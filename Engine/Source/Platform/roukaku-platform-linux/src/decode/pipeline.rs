@@ -1,6 +1,6 @@
 use super::{cancelled_error, check_pipeline_error, host_error};
-use roukaku_platform::PlatformError;
 use gstreamer::{prelude::*, ClockTime};
+use roukaku_platform::PlatformError;
 use std::{
     io::Write,
     time::{Duration, Instant},

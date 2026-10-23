@@ -66,7 +66,11 @@ pub(super) fn create_video_decoder(
     )?;
     let context =
         ffmpeg::codec::context::Context::from_parameters(parameters).map_err(|error| {
-            ffmpeg_error("ROUKAKU_FFMPEG_STREAM_DECODER", "create video decoder", error)
+            ffmpeg_error(
+                "ROUKAKU_FFMPEG_STREAM_DECODER",
+                "create video decoder",
+                error,
+            )
         })?;
     let decoder = context.decoder();
     let codec = decoder

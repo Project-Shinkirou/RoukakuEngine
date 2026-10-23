@@ -197,7 +197,9 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnSafResult<'caller>(
+pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnSafResult<
+    'caller,
+>(
     mut environment: jni::EnvUnowned<'caller>,
     _activity: jni::objects::JObject<'caller>,
     token: jni::objects::JString<'caller>,

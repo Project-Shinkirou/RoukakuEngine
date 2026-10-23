@@ -23,8 +23,10 @@ pub use policy::*;
 use roukaku_platform::{build_fingerprint, PlatformCapabilityReport, PlatformHostProfile};
 
 pub fn probe(target: Option<&str>) -> PlatformCapabilityReport {
-    let profile =
-        PlatformHostProfile::android_release(target.unwrap_or("nativevn-game"), "com.roukaku.probe");
+    let profile = PlatformHostProfile::android_release(
+        target.unwrap_or("nativevn-game"),
+        "com.roukaku.probe",
+    );
     let mut report = PlatformCapabilityReport::from_profile(
         &profile,
         build_fingerprint(

@@ -124,8 +124,11 @@ fn deterministic_measurement_duration_covers_all_120hz_intervals() {
         600_000_000
     );
     assert_eq!(
-        measurement_duration_us(1, roukaku_platform::HEADLESS_PERFORMANCE_PRESENTATION_RATE_HZ)
-            .unwrap(),
+        measurement_duration_us(
+            1,
+            roukaku_platform::HEADLESS_PERFORMANCE_PRESENTATION_RATE_HZ
+        )
+        .unwrap(),
         8_334
     );
 }

@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semver version (dispatch uploads Actions artifacts only)
+        required: true
+        default: 0.1.0-beta.1
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Prepare pinned native dependencies
+        run: cargo xtask deps --target ${{ matrix.target }} --subtitle
+      - name: Build real desktop products
+        shell: bash
+        run: cargo xtask release --target '${{ matrix.target }}' --version "$RELEASE_VERSION" --output .work/release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: roukaku-${{ matrix.target }}
+          path: .work/release/*
+          if-no-files-found: error
+
+  collect:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: roukaku-*
+          path: .work/downloaded
+      - name: Collect dispatch artifacts without publishing
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: cargo xtask release-collect --input .work/downloaded --output .work/final --version "$RELEASE_VERSION"
+      - name: Publish version tag
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cargo xtask release-collect --input .work/downloaded --output .work/final --version "$RELEASE_VERSION" --publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: roukaku-release
+          path: .work/final/*
+          if-no-files-found: error

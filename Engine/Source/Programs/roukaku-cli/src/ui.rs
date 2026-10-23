@@ -109,7 +109,9 @@ pub(crate) fn run_ui_command(command: UiCommand) -> Result<(), CliError> {
             out,
         } => {
             if locales.is_empty() || sizes.is_empty() || scales.is_empty() {
-                return Err("ROUKAKU_UI_MATRIX_EMPTY: locales, sizes and scales are required".into());
+                return Err(
+                    "ROUKAKU_UI_MATRIX_EMPTY: locales, sizes and scales are required".into(),
+                );
             }
             let package = compile_ui_preview_package(&project, &profile, &target)?;
             fs::create_dir_all(&out)?;
@@ -273,8 +275,9 @@ pub(crate) fn render_ui_snapshot(
             );
         }
     }
-    let (mut frame, mut commands, mut semantics, mut sequence) = selected
-        .ok_or("ROUKAKU_UI_PREVIEW_PRESENT_SCENE: launch did not produce a semantic Scene2D frame")?;
+    let (mut frame, mut commands, mut semantics, mut sequence) = selected.ok_or(
+        "ROUKAKU_UI_PREVIEW_PRESENT_SCENE: launch did not produce a semantic Scene2D frame",
+    )?;
     for tick in 1..=30_u64 {
         let batch = source.dispatch_ui_event(roukaku_ui_core::UiInputEventKind::FixedTime {
             time_ns: tick * 16_666_667,

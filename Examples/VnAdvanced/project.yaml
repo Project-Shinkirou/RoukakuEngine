@@ -1,0 +1,88 @@
+schema: roukaku.project.v1
+id: com.example.roukaku.advanced_vn
+platform_profiles:
+  windows-release:
+    schema: roukaku.platform_host_profile.v3
+    id: windows-release
+    platform: windows
+    target: advanced-vn-game
+    package_id: com.example.roukaku.advanced_vn
+    renderer: { providers: [wgpu_hardware], allow_software: false }
+    decode: { providers: [wmf], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [wasapi], allow_software: false }
+    save: { providers: [saved_games], allow_software: false }
+    package_sources:
+      - { kind: bundled }
+      - { kind: user_authorized }
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  web-release-chrome:
+    schema: roukaku.platform_host_profile.v3
+    id: web-release-chrome
+    platform: web
+    target: advanced-vn-game
+    package_id: com.example.roukaku.advanced_vn
+    renderer: { providers: [webgpu], allow_software: false }
+    decode: { providers: [webcodecs], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [webaudio], allow_software: false }
+    save: { providers: [opfs], allow_software: false }
+    package_sources:
+      - { kind: bundled }
+      - { kind: user_authorized }
+      - kind: https_range
+        allowed_origins: [https://cdn.example.invalid]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+
+targets:
+  - id: advanced-vn-game
+    kind: game
+    crate: roukaku-vn
+    default_profile: advanced-vn
+    platforms: [windows, linux, macos, ios, android, web]
+    packaged: true
+profiles:
+  - nativevn-commercial
+  - advanced-vn
+command_providers:
+  show: roukaku.vn.standard
+  hide: roukaku.vn.standard
+  move: roukaku.vn.standard
+  camera: roukaku.vn.standard
+  transition: roukaku.vn.standard
+  shake: roukaku.vn.standard
+  movie: roukaku.vn.standard
+  voice: roukaku.vn.standard
+  bgm: roukaku.vn.standard
+  se: roukaku.vn.standard
+  wait: roukaku.vn.standard
+  choice: roukaku.vn.standard
+  system_page: roukaku.vn.system
+luau:
+  runtime: luau
+  policy_bundle: com.example.advanced_presentation
+  entry: advanced_policy.luau
+  capabilities:
+    - roukaku.vn.policy_bundle
+    - roukaku.vn.command_extension
+    - filter_graph.node
+    - text_effect.policy
+system_stories:
+  title: system.title
+  save: system.save
+  load: system.load
+  config: system.config
+  backlog: system.backlog
+  gallery: system.gallery
+  replay: system.replay
+  route_chart: system.route_chart
+  voice_replay: system.voice_replay
+  localization_preview: system.localization_preview
+release_checks:
+  required:
+    - vn.commercial_baseline
+    - vn.system_ui_profile
+    - vn.advanced_presentation
+    - plugin.extension_registry

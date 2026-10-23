@@ -7,7 +7,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    RoukakuContainerBuilder, ContainerBlob, ContainerError, ContainerKind, SectionPayload,
+    ContainerBlob, ContainerError, ContainerKind, RoukakuContainerBuilder, SectionPayload,
     CURRENT_CONTAINER_VERSION,
 };
 

@@ -3,8 +3,8 @@ use super::luau_budget::{entry_bytes, value_bytes, SharedBudget};
 use crate::{
     PolicyCommandTraceEntry, PolicyQueryTraceEntry, PolicySnapshotValue, PolicyTraceEvent, VnError,
 };
-use roukaku_core::Diagnostic;
 use mlua::Lua;
+use roukaku_core::Diagnostic;
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 pub(super) fn record_policy_command(
@@ -63,7 +63,10 @@ pub(super) fn record_policy_trace(
 pub(super) fn sandbox_error(err: mlua::Error) -> VnError {
     let message = err.to_string();
     for (marker, code) in [
-        ("ROUKAKU_VN_LUAU_AUTHORITY_API", "ROUKAKU_VN_LUAU_AUTHORITY_API"),
+        (
+            "ROUKAKU_VN_LUAU_AUTHORITY_API",
+            "ROUKAKU_VN_LUAU_AUTHORITY_API",
+        ),
         (
             "ROUKAKU_VN_LUAU_INSTRUCTION_BUDGET",
             "ROUKAKU_VN_LUAU_INSTRUCTION_BUDGET",
@@ -184,5 +187,7 @@ pub(super) fn policy_snapshot_to_lua(
 }
 
 fn snapshot_error(message: &str) -> mlua::Error {
-    mlua::Error::RuntimeError(format!("ROUKAKU_VN_LUAU_SNAPSHOT_UNSERIALIZABLE: {message}"))
+    mlua::Error::RuntimeError(format!(
+        "ROUKAKU_VN_LUAU_SNAPSHOT_UNSERIALIZABLE: {message}"
+    ))
 }

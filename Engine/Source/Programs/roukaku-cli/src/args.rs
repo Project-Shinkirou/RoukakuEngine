@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use roukaku_platform::PlatformId;
 use clap::{Parser, Subcommand, ValueEnum};
+use roukaku_platform::PlatformId;
 
 pub(crate) type CliError = Box<dyn std::error::Error + Send + Sync>;
 pub(crate) const WEB_PLAYER_LOADER: &[u8] =

@@ -1,3 +1,4 @@
+use parking_lot::Mutex;
 use roukaku_core::StableId;
 use roukaku_runtime::{
     ActionAccess, ActionDescriptor, ActionExecutionClass, ActionInvocation, ActionResourceKey,
@@ -5,7 +6,6 @@ use roukaku_runtime::{
     RuntimeAction, RuntimeConfig, RuntimeError, RuntimeWorld, StateDefinition,
     StateMachineDefinition, TickInput, TickRequest, TransitionDefinition,
 };
-use parking_lot::Mutex;
 use std::{
     collections::{BTreeMap, HashSet},
     sync::Arc,

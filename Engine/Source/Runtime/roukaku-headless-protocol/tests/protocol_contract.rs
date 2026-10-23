@@ -79,9 +79,10 @@ fn custom_tolerances_are_validated_without_external_approval() {
         schema: HEADLESS_CHECKPOINT_CONFIG_SCHEMA.into(),
         id: "tolerance.test".into(),
         input_sequence_hash: hash("input"),
-        renderer_identity_hash: roukaku_headless_protocol::RendererExecutionIdentity::cpu_reference()
-            .hash()
-            .unwrap(),
+        renderer_identity_hash:
+            roukaku_headless_protocol::RendererExecutionIdentity::cpu_reference()
+                .hash()
+                .unwrap(),
         checkpoints: vec![CheckpointExpectation {
             id: "final".into(),
             required: true,

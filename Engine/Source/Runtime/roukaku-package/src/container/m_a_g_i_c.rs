@@ -57,7 +57,9 @@ impl ContainerKind {
         match value {
             1 => Ok(Self::Save),
             2 => Ok(Self::Package),
-            _ => Err(ContainerError::message("unsupported Roukaku container kind")),
+            _ => Err(ContainerError::message(
+                "unsupported Roukaku container kind",
+            )),
         }
     }
 }
@@ -270,7 +272,9 @@ impl RoukakuContainerBuilder {
 
     pub fn write(self) -> Result<ContainerBlob, ContainerError> {
         if self.sections.is_empty() {
-            return Err(ContainerError::message("Roukaku container requires sections"));
+            return Err(ContainerError::message(
+                "Roukaku container requires sections",
+            ));
         }
         write_container(self.kind, self.sections, None)
     }
@@ -280,7 +284,9 @@ impl RoukakuContainerBuilder {
         crypto: &dyn ContainerCryptoProvider,
     ) -> Result<ContainerBlob, ContainerError> {
         if self.sections.is_empty() {
-            return Err(ContainerError::message("Roukaku container requires sections"));
+            return Err(ContainerError::message(
+                "Roukaku container requires sections",
+            ));
         }
         write_container(self.kind, self.sections, Some(crypto))
     }

@@ -282,7 +282,8 @@ impl AssRenderer {
         if unsafe { ffi::roukaku_ass_track_valid(track.as_ptr()) } == 0 {
             return Err(SubtitleError::new(ErrorKind::Input, Stage::Parse));
         }
-        result.matrix = YcbcrMatrix::from_native(unsafe { ffi::roukaku_ass_matrix(track.as_ptr()) })?;
+        result.matrix =
+            YcbcrMatrix::from_native(unsafe { ffi::roukaku_ass_matrix(track.as_ptr()) })?;
         Ok(result)
     }
 

@@ -65,7 +65,8 @@ pub(crate) fn build_standalone_bundle_into(
     } else {
         PackageReader::open(&package_bytes)?
     };
-    if platform == PlatformId::Web && !roukaku_vn_package::load_policy_actions(&reader)?.is_empty() {
+    if platform == PlatformId::Web && !roukaku_vn_package::load_policy_actions(&reader)?.is_empty()
+    {
         return Err(
             "ROUKAKU_WEB_POLICY_ACTION_UNSUPPORTED: Web bundles cannot execute native policy actions"
                 .into(),

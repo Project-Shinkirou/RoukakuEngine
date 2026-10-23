@@ -16,7 +16,8 @@ use super::*;
 
 pub(crate) fn bootstrap_test_env(output: &Path, build_identity: &Path) -> Result<(), String> {
     let identity_hash = read_identity_hash(build_identity)?;
-    fs::create_dir_all(output).map_err(|e| format!("ROUKAKU_HEADLESS_BOOTSTRAP_ROOT_FAILED: {e}"))?;
+    fs::create_dir_all(output)
+        .map_err(|e| format!("ROUKAKU_HEADLESS_BOOTSTRAP_ROOT_FAILED: {e}"))?;
     let package =
         roukaku_package::PackageBuilder::build(roukaku_package::PackageBuildRequest::fixture(
             "roukaku.headless.empty",
@@ -86,7 +87,9 @@ pub(crate) fn prepare_product_profile(
     );
     let (reader, package_storage_hash) =
         roukaku_package::RoukakuContainerReader::open_storage_audited_source(package_source)
-            .map_err(|error| format!("ROUKAKU_HEADLESS_PREPARE_PROFILE_PACKAGE_INVALID: {error}"))?;
+            .map_err(|error| {
+                format!("ROUKAKU_HEADLESS_PREPARE_PROFILE_PACKAGE_INVALID: {error}")
+            })?;
     let manifest: roukaku_package::PackageManifest = reader
         .decode_postcard("package.manifest")
         .map_err(|error| format!("ROUKAKU_HEADLESS_PREPARE_PROFILE_MANIFEST_INVALID: {error}"))?;
@@ -115,7 +118,8 @@ pub(crate) fn prepare_product_profile(
     if manifest_only {
         profile.artifacts.retention = roukaku_platform::HeadlessArtifactRetention::ManifestOnly;
     }
-    roukaku_platform::validate_headless_host_profile(&profile).map_err(|error| error.to_string())?;
+    roukaku_platform::validate_headless_host_profile(&profile)
+        .map_err(|error| error.to_string())?;
     if let Some(parent) = output.parent() {
         fs::create_dir_all(parent)
             .map_err(|error| format!("ROUKAKU_HEADLESS_PREPARE_PROFILE_ROOT_FAILED: {error}"))?;

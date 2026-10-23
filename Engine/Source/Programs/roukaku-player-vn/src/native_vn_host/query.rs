@@ -249,7 +249,8 @@ impl NativeVnHostCommandSource {
     ) -> Result<NativeVnProductObservationEvidence, NativeVnHostError> {
         let state = self.runtime_state.as_ref().ok_or_else(|| {
             NativeVnHostError::RuntimeEvidence(
-                "ROUKAKU_PLAYER_VN_STATE_MISSING: product observation requires runtime state".into(),
+                "ROUKAKU_PLAYER_VN_STATE_MISSING: product observation requires runtime state"
+                    .into(),
             )
         })?;
         Ok(NativeVnProductObservationEvidence {
@@ -295,7 +296,8 @@ impl NativeVnHostCommandSource {
         })?;
         if metadata.slot_id != slot_id {
             return Err(NativeVnHostError::Save(
-                "ROUKAKU_PLAYER_SAVE_METADATA_SLOT: prepared metadata belongs to another slot".into(),
+                "ROUKAKU_PLAYER_SAVE_METADATA_SLOT: prepared metadata belongs to another slot"
+                    .into(),
             ));
         }
         {

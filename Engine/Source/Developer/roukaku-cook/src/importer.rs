@@ -150,7 +150,8 @@ fn probe_metadata(path: &std::path::Path, bytes: &[u8]) -> Result<ImportMetadata
             })
         }
         "txt" => {
-            std::str::from_utf8(bytes).map_err(|_| CookError::message("ROUKAKU_IMPORT_TEXT_UTF8"))?;
+            std::str::from_utf8(bytes)
+                .map_err(|_| CookError::message("ROUKAKU_IMPORT_TEXT_UTF8"))?;
             Ok(ImportMetadata {
                 kind: "text".into(),
                 codec: "utf8".into(),

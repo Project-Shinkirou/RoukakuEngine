@@ -1,9 +1,9 @@
+use image::{ImageBuffer, Rgba};
 use roukaku_asset::AssetSidecar;
 use roukaku_cook::{
     ArtifactState, CookAudit, CookRequest, DefaultCookProcessor, DefaultMetadataImporter,
     ImportRequest,
 };
-use image::{ImageBuffer, Rgba};
 
 #[test]
 fn import_cook_classifies_fresh_stale_and_blocked_artifacts() {

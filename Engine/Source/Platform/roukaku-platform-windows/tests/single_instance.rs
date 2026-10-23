@@ -8,7 +8,9 @@ async fn same_game_profile_rejects_a_second_live_host() {
     let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.single");
     let factory = roukaku_platform_windows::factory_with_test_roots(temp.path(), temp.path());
     let first = factory
-        .start(roukaku_platform::HostLaunchProfile::platform(profile.clone()))
+        .start(roukaku_platform::HostLaunchProfile::platform(
+            profile.clone(),
+        ))
         .await
         .unwrap();
     let error = match factory

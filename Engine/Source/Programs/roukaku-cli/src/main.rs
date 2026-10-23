@@ -3,16 +3,16 @@ mod windows_runtime;
 
 use std::{fs, path::Path};
 
+use clap::Parser;
 use roukaku_asset::VfsUri;
 use roukaku_cook::CookCancellationToken;
 use roukaku_core::Hash256;
 use roukaku_release::{PackageValidateRequest, ReleaseValidator};
 use roukaku_target::validate_manifest;
 use roukaku_vn_script::{
-    compile_roukaku_project, format_roukaku_source, RoukakuSource, CompileRoukakuProjectOptions,
-    FormatOptions,
+    compile_roukaku_project, format_roukaku_source, CompileRoukakuProjectOptions, FormatOptions,
+    RoukakuSource,
 };
-use clap::Parser;
 use serde::Deserialize;
 use tracing::info;
 

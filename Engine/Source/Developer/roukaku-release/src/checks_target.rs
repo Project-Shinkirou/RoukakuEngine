@@ -295,7 +295,8 @@ pub(crate) fn cooked_project_input_check(
             };
         }
     }
-    if value.get("schema").and_then(serde_json::Value::as_str) != Some("roukaku.cooked_project.v1") {
+    if value.get("schema").and_then(serde_json::Value::as_str) != Some("roukaku.cooked_project.v1")
+    {
         return ReleaseCheckRecord {
             id: "package.cooked_project".to_string(),
             domain: ReleaseDomain::Package,

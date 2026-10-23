@@ -333,7 +333,8 @@ impl PluginRegistrar {
 
     pub fn extension_registry_snapshot(
         &self,
-    ) -> Result<PluginExtensionRegistrySnapshot, roukaku_plugin_abi::ProviderRegistryDiagnostic> {
+    ) -> Result<PluginExtensionRegistrySnapshot, roukaku_plugin_abi::ProviderRegistryDiagnostic>
+    {
         Ok(PluginExtensionRegistrySnapshot {
             schema: PLUGIN_EXTENSION_REGISTRY_SCHEMA.to_string(),
             providers: self

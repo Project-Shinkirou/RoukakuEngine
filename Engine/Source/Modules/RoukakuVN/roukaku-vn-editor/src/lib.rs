@@ -8,7 +8,7 @@ mod history;
 pub mod timeline;
 mod transaction;
 
-pub use roukaku_vn_script::*;
 pub use document::*;
 pub use editor_metadata::*;
+pub use roukaku_vn_script::*;
 pub use transaction::*;

@@ -6,7 +6,7 @@ pub use lexer::*;
 
 use roukaku_core::{Diagnostic, SourceRef};
 
-use crate::{RoukakuSource, CommandRegistry};
+use crate::{CommandRegistry, RoukakuSource};
 
 #[derive(Debug, Clone)]
 pub struct ParsedRoukakuSource {

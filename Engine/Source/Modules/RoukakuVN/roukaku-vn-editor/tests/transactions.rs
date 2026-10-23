@@ -36,7 +36,8 @@ fn inspector_edit_compiles_preserves_comments_and_undo_uses_new_version() {
 #[test]
 fn batch_rejects_partial_conflicts_and_unicode_splits() {
     let mut w = workspace();
-    w.open(RoukakuSource::story("second.roukaku", "你好")).unwrap();
+    w.open(RoukakuSource::story("second.roukaku", "你好"))
+        .unwrap();
     let good = w
         .attribute_edit("main.roukaku", "hello", "speaker", "Alice")
         .unwrap();
@@ -123,7 +124,10 @@ fn adjacent_unicode_deletions_and_replacement_undo_as_one_batch() {
         "文字-tail"
     );
     workspace.undo().unwrap();
-    assert_eq!(workspace.document("unicode.roukaku").unwrap().text, original);
+    assert_eq!(
+        workspace.document("unicode.roukaku").unwrap().text,
+        original
+    );
     workspace.redo().unwrap();
     assert_eq!(
         workspace.document("unicode.roukaku").unwrap().text,

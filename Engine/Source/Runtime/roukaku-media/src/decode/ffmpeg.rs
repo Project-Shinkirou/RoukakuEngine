@@ -265,7 +265,9 @@ fn decode_video(
                 .and_then(|height| width.checked_mul(height))
         })
         .and_then(|pixels| pixels.checked_mul(4))
-        .ok_or_else(|| decode_error("ROUKAKU_FFMPEG_VIDEO_BUDGET", "video frame size overflowed"))?;
+        .ok_or_else(|| {
+            decode_error("ROUKAKU_FFMPEG_VIDEO_BUDGET", "video frame size overflowed")
+        })?;
     if expected_bytes == 0 || expected_bytes > MAX_DECODED_VIDEO_FRAME_BYTES {
         return Err(decode_error(
             "ROUKAKU_FFMPEG_VIDEO_BUDGET",

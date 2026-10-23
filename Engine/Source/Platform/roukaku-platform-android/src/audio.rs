@@ -5,16 +5,16 @@ use std::sync::{
     Arc,
 };
 
-use roukaku_platform::{
-    AudioDeviceFormat, AudioFocusState, AudioOutputRequest, AudioWakeRegistration, PlatformError,
-    PlatformErrorCode,
-};
-use roukaku_platform_common::{NativeAudioConsumer, NativeAudioProducer, NativeAudioQueue};
 use oboe::{
     AudioApi, AudioOutputCallback, AudioOutputStream, AudioStream, AudioStreamAsync,
     AudioStreamBuilder, AudioStreamSafe, ContentType, DataCallbackResult, Mono, Output,
     PerformanceMode, SharingMode, Stereo, Usage,
 };
+use roukaku_platform::{
+    AudioDeviceFormat, AudioFocusState, AudioOutputRequest, AudioWakeRegistration, PlatformError,
+    PlatformErrorCode,
+};
+use roukaku_platform_common::{NativeAudioConsumer, NativeAudioProducer, NativeAudioQueue};
 
 pub(crate) struct AndroidAudioResource {
     stream: AndroidAudioStream,

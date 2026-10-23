@@ -3,8 +3,8 @@
 pub use roukaku_vn_core::{VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind};
 pub use roukaku_vn_presentation::{StageModel, VnPresentationProviderManifest};
 pub use roukaku_vn_script::{
-    compile_roukaku_project, format_roukaku_source, RoukakuSource, CompileRoukakuProjectOptions,
-    FormatOptions, SystemStoryManifest, SystemStoryValidationStatus, VnSystemUiProfileManifest,
+    compile_roukaku_project, format_roukaku_source, CompileRoukakuProjectOptions, FormatOptions,
+    RoukakuSource, SystemStoryManifest, SystemStoryValidationStatus, VnSystemUiProfileManifest,
 };
 
 mod limits;

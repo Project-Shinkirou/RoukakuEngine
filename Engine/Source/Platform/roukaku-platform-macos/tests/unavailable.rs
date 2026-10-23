@@ -9,6 +9,9 @@ fn macos_probe_never_claims_runtime_availability_without_conformance() {
         "ROUKAKU_PLATFORM_RUNTIME_PROBE_REQUIRED"
     );
     #[cfg(not(target_os = "macos"))]
-    assert_eq!(report.diagnostics[0].code, "ROUKAKU_PLATFORM_NOT_IMPLEMENTED");
+    assert_eq!(
+        report.diagnostics[0].code,
+        "ROUKAKU_PLATFORM_NOT_IMPLEMENTED"
+    );
     let _factory = roukaku_platform_macos::factory();
 }

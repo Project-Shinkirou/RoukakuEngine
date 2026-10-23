@@ -2,11 +2,11 @@
 
 use std::sync::atomic::AtomicBool;
 
+use cpal::traits::{DeviceTrait, HostTrait};
 use roukaku_platform::{
     AudioOutputRequest, DecodeKind, DecodeOutput, PlatformDecodeRequest, PlatformErrorCode,
     PlatformHostFactory, PlatformHostProfile,
 };
-use cpal::traits::{DeviceTrait, HostTrait};
 
 #[tokio::test]
 async fn windows_host_uses_real_wasapi_stream_and_wmf_decode_session() {

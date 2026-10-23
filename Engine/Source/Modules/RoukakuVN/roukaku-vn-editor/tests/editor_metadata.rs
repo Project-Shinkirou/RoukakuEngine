@@ -1,5 +1,5 @@
 use roukaku_vn_editor::{
-    compile_roukaku_project, RoukakuSource, EditorVisualMetadata, GraphNodeMetadata,
+    compile_roukaku_project, EditorVisualMetadata, GraphNodeMetadata, RoukakuSource,
     TimelineTrackMetadata,
 };
 

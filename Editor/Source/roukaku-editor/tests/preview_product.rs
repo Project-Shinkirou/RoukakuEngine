@@ -156,7 +156,10 @@ fn nativevn_graph_timeline_preview_and_undo() {
 
 fn edit_nativevn(
     project: &mut Project,
-) -> (roukaku_core::Hash256, Vec<roukaku_vn_editor::DocumentSnapshot>) {
+) -> (
+    roukaku_core::Hash256,
+    Vec<roukaku_vn_editor::DocumentSnapshot>,
+) {
     use roukaku_editor::graph;
     use roukaku_vn_editor::timeline::{self, KeyframeEdit};
     let original_hash = project.compile().unwrap().project_hash;

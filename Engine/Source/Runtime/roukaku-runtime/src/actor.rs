@@ -5,8 +5,8 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use roukaku_core::{SchemaId, SchemaVersion, StableId};
 use indexmap::IndexMap;
+use roukaku_core::{SchemaId, SchemaVersion, StableId};
 use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -227,7 +227,9 @@ impl RuntimeComponentPayload {
     {
         if let Some(value) = self.typed.get() {
             return value.as_any().downcast_ref::<T>().cloned().ok_or_else(|| {
-                RuntimeError::message("ROUKAKU_RUNTIME_COMPONENT_TYPE: typed component type mismatch")
+                RuntimeError::message(
+                    "ROUKAKU_RUNTIME_COMPONENT_TYPE: typed component type mismatch",
+                )
             });
         }
         let bytes = self.bytes.get().ok_or_else(|| {

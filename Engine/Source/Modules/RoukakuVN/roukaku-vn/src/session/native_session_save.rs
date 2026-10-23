@@ -12,8 +12,11 @@ impl VnSession {
                 "failed session cannot produce a save",
             ));
         }
-        roukaku_runtime::write_runtime_save(materialized_save_snapshot(self)?, SaveRequest::default())
-            .map_err(|error| CoreVnError::message(error.to_string()))
+        roukaku_runtime::write_runtime_save(
+            materialized_save_snapshot(self)?,
+            SaveRequest::default(),
+        )
+        .map_err(|error| CoreVnError::message(error.to_string()))
     }
 
     pub fn restore(&mut self, blob: SaveBlob) -> Result<roukaku_runtime::LoadReport, CoreVnError> {

@@ -180,8 +180,11 @@ fn retained_pointer_activation_prefers_the_topmost_enabled_actionable_node() {
         ],
     };
     assert_eq!(
-        retained_pointer_activation_target(&snapshot, roukaku_ui_core::UiPoint { x: 50.0, y: 50.0 },)
-            .map(|node| node.id.as_str()),
+        retained_pointer_activation_target(
+            &snapshot,
+            roukaku_ui_core::UiPoint { x: 50.0, y: 50.0 },
+        )
+        .map(|node| node.id.as_str()),
         Some("root/advance")
     );
 }
@@ -240,7 +243,9 @@ fn semantic_text_alignment_uses_bounded_container_offsets() {
 fn invalid_semantic_text_alignment_is_blocking() {
     let invalid = "middle".to_string();
     let error = parse_ui_text_alignment(Some(&invalid)).unwrap_err();
-    assert!(error.to_string().contains("ROUKAKU_PLAYER_UI_TEXT_ALIGNMENT"));
+    assert!(error
+        .to_string()
+        .contains("ROUKAKU_PLAYER_UI_TEXT_ALIGNMENT"));
 }
 
 #[test]

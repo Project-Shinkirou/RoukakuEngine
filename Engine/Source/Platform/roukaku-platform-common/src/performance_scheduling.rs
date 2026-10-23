@@ -39,14 +39,18 @@ mod platform {
                 ));
             }
             if unsafe { SetPriorityClass(process, HIGH_PRIORITY_CLASS) } == 0 {
-                return Err(last_error("ROUKAKU_PERFORMANCE_PROCESS_PRIORITY_SET_FAILED"));
+                return Err(last_error(
+                    "ROUKAKU_PERFORMANCE_PROCESS_PRIORITY_SET_FAILED",
+                ));
             }
 
             let thread = unsafe { GetCurrentThread() };
             let thread_priority = unsafe { GetThreadPriority(thread) };
             if thread_priority == THREAD_PRIORITY_ERROR_RETURN {
                 unsafe { SetPriorityClass(process, process_priority) };
-                return Err(last_error("ROUKAKU_PERFORMANCE_THREAD_PRIORITY_QUERY_FAILED"));
+                return Err(last_error(
+                    "ROUKAKU_PERFORMANCE_THREAD_PRIORITY_QUERY_FAILED",
+                ));
             }
             if unsafe { SetThreadPriority(thread, thread_priority_target) } == 0 {
                 unsafe { SetPriorityClass(process, process_priority) };

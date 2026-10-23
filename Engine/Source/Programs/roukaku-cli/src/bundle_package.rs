@@ -67,7 +67,8 @@ pub(crate) fn build_package_from_cooked(
         &manifest,
         &request.cooked_assets,
     )?)?;
-    request.release_summary = br#"{"schema":"roukaku.release_summary.v1","status":"built"}"#.to_vec();
+    request.release_summary =
+        br#"{"schema":"roukaku.release_summary.v1","status":"built"}"#.to_vec();
     if let Some(source_lock) = source_lock {
         validate_source_lock_coverage(&request, &source_lock.policy)?;
         request.source_unlock_policy = Some(source_lock.policy.clone());
@@ -164,8 +165,8 @@ pub(crate) fn production_package_request(
             schema: roukaku_plugin_abi::PLUGIN_EXTENSION_REGISTRY_SCHEMA.to_string(),
             providers: provider_specs
                 .iter()
-                .map(
-                    |(slot, provider_id, capability)| roukaku_plugin_abi::ProviderExtensionRecord {
+                .map(|(slot, provider_id, capability)| {
+                    roukaku_plugin_abi::ProviderExtensionRecord {
                         slot: slot.to_string(),
                         provider_id: provider_id.to_string(),
                         capability: capability.to_string(),
@@ -175,8 +176,8 @@ pub(crate) fn production_package_request(
                         rustc_fingerprint: "rustc-stable".to_string(),
                         feature_fingerprint: "runtime-typed-v3".to_string(),
                         abi_fingerprint: "roukaku-plugin-abi-v3".to_string(),
-                    },
-                )
+                    }
+                })
                 .collect(),
             bindings,
             conflicts: vec![],

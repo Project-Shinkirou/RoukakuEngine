@@ -6,7 +6,8 @@ use tokio::sync::oneshot;
 #[test]
 #[ignore = "requires explicit local video fixture, expected frame count, GStreamer plugins and hardware GPU"]
 fn complete_local_movie_streams_through_worker_and_gpu() {
-    let input = std::env::var_os("ROUKAKU_LINUX_VIDEO_TEST_FILE").expect("set a local video fixture");
+    let input =
+        std::env::var_os("ROUKAKU_LINUX_VIDEO_TEST_FILE").expect("set a local video fixture");
     let expected_frames: u64 = std::env::var("ROUKAKU_LINUX_VIDEO_TEST_FRAMES")
         .unwrap()
         .parse()

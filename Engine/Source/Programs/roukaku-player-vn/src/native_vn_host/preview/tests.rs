@@ -30,17 +30,20 @@ fn identity(source: &NativeVnHostCommandSource) -> PreviewIdentity {
         .into(),
     }
 }
-fn executor() -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink>
-{
+fn executor(
+) -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink> {
     let (client, _, _) = roukaku_platform::host_channel(
-        roukaku_platform::PlatformHostProfile::windows_release("nativevn-game", "com.example.player"),
+        roukaku_platform::PlatformHostProfile::windows_release(
+            "nativevn-game",
+            "com.example.player",
+        ),
         1,
         1,
     )
     .unwrap();
-    roukaku_player_core::PlayerHostCommandExecutor::new(roukaku_player_core::PlatformCommandSink::new(
-        client,
-    ))
+    roukaku_player_core::PlayerHostCommandExecutor::new(
+        roukaku_player_core::PlatformCommandSink::new(client),
+    )
 }
 #[test]
 fn rejects_wrong_project_revisions_duplicates_and_cancelled_session() {

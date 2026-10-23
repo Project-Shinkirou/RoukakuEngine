@@ -209,7 +209,9 @@ impl WebCdpSession {
                     return Ok(evidence);
                 }
                 if event.get("method").and_then(Value::as_str) == Some("Runtime.exceptionThrown") {
-                    return Err("ROUKAKU_PLAYER_CDP_RUNTIME_EXCEPTION: browser runtime failed".into());
+                    return Err(
+                        "ROUKAKU_PLAYER_CDP_RUNTIME_EXCEPTION: browser runtime failed".into(),
+                    );
                 }
             }
             self.read_one(deadline)?;

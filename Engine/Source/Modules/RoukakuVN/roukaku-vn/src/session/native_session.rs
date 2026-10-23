@@ -253,7 +253,10 @@ mod tests {
             .unwrap();
         let after = session.engine.world().snapshot().unwrap();
         assert!(after.awaits.pending().is_empty());
-        assert_eq!(after.machines, roukaku_runtime::StateMachineStore::default());
+        assert_eq!(
+            after.machines,
+            roukaku_runtime::StateMachineStore::default()
+        );
         assert!(session.runtime.state().pending_wait.is_none());
     }
 }

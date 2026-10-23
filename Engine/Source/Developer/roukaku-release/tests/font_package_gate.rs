@@ -106,5 +106,8 @@ fn release_gate_validates_package_vfs_font_authority_and_target_drift() {
 
     let drift = font_check(package_with_font("other-game"));
     assert_eq!(drift.status, CheckStatus::Blocked);
-    assert_eq!(drift.diagnostic.unwrap().code, "ROUKAKU_TEXT_PACKAGE_INVALID");
+    assert_eq!(
+        drift.diagnostic.unwrap().code,
+        "ROUKAKU_TEXT_PACKAGE_INVALID"
+    );
 }

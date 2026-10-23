@@ -187,7 +187,8 @@ impl RuntimeWorld {
         if let Some(diagnostic) = self.diagnostics.iter().find(|diagnostic| {
             matches!(
                 diagnostic.severity,
-                roukaku_core::DiagnosticSeverity::Blocking | roukaku_core::DiagnosticSeverity::Error
+                roukaku_core::DiagnosticSeverity::Blocking
+                    | roukaku_core::DiagnosticSeverity::Error
             )
         }) {
             return Err(RuntimeError::diagnostic(diagnostic.clone()));

@@ -15,7 +15,7 @@ use roukaku_vn_package::{
     package_sections_for_project, PlayerLocaleConfig, PLAYER_LOCALE_CONFIG_SCHEMA,
 };
 use roukaku_vn_policy::LuauUiControllerHost;
-use roukaku_vn_script::{compile_roukaku_project, RoukakuSource, CompileRoukakuProjectOptions};
+use roukaku_vn_script::{compile_roukaku_project, CompileRoukakuProjectOptions, RoukakuSource};
 
 use super::*;
 
@@ -167,9 +167,9 @@ pub(crate) fn cook_nativevn_sections(
         controller_host.register_source(source)?;
     }
     for manifest in controller_host.manifests() {
-        let source = controller_host
-            .source(&manifest.id)
-            .ok_or("ROUKAKU_UI_CONTROLLER_SOURCE_IDENTITY: validated controller source is missing")?;
+        let source = controller_host.source(&manifest.id).ok_or(
+            "ROUKAKU_UI_CONTROLLER_SOURCE_IDENTITY: validated controller source is missing",
+        )?;
         compile_options =
             compile_options.with_ui_controller_source(manifest.id.clone(), source.to_string());
     }

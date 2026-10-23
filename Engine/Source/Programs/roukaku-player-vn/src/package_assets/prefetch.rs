@@ -95,7 +95,9 @@ impl PackageImagePrefetcher {
                     }
                 })
                 .map_err(|error| {
-                    NativeVnHostError::Asset(format!("ROUKAKU_PLAYER_IMAGE_PREFETCH_THREAD: {error}"))
+                    NativeVnHostError::Asset(format!(
+                        "ROUKAKU_PLAYER_IMAGE_PREFETCH_THREAD: {error}"
+                    ))
                 })?;
             owner.workers.push(worker);
         }

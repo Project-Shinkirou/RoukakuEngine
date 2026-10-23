@@ -165,9 +165,9 @@ impl Drop for MacosHostApp {
 pub(super) fn raw_gamepad_event(
     event: gilrs::Event,
 ) -> Option<roukaku_platform_common::RawGamepadEvent> {
+    use gilrs::{Axis, Button, EventType};
     use roukaku_platform::GamepadControl;
     use roukaku_platform_common::RawGamepadEvent;
-    use gilrs::{Axis, Button, EventType};
 
     let raw_device_id = u32::try_from(usize::from(event.id)).ok()?;
     let map_button = |button| match button {

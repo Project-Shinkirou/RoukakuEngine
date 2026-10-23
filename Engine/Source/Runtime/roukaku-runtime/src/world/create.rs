@@ -405,9 +405,9 @@ impl RuntimeWorld {
     pub fn emit_presentation(&mut self, command: PresentationCommand) -> Result<(), RuntimeError> {
         self.ensure_active()?;
         let sequence = self.presentation_sequence;
-        self.presentation_sequence = sequence
-            .checked_add(1)
-            .ok_or_else(|| RuntimeError::message("ROUKAKU_RUNTIME_PRESENTATION_SEQUENCE_OVERFLOW"))?;
+        self.presentation_sequence = sequence.checked_add(1).ok_or_else(|| {
+            RuntimeError::message("ROUKAKU_RUNTIME_PRESENTATION_SEQUENCE_OVERFLOW")
+        })?;
         debug!(
             step = self.step,
             sequence,

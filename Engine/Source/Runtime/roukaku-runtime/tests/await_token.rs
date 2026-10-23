@@ -229,7 +229,9 @@ fn await_completion_policy_rejects_invalid_tokens_and_live_timeout_results() {
             completion_policy: AwaitCompletionPolicy::HostResult,
         })
         .unwrap_err();
-    assert!(error.to_string().contains("ROUKAKU_AWAIT_COMPLETION_POLICY"));
+    assert!(error
+        .to_string()
+        .contains("ROUKAKU_AWAIT_COMPLETION_POLICY"));
 
     let timeout_token = AwaitTokenId(StableId::deterministic_v7(4, 2, 13));
     world

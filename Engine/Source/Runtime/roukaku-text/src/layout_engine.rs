@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use roukaku_core::Diagnostic;
 use cosmic_text::{FontFeatures, SubpixelBin};
+use roukaku_core::Diagnostic;
 
 use super::vertical::{is_vertical, shaping_constraint, transform_vertical_run};
 use crate::MediaError;

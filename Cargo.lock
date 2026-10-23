@@ -371,6 +371,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arbitrary"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
+dependencies = [
+ "derive_arbitrary",
+]
+
+[[package]]
 name = "arboard"
 version = "3.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,967 +492,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "roukaku-asset"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "camino",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-audio-kira"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-platform",
- "kira",
- "rtrb",
- "schemars",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-byte-source"
-version = "0.1.0"
-dependencies = [
- "abi_stable",
- "roukaku-core",
- "schemars",
- "serde",
- "sha2",
- "tempfile",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "roukaku-cli"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-cook",
- "roukaku-core",
- "roukaku-headless-protocol",
- "roukaku-headless-test",
- "roukaku-media",
- "roukaku-observability",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-android",
- "roukaku-platform-linux",
- "roukaku-platform-macos",
- "roukaku-platform-web",
- "roukaku-platform-windows",
- "roukaku-player-core",
- "roukaku-player-vn",
- "roukaku-plugin-abi",
- "roukaku-release",
- "roukaku-target",
- "roukaku-ui-core",
- "roukaku-vn",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "roukaku-vn-policy",
- "roukaku-vn-script",
- "clap",
- "ctrlc",
- "hex",
- "image",
- "object",
- "postcard",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "tracing",
- "wasmparser",
- "windows",
-]
-
-[[package]]
-name = "roukaku-cook"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-core",
- "roukaku-package",
- "camino",
- "image",
- "postcard",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-property-derive",
- "blake3",
- "hex",
- "miette",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "thiserror 1.0.69",
- "uuid",
-]
-
-[[package]]
-name = "roukaku-crash-reporter"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-observability",
- "serde",
- "serde_json",
- "tempfile",
- "time",
- "tracing",
- "windows",
-]
-
-[[package]]
-name = "roukaku-engine"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-package",
- "roukaku-plugin",
- "roukaku-runtime",
-]
-
-[[package]]
-name = "roukaku-headless"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-headless-protocol",
- "roukaku-headless-test",
- "roukaku-headless-vn-adapter",
- "roukaku-media-core",
- "roukaku-observability",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-common",
- "roukaku-platform-headless",
- "roukaku-player-vn",
- "roukaku-plugin",
- "clap",
- "hound",
- "image",
- "rustfft",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-headless-protocol"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-package",
- "roukaku-platform",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "roukaku-headless-test"
-version = "0.1.0"
-dependencies = [
- "roukaku-headless-protocol",
- "serde_json",
- "sha2",
- "tempfile",
- "thiserror 1.0.69",
- "tokio",
-]
-
-[[package]]
-name = "roukaku-headless-vn-adapter"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-headless-protocol",
- "roukaku-media",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-headless",
- "roukaku-player-core",
- "roukaku-player-vn",
- "roukaku-runtime",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-media"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-package",
- "roukaku-text",
- "roukaku-worker-budget",
- "ffmpeg-next",
- "image",
- "js-sys",
- "postcard",
- "rubato",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "symphonia",
- "tempfile",
- "thiserror 1.0.69",
- "tracing",
- "wasm-bindgen",
- "windows",
-]
-
-[[package]]
-name = "roukaku-media-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-core",
- "rayon",
- "schemars",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-observability"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "file-rotate",
- "libc",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "thiserror 1.0.69",
- "time",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "windows",
-]
-
-[[package]]
-name = "roukaku-package"
-version = "0.1.0"
-dependencies = [
- "aes-gcm-siv",
- "roukaku-asset",
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-plugin-abi",
- "roukaku-target",
- "hkdf",
- "postcard",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "tempfile",
- "thiserror 1.0.69",
- "tracing",
- "zeroize",
- "zstd",
-]
-
-[[package]]
-name = "roukaku-platform"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-ui-core",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "roukaku-platform-android"
-version = "0.1.0"
-dependencies = [
- "accesskit",
- "accesskit_android",
- "android-activity",
- "roukaku-core",
- "roukaku-media",
- "roukaku-platform",
- "roukaku-platform-common",
- "roukaku-ui-core",
- "jni 0.22.4",
- "ndk 0.9.0",
- "ndk-sys 0.6.0+11769913",
- "oboe",
- "pollster",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tracing",
- "wgpu",
- "winit",
-]
-
-[[package]]
-name = "roukaku-platform-common"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-observability",
- "roukaku-platform",
- "directories",
- "futures-util",
- "reqwest",
- "rtrb",
- "serde",
- "serde_json",
- "sha2",
- "smallvec",
- "tempfile",
- "tokio",
- "tracing",
- "url",
- "wgpu",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "roukaku-platform-headless"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-headless-protocol",
- "roukaku-media",
- "roukaku-media-core",
- "roukaku-platform",
- "roukaku-platform-common",
- "roukaku-ui-core",
- "hound",
- "image",
- "postcard",
- "rcgen",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tokio-rustls",
- "tracing",
- "url",
- "wgpu",
-]
-
-[[package]]
-name = "roukaku-platform-linux"
-version = "0.1.0"
-dependencies = [
- "ashpd",
- "roukaku-core",
- "roukaku-media",
- "roukaku-platform",
- "roukaku-platform-common",
- "cpal",
- "directories",
- "evdev",
- "gilrs",
- "gstreamer",
- "gstreamer-app",
- "gstreamer-video",
- "libc",
- "pollster",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "wgpu",
- "winit",
-]
-
-[[package]]
-name = "roukaku-platform-macos"
-version = "0.1.0"
-dependencies = [
- "accesskit",
- "accesskit_winit",
- "roukaku-core",
- "roukaku-media",
- "roukaku-platform",
- "roukaku-platform-common",
- "roukaku-ui-core",
- "cpal",
- "directories",
- "gilrs",
- "libc",
- "objc2 0.6.4",
- "objc2-av-foundation",
- "objc2-core-media",
- "objc2-core-video",
- "objc2-foundation 0.3.2",
- "pollster",
- "rfd",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "wgpu",
- "winit",
-]
-
-[[package]]
-name = "roukaku-platform-web"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-platform",
- "roukaku-platform-common",
- "roukaku-ui-core",
- "gilrs",
- "js-sys",
- "rfd",
- "serde_json",
- "tokio",
- "tracing",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-bindgen-test",
- "web-sys",
- "wgpu",
-]
-
-[[package]]
-name = "roukaku-platform-windows"
-version = "0.1.0"
-dependencies = [
- "accesskit",
- "accesskit_winit",
- "roukaku-core",
- "roukaku-media",
- "roukaku-platform",
- "roukaku-platform-common",
- "roukaku-ui-core",
- "cpal",
- "gilrs",
- "pollster",
- "postcard",
- "rfd",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
- "wgpu",
- "windows",
- "winit",
-]
-
-[[package]]
-name = "roukaku-player"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-media",
- "roukaku-media-core",
- "roukaku-observability",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-linux",
- "roukaku-platform-macos",
- "roukaku-platform-windows",
- "roukaku-player-core",
- "roukaku-player-vn",
- "roukaku-runtime",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "base64",
- "libc",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "time",
- "tokio",
- "tracing",
- "tungstenite",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "roukaku-player-android"
-version = "0.1.0"
-dependencies = [
- "android-activity",
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-observability",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-android",
- "roukaku-player",
- "roukaku-player-core",
- "roukaku-player-vn",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-player-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-media",
- "roukaku-media-core",
- "roukaku-platform",
- "roukaku-ui-core",
- "rubato",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-player-vn"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-audio-kira",
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-media",
- "roukaku-media-core",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-windows",
- "roukaku-player-core",
- "roukaku-plugin",
- "roukaku-plugin-abi",
- "roukaku-runtime",
- "roukaku-ui-core",
- "roukaku-ui-yakui",
- "roukaku-vn",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "roukaku-vn-policy",
- "roukaku-vn-presentation",
- "roukaku-vn-ui",
- "roukaku-worker-budget",
- "image",
- "postcard",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "roukaku-player-web"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-web",
- "roukaku-player-core",
- "roukaku-player-vn",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "futures-util",
- "js-sys",
- "serde",
- "serde_json",
- "tracing",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-bindgen-test",
- "web-sys",
-]
-
-[[package]]
-name = "roukaku-plugin"
-version = "0.1.0"
-dependencies = [
- "abi_stable",
- "roukaku-core",
- "roukaku-plugin-abi",
- "roukaku-runtime",
- "roukaku-worker-budget",
- "libloading 0.8.9",
- "schemars",
- "semver",
- "serde",
- "serde_json",
- "serde_yaml",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-plugin-abi"
-version = "0.1.0"
-dependencies = [
- "abi_stable",
- "roukaku-core",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "roukaku-policy"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "luaur-rt",
- "mlua",
- "postcard",
- "schemars",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-property-derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "roukaku-release"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-core",
- "roukaku-media",
- "roukaku-package",
- "roukaku-platform",
- "roukaku-platform-android",
- "roukaku-player-core",
- "roukaku-plugin-abi",
- "roukaku-runtime",
- "roukaku-target",
- "roukaku-vn",
- "roukaku-vn-core",
- "roukaku-vn-package",
- "roukaku-vn-policy",
- "roukaku-vn-script",
- "postcard",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-runtime"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-package",
- "blake3",
- "futures-util",
- "indexmap",
- "parking_lot",
- "postcard",
- "rayon",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 1.0.69",
- "tokio",
- "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-subtitle"
-version = "0.1.0"
-dependencies = [
- "cc",
- "pkg-config",
- "vcpkg",
-]
-
-[[package]]
-name = "roukaku-target"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "schemars",
- "serde",
- "serde_yaml",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-text"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-worker-budget",
- "cosmic-text",
- "schemars",
- "serde",
- "serde_json",
- "tracing",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "roukaku-ui-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "postcard",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "roukaku-ui-yakui"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-ui-core",
- "fast-srgb8",
- "postcard",
- "schemars",
- "serde",
- "thiserror 1.0.69",
- "tracing",
- "unicode-segmentation",
- "yakui-core",
- "yakui-widgets",
-]
-
-[[package]]
-name = "roukaku-vn"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-plugin-abi",
- "roukaku-runtime",
- "roukaku-vn-core",
- "roukaku-vn-policy",
- "roukaku-vn-presentation",
- "roukaku-vn-script",
- "serde",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-vn-presentation",
- "roukaku-vn-script",
- "postcard",
- "schemars",
- "serde",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-editor"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "roukaku-core",
- "roukaku-vn-script",
- "parking_lot",
- "schemars",
- "serde",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-package"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-package",
- "roukaku-plugin",
- "roukaku-runtime",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-policy",
- "roukaku-vn-presentation",
- "roukaku-vn-script",
- "postcard",
- "schemars",
- "semver",
- "serde",
- "serde_json",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-policy"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-core",
- "roukaku-policy",
- "roukaku-ui-core",
- "roukaku-vn-script",
- "roukaku-vn-ui",
- "luaur-rt",
- "mlua",
- "postcard",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-presentation"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-runtime",
- "roukaku-vn-script",
- "roukaku-worker-budget",
- "postcard",
- "schemars",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-script"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-ui-core",
- "blake3",
- "chumsky",
- "hex",
- "indexmap",
- "insta",
- "logos",
- "miette",
- "postcard",
- "proptest",
- "rowan",
- "schemars",
- "serde",
- "serde_json",
- "text-size",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-ui"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-script",
- "schemars",
- "serde",
- "thiserror 1.0.69",
- "tracing",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "roukaku-worker-budget"
-version = "0.1.0"
-dependencies = [
- "tokio",
 ]
 
 [[package]]
@@ -2391,6 +1439,17 @@ name = "deranged"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
+
+[[package]]
+name = "derive_arbitrary"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b034bd7d5f032402a2479444dcc6f74e36a03f31854d41680fb240ef682a1ac"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
 
 [[package]]
 name = "digest"
@@ -5834,6 +4893,967 @@ dependencies = [
 ]
 
 [[package]]
+name = "roukaku-asset"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-audio-kira"
+version = "0.1.0"
+dependencies = [
+ "kira",
+ "roukaku-byte-source",
+ "roukaku-platform",
+ "rtrb",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-byte-source"
+version = "0.1.0"
+dependencies = [
+ "abi_stable",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "sha2",
+ "tempfile",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "roukaku-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "ctrlc",
+ "hex",
+ "image",
+ "object",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-cook",
+ "roukaku-core",
+ "roukaku-headless-protocol",
+ "roukaku-headless-test",
+ "roukaku-media",
+ "roukaku-observability",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-android",
+ "roukaku-platform-linux",
+ "roukaku-platform-macos",
+ "roukaku-platform-web",
+ "roukaku-platform-windows",
+ "roukaku-player-core",
+ "roukaku-player-vn",
+ "roukaku-plugin-abi",
+ "roukaku-release",
+ "roukaku-target",
+ "roukaku-ui-core",
+ "roukaku-vn",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "roukaku-vn-policy",
+ "roukaku-vn-script",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "tracing",
+ "wasmparser",
+ "windows",
+]
+
+[[package]]
+name = "roukaku-cook"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "image",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-core",
+ "roukaku-package",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-core"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "hex",
+ "miette",
+ "roukaku-property-derive",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2",
+ "thiserror 1.0.69",
+ "uuid",
+]
+
+[[package]]
+name = "roukaku-crash-reporter"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "roukaku-observability",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time",
+ "tracing",
+ "windows",
+]
+
+[[package]]
+name = "roukaku-engine"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "roukaku-package",
+ "roukaku-plugin",
+ "roukaku-runtime",
+]
+
+[[package]]
+name = "roukaku-headless"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "hound",
+ "image",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-headless-protocol",
+ "roukaku-headless-test",
+ "roukaku-headless-vn-adapter",
+ "roukaku-media-core",
+ "roukaku-observability",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "roukaku-platform-headless",
+ "roukaku-player-vn",
+ "roukaku-plugin",
+ "rustfft",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-headless-protocol"
+version = "0.1.0"
+dependencies = [
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-package",
+ "roukaku-platform",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "roukaku-headless-test"
+version = "0.1.0"
+dependencies = [
+ "roukaku-headless-protocol",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
+name = "roukaku-headless-vn-adapter"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "roukaku-headless-protocol",
+ "roukaku-media",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-headless",
+ "roukaku-player-core",
+ "roukaku-player-vn",
+ "roukaku-runtime",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-media"
+version = "0.1.0"
+dependencies = [
+ "ffmpeg-next",
+ "image",
+ "js-sys",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-package",
+ "roukaku-text",
+ "roukaku-worker-budget",
+ "rubato",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2",
+ "symphonia",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tracing",
+ "wasm-bindgen",
+ "windows",
+]
+
+[[package]]
+name = "roukaku-media-core"
+version = "0.1.0"
+dependencies = [
+ "rayon",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-observability"
+version = "0.1.0"
+dependencies = [
+ "file-rotate",
+ "libc",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 1.0.69",
+ "time",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "windows",
+]
+
+[[package]]
+name = "roukaku-package"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm-siv",
+ "hkdf",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-plugin-abi",
+ "roukaku-target",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tracing",
+ "zeroize",
+ "zstd",
+]
+
+[[package]]
+name = "roukaku-platform"
+version = "0.1.0"
+dependencies = [
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-ui-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "roukaku-platform-android"
+version = "0.1.0"
+dependencies = [
+ "accesskit",
+ "accesskit_android",
+ "android-activity",
+ "jni 0.22.4",
+ "ndk 0.9.0",
+ "ndk-sys 0.6.0+11769913",
+ "oboe",
+ "pollster",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "roukaku-ui-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "roukaku-platform-common"
+version = "0.1.0"
+dependencies = [
+ "directories",
+ "futures-util",
+ "reqwest",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-observability",
+ "roukaku-platform",
+ "rtrb",
+ "serde",
+ "serde_json",
+ "sha2",
+ "smallvec",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "url",
+ "wgpu",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "roukaku-platform-headless"
+version = "0.1.0"
+dependencies = [
+ "hound",
+ "image",
+ "postcard",
+ "rcgen",
+ "reqwest",
+ "roukaku-core",
+ "roukaku-headless-protocol",
+ "roukaku-media",
+ "roukaku-media-core",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "roukaku-ui-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-rustls",
+ "tracing",
+ "url",
+ "wgpu",
+]
+
+[[package]]
+name = "roukaku-platform-linux"
+version = "0.1.0"
+dependencies = [
+ "ashpd",
+ "cpal",
+ "directories",
+ "evdev",
+ "gilrs",
+ "gstreamer",
+ "gstreamer-app",
+ "gstreamer-video",
+ "libc",
+ "pollster",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "roukaku-platform-macos"
+version = "0.1.0"
+dependencies = [
+ "accesskit",
+ "accesskit_winit",
+ "cpal",
+ "directories",
+ "gilrs",
+ "libc",
+ "objc2 0.6.4",
+ "objc2-av-foundation",
+ "objc2-core-media",
+ "objc2-core-video",
+ "objc2-foundation 0.3.2",
+ "pollster",
+ "rfd",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "roukaku-ui-core",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
+name = "roukaku-platform-web"
+version = "0.1.0"
+dependencies = [
+ "gilrs",
+ "js-sys",
+ "rfd",
+ "roukaku-core",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "roukaku-ui-core",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test",
+ "web-sys",
+ "wgpu",
+]
+
+[[package]]
+name = "roukaku-platform-windows"
+version = "0.1.0"
+dependencies = [
+ "accesskit",
+ "accesskit_winit",
+ "cpal",
+ "gilrs",
+ "pollster",
+ "postcard",
+ "rfd",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-platform",
+ "roukaku-platform-common",
+ "roukaku-ui-core",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "wgpu",
+ "windows",
+ "winit",
+]
+
+[[package]]
+name = "roukaku-player"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "libc",
+ "roukaku-asset",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-media-core",
+ "roukaku-observability",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-linux",
+ "roukaku-platform-macos",
+ "roukaku-platform-windows",
+ "roukaku-player-core",
+ "roukaku-player-vn",
+ "roukaku-runtime",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "time",
+ "tokio",
+ "tracing",
+ "tungstenite",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "roukaku-player-android"
+version = "0.1.0"
+dependencies = [
+ "android-activity",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-observability",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-android",
+ "roukaku-player",
+ "roukaku-player-core",
+ "roukaku-player-vn",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-player-core"
+version = "0.1.0"
+dependencies = [
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-media-core",
+ "roukaku-platform",
+ "roukaku-ui-core",
+ "rubato",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-player-vn"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-audio-kira",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-media-core",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-windows",
+ "roukaku-player-core",
+ "roukaku-plugin",
+ "roukaku-plugin-abi",
+ "roukaku-runtime",
+ "roukaku-ui-core",
+ "roukaku-ui-yakui",
+ "roukaku-vn",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "roukaku-vn-policy",
+ "roukaku-vn-presentation",
+ "roukaku-vn-ui",
+ "roukaku-worker-budget",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "roukaku-player-web"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "js-sys",
+ "roukaku-core",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-web",
+ "roukaku-player-core",
+ "roukaku-player-vn",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "serde",
+ "serde_json",
+ "tracing",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test",
+ "web-sys",
+]
+
+[[package]]
+name = "roukaku-plugin"
+version = "0.1.0"
+dependencies = [
+ "abi_stable",
+ "libloading 0.8.9",
+ "roukaku-core",
+ "roukaku-plugin-abi",
+ "roukaku-runtime",
+ "roukaku-worker-budget",
+ "schemars",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-plugin-abi"
+version = "0.1.0"
+dependencies = [
+ "abi_stable",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "roukaku-policy"
+version = "0.1.0"
+dependencies = [
+ "luaur-rt",
+ "mlua",
+ "postcard",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-property-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "roukaku-release"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-asset",
+ "roukaku-core",
+ "roukaku-media",
+ "roukaku-package",
+ "roukaku-platform",
+ "roukaku-platform-android",
+ "roukaku-player-core",
+ "roukaku-plugin-abi",
+ "roukaku-runtime",
+ "roukaku-target",
+ "roukaku-vn",
+ "roukaku-vn-core",
+ "roukaku-vn-package",
+ "roukaku-vn-policy",
+ "roukaku-vn-script",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-runtime"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "futures-util",
+ "indexmap",
+ "parking_lot",
+ "postcard",
+ "rayon",
+ "roukaku-core",
+ "roukaku-package",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-subtitle"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
+
+[[package]]
+name = "roukaku-target"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "serde_yaml",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-text"
+version = "0.1.0"
+dependencies = [
+ "cosmic-text",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-worker-budget",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tracing",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "roukaku-ui-core"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "roukaku-ui-yakui"
+version = "0.1.0"
+dependencies = [
+ "fast-srgb8",
+ "postcard",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-ui-core",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+ "unicode-segmentation",
+ "yakui-core",
+ "yakui-widgets",
+]
+
+[[package]]
+name = "roukaku-vn"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "roukaku-plugin-abi",
+ "roukaku-runtime",
+ "roukaku-vn-core",
+ "roukaku-vn-policy",
+ "roukaku-vn-presentation",
+ "roukaku-vn-script",
+ "serde",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-core"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "roukaku-vn-presentation",
+ "roukaku-vn-script",
+ "schemars",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-editor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "parking_lot",
+ "roukaku-core",
+ "roukaku-vn-script",
+ "schemars",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-package"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "roukaku-package",
+ "roukaku-plugin",
+ "roukaku-runtime",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-policy",
+ "roukaku-vn-presentation",
+ "roukaku-vn-script",
+ "schemars",
+ "semver",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-policy"
+version = "0.1.0"
+dependencies = [
+ "luaur-rt",
+ "mlua",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-core",
+ "roukaku-policy",
+ "roukaku-ui-core",
+ "roukaku-vn-script",
+ "roukaku-vn-ui",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-presentation"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-runtime",
+ "roukaku-vn-script",
+ "roukaku-worker-budget",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-script"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "chumsky",
+ "hex",
+ "indexmap",
+ "insta",
+ "logos",
+ "miette",
+ "postcard",
+ "proptest",
+ "roukaku-core",
+ "roukaku-ui-core",
+ "rowan",
+ "schemars",
+ "serde",
+ "serde_json",
+ "text-size",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-ui"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-script",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "roukaku-worker-budget"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "rowan"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6738,6 +6758,17 @@ name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
+version = "3.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8531,7 +8562,17 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
+ "percent-encoding",
+ "regex",
+ "reqwest",
+ "semver",
  "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "walkdir",
+ "zip",
 ]
 
 [[package]]
@@ -8760,10 +8801,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "zip"
+version = "2.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dcb24d0152526ae49b9b96c1dcf71850ca1e0b882e4e28ed898a93c41334744"
+dependencies = [
+ "arbitrary",
+ "crc32fast",
+ "crossbeam-utils",
+ "flate2",
+ "indexmap",
+ "memchr",
+ "zopfli",
+]
+
+[[package]]
 name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[package]]
+name = "zopfli"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f05cd8797d63865425ff89b5c4a48804f35ba0ce8d125800027ad6017d2b5249"
+dependencies = [
+ "bumpalo",
+ "crc32fast",
+ "log",
+ "simd-adler32",
+]
 
 [[package]]
 name = "zstd"

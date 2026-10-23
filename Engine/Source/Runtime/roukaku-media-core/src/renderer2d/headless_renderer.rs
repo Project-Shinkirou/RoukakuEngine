@@ -133,8 +133,8 @@ impl HeadlessRenderer {
                         retained_texture_dimensions(&self.textures, &resource_overlay, texture_id)
                             .ok_or_else(|| {
                                 MediaError::message(
-                                    "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: sprite texture is not uploaded",
-                                )
+                            "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: sprite texture is not uploaded",
+                        )
                             })?;
                     if let Some(source) = source {
                         validate_source_rect_dimensions(dimensions, *source)?;

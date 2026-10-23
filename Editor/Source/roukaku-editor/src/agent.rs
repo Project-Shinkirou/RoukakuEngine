@@ -95,7 +95,7 @@ impl AgentEdits {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use roukaku_vn_editor::{RoukakuSource, DocumentEdits, TextEdit};
+    use roukaku_vn_editor::{DocumentEdits, RoukakuSource, TextEdit};
 
     #[test]
     fn cancel_and_manual_conflict_cannot_apply_late_results() {

@@ -161,7 +161,9 @@ pub async fn run(request: PerformanceE2Request<'_>) -> Result<(), String> {
                 .expect("bounded performance queue is not empty");
             let submission = renderer
                 .resolve_profiled_submission(pending.pending)
-                .map_err(|error| format!("ROUKAKU_PERFORMANCE_TIMESTAMP_RESOLVE_FAILED: {error}"))?;
+                .map_err(|error| {
+                    format!("ROUKAKU_PERFORMANCE_TIMESTAMP_RESOLVE_FAILED: {error}")
+                })?;
             deadline_misses = deadline_misses.saturating_add(record_measured_frame(
                 pending,
                 submission,

@@ -7,9 +7,9 @@ use std::{
     },
 };
 
+use cosmic_text::{fontdb, FontSystem, LayoutGlyph, SwashCache};
 use roukaku_core::Hash256;
 use roukaku_worker_budget::WorkerBudgetBroker;
-use cosmic_text::{fontdb, FontSystem, LayoutGlyph, SwashCache};
 
 use crate::MediaError;
 

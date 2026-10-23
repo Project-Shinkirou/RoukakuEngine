@@ -403,9 +403,12 @@ impl AudioServiceSession {
             ));
         }
         self.ensure_bus(bus)?;
-        let sound =
-            RoukakuStreamSoundData::new(self.timeline.device_channels, chunk_frames, chunk_capacity)
-                .map_err(AudioServiceError::InvalidCommand)?;
+        let sound = RoukakuStreamSoundData::new(
+            self.timeline.device_channels,
+            chunk_frames,
+            chunk_capacity,
+        )
+        .map_err(AudioServiceError::InvalidCommand)?;
         let handle = self
             .buses
             .get_mut(bus)

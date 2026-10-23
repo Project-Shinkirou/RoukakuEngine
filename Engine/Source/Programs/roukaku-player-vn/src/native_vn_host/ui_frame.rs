@@ -119,7 +119,9 @@ impl NativeVnHostCommandSource {
                     )
                 })
                 .ok_or_else(|| {
-                    NativeVnHostError::Input("ROUKAKU_PLAYER_UI_CHOICE_INSTANCE_WAIT_MISSING".into())
+                    NativeVnHostError::Input(
+                        "ROUKAKU_PLAYER_UI_CHOICE_INSTANCE_WAIT_MISSING".into(),
+                    )
                 })?
         } else {
             system_page

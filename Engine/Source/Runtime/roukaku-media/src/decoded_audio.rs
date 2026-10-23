@@ -140,7 +140,10 @@ impl PlayerDecodedAudio {
             let output = resampler
                 .process_all(&input, self.frame_count(), None)
                 .map_err(|error| {
-                    PlayerAudioContractError::new("ROUKAKU_PLAYER_AUDIO_RESAMPLE", error.to_string())
+                    PlayerAudioContractError::new(
+                        "ROUKAKU_PLAYER_AUDIO_RESAMPLE",
+                        error.to_string(),
+                    )
                 })?;
             let output_samples =
                 output

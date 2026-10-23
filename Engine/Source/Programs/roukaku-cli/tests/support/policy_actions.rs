@@ -178,7 +178,9 @@ end)
         .output()
         .unwrap();
     assert!(!blocked.status.success());
-    assert!(String::from_utf8_lossy(&blocked.stderr).contains("ROUKAKU_VN_POLICY_TEXT_ASSET_MAPPING"));
+    assert!(
+        String::from_utf8_lossy(&blocked.stderr).contains("ROUKAKU_VN_POLICY_TEXT_ASSET_MAPPING")
+    );
     assert_eq!(
         fs::read(cooked.join("cook_manifest.yaml")).unwrap(),
         old_manifest

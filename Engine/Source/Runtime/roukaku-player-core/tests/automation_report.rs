@@ -74,10 +74,9 @@ fn player_automation_report_blocks_direct_route_scenario_input() {
     assert!(report.checks.iter().any(|check| {
         check.id == "player.live_input_surface"
             && check.status == PlayerAutomationStatus::Blocked
-            && check
-                .diagnostic
-                .as_ref()
-                .is_some_and(|diagnostic| diagnostic.code == "ROUKAKU_PLAYER_FORBIDDEN_INPUT_SURFACE")
+            && check.diagnostic.as_ref().is_some_and(|diagnostic| {
+                diagnostic.code == "ROUKAKU_PLAYER_FORBIDDEN_INPUT_SURFACE"
+            })
     }));
     assert!(!report.full_playable_passed());
 }

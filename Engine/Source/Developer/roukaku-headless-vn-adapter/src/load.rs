@@ -139,7 +139,9 @@ pub(super) fn ui_button_state(state: ButtonState) -> UiButtonState {
     }
 }
 
-pub(super) fn ui_pointer_button(button: roukaku_headless_protocol::PointerButton) -> UiPointerButton {
+pub(super) fn ui_pointer_button(
+    button: roukaku_headless_protocol::PointerButton,
+) -> UiPointerButton {
     match button {
         roukaku_headless_protocol::PointerButton::Primary => UiPointerButton::Primary,
         roukaku_headless_protocol::PointerButton::Secondary => UiPointerButton::Secondary,

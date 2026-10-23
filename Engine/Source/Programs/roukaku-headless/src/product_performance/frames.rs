@@ -488,7 +488,9 @@ impl ProductPerformanceRecorder {
             .state
             .lock()
             .map_err(|_| "ROUKAKU_PERFORMANCE_RECORDER_POISONED")?;
-        let state = guard.take().ok_or("ROUKAKU_PERFORMANCE_RECORDER_FINISHED")?;
+        let state = guard
+            .take()
+            .ok_or("ROUKAKU_PERFORMANCE_RECORDER_FINISHED")?;
         if !state.armed {
             return Err("ROUKAKU_PERFORMANCE_START_SEQUENCE_NOT_REACHED".into());
         }

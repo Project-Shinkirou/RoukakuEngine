@@ -39,7 +39,8 @@ impl DecodeWorkerState {
         };
         if matches!(
             request.stream_action,
-            roukaku_platform::DecodeStreamAction::OneShot | roukaku_platform::DecodeStreamAction::Start
+            roukaku_platform::DecodeStreamAction::OneShot
+                | roukaku_platform::DecodeStreamAction::Start
         ) && !capability
             .codecs
             .iter()

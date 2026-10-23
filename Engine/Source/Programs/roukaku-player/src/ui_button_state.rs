@@ -1,7 +1,9 @@
 use super::*;
 
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
-pub(super) fn ui_button_state(state: roukaku_platform::InputState) -> roukaku_ui_core::UiButtonState {
+pub(super) fn ui_button_state(
+    state: roukaku_platform::InputState,
+) -> roukaku_ui_core::UiButtonState {
     match state {
         roukaku_platform::InputState::Pressed => roukaku_ui_core::UiButtonState::Pressed,
         roukaku_platform::InputState::Released => roukaku_ui_core::UiButtonState::Released,
@@ -18,7 +20,9 @@ pub(super) fn ui_pointer_button(
         roukaku_platform::PointerButton::Middle => roukaku_ui_core::UiPointerButton::Middle,
         roukaku_platform::PointerButton::Back => roukaku_ui_core::UiPointerButton::Back,
         roukaku_platform::PointerButton::Forward => roukaku_ui_core::UiPointerButton::Forward,
-        roukaku_platform::PointerButton::Other(value) => roukaku_ui_core::UiPointerButton::Other(value),
+        roukaku_platform::PointerButton::Other(value) => {
+            roukaku_ui_core::UiPointerButton::Other(value)
+        }
     }
 }
 

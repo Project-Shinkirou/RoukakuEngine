@@ -180,7 +180,8 @@ impl NativeVnHostCommandSource {
                         })?;
                     let theme = self.ui_themes.get(&view.theme_id).ok_or_else(|| {
                         NativeVnHostError::Input(
-                            "ROUKAKU_PLAYER_UI_ANIMATION_THEME: origin theme is not packaged".into(),
+                            "ROUKAKU_PLAYER_UI_ANIMATION_THEME: origin theme is not packaged"
+                                .into(),
                         )
                     })?;
                     let motion = theme.tokens.get(&preset_id).ok_or_else(|| {

@@ -2,7 +2,8 @@ use super::*;
 
 impl VnRuntime {
     pub fn load_slot(&mut self, save: VnSaveBlob) -> Result<(), VnError> {
-        if save.schema != "roukaku.vn.save_slot.v2" || save.state.schema != VN_RUNTIME_STATE_SCHEMA {
+        if save.schema != "roukaku.vn.save_slot.v2" || save.state.schema != VN_RUNTIME_STATE_SCHEMA
+        {
             return Err(VnError::diagnostic(
                 "ROUKAKU_VN_SAVE_SCHEMA",
                 "RoukakuVN save slot schema is invalid",

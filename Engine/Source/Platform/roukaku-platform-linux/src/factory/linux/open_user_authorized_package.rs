@@ -78,7 +78,8 @@ impl LinuxHostApp {
                 let result = (|| {
                     let cache_root = VerifiedPackageCache::platform_cache_root(&package_id)?;
                     let mut cache = VerifiedPackageCache::open(cache_root, policy)?;
-                    let client = roukaku_platform_common::HttpRangeClient::from_policies(&policies)?;
+                    let client =
+                        roukaku_platform_common::HttpRangeClient::from_policies(&policies)?;
                     let runtime = tokio::runtime::Builder::new_current_thread()
                         .enable_all()
                         .build()
@@ -286,9 +287,9 @@ pub(super) fn linux_gamepad_worker(
 pub(super) fn raw_gamepad_event(
     event: gilrs::Event,
 ) -> Option<roukaku_platform_common::RawGamepadEvent> {
+    use gilrs::{Axis, Button, EventType};
     use roukaku_platform::GamepadControl;
     use roukaku_platform_common::RawGamepadEvent;
-    use gilrs::{Axis, Button, EventType};
 
     let raw_device_id = u32::try_from(usize::from(event.id)).ok()?;
     let map_button = |button| match button {

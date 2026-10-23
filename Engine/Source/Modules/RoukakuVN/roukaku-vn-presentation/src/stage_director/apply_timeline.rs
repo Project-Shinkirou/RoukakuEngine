@@ -58,10 +58,9 @@ impl ProductStageDirector {
         self.state.frame_index = self.state.frame_index.checked_add(1).ok_or_else(|| {
             stage_error("ROUKAKU_VN_STAGE_FRAME_OVERFLOW", "frame index overflowed")
         })?;
-        self.state.elapsed_ns =
-            self.state.elapsed_ns.checked_add(delta_ns).ok_or_else(|| {
-                stage_error("ROUKAKU_VN_STAGE_TIME_OVERFLOW", "stage time overflowed")
-            })?;
+        self.state.elapsed_ns = self.state.elapsed_ns.checked_add(delta_ns).ok_or_else(|| {
+            stage_error("ROUKAKU_VN_STAGE_TIME_OVERFLOW", "stage time overflowed")
+        })?;
         self.advance_tweens(delta_ns)?;
         let mut output = self.advance_timelines(delta_ns)?;
         self.advance_shake(delta_ns, &mut output)?;
@@ -181,7 +180,9 @@ impl ProductStageDirector {
                     (u128::from(shake.duration_ns - shake.elapsed_ns) * 1_000_000)
                         / u128::from(shake.duration_ns),
                 )
-                .map_err(|_| stage_error("ROUKAKU_VN_STAGE_SHAKE_RANGE", "shake range overflowed"))?,
+                .map_err(|_| {
+                    stage_error("ROUKAKU_VN_STAGE_SHAKE_RANGE", "shake range overflowed")
+                })?,
             };
             let amplitude = fixed_mul(shake.strength, remaining)?;
             self.state.camera.shake_x = FixedScalar {

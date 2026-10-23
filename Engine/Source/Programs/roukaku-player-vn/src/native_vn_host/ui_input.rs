@@ -72,7 +72,8 @@ impl NativeVnHostCommandSource {
         let mut frame = self.render_ui(events)?;
         if frame.actions.len() > 1 {
             return Err(NativeVnHostError::Input(
-                "ROUKAKU_PLAYER_UI_ACTION_AMBIGUOUS: one input frame emitted multiple actions".into(),
+                "ROUKAKU_PLAYER_UI_ACTION_AMBIGUOUS: one input frame emitted multiple actions"
+                    .into(),
             ));
         }
         // Layout has already updated the resource owner. Preserve its one-shot

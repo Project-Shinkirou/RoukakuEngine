@@ -9,7 +9,10 @@ fn linux_probe_is_explicitly_unavailable_until_stage6() {
         "ROUKAKU_PLATFORM_RUNTIME_PROBE_REQUIRED"
     );
     #[cfg(not(target_os = "linux"))]
-    assert_eq!(report.diagnostics[0].code, "ROUKAKU_PLATFORM_NOT_IMPLEMENTED");
+    assert_eq!(
+        report.diagnostics[0].code,
+        "ROUKAKU_PLATFORM_NOT_IMPLEMENTED"
+    );
     let _factory = roukaku_platform_linux::factory();
 }
 

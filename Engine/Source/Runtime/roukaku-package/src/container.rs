@@ -16,8 +16,6 @@ use thiserror::Error;
 mod tests;
 
 mod m_a_g_i_c;
-pub use m_a_g_i_c::RoukakuContainerBuilder;
-pub use m_a_g_i_c::RoukakuContainerReader;
 pub use m_a_g_i_c::ContainerBlob;
 pub use m_a_g_i_c::ContainerCryptoProvider;
 pub use m_a_g_i_c::ContainerError;
@@ -26,6 +24,8 @@ pub use m_a_g_i_c::EncryptionDescriptor;
 pub use m_a_g_i_c::ExternalKeyRef;
 pub use m_a_g_i_c::MigrationPolicy;
 pub use m_a_g_i_c::NoCryptoProvider;
+pub use m_a_g_i_c::RoukakuContainerBuilder;
+pub use m_a_g_i_c::RoukakuContainerReader;
 pub use m_a_g_i_c::SectionCodec;
 pub use m_a_g_i_c::SectionEntry;
 pub use m_a_g_i_c::SectionPayload;

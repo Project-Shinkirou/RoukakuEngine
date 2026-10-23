@@ -15,7 +15,7 @@ use roukaku_ui_core::{
     UiViewport,
 };
 
-use roukaku_ui_yakui::{RoukakuYakuiBackend, BlueprintYakuiRenderer};
+use roukaku_ui_yakui::{BlueprintYakuiRenderer, RoukakuYakuiBackend};
 
 #[path = "blueprint_runtime/bindings.rs"]
 mod bindings;

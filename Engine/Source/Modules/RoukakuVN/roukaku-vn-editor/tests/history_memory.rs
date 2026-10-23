@@ -1,4 +1,4 @@
-use roukaku_vn_editor::{RoukakuSource, AuthoringWorkspace, DocumentEdits, EditBatch, TextEdit};
+use roukaku_vn_editor::{AuthoringWorkspace, DocumentEdits, EditBatch, RoukakuSource, TextEdit};
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     cell::Cell,
@@ -34,7 +34,10 @@ static ALLOCATOR: AllocationMeter = AllocationMeter;
 fn repeated_small_changes_do_not_retain_whole_document_versions() {
     let mut workspace = AuthoringWorkspace::default();
     workspace
-        .open(RoukakuSource::story("large.roukaku", "a".repeat(1024 * 1024)))
+        .open(RoukakuSource::story(
+            "large.roukaku",
+            "a".repeat(1024 * 1024),
+        ))
         .unwrap();
     let before = LIVE_BYTES.with(Cell::get);
     // Editor text widgets may report complete replacement strings. History must

@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use super::luau_budget::{entry_bytes, HostBudget};
 use super::luau_value::*;
-use roukaku_policy::{create_sandboxed_lua, PolicyExecutionBudget};
 use mlua::Lua;
+use roukaku_policy::{create_sandboxed_lua, PolicyExecutionBudget};
 
 use crate::{MutationTraceEntry, PolicyQueryContext, PolicySnapshotValue, VnError, VnPolicyState};
 
@@ -166,7 +166,12 @@ impl LuauPolicy {
                         0,
                         budget.snapshot_depth,
                     )?;
-                    record_policy_command(&command_emit_trace, "roukaku.command.emit", name, payload);
+                    record_policy_command(
+                        &command_emit_trace,
+                        "roukaku.command.emit",
+                        name,
+                        payload,
+                    );
                     Ok(())
                 })
                 .map_err(sandbox_error)?,
@@ -505,7 +510,9 @@ impl LuauPolicy {
             host.capabilities.clone(),
         )
         .map_err(sandbox_error)?;
-        globals.set("roukaku", roukaku.clone()).map_err(sandbox_error)?;
+        globals
+            .set("roukaku", roukaku.clone())
+            .map_err(sandbox_error)?;
         let result = invoke(&lua, &roukaku, &host_state, &host_budget).map_err(sandbox_error)?;
         host_budget.borrow().check().map_err(sandbox_error)?;
         state.variables = variables.borrow().clone();

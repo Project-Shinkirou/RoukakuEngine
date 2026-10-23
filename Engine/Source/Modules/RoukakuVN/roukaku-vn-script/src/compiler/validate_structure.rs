@@ -201,8 +201,11 @@ impl CompileBuilder {
             Ok(())
         } else {
             Err(VnError::Diagnostic(
-                Diagnostic::blocking("ROUKAKU_VN_OPTION_CONTEXT", "option must belong to a choice")
-                    .with_source(line.source_ref()),
+                Diagnostic::blocking(
+                    "ROUKAKU_VN_OPTION_CONTEXT",
+                    "option must belong to a choice",
+                )
+                .with_source(line.source_ref()),
             ))
         }
     }
@@ -214,7 +217,9 @@ impl CompileBuilder {
             .map(String::as_str)
             .or_else(|| line.attr("target"))
             .map(str::to_string)
-            .ok_or_else(|| VnError::diagnostic("ROUKAKU_VN_JUMP_TARGET", "jump target is missing"))?;
+            .ok_or_else(|| {
+                VnError::diagnostic("ROUKAKU_VN_JUMP_TARGET", "jump target is missing")
+            })?;
         self.current_scene_mut()?
             .commands
             .push(CompiledCommand::Jump {
@@ -252,10 +257,13 @@ impl CompileBuilder {
             "greater_eq" => BranchOp::GreaterEq,
             op => {
                 return Err(VnError::Diagnostic(
-                    Diagnostic::blocking("ROUKAKU_VN_BRANCH_OP", "branch operator is not supported")
-                        .with_source(line.source_ref())
-                        .with_field("operator", op)
-                        .with_field("allowed", "eq,not_eq,less,less_eq,greater,greater_eq"),
+                    Diagnostic::blocking(
+                        "ROUKAKU_VN_BRANCH_OP",
+                        "branch operator is not supported",
+                    )
+                    .with_source(line.source_ref())
+                    .with_field("operator", op)
+                    .with_field("allowed", "eq,not_eq,less,less_eq,greater,greater_eq"),
                 ));
             }
         };
@@ -294,7 +302,9 @@ impl CompileBuilder {
             .map(String::as_str)
             .or_else(|| line.attr("target"))
             .map(str::to_string)
-            .ok_or_else(|| VnError::diagnostic("ROUKAKU_VN_CALL_TARGET", "call target is missing"))?;
+            .ok_or_else(|| {
+                VnError::diagnostic("ROUKAKU_VN_CALL_TARGET", "call target is missing")
+            })?;
         self.current_scene_mut()?
             .commands
             .push(CompiledCommand::Call {
@@ -314,10 +324,9 @@ impl CompileBuilder {
     }
 
     pub(super) fn push_mutate(&mut self, line: &ParsedLine) -> Result<(), VnError> {
-        let path = line
-            .args
-            .first()
-            .ok_or_else(|| VnError::diagnostic("ROUKAKU_VN_MUTATE_PATH", "mutate path is missing"))?;
+        let path = line.args.first().ok_or_else(|| {
+            VnError::diagnostic("ROUKAKU_VN_MUTATE_PATH", "mutate path is missing")
+        })?;
         let (scope, key) = path.split_once('.').ok_or_else(|| {
             VnError::diagnostic("ROUKAKU_VN_MUTATE_PATH", "mutate path needs scope.key")
         })?;

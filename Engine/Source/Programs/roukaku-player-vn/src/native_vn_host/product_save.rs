@@ -139,7 +139,8 @@ mod tests {
     use crate::test_native_package;
 
     fn executor(
-    ) -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink> {
+    ) -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink>
+    {
         let (client, _, _) = roukaku_platform::host_channel(
             roukaku_platform::PlatformHostProfile::windows_release(
                 "nativevn-game",

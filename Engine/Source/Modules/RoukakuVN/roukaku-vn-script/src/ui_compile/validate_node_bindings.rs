@@ -122,7 +122,9 @@ pub(super) fn model_path_allowed(schema: &str, path: &[String]) -> bool {
         "roukaku.vn.ui_model.backlog.v1" | "roukaku.vn.ui_model.voice_replay.v1" => {
             first == Some("entries")
         }
-        "roukaku.vn.ui_model.gallery.v1" | "roukaku.vn.ui_model.replay.v1" => first == Some("items"),
+        "roukaku.vn.ui_model.gallery.v1" | "roukaku.vn.ui_model.replay.v1" => {
+            first == Some("items")
+        }
         "roukaku.vn.ui_model.route_chart.v1" => first == Some("nodes"),
         "roukaku.vn.ui_model.localization_preview.v1" => {
             matches!(first, Some("locale" | "entries"))

@@ -200,7 +200,7 @@ pub(super) fn target_validate_and_platform_probe_emit_machine_readable_reports()
         .args([
             "target",
             "validate",
-            "Docs/samples/roukaku-vn-script/project.yaml",
+            "Examples/VnScript/project.yaml",
             "--target",
             "nativevn-game",
             "--format",
@@ -215,7 +215,10 @@ pub(super) fn target_validate_and_platform_probe_emit_machine_readable_reports()
         String::from_utf8_lossy(&target_output.stderr)
     );
     let target_report: serde_json::Value = serde_json::from_slice(&target_output.stdout).unwrap();
-    assert_eq!(target_report["schema"], "roukaku.target_validation_report.v1");
+    assert_eq!(
+        target_report["schema"],
+        "roukaku.target_validation_report.v1"
+    );
     assert_eq!(target_report["status"], "pass");
 
     let platform_output = Command::new(env!("CARGO_BIN_EXE_roukaku"))

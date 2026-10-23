@@ -4,7 +4,7 @@ mod sound;
 mod stream;
 mod timeline;
 
-pub use backend::{RoukakuChunkBackend, RoukakuChunkBackendSettings, AudioChunkTelemetry};
+pub use backend::{AudioChunkTelemetry, RoukakuChunkBackend, RoukakuChunkBackendSettings};
 pub use service::{AudioServiceConfig, AudioServiceError, AudioServiceSession};
 pub use sound::{RoukakuPcmSoundData, RoukakuPcmSoundHandle};
 pub use stream::{RoukakuStreamSoundData, RoukakuStreamSoundHandle};

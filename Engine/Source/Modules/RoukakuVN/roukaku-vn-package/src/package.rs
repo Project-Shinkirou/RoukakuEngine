@@ -196,7 +196,9 @@ pub fn load_presentation_provider_manifest(
         .container()
         .decode_postcard("vn.presentation_provider_manifest")
         .map_err(|error| {
-            ContainerError::message(format!("ROUKAKU_VN_PRESENTATION_PROVIDER_MANIFEST: {error}"))
+            ContainerError::message(format!(
+                "ROUKAKU_VN_PRESENTATION_PROVIDER_MANIFEST: {error}"
+            ))
         })?;
     let report = manifest.validate_standard();
     if let Some(diagnostic) = report.diagnostics.first() {

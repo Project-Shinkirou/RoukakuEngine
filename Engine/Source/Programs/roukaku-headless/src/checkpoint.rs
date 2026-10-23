@@ -1,10 +1,10 @@
 use std::{collections::BTreeMap, fs, path::Path};
 
+use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use roukaku_headless_protocol::{
     ArtifactEntry, ArtifactManifest, CheckpointConfig, CheckpointResult, ProductSession,
 };
 use roukaku_platform::HeadlessHostProfile;
-use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 
 use super::*;
 
@@ -49,8 +49,8 @@ pub(crate) async fn capture_checkpoint(
             .map(|pair| (item, pair))
     }) {
         Some((expectation, (path, hash))) => {
-            let root =
-                config_root.ok_or_else(|| "ROUKAKU_HEADLESS_CHECKPOINT_ROOT_MISSING".to_string())?;
+            let root = config_root
+                .ok_or_else(|| "ROUKAKU_HEADLESS_CHECKPOINT_ROOT_MISSING".to_string())?;
             let (metrics, passed) = compare::compare_image(
                 &frame.rgba8,
                 frame.width,
@@ -121,7 +121,9 @@ pub(crate) fn validate_required_checkpoints(
         let result = results
             .iter()
             .find(|result| result.id == expected_id)
-            .ok_or_else(|| format!("ROUKAKU_HEADLESS_REQUIRED_CHECKPOINT_MISSING: {expected_id}"))?;
+            .ok_or_else(|| {
+                format!("ROUKAKU_HEADLESS_REQUIRED_CHECKPOINT_MISSING: {expected_id}")
+            })?;
         debug_assert!(result.passed);
     }
     Ok(())
@@ -340,7 +342,9 @@ pub(crate) fn wav_bytes(samples: &[f32]) -> Result<Vec<u8>, String> {
             let scale = if sample < 0.0 { 32768.0 } else { 32767.0 };
             writer
                 .write_sample((sample * scale).round() as i16)
-                .map_err(|error| format!("ROUKAKU_HEADLESS_CHECKPOINT_WAV_WRITE_FAILED: {error}"))?;
+                .map_err(|error| {
+                    format!("ROUKAKU_HEADLESS_CHECKPOINT_WAV_WRITE_FAILED: {error}")
+                })?;
         }
         writer
             .finalize()

@@ -1,7 +1,7 @@
 use std::{fs, io::Cursor, path::Path, sync::Arc};
 
-use roukaku_headless_protocol::{AudioMetrics, AudioTolerance, ImageMetrics, ImageTolerance};
 use image::ImageReader;
+use roukaku_headless_protocol::{AudioMetrics, AudioTolerance, ImageMetrics, ImageTolerance};
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
 pub(crate) fn compare_image(
@@ -424,8 +424,8 @@ fn bbox_offset(left: &[u8], right: &[u8], width: u32, height: u32) -> u32 {
 mod tests {
     use std::{fs, io::Cursor};
 
-    use roukaku_headless_protocol::{AudioTolerance, ImageTolerance};
     use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
+    use roukaku_headless_protocol::{AudioTolerance, ImageTolerance};
 
     use super::{
         compare_audio_samples, compare_image, integrated_loudness_lufs, spectrum_distance,

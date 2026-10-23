@@ -3,8 +3,8 @@ use abi_stable::{
     std_types::{RString, RVec},
 };
 use roukaku_plugin_abi::{
-    RoukakuPluginModule, RoukakuPluginModuleRef, FfiPluginRegistration, FfiPluginShutdown,
-    FfiProviderRegistration,
+    FfiPluginRegistration, FfiPluginShutdown, FfiProviderRegistration, RoukakuPluginModule,
+    RoukakuPluginModuleRef,
 };
 
 extern "C" fn descriptor_yaml() -> RString {

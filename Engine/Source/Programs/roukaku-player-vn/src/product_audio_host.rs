@@ -8,8 +8,8 @@ use std::{
 };
 
 use roukaku_audio_kira::{
-    RoukakuChunkBackendSettings, AudioAssetRevision, AudioChunkTelemetry, AudioServiceCommand,
-    AudioServiceConfig, AudioServiceEvent, AudioServiceSession, AudioTimelineStateV1,
+    AudioAssetRevision, AudioChunkTelemetry, AudioServiceCommand, AudioServiceConfig,
+    AudioServiceEvent, AudioServiceSession, AudioTimelineStateV1, RoukakuChunkBackendSettings,
 };
 use roukaku_media::{PcmAsset, CANONICAL_CHANNELS, CANONICAL_SAMPLE_RATE};
 use roukaku_platform::{
@@ -574,7 +574,10 @@ fn parse_audio_f32(
         .map(|value| value.parse::<f32>())
         .transpose()
         .map_err(|_| {
-            player_platform_error("player.audio.attribute", "ROUKAKU_PLAYER_AUDIO_FLOAT_INVALID")
+            player_platform_error(
+                "player.audio.attribute",
+                "ROUKAKU_PLAYER_AUDIO_FLOAT_INVALID",
+            )
         })?
         .unwrap_or(default);
     if !value.is_finite() || value < 0.0 {

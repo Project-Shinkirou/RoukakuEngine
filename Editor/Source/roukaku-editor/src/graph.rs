@@ -1,4 +1,6 @@
-use roukaku_vn_editor::{parse_roukaku_source, AuthoringWorkspace, DocumentEdits, EditBatch, TextEdit};
+use roukaku_vn_editor::{
+    parse_roukaku_source, AuthoringWorkspace, DocumentEdits, EditBatch, TextEdit,
+};
 
 /// Add a route only to a state without existing control flow. The source remains authoritative.
 pub fn connect(

@@ -1,11 +1,11 @@
 #[path = "support/native_package.rs"]
 mod native_package;
+use native_package::*;
 use roukaku_package::PackageReader;
 use roukaku_player_core::{PlayerHostCommand, PlayerHostCommandBatch, PlayerHostResourceId};
 use roukaku_player_vn::NativeVnHostCommandSource;
 use roukaku_ui_core::{UiButtonState, UiInputEventKind, UiPoint, UiPointerButton};
 use roukaku_vn_core::VnRunConfig;
-use native_package::*;
 
 #[test]
 fn system_activation_captures_before_presentation_and_not_inside_system_ui() {

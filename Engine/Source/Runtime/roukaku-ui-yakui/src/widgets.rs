@@ -36,7 +36,10 @@ pub struct RoukakuNodeWidget {
 }
 
 impl RoukakuNodeWidget {
-    pub fn show<F: FnOnce()>(props: RoukakuNodeProps, children: F) -> Response<RoukakuNodeResponse> {
+    pub fn show<F: FnOnce()>(
+        props: RoukakuNodeProps,
+        children: F,
+    ) -> Response<RoukakuNodeResponse> {
         let dom = context::dom();
         let response = dom.begin_widget::<Self>(props);
         children();

@@ -272,8 +272,9 @@ pub(super) fn missing_focus_target_reports_bounded_focusable_semantic_ids() {
         model: frame,
     };
     let renderer = BlueprintYakuiRenderer::new(bundle).expect("renderer");
-    let mut backend = RoukakuYakuiBackend::new(renderer, Hash256::from_sha256(b"missing-focus-test"))
-        .expect("backend");
+    let mut backend =
+        RoukakuYakuiBackend::new(renderer, Hash256::from_sha256(b"missing-focus-test"))
+            .expect("backend");
     let error = backend.render_frame(request).expect_err("missing target");
     let message = error.to_string();
     assert!(message.contains("requested=root/missing"));

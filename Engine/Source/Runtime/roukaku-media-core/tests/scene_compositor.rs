@@ -143,7 +143,9 @@ fn scene_resources_are_uploaded_reused_cropped_and_released_explicitly() {
             blend: BlendMode::Alpha,
         }])
         .unwrap_err();
-    assert!(missing.to_string().contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN"));
+    assert!(missing
+        .to_string()
+        .contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN"));
 }
 
 #[test]
@@ -283,7 +285,9 @@ fn resource_updates_are_transactional_and_color_glyphs_preserve_rgba() {
             blend: BlendMode::Alpha,
         }])
         .unwrap_err();
-    assert!(missing.to_string().contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN"));
+    assert!(missing
+        .to_string()
+        .contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN"));
 
     let frame = renderer
         .capture_frame(&[

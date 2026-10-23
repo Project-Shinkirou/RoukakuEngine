@@ -74,7 +74,9 @@ pub(crate) fn validate_profiler_overhead(
                         .pop_front()
                         .expect("bounded timestamp queue is not empty"),
                 )
-                .map_err(|error| format!("ROUKAKU_PERFORMANCE_PROFILER_BASELINE_FAILED: {error}"))?;
+                .map_err(|error| {
+                    format!("ROUKAKU_PERFORMANCE_PROFILER_BASELINE_FAILED: {error}")
+                })?;
         }
         let submission = renderer
             .submit_frame_timestamped(frame)

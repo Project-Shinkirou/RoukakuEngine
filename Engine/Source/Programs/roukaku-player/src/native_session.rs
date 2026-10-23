@@ -507,7 +507,9 @@ fn ui_pointer_button(button: roukaku_platform::PointerButton) -> roukaku_ui_core
         roukaku_platform::PointerButton::Middle => roukaku_ui_core::UiPointerButton::Middle,
         roukaku_platform::PointerButton::Back => roukaku_ui_core::UiPointerButton::Back,
         roukaku_platform::PointerButton::Forward => roukaku_ui_core::UiPointerButton::Forward,
-        roukaku_platform::PointerButton::Other(value) => roukaku_ui_core::UiPointerButton::Other(value),
+        roukaku_platform::PointerButton::Other(value) => {
+            roukaku_ui_core::UiPointerButton::Other(value)
+        }
     }
 }
 

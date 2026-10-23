@@ -34,7 +34,10 @@ fn vfs_provider_registry_allows_multiple_providers_on_single_slot() {
         .register_provider(vfs_provider("roukaku.vfs.local", "vfs.backend.local"))
         .unwrap();
     registrar
-        .register_provider(vfs_provider("roukaku.vfs.fvp", "vfs.backend.legacy_pack.fvp"))
+        .register_provider(vfs_provider(
+            "roukaku.vfs.fvp",
+            "vfs.backend.legacy_pack.fvp",
+        ))
         .unwrap();
 
     let snapshot = registrar.extension_registry_snapshot().unwrap();

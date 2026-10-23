@@ -141,7 +141,9 @@ pub(super) fn web_bundle_requires_wasm_bindgen_pair_and_embeds_canonical_host_sc
         .output()
         .unwrap();
     assert!(!bypass_output.status.success());
-    assert!(String::from_utf8_lossy(&bypass_output.stderr).contains("ROUKAKU_WEB_PLAYER_GLUE_BYPASS"));
+    assert!(
+        String::from_utf8_lossy(&bypass_output.stderr).contains("ROUKAKU_WEB_PLAYER_GLUE_BYPASS")
+    );
     assert!(!bypass_glue_bundle.exists());
     let bundle = case_dir.join("bundle");
     let output = Command::new(env!("CARGO_BIN_EXE_roukaku"))
@@ -187,7 +189,8 @@ pub(super) fn web_bundle_requires_wasm_bindgen_pair_and_embeds_canonical_host_sc
     assert!(!bundle.join("RoukakuPlayer.route_model.json").exists());
     assert!(!bundle.join("roukaku-player.js").exists());
     let config: serde_json::Value =
-        serde_json::from_slice(&fs::read(bundle.join("RoukakuPlayer.config.json")).unwrap()).unwrap();
+        serde_json::from_slice(&fs::read(bundle.join("RoukakuPlayer.config.json")).unwrap())
+            .unwrap();
     assert!(config.get("ui_components").is_none());
     // A mixed-platform Cook remains valid; only the selected Web bundle rejects actions.
     let old_config = fs::read(bundle.join("RoukakuPlayer.config.json")).unwrap();

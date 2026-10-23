@@ -15,7 +15,9 @@ pub(super) fn fixed_lerp(
     let value = i128::from(start.millionths)
         + delta
             .checked_mul(i128::from(progress.millionths))
-            .ok_or_else(|| stage_error("ROUKAKU_VN_STAGE_FIXED_RANGE", "interpolation overflowed"))?
+            .ok_or_else(|| {
+                stage_error("ROUKAKU_VN_STAGE_FIXED_RANGE", "interpolation overflowed")
+            })?
             / 1_000_000;
     Ok(FixedScalar {
         millionths: i64::try_from(value).map_err(|_| {

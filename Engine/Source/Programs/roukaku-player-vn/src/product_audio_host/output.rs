@@ -1,8 +1,9 @@
 use super::*;
 use std::{future::Future, pin::Pin};
 
-pub(super) type OpenFuture =
-    Pin<Box<dyn Future<Output = Result<roukaku_platform::OpenedAudioOutput, PlatformError>> + Send>>;
+pub(super) type OpenFuture = Pin<
+    Box<dyn Future<Output = Result<roukaku_platform::OpenedAudioOutput, PlatformError>> + Send>,
+>;
 pub(super) type CloseFuture = Pin<Box<dyn Future<Output = Result<(), PlatformError>> + Send>>;
 
 impl NativeVnProductAudioHost {

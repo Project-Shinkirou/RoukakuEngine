@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use roukaku_vn_editor::{RoukakuSource, AuthoringWorkspace, DocumentEdits, EditBatch, TextEdit};
+use roukaku_vn_editor::{AuthoringWorkspace, DocumentEdits, EditBatch, RoukakuSource, TextEdit};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct ProjectRevision {
@@ -131,7 +131,9 @@ impl Project {
         Ok(())
     }
 
-    pub fn compile(&self) -> Result<roukaku_vn_editor::CompiledVnProject, roukaku_vn_editor::VnError> {
+    pub fn compile(
+        &self,
+    ) -> Result<roukaku_vn_editor::CompiledVnProject, roukaku_vn_editor::VnError> {
         self.documents.compile((*self.options).clone())
     }
 

@@ -9,7 +9,7 @@ use roukaku_plugin_abi::{
     ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
     PROVIDER_POLICY_SCHEMA,
 };
-use roukaku_vn_core::{compile_roukaku_project, RoukakuSource, CompileRoukakuProjectOptions};
+use roukaku_vn_core::{compile_roukaku_project, CompileRoukakuProjectOptions, RoukakuSource};
 use roukaku_vn_package::{package_sections_for_project, PLAYER_LOCALE_CONFIG_SCHEMA};
 
 pub(crate) const TEST_UI: &str = r#"

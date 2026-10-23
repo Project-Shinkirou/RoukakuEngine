@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use roukaku_core::{SchemaMigrationRegistry, SchemaVersion};
 use roukaku_package::{
-    RoukakuContainerBuilder, RoukakuContainerReader, ContainerBlob, ContainerKind, MigrationPolicy,
+    ContainerBlob, ContainerKind, MigrationPolicy, RoukakuContainerBuilder, RoukakuContainerReader,
     SectionCodec, SectionPayload, CURRENT_CONTAINER_VERSION,
 };
 use schemars::JsonSchema;

@@ -13,7 +13,8 @@ pub(super) fn install(
     api.set(
         "read_text",
         lua.create_function(move |_, (key, resource): (String, String)| {
-            let resource = roukaku_asset::VfsUri::parse(&resource).map_err(mlua::Error::external)?;
+            let resource =
+                roukaku_asset::VfsUri::parse(&resource).map_err(mlua::Error::external)?;
             let status = reads
                 .borrow_mut()
                 .read_text(key, resource, &capabilities)

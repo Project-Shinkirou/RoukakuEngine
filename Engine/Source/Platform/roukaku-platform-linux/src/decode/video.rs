@@ -2,9 +2,9 @@ use super::{
     host_error, invalid,
     pipeline::{MediaPipeline, MAX_FRAME_BYTES},
 };
-use roukaku_platform::{DecodeOutput, PlatformError};
 use gstreamer::{prelude::*, ClockTime};
 use gstreamer_video::prelude::*;
+use roukaku_platform::{DecodeOutput, PlatformError};
 
 pub(super) struct VideoStream {
     pipeline: Option<MediaPipeline>,

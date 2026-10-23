@@ -11,7 +11,9 @@ use roukaku_plugin_abi::{
     ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
     PROVIDER_POLICY_SCHEMA,
 };
-use roukaku_vn_core::{compile_roukaku_project, RoukakuSource, CompileRoukakuProjectOptions, VnRunConfig};
+use roukaku_vn_core::{
+    compile_roukaku_project, CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig,
+};
 use roukaku_vn_package::{package_sections_for_project, PLAYER_LOCALE_CONFIG_SCHEMA};
 
 const TEST_UI: &str = r#"
@@ -328,7 +330,9 @@ fn test_compile_options() -> CompileRoukakuProjectOptions {
     test_controller_options(CompileRoukakuProjectOptions::default().with_ui_theme(theme))
 }
 
-fn test_controller_options(mut options: CompileRoukakuProjectOptions) -> CompileRoukakuProjectOptions {
+fn test_controller_options(
+    mut options: CompileRoukakuProjectOptions,
+) -> CompileRoukakuProjectOptions {
     let source = test_controller_source();
     for id in ["test.message", "test.choice", "test.system"] {
         options = options.with_ui_controller_source(id, source.clone());

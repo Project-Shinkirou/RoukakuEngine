@@ -134,7 +134,10 @@ fn action_rejects_invalid_wait_boolean_and_ambient_grants_without_committing() {
             "roukaku.action.await(\"missing\")",
         ),
         SOURCE.replace("roukaku.action.await(\"note\")", "true"),
-        SOURCE.replace("roukaku.action.await(\"note\")", "roukaku.action.complete()"),
+        SOURCE.replace(
+            "roukaku.action.await(\"note\")",
+            "roukaku.action.complete()",
+        ),
     ] {
         let binding = binding(&source);
         let mut continuation = continuation(&binding, 1);

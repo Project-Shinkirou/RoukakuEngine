@@ -63,7 +63,9 @@ fn validate(bindings: &[PolicyActionBinding]) -> Result<(), ContainerError> {
             ));
         }
         if !commands.insert(&binding.descriptor.command) {
-            return Err(ContainerError::message("ROUKAKU_VN_POLICY_ACTION_DUPLICATE"));
+            return Err(ContainerError::message(
+                "ROUKAKU_VN_POLICY_ACTION_DUPLICATE",
+            ));
         }
     }
     Ok(())

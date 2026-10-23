@@ -112,9 +112,12 @@ fn registry_executes_only_the_explicit_provider_and_validates_output_identity() 
         bytes: tiny_wav().into(),
         profile: "desktop-release".into(),
     };
-    let binding =
-        DecodeBindingContext::shipping("roukaku.decode.symphonia", "native-game", "desktop-release")
-            .with_declared_fallback();
+    let binding = DecodeBindingContext::shipping(
+        "roukaku.decode.symphonia",
+        "native-game",
+        "desktop-release",
+    )
+    .with_declared_fallback();
     let result = registry.decode(&request, &binding).unwrap();
     assert_eq!(result.provider_id, "roukaku.decode.symphonia");
     assert!(matches!(result.output, DecodeOutput::AudioPcmI16 { .. }));
@@ -270,8 +273,8 @@ fn windows_wmf_full_stream_decoder_enforces_frame_and_byte_budgets() {
     let frame_limited =
         roukaku_media::decode_windows_video_stream(&bytes, 1, 64 * 1024 * 1024).unwrap_err();
     assert_wmf_diagnostic(frame_limited);
-    let malformed =
-        roukaku_media::decode_windows_video_stream(b"not an mp4", 64, 64 * 1024 * 1024).unwrap_err();
+    let malformed = roukaku_media::decode_windows_video_stream(b"not an mp4", 64, 64 * 1024 * 1024)
+        .unwrap_err();
     assert_wmf_diagnostic(malformed);
 }
 
@@ -298,7 +301,8 @@ fn windows_wmf_incremental_stream_releases_frames_and_enforces_running_budget() 
     assert!(second.pts_us >= first.pts_us);
     assert!(!first.bgra8.is_empty());
 
-    let mut limited = roukaku_media::open_windows_video_stream(&bytes, 1, 64 * 1024 * 1024).unwrap();
+    let mut limited =
+        roukaku_media::open_windows_video_stream(&bytes, 1, 64 * 1024 * 1024).unwrap();
     assert!(limited.next_frame().unwrap().is_some());
     let error = limited.next_frame().unwrap_err();
     match error {

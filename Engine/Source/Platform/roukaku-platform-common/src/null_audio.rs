@@ -1,5 +1,7 @@
 use crate::{NativeAudioProducer, NativeAudioQueue};
-use roukaku_platform::{AudioOutputRequest, AudioWakeRegistration, PlatformError, PlatformErrorCode};
+use roukaku_platform::{
+    AudioOutputRequest, AudioWakeRegistration, PlatformError, PlatformErrorCode,
+};
 use std::{
     sync::mpsc,
     thread,

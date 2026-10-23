@@ -145,7 +145,9 @@ pub(super) fn parse_scenario_input_plan(bytes: &[u8]) -> Result<Vec<ScenarioInpu
         }
     }
     if plan.is_empty() {
-        return Err("ROUKAKU_PLAYER_SCENARIO_INPUT_EMPTY: scenario has no host input actions".into());
+        return Err(
+            "ROUKAKU_PLAYER_SCENARIO_INPUT_EMPTY: scenario has no host input actions".into(),
+        );
     }
     Ok(plan)
 }

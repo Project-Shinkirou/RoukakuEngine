@@ -32,5 +32,8 @@ state prologue #@id state.prologue
     assert_eq!(stage.viewport_width, 1280);
     assert_eq!(stage.viewport_height, 720);
     let system_manifest = SystemStoryManifest::from_compiled(&compiled).unwrap();
-    assert_eq!(system_manifest.schema, "roukaku.vn.system_story_manifest.v2");
+    assert_eq!(
+        system_manifest.schema,
+        "roukaku.vn.system_story_manifest.v2"
+    );
 }

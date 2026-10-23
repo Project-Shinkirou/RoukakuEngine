@@ -3,11 +3,11 @@ use std::sync::{
     Arc,
 };
 
-use roukaku_byte_source::OwnedF32Buffer;
 use kira::{
     sound::{Sound, SoundData},
     Frame,
 };
+use roukaku_byte_source::OwnedF32Buffer;
 use rtrb::{Consumer, Producer, RingBuffer};
 
 const PLAYING: u8 = 0;

@@ -352,8 +352,11 @@ impl VfsManifest {
             }
             if entry.offset.checked_add(entry.size).is_none() {
                 diagnostics.push(
-                    Diagnostic::blocking("ROUKAKU_VFS_ENTRY_RANGE", "VFS entry byte range overflows")
-                        .with_field("vfs_uri", entry.uri.as_str()),
+                    Diagnostic::blocking(
+                        "ROUKAKU_VFS_ENTRY_RANGE",
+                        "VFS entry byte range overflows",
+                    )
+                    .with_field("vfs_uri", entry.uri.as_str()),
                 );
             }
             let key = (entry.uri.as_str(), entry.layer_id.as_str());

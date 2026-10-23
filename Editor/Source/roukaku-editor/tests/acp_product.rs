@@ -3,7 +3,7 @@ use roukaku_editor::{
     agent::{AgentEdits, EditMode},
     bridge::{EditorBridge, Request},
 };
-use roukaku_vn_editor::{RoukakuSource, AuthoringWorkspace};
+use roukaku_vn_editor::{AuthoringWorkspace, RoukakuSource};
 
 #[test]
 #[ignore = "requires ROUKAKU_EDITOR_ACP_COMMAND and an authenticated external ACP agent"]

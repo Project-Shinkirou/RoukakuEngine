@@ -1,6 +1,6 @@
 use crate::{
-    compile_timeline_command, parse_roukaku_source, AuthoringWorkspace, DocumentSnapshot, EditBatch,
-    TimelineCommand, VnPresentationEasing,
+    compile_timeline_command, parse_roukaku_source, AuthoringWorkspace, DocumentSnapshot,
+    EditBatch, TimelineCommand, VnPresentationEasing,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]

@@ -261,7 +261,9 @@ pub(crate) fn validate_manifest(manifest: &BatchManifest) -> Result<(), String> 
         return Err("ROUKAKU_HEADLESS_BATCH_SCHEMA: unsupported batch manifest schema".into());
     }
     if !(1..=MAX_PARALLEL_SESSIONS).contains(&manifest.worker_limit) {
-        return Err("ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT: worker_limit must be within 1..=8".into());
+        return Err(
+            "ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT: worker_limit must be within 1..=8".into(),
+        );
     }
     if manifest.jobs.is_empty() {
         return Err("ROUKAKU_HEADLESS_BATCH_EMPTY: batch must contain at least one job".into());
@@ -279,7 +281,9 @@ pub(crate) fn validate_manifest(manifest: &BatchManifest) -> Result<(), String> 
             return Err("ROUKAKU_HEADLESS_BATCH_SESSION_ID: session id is invalid".into());
         }
         if !ids.insert(job.session_id.as_str()) {
-            return Err("ROUKAKU_HEADLESS_BATCH_SESSION_DUPLICATE: session id is duplicated".into());
+            return Err(
+                "ROUKAKU_HEADLESS_BATCH_SESSION_DUPLICATE: session id is duplicated".into(),
+            );
         }
         match (job.kind, job.performance.as_ref()) {
             (BatchJobKind::Performance, Some(performance)) if performance.start_sequence > 0 => {}
@@ -327,7 +331,9 @@ pub(crate) fn select_concurrency(
     available_parallelism: usize,
 ) -> Result<usize, String> {
     if !(1..=MAX_PARALLEL_SESSIONS).contains(&configured_worker_limit) {
-        return Err("ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT: worker_limit must be within 1..=8".into());
+        return Err(
+            "ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT: worker_limit must be within 1..=8".into(),
+        );
     }
     if job_count == 0 {
         return Err("ROUKAKU_HEADLESS_BATCH_EMPTY: batch must contain at least one job".into());
@@ -347,7 +353,9 @@ pub(crate) fn concurrent_session_worker_limit(
     selected_concurrency: usize,
 ) -> Result<usize, String> {
     if !(1..=MAX_PARALLEL_SESSIONS).contains(&configured_worker_limit) {
-        return Err("ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT: worker_limit must be within 1..=8".into());
+        return Err(
+            "ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT: worker_limit must be within 1..=8".into(),
+        );
     }
     if selected_concurrency == 0 || selected_concurrency > configured_worker_limit {
         return Err(

@@ -34,7 +34,8 @@ impl NativeVnRuntimeExecution {
     pub fn validate(&self) -> Result<(), NativeVnHostError> {
         if !(1..=WorkerBudgetBroker::DEFAULT_LIMIT).contains(&self.worker_count) {
             return Err(NativeVnHostError::Input(
-                "ROUKAKU_RUNTIME_EXECUTOR_CONFIG: worker count is outside the Runtime budget".into(),
+                "ROUKAKU_RUNTIME_EXECUTOR_CONFIG: worker count is outside the Runtime budget"
+                    .into(),
             ));
         }
         Ok(())
@@ -84,7 +85,9 @@ mod tests {
             let Err(error) = result else {
                 panic!("invalid workers opened a session")
             };
-            assert!(error.to_string().contains("ROUKAKU_RUNTIME_EXECUTOR_CONFIG"));
+            assert!(error
+                .to_string()
+                .contains("ROUKAKU_RUNTIME_EXECUTOR_CONFIG"));
         }
     }
 }

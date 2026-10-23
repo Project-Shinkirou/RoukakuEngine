@@ -1,7 +1,7 @@
-use roukaku_platform::{PlatformError, PlatformErrorCode};
 use evdev::{
     uinput::VirtualDevice, AttributeSet, EventType, InputEvent, KeyCode, RelativeAxisCode,
 };
+use roukaku_platform::{PlatformError, PlatformErrorCode};
 
 pub struct LinuxTestDriver {
     keyboard: VirtualDevice,

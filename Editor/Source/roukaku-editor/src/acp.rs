@@ -31,9 +31,12 @@ pub async fn prompt(
     let agent = AcpAgent::from_str(&command)?;
     let cancellation_bridge = bridge.clone();
     let mut mcp = crate::mcp_http::AgentMcp::start(bridge.clone()).await?;
-    let mcp_server = McpServer::Http(McpServerHttp::new("roukaku_editor", mcp.url.clone()).headers(
-        vec![HttpHeader::new("Authorization", mcp.authorization.clone())],
-    ));
+    let mcp_server = McpServer::Http(
+        McpServerHttp::new("roukaku_editor", mcp.url.clone()).headers(vec![HttpHeader::new(
+            "Authorization",
+            mcp.authorization.clone(),
+        )]),
+    );
     let connection = agent_client_protocol::Client.builder()
         .on_receive_notification(async move |notification: SessionNotification, _cx| {
             match notification.update {

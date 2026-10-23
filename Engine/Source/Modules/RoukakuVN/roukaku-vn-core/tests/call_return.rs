@@ -1,4 +1,6 @@
-use roukaku_vn_core::{compile_roukaku_project, RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime};
+use roukaku_vn_core::{
+    compile_roukaku_project, RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime,
+};
 
 const CALL_RETURN: &str = r#"
 story main #@id story.main

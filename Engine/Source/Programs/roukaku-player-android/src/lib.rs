@@ -16,7 +16,7 @@ mod android {
     use std::sync::{atomic::AtomicBool, Arc, OnceLock};
 
     use android_activity::AndroidApp;
-    use roukaku_package::{RoukakuContainerReader, PackageManifest, PackageReader};
+    use roukaku_package::{PackageManifest, PackageReader, RoukakuContainerReader};
     use roukaku_platform::{HostLaunchProfile, PlatformError, PlatformErrorCode, PlatformId};
     use serde::Deserialize;
 
@@ -69,9 +69,8 @@ mod android {
             source: MemoryByteSource::from_shared(package_bytes),
             cancelled,
         });
-        let (container, storage_hash) =
-            RoukakuContainerReader::open_storage_audited_source(source)
-                .map_err(|error| player_error("player.package.audit", error))?;
+        let (container, storage_hash) = RoukakuContainerReader::open_storage_audited_source(source)
+            .map_err(|error| player_error("player.package.audit", error))?;
         let package = PackageReader::open_verified_container(container)
             .map_err(|error| player_error("player.package.open", error))?;
         let manifest: PackageManifest = package

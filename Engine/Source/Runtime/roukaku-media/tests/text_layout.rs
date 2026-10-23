@@ -198,8 +198,11 @@ fn verified_package_vfs_is_the_font_database_authority() {
         include_bytes!("../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf")
             .to_vec();
     let font_hash = Hash256::from_sha256(&font_bytes);
-    let font_section =
-        SectionPayload::raw("asset.font.ui", "roukaku.cooked_asset.v1", font_bytes.clone());
+    let font_section = SectionPayload::raw(
+        "asset.font.ui",
+        "roukaku.cooked_asset.v1",
+        font_bytes.clone(),
+    );
     let mut build =
         PackageBuildRequest::fixture("com.example.font-authority", "classic", vec![font_section]);
     build.asset_vfs_manifest = serde_json::to_vec(&serde_json::json!({

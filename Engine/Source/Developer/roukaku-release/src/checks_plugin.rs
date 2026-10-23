@@ -296,10 +296,19 @@ pub(crate) fn native_vn_behavioral_evidence(
     package: &PackageReader,
 ) -> Result<Vec<ReleaseEvidence>, (&'static str, String)> {
     use roukaku_vn::{NativeVnStepCommand, NativeVnStepInput, VnSession, VnSessionConfig};
-    let compiled = decode_compiled_project(package)
-        .map_err(|error| ("ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_PACKAGE", error.to_string()))?;
+    let compiled = decode_compiled_project(package).map_err(|error| {
+        (
+            "ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_PACKAGE",
+            error.to_string(),
+        )
+    })?;
     let locale = load_player_locale_config(package)
-        .map_err(|error| ("ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_LOCALE", error.to_string()))?
+        .map_err(|error| {
+            (
+                "ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_LOCALE",
+                error.to_string(),
+            )
+        })?
         .default_locale;
     let selection = package.product_context();
     let mut session = VnSession::new(
@@ -353,9 +362,12 @@ pub(crate) fn native_vn_behavioral_evidence(
     limits
         .validate_save_bytes(save.0.len())
         .map_err(|error| ("ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_SAVE", error.to_string()))?;
-    let report = session
-        .restore(save.clone())
-        .map_err(|error| ("ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_RESTORE", error.to_string()))?;
+    let report = session.restore(save.clone()).map_err(|error| {
+        (
+            "ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_RESTORE",
+            error.to_string(),
+        )
+    })?;
     let restored = session
         .save()
         .map_err(|error| ("ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_SAVE", error.to_string()))?;
@@ -369,9 +381,16 @@ pub(crate) fn native_vn_behavioral_evidence(
         .step(input(
             2,
             roukaku_runtime::TickMode::RestoreContinuation,
-            NativeVnStepCommand::Execute(roukaku_vn_core::VnPlayerCommand::SetAuto { enabled: true }),
+            NativeVnStepCommand::Execute(roukaku_vn_core::VnPlayerCommand::SetAuto {
+                enabled: true,
+            }),
         ))
-        .map_err(|error| ("ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_RESUME", error.to_string()))?;
+        .map_err(|error| {
+            (
+                "ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_RESUME",
+                error.to_string(),
+            )
+        })?;
     if !resumed.vn_state.into_display_state().system.auto_enabled {
         return Err((
             "ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_RESUME",

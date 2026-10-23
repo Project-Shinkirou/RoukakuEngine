@@ -5,10 +5,10 @@ use roukaku_core::{Diagnostic, DiagnosticSeverity, Hash128, SourceRef};
 use crate::{
     lower::{lower_sources_from_cst, ParsedLine},
     stage_compile::{compile_extension_command, compile_stage_command},
-    RoukakuSource, RoukakuSourceRole, BranchOp, ChoiceOption, CommandManifest, CommandManifestEntry,
-    CommandProvider, CommandRegistry, CommandSourceMap, CompiledCommand, CompiledStory,
-    CompiledVnProject, ExtensionCommandDescriptor, MutationOp, PresentationCommand, RouteEdge,
-    RouteGraph, RouteNode, Scene, State, Story, StoryManifest, StoryManifestEntry,
+    BranchOp, ChoiceOption, CommandManifest, CommandManifestEntry, CommandProvider,
+    CommandRegistry, CommandSourceMap, CompiledCommand, CompiledStory, CompiledVnProject,
+    ExtensionCommandDescriptor, MutationOp, PresentationCommand, RoukakuSource, RoukakuSourceRole,
+    RouteEdge, RouteGraph, RouteNode, Scene, State, Story, StoryManifest, StoryManifestEntry,
     SystemActionEffect, SystemActionProgram, SystemPageKind, SystemStoryManifest,
     VariableCondition, VariableManifest, VariableScopeManifest, VnError,
 };
@@ -16,8 +16,8 @@ use crate::{
 mod semantic_pass;
 pub use semantic_pass::compile_roukaku_project;
 use semantic_pass::trace_pass;
-pub use semantic_pass::CompileRoukakuProjectOptions;
 use semantic_pass::CompileBuilder;
+pub use semantic_pass::CompileRoukakuProjectOptions;
 pub use semantic_pass::SemanticPass;
 pub use semantic_pass::SEMANTIC_PASS_ORDER;
 mod validate_structure;

@@ -101,8 +101,8 @@ impl Renderer2D for HeadlessRenderer {
                             capture_glyph(&self.glyphs, &glyph_changes, &instance.resource_id)
                                 .ok_or_else(|| {
                                     MediaError::message(
-                                    "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: glyph resource is not uploaded",
-                                )
+                                "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: glyph resource is not uploaded",
+                            )
                                 })?;
                         draw_glyph(
                             &mut bytes,

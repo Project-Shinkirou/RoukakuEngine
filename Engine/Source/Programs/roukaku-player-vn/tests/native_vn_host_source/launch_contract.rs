@@ -49,7 +49,9 @@ pub(super) fn product_source_persists_resize_scale_and_text_across_repaints() {
     source.shutdown().unwrap();
 }
 
-pub(super) fn scene_commands(batch: &roukaku_player_core::PlayerHostCommandBatch) -> &[SceneCommand] {
+pub(super) fn scene_commands(
+    batch: &roukaku_player_core::PlayerHostCommandBatch,
+) -> &[SceneCommand] {
     match &batch.commands[0] {
         PlayerHostCommand::PresentScene { commands, .. } => commands,
         command => panic!("expected retained scene presentation, got {command:?}"),

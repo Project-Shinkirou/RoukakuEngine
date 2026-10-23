@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use roukaku_headless_protocol::{
     ArtifactEntry, ArtifactManifest, RendererExecutionIdentity, HEADLESS_ARTIFACT_MANIFEST_SCHEMA,
 };
@@ -11,7 +12,6 @@ use roukaku_platform::{
     HeadlessArtifactPolicy, HeadlessArtifactRetention, HeadlessHostProfile, PlatformError,
     PlatformErrorCode,
 };
-use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use sha2::{Digest, Sha256};
 
 pub(crate) struct ArtifactRecorder {

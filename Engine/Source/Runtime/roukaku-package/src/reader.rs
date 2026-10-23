@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::PackageProductContext;
 use crate::{
-    RoukakuContainerReader, ContainerError, ContainerKind, PackageManifest, SchemaRegistryManifest,
+    ContainerError, ContainerKind, PackageManifest, RoukakuContainerReader, SchemaRegistryManifest,
     CURRENT_CONTAINER_VERSION,
 };
 use roukaku_core::Hash256;

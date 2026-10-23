@@ -190,7 +190,11 @@ fn action_context_commits_typed_component_mutation() {
     let mut world = RuntimeWorld::create(RuntimeConfig::default()).unwrap();
     let owner = world.create_actor("runtime.owner", vec![]).unwrap();
     let component = world
-        .attach_component(owner, "roukaku.test.counter", &CounterComponent { value: 1 })
+        .attach_component(
+            owner,
+            "roukaku.test.counter",
+            &CounterComponent { value: 1 },
+        )
         .unwrap();
     world
         .register_action("roukaku.test", IncrementComponentAction { component })

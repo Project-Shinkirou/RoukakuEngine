@@ -1,5 +1,5 @@
 use roukaku_vn_script::{
-    compile_roukaku_project, RoukakuSource, ReadingMode, SaveCompletionPolicy, SystemPageKind,
+    compile_roukaku_project, ReadingMode, RoukakuSource, SaveCompletionPolicy, SystemPageKind,
     SystemStoryManifest, SystemStoryValidationStatus, SystemUiProfilePolicy,
     VnSystemUiProfileManifest,
 };

@@ -1,9 +1,9 @@
 use super::*;
-use roukaku_vn_editor::{parse_roukaku_source, EditBatch};
 use gpui_component::{
     list::ListItem,
     tree::{tree, TreeItem, TreeState},
 };
+use roukaku_vn_editor::{parse_roukaku_source, EditBatch};
 
 pub(super) struct WorkspacePanels {
     pub(super) timeline_selection: Option<crate::timeline_panel::TimelineSelection>,

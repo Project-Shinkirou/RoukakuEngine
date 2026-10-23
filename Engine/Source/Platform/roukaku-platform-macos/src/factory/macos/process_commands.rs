@@ -70,9 +70,10 @@ impl MacosHostApp {
                             .get_mut(surface)
                             .and_then(|surface| surface.reconfigure_after_loss())
                             .is_ok();
-                        for event in
-                            roukaku_platform_common::wgpu_recovery_events("wgpu_hardware", recovered)
-                        {
+                        for event in roukaku_platform_common::wgpu_recovery_events(
+                            "wgpu_hardware",
+                            recovered,
+                        ) {
                             self.emit(event);
                         }
                     } else if result
@@ -134,9 +135,10 @@ impl MacosHostApp {
                             .get_mut(surface)
                             .and_then(|surface| surface.reconfigure_after_loss())
                             .is_ok();
-                        for event in
-                            roukaku_platform_common::wgpu_recovery_events("wgpu_hardware", recovered)
-                        {
+                        for event in roukaku_platform_common::wgpu_recovery_events(
+                            "wgpu_hardware",
+                            recovered,
+                        ) {
                             self.emit(event);
                         }
                     } else if result

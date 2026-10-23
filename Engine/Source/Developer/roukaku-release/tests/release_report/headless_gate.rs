@@ -3,8 +3,14 @@ use super::*;
 #[test]
 pub(super) fn shipping_isolation_rejects_current_and_retired_test_payloads() {
     for (schema, expected) in [
-        ("roukaku.headless_checkpoint_config.v2", CheckStatus::Blocked),
-        ("roukaku.headless_checkpoint_config.v3", CheckStatus::Blocked),
+        (
+            "roukaku.headless_checkpoint_config.v2",
+            CheckStatus::Blocked,
+        ),
+        (
+            "roukaku.headless_checkpoint_config.v3",
+            CheckStatus::Blocked,
+        ),
         ("roukaku.headless_review.v2", CheckStatus::Blocked),
         ("example.config.v1", CheckStatus::Pass),
     ] {

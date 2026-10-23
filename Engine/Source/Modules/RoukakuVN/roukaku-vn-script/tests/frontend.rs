@@ -1,9 +1,9 @@
 use roukaku_ui_core::{UiThemeManifest, UiThemeValue};
 use roukaku_vn_script::{
-    compile_roukaku_project, format_roukaku_source, parse_roukaku_source, RoukakuSource,
+    compile_roukaku_project, format_roukaku_source, parse_roukaku_source,
     CompileRoukakuProjectOptions, ExtensionCommandDescriptor, ExtensionFieldContract,
-    ExtensionFieldKind, FormatOptions, ScriptLanguageService, SemanticPass, SyntaxKind,
-    SEMANTIC_PASS_ORDER,
+    ExtensionFieldKind, FormatOptions, RoukakuSource, ScriptLanguageService, SemanticPass,
+    SyntaxKind, SEMANTIC_PASS_ORDER,
 };
 use std::collections::BTreeMap;
 
@@ -65,7 +65,10 @@ fn semantic_hash_ignores_trivia_and_implicit_command_source_spans() {
     let with_trivia =
         "# comment\nstory   main\n\nstate start\n  scene room\n    text   key:hello # comment\n";
     let left = compile_roukaku_project(
-        [roukaku_vn_script::RoukakuSource::story("story.roukaku", compact)],
+        [roukaku_vn_script::RoukakuSource::story(
+            "story.roukaku",
+            compact,
+        )],
         Default::default(),
     )
     .unwrap();
@@ -165,8 +168,9 @@ fn tsuinosora_classic_and_modern_ui_template_compiles_as_one_project() {
         include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/classic.roukaku");
     const MODERN_UI: &str =
         include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/modern.roukaku");
-    const SYSTEM_STORY: &str =
-        include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/Scripts/system.roukaku");
+    const SYSTEM_STORY: &str = include_str!(
+        "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Scripts/system.roukaku"
+    );
     const CONTROLLERS: &str = include_str!(
         "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Controllers/tsui_ui.luau"
     );
@@ -260,7 +264,10 @@ state z12 #@id director.z.0126
     let compiled = compile_roukaku_project(
         [
             roukaku_vn_script::RoukakuSource::story("system.roukaku", SYSTEM_STORY),
-            roukaku_vn_script::RoukakuSource::story("classic-test-targets.roukaku", CLASSIC_TEST_TARGETS),
+            roukaku_vn_script::RoukakuSource::story(
+                "classic-test-targets.roukaku",
+                CLASSIC_TEST_TARGETS,
+            ),
             roukaku_vn_script::RoukakuSource::ui("classic.roukaku", CLASSIC_UI),
             roukaku_vn_script::RoukakuSource::ui("modern.roukaku", MODERN_UI),
         ],
@@ -364,14 +371,20 @@ fn unknown_command_is_editable_but_requires_explicit_compile_binding() {
         .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNKNOWN_COMMAND"));
 
     let error = compile_roukaku_project(
-        [roukaku_vn_script::RoukakuSource::story("unknown.roukaku", source)],
+        [roukaku_vn_script::RoukakuSource::story(
+            "unknown.roukaku",
+            source,
+        )],
         CompileRoukakuProjectOptions::default(),
     )
     .unwrap_err();
     assert_eq!(error.code(), "ROUKAKU_VN_COMMAND_UNBOUND");
 
     let compiled = compile_roukaku_project(
-        [roukaku_vn_script::RoukakuSource::story("unknown.roukaku", source)],
+        [roukaku_vn_script::RoukakuSource::story(
+            "unknown.roukaku",
+            source,
+        )],
         CompileRoukakuProjectOptions::default().bind_extension(ExtensionCommandDescriptor {
             command: "studio_fx".to_string(),
             provider_id: "studio.presentation".to_string(),
@@ -399,7 +412,10 @@ fn standard_audio_control_is_bound_without_an_extension_bypass() {
         .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNKNOWN_COMMAND"));
 
     let compiled = compile_roukaku_project(
-        [roukaku_vn_script::RoukakuSource::story("audio.roukaku", source)],
+        [roukaku_vn_script::RoukakuSource::story(
+            "audio.roukaku",
+            source,
+        )],
         Default::default(),
     )
     .unwrap();
@@ -408,7 +424,8 @@ fn standard_audio_control_is_bound_without_an_extension_bypass() {
 
 #[test]
 fn formatter_is_idempotent_and_preserves_semantics() {
-    let formatted = format_roukaku_source("story.roukaku", SOURCE, FormatOptions::default()).unwrap();
+    let formatted =
+        format_roukaku_source("story.roukaku", SOURCE, FormatOptions::default()).unwrap();
     assert_eq!(
         format_roukaku_source("story.roukaku", &formatted, FormatOptions::default()).unwrap(),
         formatted

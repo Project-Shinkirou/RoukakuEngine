@@ -106,10 +106,9 @@ impl AssetCache {
                         "ROUKAKU_PLAYER_ASSET_CACHE_PINNED_BUDGET_EXCEEDED".into(),
                     )
                 })?;
-            let evicted = self
-                .entries
-                .remove(&evict_id)
-                .ok_or_else(|| NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_CACHE_STATE".into()))?;
+            let evicted = self.entries.remove(&evict_id).ok_or_else(|| {
+                NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_CACHE_STATE".into())
+            })?;
             self.bytes = self.bytes.saturating_sub(evicted.value.bytes());
             retired.push(evicted.value);
             tracing::debug!(

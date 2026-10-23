@@ -59,7 +59,10 @@ fn compiled_project_v5_requires_the_v4_root_without_reader_fallback() {
         .decode_postcard("vn.compiled_project")
         .unwrap();
     assert_eq!(root.schema, "roukaku.vn.compiled_project_root.v4");
-    assert_eq!(root.compiled_project_schema, "roukaku.vn.compiled_project.v5");
+    assert_eq!(
+        root.compiled_project_schema,
+        "roukaku.vn.compiled_project.v5"
+    );
     assert_eq!(
         decode_compiled_project(&package).unwrap().schema,
         "roukaku.vn.compiled_project.v5"

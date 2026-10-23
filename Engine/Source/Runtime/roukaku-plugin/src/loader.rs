@@ -5,15 +5,15 @@ use std::{
 };
 
 use abi_stable::library::{AbiHeaderRef, ROOT_MODULE_LOADER_NAME_WITH_NUL};
-use roukaku_core::Hash256;
 use libloading::Library;
+use roukaku_core::Hash256;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
 
 use crate::{
-    RoukakuPluginModuleRef, EngineModuleSlot, FfiPluginShutdown, LoadPhase, PluginDescriptor,
-    PluginError, PluginGate, PluginRegistrar, RegisteredProvider,
+    EngineModuleSlot, FfiPluginShutdown, LoadPhase, PluginDescriptor, PluginError, PluginGate,
+    PluginRegistrar, RegisteredProvider, RoukakuPluginModuleRef,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

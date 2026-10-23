@@ -242,10 +242,9 @@ impl ProductStageDirector {
         self.state.frame_index.checked_add(1).ok_or_else(|| {
             stage_error("ROUKAKU_VN_STAGE_FRAME_OVERFLOW", "frame index overflowed")
         })?;
-        self.state
-            .elapsed_ns
-            .checked_add(delta_ns)
-            .ok_or_else(|| stage_error("ROUKAKU_VN_STAGE_TIME_OVERFLOW", "stage time overflowed"))?;
+        self.state.elapsed_ns.checked_add(delta_ns).ok_or_else(|| {
+            stage_error("ROUKAKU_VN_STAGE_TIME_OVERFLOW", "stage time overflowed")
+        })?;
         let result = self.tick_committed(delta_ns);
         if result.is_err() {
             self.failed = true;

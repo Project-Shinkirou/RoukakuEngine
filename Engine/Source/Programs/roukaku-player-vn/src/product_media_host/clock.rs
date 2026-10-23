@@ -21,7 +21,10 @@ impl PlaybackClock {
     pub(super) fn advance(&mut self, host_time_ms: u64) -> Result<u64, PlatformError> {
         let delta = match self.host_time_ms {
             Some(previous) => host_time_ms.checked_sub(previous).ok_or_else(|| {
-                media_error("player.media.clock", "ROUKAKU_PLAYER_MEDIA_CLOCK_REGRESSION")
+                media_error(
+                    "player.media.clock",
+                    "ROUKAKU_PLAYER_MEDIA_CLOCK_REGRESSION",
+                )
             })?,
             None => 0,
         };

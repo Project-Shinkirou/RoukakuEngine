@@ -233,10 +233,9 @@ pub(super) fn prepare_policy(
             "ROUKAKU_POLICY_RESTORE_STATE: exactly one session policy state is required",
         ));
     }
-    let component = snapshot
-        .actors
-        .component_mut(component_id)
-        .ok_or_else(|| RuntimeError::message("ROUKAKU_POLICY_RESTORE_STATE: missing policy state"))?;
+    let component = snapshot.actors.component_mut(component_id).ok_or_else(|| {
+        RuntimeError::message("ROUKAKU_POLICY_RESTORE_STATE: missing policy state")
+    })?;
     if component.payload.version() != SchemaVersion::default() {
         return Err(RuntimeError::message(
             "ROUKAKU_POLICY_RESTORE_VERSION: unsupported session policy state version",

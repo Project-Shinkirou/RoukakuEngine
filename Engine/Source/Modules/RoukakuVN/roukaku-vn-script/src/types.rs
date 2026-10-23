@@ -13,8 +13,6 @@ use crate::CommandSourceMap;
 use crate::VnError;
 
 mod runtime_state;
-pub use runtime_state::RoukakuSource;
-pub use runtime_state::RoukakuSourceRole;
 pub use runtime_state::BranchOp;
 pub use runtime_state::ChoiceOption;
 pub use runtime_state::CommandManifest;
@@ -24,6 +22,8 @@ pub use runtime_state::CompiledStory;
 pub use runtime_state::CompiledVnProject;
 pub use runtime_state::MutationOp;
 pub use runtime_state::ReadingMode;
+pub use runtime_state::RoukakuSource;
+pub use runtime_state::RoukakuSourceRole;
 pub use runtime_state::SaveCompletionPolicy;
 pub use runtime_state::Scene;
 pub use runtime_state::State;

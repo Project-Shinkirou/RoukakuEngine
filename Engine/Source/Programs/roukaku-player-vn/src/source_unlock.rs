@@ -1,7 +1,7 @@
 use roukaku_byte_source::BoundedByteSource;
 use roukaku_core::Hash256;
 use roukaku_package::{
-    RoukakuContainerReader, AuthorizedSourceReader, ContainerError, PackageReader,
+    AuthorizedSourceReader, ContainerError, PackageReader, RoukakuContainerReader,
     SourceFingerprintCryptoProvider, SourceUnlockPolicy, SourceVerificationManifest,
 };
 use roukaku_platform::AuthorizedSourceDirectory;

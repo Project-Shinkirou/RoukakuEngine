@@ -1,10 +1,10 @@
 #![cfg(target_arch = "wasm32")]
 
+use js_sys::{Function, Promise, Uint8Array};
 use roukaku_platform::{
     AudioOutputRequest, DecodeKind, DecodeOutput, PlatformDecodeRequest, PlatformErrorCode,
     PlatformHostFactory, PlatformHostProfile, RgbaFrame, SurfaceRequest, WindowRequest,
 };
-use js_sys::{Function, Promise, Uint8Array};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use wasm_bindgen_test::wasm_bindgen_test;
@@ -15,7 +15,9 @@ wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 async fn same_game_profile_rejects_a_second_browser_host() {
     let profile = PlatformHostProfile::web_release("nativevn-web", "com.example.web-single");
     let first = roukaku_platform_web::factory()
-        .start(roukaku_platform::HostLaunchProfile::platform(profile.clone()))
+        .start(roukaku_platform::HostLaunchProfile::platform(
+            profile.clone(),
+        ))
         .await
         .unwrap();
     let error = match roukaku_platform_web::factory()

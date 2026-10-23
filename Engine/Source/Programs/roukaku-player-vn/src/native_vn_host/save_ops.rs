@@ -47,7 +47,8 @@ impl NativeVnHostCommandSource {
         })?;
         if save_metadata.slot_id != slot {
             return Err(NativeVnHostError::Save(
-                "ROUKAKU_PLAYER_SAVE_METADATA_SLOT: prepared metadata belongs to another slot".into(),
+                "ROUKAKU_PLAYER_SAVE_METADATA_SLOT: prepared metadata belongs to another slot"
+                    .into(),
             ));
         }
         let payload = NativeVnPlayerSavePayload {

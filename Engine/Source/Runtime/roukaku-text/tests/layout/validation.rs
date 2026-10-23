@@ -53,7 +53,9 @@ fn font_binding_hash_direction_and_fallback_fail_fast() {
     )
     .err()
     .unwrap();
-    assert!(error.to_string().contains("ROUKAKU_TEXT_PACKAGED_FONT_HASH"));
+    assert!(error
+        .to_string()
+        .contains("ROUKAKU_TEXT_PACKAGED_FONT_HASH"));
 
     let provider = provider();
     let mut missing = request("text");

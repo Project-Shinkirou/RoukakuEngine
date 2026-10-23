@@ -6,8 +6,8 @@ use roukaku_target::TargetManifest;
 #[test]
 fn generated_stage_commands_compile_with_explicit_replacement_policy() {
     use roukaku_vn_script::{
-        compile_roukaku_project, RoukakuSource, CompiledCommand, PresentationCommand,
-        PresentationInterruptPolicy, StageCommand,
+        compile_roukaku_project, CompiledCommand, PresentationCommand, PresentationInterruptPolicy,
+        RoukakuSource, StageCommand,
     };
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()

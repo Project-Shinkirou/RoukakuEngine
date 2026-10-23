@@ -1,0 +1,89 @@
+schema: roukaku.project.v1
+id: com.example.roukaku_vn_script_sample
+platform_profiles:
+  windows-release:
+    schema: roukaku.platform_host_profile.v3
+    id: windows-release
+    platform: windows
+    target: nativevn-game
+    package_id: com.example.roukaku_vn_script_sample
+    renderer: { providers: [wgpu_hardware], allow_software: false }
+    decode: { providers: [wmf], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [wasapi], allow_software: false }
+    save: { providers: [saved_games], allow_software: false }
+    package_sources:
+      - { kind: bundled }
+      - { kind: user_authorized }
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  web-release-chrome:
+    schema: roukaku.platform_host_profile.v3
+    id: web-release-chrome
+    platform: web
+    target: nativevn-game
+    package_id: com.example.roukaku_vn_script_sample
+    renderer: { providers: [webgpu], allow_software: false }
+    decode: { providers: [webcodecs], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [webaudio], allow_software: false }
+    save: { providers: [opfs], allow_software: false }
+    package_sources:
+      - { kind: bundled }
+      - { kind: user_authorized }
+      - kind: https_range
+        allowed_origins: [https://cdn.example.invalid]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+
+
+targets:
+  - id: nativevn-game
+    kind: game
+    crate: roukaku-vn
+    default_profile: desktop-release
+    platforms: [windows, linux, macos, ios, android, web]
+    packaged: true
+
+stories:
+  main: main.roukaku
+  system: system.roukaku
+
+system_stories:
+  title: system.title
+  config: system.config
+  gallery: system.gallery
+  replay: system.replay
+  chart: system.chart
+
+policies:
+  standard:
+    id: roukaku.policy.standard
+    version: 0.1.0
+    source: official
+    luau_entry: standard_policy.luau
+  cinematic:
+    id: com.example.cinematic
+    version: 0.1.0
+    source: pesde
+    luau_entry: cinematic_policy.luau
+    rust_plugin: com.example.cinematic_nodes
+    package_lock: auto
+
+bindings:
+  roukaku.vn.dialogue: roukaku.policy.standard
+  roukaku.vn.choice: roukaku.policy.standard
+  roukaku.vn.system_pages: roukaku.policy.standard
+  roukaku.cinematic.reveal_text: com.example.cinematic
+  roukaku.cinematic.camera_pulse: com.example.cinematic
+
+localization:
+  default_locale: zh-Hans
+  text_tables:
+    - text/zh-Hans.yaml
+    - text/ja-JP.yaml
+
+release:
+  dependency_lock: auto
+  evidence: hash_trace
+  require_full_playthrough: true

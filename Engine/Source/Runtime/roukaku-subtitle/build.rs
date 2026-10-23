@@ -28,7 +28,10 @@ fn main() {
             .copy_dlls(false)
             .find_package("libass")
             .expect("install libass 0.17.4#1 in the isolated subtitle vcpkg root");
-        assert!(lib.is_static, "libass must be static; only fribidi may be dynamic");
+        assert!(
+            lib.is_static,
+            "libass must be static; only fribidi may be dynamic"
+        );
         for required in ["libass", "freetype", "fribidi", "harfbuzz"] {
             assert!(
                 lib.ports.iter().any(|port| port == required),

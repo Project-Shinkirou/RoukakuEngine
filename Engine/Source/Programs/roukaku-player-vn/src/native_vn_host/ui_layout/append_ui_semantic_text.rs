@@ -191,7 +191,8 @@ impl NativeUiTextMeasurer {
             .lock()
             .map_err(|_| {
                 NativeVnHostError::Asset(
-                    "ROUKAKU_PLAYER_UI_TEXT_MEASUREMENT_LOCK: frame layout state was poisoned".into(),
+                    "ROUKAKU_PLAYER_UI_TEXT_MEASUREMENT_LOCK: frame layout state was poisoned"
+                        .into(),
                 )
             })?
             .clear();

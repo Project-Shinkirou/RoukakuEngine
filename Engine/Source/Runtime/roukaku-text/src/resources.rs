@@ -473,7 +473,9 @@ impl TextRenderResourceOwner {
         let mut dormant_count = dormant.len();
         let mut dormant_bytes = dormant.iter().try_fold(0usize, |total, entry| {
             total.checked_add(entry.2).ok_or_else(|| {
-                MediaError::message("ROUKAKU_TEXT_RENDER_CACHE_BUDGET: dormant byte count overflowed")
+                MediaError::message(
+                    "ROUKAKU_TEXT_RENDER_CACHE_BUDGET: dormant byte count overflowed",
+                )
             })
         })?;
         let mut evicted_count = 0usize;

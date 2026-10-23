@@ -249,7 +249,9 @@ pub(super) fn action_registry_rejects_duplicate_action_ids() {
         .register_with_provider("roukaku.other", SetBlackboardAction)
         .unwrap_err();
 
-    assert!(error.to_string().contains("ROUKAKU_RUNTIME_ACTION_CONFLICT"));
+    assert!(error
+        .to_string()
+        .contains("ROUKAKU_RUNTIME_ACTION_CONFLICT"));
 }
 
 pub(super) fn set_blackboard_input(key: &str, value: &str) -> BTreeMap<String, BlackboardValue> {

@@ -7,8 +7,8 @@ use std::{
     time::Instant,
 };
 
-use roukaku_platform::{AudioOutputLane, PlatformError};
 use kira::backend::{Backend, Renderer};
+use roukaku_platform::{AudioOutputLane, PlatformError};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct AudioChunkTelemetry {

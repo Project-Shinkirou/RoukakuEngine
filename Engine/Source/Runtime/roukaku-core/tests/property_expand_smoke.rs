@@ -1,4 +1,4 @@
-use roukaku_core::{RoukakuProperty, PropertyDescribe};
+use roukaku_core::{PropertyDescribe, RoukakuProperty};
 
 #[derive(RoukakuProperty)]
 #[allow(dead_code)]

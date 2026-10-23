@@ -19,10 +19,10 @@ pub use host_io::*;
 #[cfg(any(feature = "luau-runtime", feature = "portable-luau-runtime"))]
 mod ui_controller;
 
-pub use roukaku_vn_script::*;
 #[cfg(feature = "luau-runtime")]
 pub use luau::*;
 pub use policy_bundle::*;
+pub use roukaku_vn_script::*;
 pub use state::*;
 #[cfg(any(feature = "luau-runtime", feature = "portable-luau-runtime"))]
 pub use ui_controller::*;

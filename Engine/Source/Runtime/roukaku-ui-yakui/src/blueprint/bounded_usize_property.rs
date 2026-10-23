@@ -90,7 +90,10 @@ pub(super) fn semantic_text_properties(
     Ok(properties)
 }
 
-pub(super) fn repeat_key(node: &roukaku_ui_core::UiNodeBlueprint, item: &UiValue) -> Option<String> {
+pub(super) fn repeat_key(
+    node: &roukaku_ui_core::UiNodeBlueprint,
+    item: &UiValue,
+) -> Option<String> {
     let value = if let Some(repeat) = &node.repeat {
         lookup(item, &repeat.item_key_path)?
     } else {
@@ -219,10 +222,16 @@ pub(super) fn evaluate(
                 UiBindingRoot::Model => &frame.model,
                 UiBindingRoot::State => &frame.state,
                 UiBindingRoot::Item => item.ok_or_else(|| {
-                    UiValidationError::invalid("ROUKAKU_UI_ITEM_SCOPE", "item binding outside repeat")
+                    UiValidationError::invalid(
+                        "ROUKAKU_UI_ITEM_SCOPE",
+                        "item binding outside repeat",
+                    )
                 })?,
                 UiBindingRoot::Event => event.ok_or_else(|| {
-                    UiValidationError::invalid("ROUKAKU_UI_EVENT_SCOPE", "event binding unavailable")
+                    UiValidationError::invalid(
+                        "ROUKAKU_UI_EVENT_SCOPE",
+                        "event binding unavailable",
+                    )
                 })?,
             };
             lookup(root, path).cloned().ok_or_else(|| {

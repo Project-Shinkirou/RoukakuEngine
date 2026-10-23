@@ -1,6 +1,12 @@
 use clap::Parser;
 use std::path::PathBuf;
 
+use gpui::{div, prelude::*, *};
+use gpui_component::{
+    button::Button,
+    input::{Input, InputEvent, InputState},
+    Disableable, Root,
+};
 use roukaku_editor::preview::{Preview, PreviewConfig};
 use roukaku_editor::project::{Project, ProjectRevision};
 use roukaku_editor::{
@@ -8,12 +14,6 @@ use roukaku_editor::{
     bridge::{EditorBridge, Request},
 };
 use roukaku_vn_editor::{BackgroundCompiler, CompilationResult};
-use gpui::{div, prelude::*, *};
-use gpui_component::{
-    button::Button,
-    input::{Input, InputEvent, InputState},
-    Disableable, Root,
-};
 mod agent_actions;
 mod asset_panel;
 mod dock_panels;

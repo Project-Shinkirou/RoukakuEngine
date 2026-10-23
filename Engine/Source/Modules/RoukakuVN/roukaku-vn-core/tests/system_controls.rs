@@ -1,5 +1,5 @@
 use roukaku_vn_core::{
-    compile_roukaku_project, RoukakuSource, PresentationCommand, ReadingMode, SkipMode,
+    compile_roukaku_project, PresentationCommand, ReadingMode, RoukakuSource, SkipMode,
     SystemUnlockKind, VnPlayerCommand, VnRunConfig, VnRuntime,
 };
 
@@ -156,7 +156,10 @@ fn fast_forward_commits_skipped_dialogue_without_emitting_transient_dialogue_fra
 #[test]
 fn skip_modes_respect_scripted_skip_block_and_resume_after_it_is_lifted() {
     let compiled = compile_roukaku_project(
-        [RoukakuSource::story("skip-toggle.roukaku", SKIP_TOGGLE_STORY)],
+        [RoukakuSource::story(
+            "skip-toggle.roukaku",
+            SKIP_TOGGLE_STORY,
+        )],
         Default::default(),
     )
     .unwrap();
@@ -190,7 +193,10 @@ fn skip_modes_respect_scripted_skip_block_and_resume_after_it_is_lifted() {
     )));
 
     let compiled = compile_roukaku_project(
-        [RoukakuSource::story("skip-blocked.roukaku", SKIP_BLOCKED_STORY)],
+        [RoukakuSource::story(
+            "skip-blocked.roukaku",
+            SKIP_BLOCKED_STORY,
+        )],
         Default::default(),
     )
     .unwrap();

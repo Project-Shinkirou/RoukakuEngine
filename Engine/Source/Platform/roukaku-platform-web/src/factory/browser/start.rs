@@ -102,7 +102,8 @@ pub(super) async fn run_backend(
                         .get_mut(surface)
                         .and_then(|surface| surface.reconfigure_after_loss())
                         .is_ok();
-                    for event in roukaku_platform_common::wgpu_recovery_events("webgpu", recovered) {
+                    for event in roukaku_platform_common::wgpu_recovery_events("webgpu", recovered)
+                    {
                         let _ = emitter.emit(event);
                     }
                 }
@@ -139,7 +140,8 @@ pub(super) async fn run_backend(
                         .get_mut(surface)
                         .and_then(|surface| surface.reconfigure_after_loss())
                         .is_ok();
-                    for event in roukaku_platform_common::wgpu_recovery_events("webgpu", recovered) {
+                    for event in roukaku_platform_common::wgpu_recovery_events("webgpu", recovered)
+                    {
                         let _ = emitter.emit(event);
                     }
                 }

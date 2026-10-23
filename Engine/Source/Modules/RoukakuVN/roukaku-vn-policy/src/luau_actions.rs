@@ -172,7 +172,9 @@ impl LuauPolicy {
                             let key = match args.pop_front() {
                                 Some(mlua::Value::String(key)) => key.to_str()?.to_owned(),
                                 _ => {
-                                    return Err(mlua::Error::runtime("ROUKAKU_VN_POLICY_ACTION_KEY"))
+                                    return Err(mlua::Error::runtime(
+                                        "ROUKAKU_VN_POLICY_ACTION_KEY",
+                                    ))
                                 }
                             };
                             let key = continuation

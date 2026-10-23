@@ -1,5 +1,5 @@
 use roukaku_vn_core::{
-    compile_roukaku_project, reduce_vn_step, RoukakuSource, PresentationCommand, SystemPageKind,
+    compile_roukaku_project, reduce_vn_step, PresentationCommand, RoukakuSource, SystemPageKind,
     VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind,
 };
 
@@ -61,11 +61,16 @@ fn compiles_route_graph_source_map_and_stable_hash() {
 
 #[test]
 fn compiled_story_exposes_story_variable_and_command_manifests() {
-    let compiled =
-        compile_roukaku_project([RoukakuSource::story("main.roukaku", MAIN)], Default::default())
-            .unwrap();
+    let compiled = compile_roukaku_project(
+        [RoukakuSource::story("main.roukaku", MAIN)],
+        Default::default(),
+    )
+    .unwrap();
 
-    assert_eq!(compiled.story_manifest.schema, "roukaku.vn.story_manifest.v1");
+    assert_eq!(
+        compiled.story_manifest.schema,
+        "roukaku.vn.story_manifest.v1"
+    );
     assert!(compiled
         .story_manifest
         .stories
@@ -118,9 +123,11 @@ fn compiled_story_exposes_system_story_manifest() {
 
 #[test]
 fn runtime_drives_dialogue_choice_backlog_read_state_and_save_load() {
-    let compiled =
-        compile_roukaku_project([RoukakuSource::story("main.roukaku", MAIN)], Default::default())
-            .unwrap();
+    let compiled = compile_roukaku_project(
+        [RoukakuSource::story("main.roukaku", MAIN)],
+        Default::default(),
+    )
+    .unwrap();
     let mut runtime = VnRuntime::new(compiled.clone(), VnRunConfig::classic("zh-Hans")).unwrap();
 
     let first = runtime
@@ -187,9 +194,11 @@ fn runtime_drives_dialogue_choice_backlog_read_state_and_save_load() {
 
 #[test]
 fn reducer_advances_from_an_explicit_runtime_state_without_hidden_session_state() {
-    let compiled =
-        compile_roukaku_project([RoukakuSource::story("main.roukaku", MAIN)], Default::default())
-            .unwrap();
+    let compiled = compile_roukaku_project(
+        [RoukakuSource::story("main.roukaku", MAIN)],
+        Default::default(),
+    )
+    .unwrap();
     let mut runtime = VnRuntime::new(compiled.clone(), VnRunConfig::classic("zh-Hans")).unwrap();
     runtime
         .apply(VnPlayerCommand::Launch {

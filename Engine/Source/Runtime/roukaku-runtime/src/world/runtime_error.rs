@@ -82,7 +82,11 @@ impl ValidatedModuleBinding {
         let provider_id = provider_id.into();
         let capability = capability.into();
         for (code, name, value) in [
-            ("ROUKAKU_RUNTIME_MODULE_SLOT_INVALID", "slot", slot.0.as_str()),
+            (
+                "ROUKAKU_RUNTIME_MODULE_SLOT_INVALID",
+                "slot",
+                slot.0.as_str(),
+            ),
             (
                 "ROUKAKU_RUNTIME_MODULE_PROVIDER_INVALID",
                 "provider_id",

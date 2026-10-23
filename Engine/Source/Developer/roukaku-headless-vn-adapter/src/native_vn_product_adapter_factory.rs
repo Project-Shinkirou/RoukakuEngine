@@ -140,8 +140,8 @@ impl ProductAdapterFactory for NativeVnProductAdapterFactory {
                     .map_err(|error| binding("policy.preload", error))?,
                     max_asset_cache_bytes: asset_cache_bytes,
                     max_glyph_cache_bytes: glyph_cache_bytes,
-                    runtime_execution: roukaku_player_vn::NativeVnRuntimeExecution::evidence_parallel(
-                    ),
+                    runtime_execution:
+                        roukaku_player_vn::NativeVnRuntimeExecution::evidence_parallel(),
                 },
             )
             .map_err(|error| binding("runtime.open", error))?;

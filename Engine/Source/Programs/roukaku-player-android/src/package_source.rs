@@ -45,7 +45,7 @@ impl BoundedByteSource for CancellableSource {
 mod tests {
     use super::*;
     use roukaku_package::{
-        RoukakuContainerBuilder, RoukakuContainerReader, ContainerKind, SectionPayload,
+        ContainerKind, RoukakuContainerBuilder, RoukakuContainerReader, SectionPayload,
     };
 
     struct CountedSource {

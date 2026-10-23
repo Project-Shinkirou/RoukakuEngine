@@ -232,7 +232,9 @@ impl NativeVnHostCommandSource {
                 total
                     .checked_add(self.texture(asset_id)?.rgba8.len() as u64)
                     .ok_or_else(|| {
-                        NativeVnHostError::Asset("ROUKAKU_PLAYER_GPU_RESIDENT_BYTES_OVERFLOW".into())
+                        NativeVnHostError::Asset(
+                            "ROUKAKU_PLAYER_GPU_RESIDENT_BYTES_OVERFLOW".into(),
+                        )
                     })
             })?;
             self.evict_gpu_textures_for(missing_bytes, &texture_ids, &mut lifecycle)?;
@@ -242,7 +244,9 @@ impl NativeVnHostCommandSource {
                     .resident_texture_bytes
                     .checked_add(frame.rgba8.len() as u64)
                     .ok_or_else(|| {
-                        NativeVnHostError::Asset("ROUKAKU_PLAYER_GPU_RESIDENT_BYTES_OVERFLOW".into())
+                        NativeVnHostError::Asset(
+                            "ROUKAKU_PLAYER_GPU_RESIDENT_BYTES_OVERFLOW".into(),
+                        )
                     })?;
                 self.live_texture_ids.insert(asset_id.clone());
                 self.live_texture_bytes

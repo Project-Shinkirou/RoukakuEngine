@@ -173,8 +173,8 @@ fn extension_source_allows_repeated_timeline_edits_without_authorizing_execution
         "ROUKAKU_VN_COMMAND_UNBOUND"
     );
     let compiled = workspace
-        .compile(
-            CompileRoukakuProjectOptions::default().bind_extension(ExtensionCommandDescriptor {
+        .compile(CompileRoukakuProjectOptions::default().bind_extension(
+            ExtensionCommandDescriptor {
                 command: "studio_fx".into(),
                 provider_id: "studio.presentation".into(),
                 schema: "studio.fx.v1".into(),
@@ -185,12 +185,15 @@ fn extension_source_allows_repeated_timeline_edits_without_authorizing_execution
                         required: true,
                     },
                 )]),
-            }),
-        )
+            },
+        ))
         .unwrap();
     assert_eq!(compiled.story.source_map.get("pan").unwrap().line, 5);
     workspace.undo().unwrap();
-    assert_eq!(workspace.document("main.roukaku").unwrap().text, after_insert);
+    assert_eq!(
+        workspace.document("main.roukaku").unwrap().text,
+        after_insert
+    );
     workspace.undo().unwrap();
     assert_eq!(workspace.document("main.roukaku").unwrap().text, source);
     assert!(workspace.undo().is_err());

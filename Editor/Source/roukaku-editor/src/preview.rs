@@ -411,7 +411,7 @@ impl Drop for Preview {
 mod tests {
     use super::*;
     use roukaku_core::Hash256;
-    use roukaku_vn_editor::{RoukakuSource, PreviewDocumentRevision};
+    use roukaku_vn_editor::{PreviewDocumentRevision, RoukakuSource};
     use std::collections::BTreeMap;
 
     fn idle_preview() -> Preview {

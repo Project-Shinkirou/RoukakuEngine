@@ -91,20 +91,23 @@ impl NativeVnRuntimeHost {
         &mut self,
         policy: crate::PreparedPolicyActions,
     ) -> Result<(), VnHostError> {
-        let runtime = self
-            .runtime
-            .as_mut()
-            .ok_or_else(|| VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "session is not open"))?;
+        let runtime = self.runtime.as_mut().ok_or_else(|| {
+            VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "session is not open")
+        })?;
         let capabilities = policy
             .capabilities()
             .map_err(|error| VnHostError::new("ROUKAKU_PLAYER_POLICY_GRANTS", error.to_string()))?;
         runtime
             .bind_policy_actions(policy.bindings.clone())
-            .map_err(|error| VnHostError::new("ROUKAKU_PLAYER_POLICY_BINDING", error.to_string()))?;
+            .map_err(|error| {
+                VnHostError::new("ROUKAKU_PLAYER_POLICY_BINDING", error.to_string())
+            })?;
         if !policy.bindings.is_empty() {
             runtime
                 .bind_policy_io(Arc::new(policy), capabilities)
-                .map_err(|error| VnHostError::new("ROUKAKU_PLAYER_POLICY_HOST", error.to_string()))?;
+                .map_err(|error| {
+                    VnHostError::new("ROUKAKU_PLAYER_POLICY_HOST", error.to_string())
+                })?;
         }
         Ok(())
     }
@@ -122,7 +125,10 @@ impl NativeVnRuntimeHost {
         input: NativeVnStepInput,
     ) -> Result<NativeVnStepOutput, VnHostError> {
         self.validate_session(self.session.as_ref().ok_or_else(|| {
-            VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "NativeVN session is not open")
+            VnHostError::new(
+                "ROUKAKU_RUNTIME_HOST_SESSION",
+                "NativeVN session is not open",
+            )
         })?)?;
         self.require_healthy()?;
         if self.last_step.checked_add(1) != Some(input.timing.fixed_step)
@@ -165,7 +171,10 @@ impl NativeVnRuntimeHost {
 
     pub(super) fn save(&mut self) -> Result<SaveBlob, VnHostError> {
         self.validate_session(self.session.as_ref().ok_or_else(|| {
-            VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "NativeVN session is not open")
+            VnHostError::new(
+                "ROUKAKU_RUNTIME_HOST_SESSION",
+                "NativeVN session is not open",
+            )
         })?)?;
         self.require_healthy()?;
         self.failed = true;
@@ -186,7 +195,10 @@ impl NativeVnRuntimeHost {
 
     pub(super) fn restore(&mut self, blob: SaveBlob) -> Result<LoadReport, VnHostError> {
         self.validate_session(self.session.as_ref().ok_or_else(|| {
-            VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "NativeVN session is not open")
+            VnHostError::new(
+                "ROUKAKU_RUNTIME_HOST_SESSION",
+                "NativeVN session is not open",
+            )
         })?)?;
         self.limits.validate_save_bytes(blob.0.len())?;
         let was_failed = self.failed;
@@ -224,7 +236,10 @@ impl NativeVnRuntimeHost {
         self.runtime
             .as_ref()
             .ok_or_else(|| {
-                VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "NativeVN session is not open")
+                VnHostError::new(
+                    "ROUKAKU_RUNTIME_HOST_SESSION",
+                    "NativeVN session is not open",
+                )
             })?
             .validate_save(blob)
             .map_err(|error| {
@@ -234,7 +249,10 @@ impl NativeVnRuntimeHost {
 
     pub(super) fn shutdown(&mut self) -> Result<(), VnHostError> {
         let session = self.session.clone().ok_or_else(|| {
-            VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "NativeVN session is not open")
+            VnHostError::new(
+                "ROUKAKU_RUNTIME_HOST_SESSION",
+                "NativeVN session is not open",
+            )
         })?;
         self.validate_session(&session)?;
         self.runtime
@@ -428,7 +446,10 @@ mod tests {
         assert!(host.save().is_err());
         host.restore(saved).unwrap();
         assert!(!host.failed);
-        assert_eq!(host.next_mode, roukaku_runtime::TickMode::RestoreContinuation);
+        assert_eq!(
+            host.next_mode,
+            roukaku_runtime::TickMode::RestoreContinuation
+        );
         host.step(step(
             host,
             2,

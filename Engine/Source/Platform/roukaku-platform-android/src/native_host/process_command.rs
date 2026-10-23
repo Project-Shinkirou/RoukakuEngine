@@ -435,7 +435,8 @@ impl AndroidHostApp {
             .spawn(move || {
                 let result = (|| {
                     let mut cache = VerifiedPackageCache::open(cache_root, policy)?;
-                    let client = roukaku_platform_common::HttpRangeClient::from_policies(&policies)?;
+                    let client =
+                        roukaku_platform_common::HttpRangeClient::from_policies(&policies)?;
                     let runtime = tokio::runtime::Builder::new_current_thread()
                         .enable_all()
                         .build()

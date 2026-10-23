@@ -30,7 +30,10 @@ fn package_vfs_mount_writes_vfs_manifest_and_catalog_without_asset_registry() {
     .unwrap();
     assert_eq!(manifest["schema"], "roukaku.asset_vfs_manifest.v1");
     assert_eq!(manifest["prefixes"][0]["prefix"], "package");
-    assert_eq!(manifest["prefixes"][0]["provider_id"], "roukaku.vfs.package");
+    assert_eq!(
+        manifest["prefixes"][0]["provider_id"],
+        "roukaku.vfs.package"
+    );
     assert_eq!(
         manifest["entries"][0]["vfs_uri"],
         "package:/asset/background/opening"

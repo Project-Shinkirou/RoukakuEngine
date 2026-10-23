@@ -33,7 +33,11 @@ pub(super) fn create_audio_decoder(
     let time_base = stream.time_base();
     let context =
         ffmpeg::codec::context::Context::from_parameters(stream.parameters()).map_err(|error| {
-            ffmpeg_error("ROUKAKU_FFMPEG_STREAM_DECODER", "create audio decoder", error)
+            ffmpeg_error(
+                "ROUKAKU_FFMPEG_STREAM_DECODER",
+                "create audio decoder",
+                error,
+            )
         })?;
     let decoder = context.decoder().audio().map_err(|error| {
         ffmpeg_error("ROUKAKU_FFMPEG_STREAM_DECODER", "open audio decoder", error)
@@ -180,7 +184,10 @@ pub(super) fn drain_audio(
                 let delay_us =
                     unsafe { ffmpeg::ffi::swr_get_delay(audio.resampler.as_mut_ptr(), 1_000_000) };
                 let delay_us = u64::try_from(delay_us).map_err(|_| {
-                    decode_error("ROUKAKU_FFMPEG_STREAM_TIMESTAMP", "negative resampler delay")
+                    decode_error(
+                        "ROUKAKU_FFMPEG_STREAM_TIMESTAMP",
+                        "negative resampler delay",
+                    )
                 })?;
                 let pts_us = input_pts_us.checked_sub(delay_us).ok_or_else(|| {
                     decode_error(
@@ -193,7 +200,11 @@ pub(super) fn drain_audio(
                     .resampler
                     .run(&decoded, &mut converted)
                     .map_err(|error| {
-                        ffmpeg_error("ROUKAKU_FFMPEG_STREAM_RESAMPLE", "convert audio frame", error)
+                        ffmpeg_error(
+                            "ROUKAKU_FFMPEG_STREAM_RESAMPLE",
+                            "convert audio frame",
+                            error,
+                        )
                     })?;
                 push_audio_frame(
                     audio,

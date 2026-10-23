@@ -3,8 +3,8 @@ use std::{
     sync::Arc,
 };
 
-use roukaku_core::Hash256;
 use cosmic_text::{fontdb, FontFeatures};
+use roukaku_core::Hash256;
 
 use crate::MediaError;
 
@@ -82,7 +82,9 @@ pub(super) fn load_database(
                 .iter()
                 .find(|font| font.face_index == info.index)
                 .ok_or_else(|| {
-                    MediaError::message("ROUKAKU_TEXT_FONT_FACE: selected face descriptor is missing")
+                    MediaError::message(
+                        "ROUKAKU_TEXT_FONT_FACE: selected face descriptor is missing",
+                    )
                 })?;
             if !info
                 .families

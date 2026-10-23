@@ -51,7 +51,8 @@ pub(crate) fn validate_web_player_glue(bytes: &[u8]) -> Result<(), CliError> {
     }
     if !source.contains("export default") && !source.contains(" as default") {
         return Err(
-            "ROUKAKU_WEB_PLAYER_GLUE_INVALID: missing wasm-bindgen default initializer export".into(),
+            "ROUKAKU_WEB_PLAYER_GLUE_INVALID: missing wasm-bindgen default initializer export"
+                .into(),
         );
     }
     for forbidden in [
@@ -254,7 +255,9 @@ pub(crate) fn validate_universal_macho(bytes: &[u8]) -> Result<(), CliError> {
         architectures.insert(u32::from_be_bytes(record[0..4].try_into()?));
     }
     if !architectures.contains(&CPU_X86_64) || !architectures.contains(&CPU_ARM64) {
-        return Err("ROUKAKU_MACOS_UNIVERSAL_REQUIRED: x86_64 and arm64 slices are required".into());
+        return Err(
+            "ROUKAKU_MACOS_UNIVERSAL_REQUIRED: x86_64 and arm64 slices are required".into(),
+        );
     }
     Ok(())
 }

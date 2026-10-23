@@ -158,7 +158,10 @@ async fn skipped_frames_preserve_release_and_reupload_boundaries() {
                 )
                 .await
                 .unwrap_err();
-            assert_eq!(error.code, roukaku_platform::PlatformErrorCode::InvalidState);
+            assert_eq!(
+                error.code,
+                roukaku_platform::PlatformErrorCode::InvalidState
+            );
         }
         client
             .present_scene(

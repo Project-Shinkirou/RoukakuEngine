@@ -11,7 +11,7 @@ use roukaku_ui_core::{
 use crate::lower::{lower_sources_from_cst, ParsedLine};
 
 use crate::{
-    RoukakuSource, CompiledStory, CompiledVnProject, ReadingMode, SaveCompletionPolicy,
+    CompiledStory, CompiledVnProject, ReadingMode, RoukakuSource, SaveCompletionPolicy,
     SystemPageKind, SystemUiProfilePolicy, VnError,
 };
 

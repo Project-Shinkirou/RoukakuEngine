@@ -192,9 +192,11 @@ fn restore_interrupts_pending_io_rejects_late_completion_and_preserves_failed_ca
     started.recv_timeout(Duration::from_secs(3)).unwrap();
     let saved = session.save().unwrap();
     let old_scope = session.engine.world().task_scope();
-    let mut invalid =
-        roukaku_runtime::read_runtime_save(&saved, &roukaku_core::SchemaMigrationRegistry::default())
-            .unwrap();
+    let mut invalid = roukaku_runtime::read_runtime_save(
+        &saved,
+        &roukaku_core::SchemaMigrationRegistry::default(),
+    )
+    .unwrap();
     let component = invalid
         .actors
         .component_mut(session.policy_component)

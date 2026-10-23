@@ -1,11 +1,11 @@
 use std::path::Path;
 
+use clap::ValueEnum;
 use roukaku_core::{
     PerformanceBudget, PerformanceMetricBudget, PerformanceThresholds, PerformanceUnit,
     PERFORMANCE_BUDGET_SCHEMA,
 };
 use roukaku_platform::{validate_headless_performance_profile, HeadlessHostProfile};
-use clap::ValueEnum;
 use serde::Deserialize;
 
 use super::*;
@@ -112,7 +112,9 @@ pub fn prepare_profile(
             PerformanceGpuBackend::Metal => roukaku_platform::GpuBackendPolicy::Metal,
         },
         device_type: match device_type {
-            PerformanceGpuDeviceType::Integrated => roukaku_platform::GpuDeviceTypePolicy::Integrated,
+            PerformanceGpuDeviceType::Integrated => {
+                roukaku_platform::GpuDeviceTypePolicy::Integrated
+            }
             PerformanceGpuDeviceType::Discrete => roukaku_platform::GpuDeviceTypePolicy::Discrete,
         },
         require_timestamp_query: true,

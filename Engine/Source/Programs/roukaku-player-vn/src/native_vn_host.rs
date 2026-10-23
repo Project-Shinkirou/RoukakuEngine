@@ -57,8 +57,8 @@ use roukaku_ui_core::{
     UiViewport, ValidateUi, MAX_EFFECTS_PER_CALL, MAX_MODAL_DEPTH,
 };
 use roukaku_ui_yakui::{
-    ui_frame_to_scene_commands, RoukakuTextMeasureRequest, RoukakuTextMeasureResult, RoukakuTextMeasurer,
-    RoukakuYakuiBackend, BlueprintYakuiRenderer,
+    ui_frame_to_scene_commands, BlueprintYakuiRenderer, RoukakuTextMeasureRequest,
+    RoukakuTextMeasureResult, RoukakuTextMeasurer, RoukakuYakuiBackend,
 };
 use roukaku_vn::{NativeVnStepCommand, NativeVnStepInput, NativeVnStepOutput};
 use roukaku_vn::{VnHostError, VnHostLimits};
