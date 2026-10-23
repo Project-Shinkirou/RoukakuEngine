@@ -36,7 +36,20 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Select repository Rust toolchain
+        run: rustup show
+      - name: Install Linux build prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf autoconf-archive automake libtool gettext autopoint pkg-config nasm \
+            libasound2-dev libudev-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libwayland-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libfontconfig1-dev \
+            libx11-dev libxcursor-dev libxi-dev libxrandr-dev libvulkan-dev clang cmake
+      - name: Install macOS assembler
+        if: runner.os == 'macOS'
+        run: brew install nasm
       - name: Prepare pinned native dependencies
         run: cargo xtask deps --target ${{ matrix.target }} --subtitle
       - name: Build real desktop products
@@ -57,7 +70,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Select repository Rust toolchain
+        run: rustup show
       - uses: actions/download-artifact@v4
         with:
           pattern: roukaku-*
