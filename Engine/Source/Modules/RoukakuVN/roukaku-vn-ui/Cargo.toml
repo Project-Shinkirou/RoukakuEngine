@@ -1,0 +1,16 @@
+[package]
+name = "roukaku-vn-ui"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-core = { path = "../../../Runtime/roukaku-core" }
+roukaku-ui-core = { path = "../../../Runtime/roukaku-ui-core" }
+roukaku-vn-core = { path = "../roukaku-vn-core" }
+roukaku-vn-script = { path = "../roukaku-vn-script" }
+schemars.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+unicode-segmentation.workspace = true

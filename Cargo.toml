@@ -1,0 +1,204 @@
+[workspace]
+resolver = "2"
+members = [
+    "Engine/Source/Runtime/roukaku-core",
+    "Engine/Source/Runtime/roukaku-package",
+    "Engine/Source/Runtime/roukaku-asset",
+    "Engine/Source/Runtime/roukaku-byte-source",
+    "Engine/Source/Runtime/roukaku-media-core",
+    "Engine/Source/Runtime/roukaku-media",
+    "Engine/Source/Runtime/roukaku-subtitle",
+    "Engine/Source/Runtime/roukaku-text",
+    "Engine/Source/Runtime/roukaku-audio-kira",
+    "Engine/Source/Runtime/roukaku-ui-core",
+    "Engine/Source/Runtime/roukaku-ui-yakui",
+    "Engine/Source/Runtime/roukaku-policy",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-script",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-presentation",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-core",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-policy",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-ui",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-package",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn-editor",
+    "Engine/Source/Modules/RoukakuVN/roukaku-vn",
+    "Engine/Source/Runtime/roukaku-runtime",
+    "Engine/Source/Runtime/roukaku-engine",
+    "Engine/Source/Runtime/roukaku-plugin-abi",
+    "Engine/Source/Runtime/roukaku-plugin",
+    "Engine/Source/Runtime/roukaku-worker-budget",
+    "Engine/Source/Runtime/roukaku-player-core",
+    "Engine/Source/Runtime/roukaku-headless-protocol",
+    "Engine/Source/Platform/roukaku-target",
+    "Engine/Source/Platform/roukaku-platform",
+    "Engine/Source/Platform/roukaku-platform-common",
+    "Engine/Source/Platform/roukaku-platform-headless",
+    "Engine/Source/Platform/roukaku-platform-windows",
+    "Engine/Source/Platform/roukaku-platform-linux",
+    "Engine/Source/Platform/roukaku-platform-macos",
+    "Engine/Source/Platform/roukaku-platform-android",
+    "Engine/Source/Platform/roukaku-platform-web",
+    "Engine/Source/Developer/roukaku-cook",
+    "Engine/Source/Developer/roukaku-release",
+    "Engine/Source/Developer/roukaku-property-derive",
+    "Engine/Source/Developer/roukaku-headless-test",
+    "Engine/Source/Developer/roukaku-headless-vn-adapter",
+    "Engine/Source/Developer/roukaku-observability",
+    "Engine/Source/Programs/roukaku-cli",
+    "Engine/Source/Programs/roukaku-headless",
+    "Engine/Source/Programs/roukaku-player",
+    "Engine/Source/Programs/roukaku-player-vn",
+    "Engine/Source/Programs/roukaku-player-web",
+    "Engine/Source/Programs/roukaku-player-android",
+    "Engine/Source/Programs/roukaku-crash-reporter",
+    "xtask",
+    "Examples/TsuiNoSora/Tools/original-patcher",
+    "Engine/Plugins/Fixtures/headless-presentation-provider",
+    "Engine/Plugins/Fixtures/vn-extension-provider",
+]
+exclude = ["Editor"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.92"
+version = "0.1.0"
+
+[workspace.dependencies]
+aes-gcm-siv = "0.11"
+accesskit = "=0.24.1"
+accesskit_android = { version = "=0.7.5", features = ["embedded-dex"] }
+accesskit_winit = { version = "=0.33.1", default-features = false, features = ["rwh_06"] }
+abi_stable = "0.11"
+ashpd = { version = "=0.12.3", default-features = false, features = ["tokio"] }
+base64 = "0.22"
+binrw = "0.15"
+blowfish = "=0.10.0"
+blake3 = "1"
+camino = { version = "1", features = ["serde1"] }
+clap = { version = "4", features = ["derive"] }
+configparser = "3"
+cosmic-text = "=0.18.2"
+fontdb = "=0.23.0"
+cpal = "0.17"
+crossbeam-channel = "0.5"
+kira = { version = "=0.12.2", default-features = false }
+directories = "6"
+dunce = "1"
+flate2 = "=1.1.9"
+fuser = "=0.17.0"
+ed25519-dalek = { version = "=3.0.0", default-features = false, features = ["fast"] }
+encoding_rs = "0.8"
+filetime = "0.2"
+ffmpeg-next = "9.0"
+futures-util = "0.3"
+hex = "0.4"
+hkdf = "0.12"
+hound = "3.5"
+evdev = "=0.13.2"
+gilrs = { version = "0.11.2", default-features = false }
+gstreamer = "=0.24.2"
+gstreamer-app = "=0.24.2"
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "webp",
+    "bmp",
+] }
+indexmap = { version = "2", features = ["serde"] }
+js-sys = "0.3"
+jni = "0.22.4"
+android-activity = { version = "0.6.1", default-features = false }
+ndk = "0.9.0"
+object = { version = "0.37.3", default-features = false, features = ["read"] }
+libloading = "0.8"
+lru = "=0.18.1"
+libc = "0.2"
+logos = "0.16.1"
+mlua = { version = "0.10", features = ["luau", "vendored", "serialize"] }
+luaur-rt = { version = "=0.1.8", default-features = false, features = ["serde"] }
+objc2 = "0.6.4"
+objc2-av-foundation = { version = "0.3.2", default-features = false }
+objc2-core-media = { version = "0.3.2", default-features = false }
+objc2-core-video = { version = "0.3.2", default-features = false }
+objc2-foundation = { version = "0.3.2", default-features = false }
+miette = { version = "7", features = ["fancy"] }
+naga = { version = "29", features = ["spv-in", "wgsl-out"] }
+postcard = { version = "1", features = ["alloc"] }
+proptest = "1.11.0"
+pollster = "0.4"
+proc-macro2 = "1"
+quote = "1"
+rc4 = "=0.2.0"
+reqwest = { version = "0.13.4", default-features = false, features = [
+    "json",
+    "rustls",
+    "stream",
+] }
+bangumi-api = "0.1.2"
+rcgen = "0.14"
+rfd = { version = "0.17.2", default-features = false, features = ["wayland", "xdg-portal"] }
+rtrb = "0.3.4"
+rubato = { version = "4", default-features = false, features = [
+    "fft_resampler",
+] }
+rustfft = "6.4"
+schemars = { version = "0.8", features = ["uuid1"] }
+rowan = "0.16.1"
+rusqlite = { version = "=0.40.1", default-features = false, features = ["bundled"] }
+semver = { version = "1", features = ["serde"] }
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sha2 = "0.10"
+smallvec = "1.15"
+slint = { version = "=1.17.1", default-features = false }
+slint-build = "=1.17.1"
+symphonia = { version = "0.6", features = ["all"] }
+syn = { version = "2", features = ["full"] }
+tempfile = "3"
+ctrlc = "3"
+text-size = "1.1.1"
+thiserror = "1"
+wait-timeout = "0.2"
+walkdir = "2"
+windows-sys = "0.61"
+winresource = "0.1"
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"] }
+tokio-rustls = "0.26"
+tokio-util = { version = "0.7.18", features = ["rt"] }
+tracing = "0.1"
+zeroize = { version = "1", features = ["derive"] }
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = [
+    "env-filter",
+    "fmt",
+    "json",
+] }
+tungstenite = "0.30"
+unicode-segmentation = "1"
+chumsky = "1.0.0-alpha.8"
+insta = "1.48.0"
+file-rotate = "0.8"
+fast-srgb8 = "1"
+time = { version = "0.3", features = ["formatting"] }
+uuid = { version = "1", features = ["serde"] }
+url = "2"
+unicode-normalization = "0.1"
+strsim = "0.11"
+vn = "0.11.2"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+wasm-bindgen-test = "0.3"
+wasmparser = "0.253"
+web-sys = "0.3"
+windows = { version = "0.62", default-features = false }
+winit = { version = "0.30", default-features = false }
+keyring = "=4.1.5"
+wgpu = { version = "29", features = ["static-dxc"] }
+rayon = "1.12"
+yakui-core = { git = "https://github.com/SecondHalfGames/yakui", rev = "4b87f09ce18c36975de022507123eb360153728d", default-features = false }
+yakui-widgets = { git = "https://github.com/SecondHalfGames/yakui", rev = "4b87f09ce18c36975de022507123eb360153728d", default-features = false }
+zstd = "0.13"
+anyhow = "1"
+ndk-sys = "0.6.0"
+oboe = "0.6.1"

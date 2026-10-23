@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+node_modules/
+target/
+.tmp/
+/.work/
+Emulator/Automation/.local/
+.roukaku-cache/
+Examples/TsuiNoSora/.local/
+Examples/NativeVN/.local/
+.idea
+.ida-mcp/

@@ -1,0 +1,13 @@
+[package]
+name = "roukaku-target"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+schemars.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/choice-select
+source: Audio/Master/se/choice-select.wav
+source_hash: sha256:30e13da19034f5d4eed7cf43a346e2187b059f549df3c601bcc70d785fbfed51
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

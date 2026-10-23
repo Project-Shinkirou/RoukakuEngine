@@ -1,0 +1,26 @@
+[package]
+name = "roukaku-vn-policy"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = ["luau-runtime"]
+luau-runtime = ["roukaku-policy/luau-runtime", "dep:mlua"]
+portable-luau-runtime = ["roukaku-policy/portable-luau-runtime", "dep:luaur-rt"]
+
+[dependencies]
+roukaku-asset = { path = "../../../Runtime/roukaku-asset" }
+roukaku-core = { path = "../../../Runtime/roukaku-core" }
+roukaku-ui-core = { path = "../../../Runtime/roukaku-ui-core" }
+roukaku-policy = { path = "../../../Runtime/roukaku-policy", default-features = false }
+roukaku-vn-script = { path = "../roukaku-vn-script" }
+roukaku-vn-ui = { path = "../roukaku-vn-ui" }
+mlua = { workspace = true, optional = true }
+luaur-rt = { workspace = true, optional = true }
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

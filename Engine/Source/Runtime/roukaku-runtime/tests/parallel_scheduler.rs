@@ -1,0 +1,152 @@
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Barrier},
+};
+
+use roukaku_core::StableId;
+use roukaku_runtime::{
+    ActionAccess, ActionDescriptor, ActionExecutionClass, ActionInvocation, ActionResourceKey,
+    ActionTrace, BlackboardValue, DeterministicActionContext, GuardExpr, RuntimeAction,
+    RuntimeConfig, RuntimeError, RuntimeWorld, StateDefinition, StateMachineDefinition, TickInput,
+    TransitionDefinition,
+};
+
+struct SetKeyAction {
+    id: &'static str,
+    key: &'static str,
+    barrier: Option<Arc<Barrier>>,
+}
+
+impl RuntimeAction for SetKeyAction {
+    fn descriptor(&self) -> ActionDescriptor {
+        ActionDescriptor::declared(
+            self.id,
+            "roukaku.test.parallel.input.v1",
+            "roukaku.action_trace.v1",
+            ActionExecutionClass::ParallelTransactional,
+            ActionAccess::new([], [ActionResourceKey::BlackboardKey(self.key.to_string())]),
+            0,
+        )
+    }
+
+    fn run(
+        &self,
+        ctx: &mut DeterministicActionContext<'_>,
+        input: &BTreeMap<String, BlackboardValue>,
+    ) -> Result<ActionTrace, RuntimeError> {
+        if let Some(barrier) = &self.barrier {
+            barrier.wait();
+        }
+        ctx.set_blackboard(self.key, BlackboardValue::I64(1));
+        Ok(ActionTrace {
+            action_id: self.id.to_string(),
+            payload: input.clone(),
+        })
+    }
+}
+
+fn install_machine(
+    world: &mut RuntimeWorld,
+    owner: roukaku_runtime::ActorId,
+    machine_ordinal: u64,
+    action_id: &str,
+) {
+    let start = StableId::deterministic_v7(17, machine_ordinal, 1);
+    let done = StableId::deterministic_v7(17, machine_ordinal, 2);
+    world
+        .add_state_machine(StateMachineDefinition {
+            id: StableId::deterministic_v7(17, machine_ordinal, 3),
+            owner,
+            states: vec![
+                StateDefinition {
+                    id: start,
+                    name: "start".to_string(),
+                    terminal: false,
+                },
+                StateDefinition {
+                    id: done,
+                    name: "done".to_string(),
+                    terminal: true,
+                },
+            ],
+            transitions: vec![TransitionDefinition {
+                from: start,
+                to: done,
+                guard: GuardExpr::Always,
+                actions: vec![ActionInvocation {
+                    action_id: action_id.to_string(),
+                    input: BTreeMap::new(),
+                }],
+                priority: 0,
+                source_ref: None,
+            }],
+            initial_state: start,
+        })
+        .unwrap();
+}
+
+fn run_world(
+    worker_count: usize,
+    barrier: Option<Arc<Barrier>>,
+) -> (roukaku_runtime::TickReport, Vec<u8>) {
+    let mut world = RuntimeWorld::create(RuntimeConfig::default()).unwrap();
+    world.set_machine_worker_count(worker_count).unwrap();
+    world
+        .register_action(
+            "roukaku.test",
+            SetKeyAction {
+                id: "roukaku.test.parallel.a",
+                key: "parallel.a",
+                barrier: barrier.clone(),
+            },
+        )
+        .unwrap();
+    world
+        .register_action(
+            "roukaku.test",
+            SetKeyAction {
+                id: "roukaku.test.parallel.b",
+                key: "parallel.b",
+                barrier,
+            },
+        )
+        .unwrap();
+    let owner = world.create_actor("owner", vec![]).unwrap();
+    install_machine(&mut world, owner, 1, "roukaku.test.parallel.a");
+    install_machine(&mut world, owner, 2, "roukaku.test.parallel.b");
+    let report = world
+        .tick(roukaku_runtime::TickRequest::live(
+            TickInput {
+                fixed_step: 1,
+                delta_ns: 16_666_667,
+                seed: 0,
+            },
+            vec![],
+        ))
+        .unwrap();
+    assert_eq!(
+        world.snapshot().unwrap().blackboard.get("parallel.a"),
+        Some(&BlackboardValue::I64(1))
+    );
+    assert_eq!(
+        world.snapshot().unwrap().blackboard.get("parallel.b"),
+        Some(&BlackboardValue::I64(1))
+    );
+    let saved = world.save(roukaku_runtime::SaveRequest::default()).unwrap();
+    (report, saved.0)
+}
+
+#[test]
+fn independent_machine_actions_execute_in_the_same_parallel_wave() {
+    let (report, _) = run_world(2, Some(Arc::new(Barrier::new(2))));
+    assert!(report.diagnostics.is_empty());
+}
+
+#[test]
+fn worker_counts_preserve_authoritative_state() {
+    let (_, baseline) = run_world(1, None);
+    for worker_count in [2, 4, 8] {
+        let (_, saved) = run_world(worker_count, None);
+        assert_eq!(saved, baseline);
+    }
+}

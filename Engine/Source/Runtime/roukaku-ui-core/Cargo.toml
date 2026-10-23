@@ -1,0 +1,16 @@
+[package]
+name = "roukaku-ui-core"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-core = { path = "../roukaku-core" }
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+
+[dev-dependencies]
+serde_json.workspace = true

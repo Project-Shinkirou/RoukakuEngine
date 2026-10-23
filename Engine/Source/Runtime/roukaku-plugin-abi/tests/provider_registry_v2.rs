@@ -1,0 +1,156 @@
+use roukaku_plugin_abi::{
+    LoadPhase, PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
+    ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
+    PROVIDER_POLICY_SCHEMA,
+};
+
+fn context(required_capability: &str) -> ProviderBindingContext {
+    ProviderBindingContext {
+        package_id: "game.package".into(),
+        target: "game".into(),
+        profile: "desktop-release".into(),
+        required_capability: required_capability.into(),
+        engine_version: "0.1.0".into(),
+        rustc_fingerprint: "rustc-stable".into(),
+        feature_fingerprint: "runtime-typed-v3".into(),
+        abi_fingerprint: "roukaku-plugin-abi-v3".into(),
+    }
+}
+
+fn registry_and_policy() -> (PluginExtensionRegistrySnapshot, ProviderPolicy) {
+    let binding = ProviderBinding::new(
+        "presentation",
+        "roukaku.renderer.wgpu",
+        context("renderer2d.wgpu"),
+    )
+    .unwrap();
+    let registry = PluginExtensionRegistrySnapshot {
+        schema: PLUGIN_EXTENSION_REGISTRY_SCHEMA.into(),
+        providers: vec![ProviderExtensionRecord {
+            slot: "presentation".into(),
+            provider_id: "roukaku.renderer.wgpu".into(),
+            capability: "renderer2d.wgpu".into(),
+            phase: LoadPhase::Runtime,
+            packaged: true,
+            engine_version: "0.1.0".into(),
+            rustc_fingerprint: "rustc-stable".into(),
+            feature_fingerprint: "runtime-typed-v3".into(),
+            abi_fingerprint: "roukaku-plugin-abi-v3".into(),
+        }],
+        bindings: vec![binding.clone()],
+        conflicts: vec![],
+    };
+    let policy = ProviderPolicy {
+        schema: PROVIDER_POLICY_SCHEMA.into(),
+        profile: "desktop-release".into(),
+        renderer: "roukaku.renderer.wgpu".into(),
+        bindings: vec![binding],
+    };
+    (registry, policy)
+}
+
+#[test]
+fn v2_registry_closes_policy_provider_and_package_identity() {
+    let (registry, policy) = registry_and_policy();
+    assert_eq!(
+        registry
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap(),
+        "game"
+    );
+}
+
+#[test]
+fn v2_registry_blocks_hash_capability_fingerprint_and_policy_drift() {
+    let (registry, policy) = registry_and_policy();
+
+    let mut tampered = registry.clone();
+    tampered.bindings[0].provider_id = "roukaku.renderer.other".into();
+    assert_eq!(
+        tampered
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PLUGIN_BINDING_HASH_MISMATCH"
+    );
+
+    let mut capability = registry.clone();
+    capability.providers[0].capability = "renderer2d.other".into();
+    assert_eq!(
+        capability
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PLUGIN_BINDING_CAPABILITY_MISMATCH"
+    );
+
+    let mut fingerprint = registry.clone();
+    fingerprint.providers[0].abi_fingerprint = "roukaku-plugin-abi-drift".into();
+    assert_eq!(
+        fingerprint
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PLUGIN_BINDING_FINGERPRINT_MISMATCH"
+    );
+
+    let mut policy_drift = policy.clone();
+    policy_drift.bindings[0] = ProviderBinding::new(
+        "presentation",
+        "roukaku.renderer.other",
+        context("renderer2d.wgpu"),
+    )
+    .unwrap();
+    assert_eq!(
+        registry
+            .validate_embedded_package(&policy_drift, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PROVIDER_POLICY_BINDING_MISMATCH"
+    );
+}
+
+#[test]
+fn v2_registry_blocks_duplicate_slot_and_context_drift() {
+    let (mut registry, mut policy) = registry_and_policy();
+    registry.bindings.push(registry.bindings[0].clone());
+    policy.bindings.push(policy.bindings[0].clone());
+    assert_eq!(
+        registry
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PLUGIN_BINDING_CONFLICT"
+    );
+
+    let (registry, policy) = registry_and_policy();
+    assert_eq!(
+        registry
+            .validate_for_package(&policy, "game.package", "web", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PLUGIN_BINDING_CONTEXT_MISMATCH"
+    );
+}
+
+#[test]
+fn registry_rejects_removed_gameplay_slot_and_old_policy_schema() {
+    let (registry, mut policy) = registry_and_policy();
+    policy.schema = "roukaku.provider_policy.v2".into();
+    assert_eq!(
+        registry
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PROVIDER_POLICY_VERSION_UNSUPPORTED"
+    );
+    let (mut registry, policy) = registry_and_policy();
+    registry.providers[0].slot = "game_runtime_provider".into();
+    assert_eq!(
+        registry
+            .validate_embedded_package(&policy, "game.package", "desktop-release")
+            .unwrap_err()
+            .code,
+        "ROUKAKU_PLUGIN_SLOT_REMOVED"
+    );
+}

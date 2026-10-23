@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/voice/vc_ln_c04_002
+source: Audio/Voice/Master/lin_yao/vc_ln_c04_002.wav
+source_hash: sha256:57e58b2d806e10bb53b7693f0758448d921c9de97b3e01bacc4897f8a6f82a4a
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

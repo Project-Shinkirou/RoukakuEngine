@@ -1,0 +1,19 @@
+[package]
+name = "roukaku-ui-yakui"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-core = { path = "../roukaku-core" }
+roukaku-media-core = { path = "../roukaku-media-core" }
+roukaku-ui-core = { path = "../roukaku-ui-core" }
+fast-srgb8.workspace = true
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+unicode-segmentation.workspace = true
+yakui-core.workspace = true
+yakui-widgets.workspace = true

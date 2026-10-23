@@ -1,0 +1,22 @@
+[package]
+name = "roukaku-cook"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-asset = { path = "../../Runtime/roukaku-asset" }
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+camino.workspace = true
+image.workspace = true
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

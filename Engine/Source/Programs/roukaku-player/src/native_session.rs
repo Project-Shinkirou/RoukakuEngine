@@ -1,0 +1,574 @@
+use roukaku_package::{PackageManifest, PackageReader};
+use roukaku_platform::{
+    FixedDeadlineScheduler, InputState, PlatformError, PlatformErrorCode, PlatformEventKind,
+    PlatformHostSession, SurfaceRequest, WindowRequest,
+};
+use roukaku_ui_core::{UiInputEventKind, UiInsets, UiPoint, UiTouchPhase, UiViewport};
+use roukaku_vn_core::VnRunConfig;
+
+use crate::{
+    NativeVnHostCommandSource, NativeVnProductMediaHost, PlatformCommandSink,
+    PlayerHostCommandExecutor, PlayerHostCommandResult, PlayerHostResourceId, VnUiHostRequest,
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NativeVnPlayerSessionConfig {
+    pub profile: String,
+    pub locale: String,
+    pub width: u32,
+    pub height: u32,
+}
+
+pub async fn run_native_vn_player_session(
+    mut session: PlatformHostSession,
+    package: PackageReader,
+    config: NativeVnPlayerSessionConfig,
+) -> Result<(), PlatformError> {
+    let mut outcome = run_native_vn_player_session_inner(&mut session, package, config).await;
+    record_cleanup(&mut outcome, session.client.shutdown().await);
+    outcome
+}
+
+async fn run_native_vn_player_session_inner(
+    session: &mut PlatformHostSession,
+    package: PackageReader,
+    config: NativeVnPlayerSessionConfig,
+) -> Result<(), PlatformError> {
+    if config.profile.is_empty()
+        || config.locale.is_empty()
+        || config.width == 0
+        || config.height == 0
+    {
+        return Err(player_error(
+            "player.session.open",
+            "Player session config is incomplete",
+        ));
+    }
+    let manifest: PackageManifest = package
+        .container()
+        .decode_postcard("package.manifest")
+        .map_err(|error| player_error_owned("player.package.manifest", error))?;
+    if manifest.profile != config.profile {
+        return Err(player_error(
+            "player.package.profile",
+            "Player config/package profile mismatch",
+        ));
+    }
+    let window = session
+        .client
+        .create_window(WindowRequest {
+            title: manifest.package_id,
+            width: config.width,
+            height: config.height,
+            visible: true,
+        })
+        .await?;
+    let surface = session
+        .client
+        .create_surface(SurfaceRequest {
+            window,
+            width: config.width,
+            height: config.height,
+        })
+        .await?;
+    let logical_surface = PlayerHostResourceId(1);
+    let mut sink = PlatformCommandSink::new(session.client.clone());
+    sink.bind_surface(logical_surface, surface)?;
+    let mut executor = PlayerHostCommandExecutor::new(sink);
+    let runtime_execution = roukaku_player_vn::NativeVnRuntimeExecution::shipping_parallel();
+    let Some(mut prepared) =
+        crate::prepare_native_vn_open(&package, &mut session.events, runtime_execution).await?
+    else {
+        return Ok(());
+    };
+    let mut startup_events = std::mem::take(&mut prepared.events);
+    let mut vn = NativeVnHostCommandSource::from_package_with_options(
+        &package,
+        VnRunConfig {
+            profile: config.profile,
+            locale: config.locale,
+        },
+        config.width,
+        config.height,
+        logical_surface,
+        prepared.options,
+    )
+    .map_err(|error| player_error_owned("player.runtime.open", error))?;
+
+    let mut pointer = (0.0_f64, 0.0_f64);
+    let mut viewport = UiViewport {
+        physical_width: config.width,
+        physical_height: config.height,
+        scale_factor: 1.0,
+        font_scale: 1.0,
+        safe_area_points: UiInsets {
+            left: 0.0,
+            top: 0.0,
+            right: 0.0,
+            bottom: 0.0,
+        },
+    };
+    let mut window_insets = [0_u32; 4];
+    let mut save_transaction_id = 1000_u64;
+    let mut media = NativeVnProductMediaHost::default();
+    let player_result: Result<(), PlatformError> = async {
+    crate::hydrate_save_catalog(&mut vn, &mut executor).await?;
+    executor
+        .execute_batch(
+            vn.launch()
+                .map_err(|error| player_error_owned("player.runtime.launch", error))?,
+        )
+        .await
+        .map_err(|error| player_error_owned("player.host.execute", error))?;
+        let mut timeline_clock = super::native_session_clock::ActiveSessionClock::new(std::time::Instant::now());
+        media
+            .process(
+                &mut vn,
+                &mut executor,
+                timeline_clock.elapsed_ms(std::time::Instant::now()),
+                Vec::new(),
+            )
+            .await?;
+        let mut timeline_tick = FixedDeadlineScheduler::new(
+            std::time::Duration::from_nanos(16_666_667),
+        )
+        .map_err(|code| player_error("player.runtime.scheduler", code))?;
+        loop {
+            let event = tokio::select! {
+                biased;
+                event = async { if let Some(event) = startup_events.pop_front() { Ok(event) } else { session.events.recv().await } } => event?,
+                _ = tokio::time::sleep_until(tokio::time::Instant::from_std(timeline_tick.next_deadline())), if !timeline_clock.is_paused() => {
+                    let due = timeline_tick.consume_due(std::time::Instant::now()).map_err(|code| {
+                        player_error_owned(
+                            "player.runtime.scheduler",
+                            code,
+                        )
+                    })?.ok_or_else(|| player_error("player.runtime.scheduler", "scheduler woke before its deadline"))?;
+                    for _ in 0..due.steps {
+                            let mut policy_stepped = false;
+                            if let Some(batch) = vn.tick_policy().map_err(|error| roukaku_platform::PlatformError::new(roukaku_platform::PlatformErrorCode::InvalidState, "player.runtime.policy_tick", error.to_string()))? {
+                                policy_stepped = true;
+                                executor.execute_batch(batch).await.map_err(|error| roukaku_platform::PlatformError::new(roukaku_platform::PlatformErrorCode::InvalidState, "player.host.execute", error.to_string()))?;
+                            }
+                        if let Some(batch) = vn.tick_presentation(16_666_667)
+                            .map_err(|error| player_error_owned("player.runtime.presentation_tick", error))?
+                        {
+                            executor.execute_batch(batch)
+                                .await
+                                .map_err(|error| player_error_owned("player.host.execute", error))?;
+                        }
+                        if media.is_active() || policy_stepped {
+                            media.poll_and_process(
+                                &mut vn,
+                                &mut executor,
+                                timeline_clock.elapsed_ms(std::time::Instant::now()),
+                            ).await?;
+                        }
+                    }
+                    continue;
+                }
+            };
+            let player_sequence = event.sequence;
+            let ui_input = match event.kind {
+                PlatformEventKind::WindowClosed { window: closed } if closed == window => break,
+
+                PlatformEventKind::Suspended => {
+                    timeline_clock.pause(std::time::Instant::now());
+                    continue;
+                }
+                PlatformEventKind::Resumed => {
+                    if timeline_clock.resume(std::time::Instant::now()) {
+                        timeline_tick = FixedDeadlineScheduler::new(std::time::Duration::from_nanos(16_666_667))
+                            .map_err(|code| player_error("player.runtime.scheduler", code))?;
+                    }
+                    continue;
+                }
+                _ if timeline_clock.is_paused() => continue,
+
+                PlatformEventKind::WindowResized {
+                    window: resized,
+                    width,
+                    height,
+                    scale_factor,
+                } if resized == window && width > 0 && height > 0 => {
+                    viewport.physical_width = width;
+                    viewport.physical_height = height;
+                    viewport.scale_factor = scale_factor as f32;
+                    viewport.safe_area_points = UiInsets {
+                        left: window_insets[0] as f32 / viewport.scale_factor,
+                        top: window_insets[1] as f32 / viewport.scale_factor,
+                        right: window_insets[2] as f32 / viewport.scale_factor,
+                        bottom: window_insets[3] as f32 / viewport.scale_factor,
+                    };
+                    Some(UiInputEventKind::Resize {
+                        viewport: viewport.clone(),
+                    })
+                }
+                PlatformEventKind::WindowInsetsChanged { insets, .. } => {
+                    window_insets = [insets.left, insets.top, insets.right, insets.bottom];
+                    viewport.safe_area_points = UiInsets {
+                        left: insets.left as f32 / viewport.scale_factor,
+                        top: insets.top as f32 / viewport.scale_factor,
+                        right: insets.right as f32 / viewport.scale_factor,
+                        bottom: insets.bottom as f32 / viewport.scale_factor,
+                    };
+                    Some(UiInputEventKind::Resize {
+                        viewport: viewport.clone(),
+                    })
+                }
+                PlatformEventKind::Keyboard {
+                    window: input_window,
+                    physical_key,
+                    logical_key,
+                    state,
+                    repeat,
+                } if input_window == window => Some(UiInputEventKind::Keyboard {
+                    logical_key: logical_key.unwrap_or_else(|| physical_key.clone()),
+                    physical_key,
+                    state: ui_button_state(state),
+                    repeat,
+                    modifiers: 0,
+                }),
+                PlatformEventKind::PointerMoved {
+                    window: input_window,
+                    x,
+                    y,
+                } if input_window == window => {
+                    pointer = (x, y);
+                    Some(UiInputEventKind::PointerMove {
+                        position: UiPoint {
+                            x: x as f32,
+                            y: y as f32,
+                        },
+                    })
+                }
+                PlatformEventKind::PointerButton {
+                    window: input_window,
+                    button,
+                    state,
+                } if input_window == window => Some(UiInputEventKind::PointerButton {
+                    position: UiPoint {
+                        x: pointer.0 as f32,
+                        y: pointer.1 as f32,
+                    },
+                    button: ui_pointer_button(button),
+                    state: ui_button_state(state),
+                }),
+                PlatformEventKind::MouseWheel {
+                    window: input_window,
+                    delta_x,
+                    delta_y,
+                } if input_window == window => Some(UiInputEventKind::Wheel {
+                    delta_points: UiPoint {
+                        x: delta_x,
+                        y: delta_y,
+                    },
+                }),
+                PlatformEventKind::ImePreedit {
+                    window: input_window,
+                    text,
+                    cursor,
+                } if input_window == window => Some(UiInputEventKind::ImePreedit {
+                    text,
+                    cursor_start: cursor.map(|value| value.0 as u32),
+                    cursor_end: cursor.map(|value| value.1 as u32),
+                }),
+                PlatformEventKind::ImeCommit {
+                    window: input_window,
+                    text,
+                } if input_window == window => Some(UiInputEventKind::ImeCommit { text }),
+                PlatformEventKind::Touch {
+                    window: input_window,
+                    id,
+                    x,
+                    y,
+                    phase,
+                } if input_window == window => Some(UiInputEventKind::Touch {
+                    device_id: 0,
+                    contact_id: id,
+                    position: UiPoint {
+                        x: x as f32,
+                        y: y as f32,
+                    },
+                    phase: match phase {
+                        roukaku_platform::TouchPhase::Started => UiTouchPhase::Started,
+                        roukaku_platform::TouchPhase::Moved => UiTouchPhase::Moved,
+                        roukaku_platform::TouchPhase::Ended => UiTouchPhase::Ended,
+                        roukaku_platform::TouchPhase::Cancelled => UiTouchPhase::Cancelled,
+                    },
+                }),
+                PlatformEventKind::GamepadInput { control, value, .. } if value > 0.5 => {
+                    gamepad_navigation(control)
+                        .map(|action| UiInputEventKind::Navigation { action })
+                }
+                PlatformEventKind::AccessibilityAction {
+                    window: input_window,
+                    semantic_id,
+                    action,
+                    value,
+                } if input_window == window => Some(UiInputEventKind::AccessibilityAction {
+                    semantic_id,
+                    action,
+                    value,
+                }),
+                _ => None,
+            };
+            if let Some(kind) = ui_input {
+                let batch = vn
+                    .prepare_ui_input(kind)
+                    .map_err(|error| player_error_owned("player.runtime.ui_input", error))?;
+                let results = executor
+                    .execute_batch(batch)
+                    .await
+                    .map_err(|error| player_error_owned("player.host.execute", error))?;
+                for result in results {
+                    if let PlayerHostCommandResult::Captured { width, height, rgba8, .. } = result {
+                        vn.cache_gameplay_surface(width, height, rgba8)
+                            .map_err(|error| player_error_owned("player.save.capture.cache", error))?;
+                    }
+                }
+                if let Some(request) = vn.take_ui_host_request() {
+                    match request {
+                        VnUiHostRequest::Save { slot_id, .. } => {
+                            save_transaction_id =
+                                save_transaction_id.checked_add(1).ok_or_else(|| {
+                                    player_error(
+                                        "player.save.transaction",
+                                        "save transaction counter overflowed",
+                                    )
+                                })?;
+                            if let Err(error) = execute_platform_save(
+                                &mut vn,
+                                &media,
+                                &mut executor,
+                                &slot_id,
+                                PlayerHostResourceId(save_transaction_id),
+                                timeline_clock.elapsed_ms(std::time::Instant::now()),
+                            )
+                            .await
+                            {
+                                vn.mark_save_failed(&slot_id).map_err(|cleanup_error| {
+                                    player_error_owned("player.save.abort_state", cleanup_error)
+                                })?;
+                                return Err(error);
+                            }
+                            if let Some(batch) =
+                                vn.mark_save_committed(&slot_id).map_err(|error| {
+                                    player_error_owned("player.save.commit_state", error)
+                                })?
+                            {
+                                executor.execute_batch(batch).await.map_err(|error| {
+                                    player_error_owned("player.save.commit_completion", error)
+                                })?;
+                            }
+                        }
+                        VnUiHostRequest::Load { slot_id } => {
+                            execute_platform_load(&mut vn, &mut media, &mut executor, &slot_id).await?;
+                        }
+                        VnUiHostRequest::Delete { slot_id } => {
+                            executor
+                                .execute_batch(vn.delete_save(&slot_id).map_err(|error| {
+                                    player_error_owned("player.save.delete.prepare", error)
+                                })?)
+                                .await
+                                .map_err(|error| player_error_owned("player.save.delete", error))?;
+                            vn.mark_save_deleted(&slot_id).map_err(|error| {
+                                player_error_owned("player.save.delete_state", error)
+                            })?;
+                        }
+                    }
+                }
+                media
+                    .process(
+                        &mut vn,
+                        &mut executor,
+                        timeline_clock.elapsed_ms(std::time::Instant::now()),
+                        Vec::new(),
+                    )
+                    .await?;
+                log_consumed_vn_step(player_sequence, &vn)?;
+            }
+        }
+        Ok(())
+    }
+    .await;
+
+    let mut outcome = player_result;
+    record_cleanup(&mut outcome, media.shutdown(&mut vn, &mut executor).await);
+    let release = match vn.release_resources() {
+        Ok(batch) => executor
+            .execute_batch(batch)
+            .await
+            .map(|_| ())
+            .map_err(|error| player_error_owned("player.host.release_resources", error)),
+        Err(error) => Err(player_error_owned(
+            "player.runtime.release_resources",
+            error,
+        )),
+    };
+    record_cleanup(&mut outcome, release);
+    record_cleanup(
+        &mut outcome,
+        vn.shutdown()
+            .map_err(|error| player_error_owned("player.runtime.shutdown", error)),
+    );
+    record_cleanup(&mut outcome, session.client.destroy_surface(surface).await);
+    record_cleanup(&mut outcome, session.client.destroy_window(window).await);
+    outcome
+}
+
+async fn execute_platform_save(
+    vn: &mut NativeVnHostCommandSource,
+    media: &NativeVnProductMediaHost,
+    executor: &mut PlayerHostCommandExecutor<PlatformCommandSink>,
+    slot: &str,
+    transaction: PlayerHostResourceId,
+    playtime_ms: u64,
+) -> Result<(), PlatformError> {
+    if !vn.has_gameplay_thumbnail_capture() {
+        let capture = vn
+            .prepare_surface_capture()
+            .map_err(|error| player_error_owned("player.save.capture.prepare", error))?;
+        let result = executor
+            .execute_batch(capture)
+            .await
+            .map_err(|error| player_error_owned("player.save.capture", error))?;
+        let [PlayerHostCommandResult::Captured {
+            width,
+            height,
+            rgba8,
+            ..
+        }] = result.as_slice()
+        else {
+            return Err(player_error(
+                "player.save.capture",
+                "ROUKAKU_PLAYER_SAVE_CAPTURE_RESULT",
+            ));
+        };
+        vn.cache_gameplay_surface(*width, *height, rgba8.clone())
+            .map_err(|error| player_error_owned("player.save.capture.cache", error))?;
+    }
+    vn.prepare_save_metadata(slot, crate::current_save_timestamp(), playtime_ms)
+        .map_err(|error| player_error_owned("player.save.metadata", error))?;
+    let plan = vn
+        .prepare_product_save_transaction(slot, transaction, media)
+        .map_err(|error| player_error_owned("player.save.prepare", error))?;
+    executor
+        .execute_save_transaction(plan)
+        .await
+        .map_err(|error| player_error_owned("player.save.commit", error))?;
+    Ok(())
+}
+
+async fn execute_platform_load(
+    vn: &mut NativeVnHostCommandSource,
+    media: &mut NativeVnProductMediaHost,
+    executor: &mut PlayerHostCommandExecutor<PlatformCommandSink>,
+    slot: &str,
+) -> Result<(), PlatformError> {
+    let read = vn
+        .read_save(slot)
+        .map_err(|error| player_error_owned("player.load.prepare", error))?;
+    let results = executor
+        .execute_batch(read)
+        .await
+        .map_err(|error| player_error_owned("player.load.read", error))?;
+    let payload = match results.as_slice() {
+        [PlayerHostCommandResult::SaveRead { bytes }] => bytes,
+        _ => {
+            return Err(player_error(
+                "player.load.read",
+                "platform returned an unexpected save read result",
+            ));
+        }
+    };
+    let restore = vn
+        .load_product_session(slot, payload, media, executor)
+        .await
+        .map_err(|error| player_error_owned("player.load.restore", error))?;
+    executor
+        .execute_batch(restore)
+        .await
+        .map_err(|error| player_error_owned("player.load.present", error))?;
+    Ok(())
+}
+
+fn ui_button_state(state: InputState) -> roukaku_ui_core::UiButtonState {
+    match state {
+        InputState::Pressed => roukaku_ui_core::UiButtonState::Pressed,
+        InputState::Released => roukaku_ui_core::UiButtonState::Released,
+    }
+}
+
+fn ui_pointer_button(button: roukaku_platform::PointerButton) -> roukaku_ui_core::UiPointerButton {
+    match button {
+        roukaku_platform::PointerButton::Primary => roukaku_ui_core::UiPointerButton::Primary,
+        roukaku_platform::PointerButton::Secondary => roukaku_ui_core::UiPointerButton::Secondary,
+        roukaku_platform::PointerButton::Middle => roukaku_ui_core::UiPointerButton::Middle,
+        roukaku_platform::PointerButton::Back => roukaku_ui_core::UiPointerButton::Back,
+        roukaku_platform::PointerButton::Forward => roukaku_ui_core::UiPointerButton::Forward,
+        roukaku_platform::PointerButton::Other(value) => roukaku_ui_core::UiPointerButton::Other(value),
+    }
+}
+
+fn gamepad_navigation(
+    control: roukaku_platform::GamepadControl,
+) -> Option<roukaku_ui_core::UiNavigationAction> {
+    use roukaku_platform::GamepadControl;
+    use roukaku_ui_core::UiNavigationAction;
+    match control {
+        GamepadControl::DpadUp => Some(UiNavigationAction::Up),
+        GamepadControl::DpadDown => Some(UiNavigationAction::Down),
+        GamepadControl::DpadLeft => Some(UiNavigationAction::Left),
+        GamepadControl::DpadRight => Some(UiNavigationAction::Right),
+        GamepadControl::South => Some(UiNavigationAction::Activate),
+        GamepadControl::East => Some(UiNavigationAction::Cancel),
+        GamepadControl::LeftShoulder => Some(UiNavigationAction::PagePrevious),
+        GamepadControl::RightShoulder => Some(UiNavigationAction::PageNext),
+        _ => None,
+    }
+}
+
+fn log_consumed_vn_step(
+    player_sequence: u64,
+    vn: &NativeVnHostCommandSource,
+) -> Result<(), PlatformError> {
+    let evidence = vn.last_step_evidence().ok_or_else(|| {
+        player_error(
+            "player.runtime.evidence",
+            "consumed input has no RuntimeWorld evidence",
+        )
+    })?;
+    tracing::trace!(
+        event = "roukaku.player.input.consumed",
+        player_sequence,
+        fixed_step = evidence.fixed_step,
+        presentation_count = evidence.presentation_count,
+        coverage_count = evidence.coverage_reached.len(),
+        "Player consumed physical platform input"
+    );
+    Ok(())
+}
+
+fn player_error(operation: &'static str, message: &'static str) -> PlatformError {
+    PlatformError::new(PlatformErrorCode::InvalidState, operation, message)
+}
+
+fn player_error_owned(operation: &'static str, error: impl std::fmt::Display) -> PlatformError {
+    PlatformError::new(
+        PlatformErrorCode::InvalidState,
+        operation,
+        error.to_string(),
+    )
+}
+
+fn record_cleanup(outcome: &mut Result<(), PlatformError>, cleanup: Result<(), PlatformError>) {
+    if let Err(error) = cleanup {
+        if outcome.is_ok() {
+            *outcome = Err(error);
+        } else {
+            tracing::error!(event = "player.session.cleanup.failed", operation = %error.operation,
+                diagnostic_code = ?error.code, "Player cleanup failed after an earlier session error");
+        }
+    }
+}

@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/signal-lock
+source: Audio/Master/se/signal-lock.wav
+source_hash: sha256:4892830dffd0befdb809e767cc1b6e09f59055a6e63fd3e6c19a3368d49e576d
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

@@ -1,0 +1,39 @@
+[package]
+name = "roukaku-player-web"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+web-code-check = ["roukaku-platform-web/web-code-check"]
+
+[dependencies]
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-platform-web = { path = "../../Platform/roukaku-platform-web" }
+roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
+roukaku-player-vn = { path = "../roukaku-player-vn" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+futures-util.workspace = true
+js-sys.workspace = true
+web-sys = { workspace = true, features = [
+    "console",
+    "Response",
+    "Window",
+] }
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+
+[dev-dependencies]
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+wasm-bindgen-test.workspace = true

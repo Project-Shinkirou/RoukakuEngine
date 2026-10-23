@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/movie/rain-signal-loop
+source: Visual/Video/rain-signal-loop.mp4
+source_hash: sha256:44020c358f86833c1ad559e729fc0145dd29aa757f4ef7185e1164cf918393f9
+type: video.mp4
+license: project-owned-generated
+importer: roukaku.import.video
+cook:
+  processor: roukaku.cook.video
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

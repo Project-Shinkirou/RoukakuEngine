@@ -1,0 +1,259 @@
+use crate::{
+    actions::action_error, ExtensionCommandDescriptor, ExtensionFieldContract, ExtensionValue,
+    LuauPolicy, PolicyActionBinding, PolicyActionContinuation, PolicyActionOutcome,
+    PolicyExecutionBudget, PolicyIoContext, PolicyIoStatus, PolicyQueryContext, VnError,
+    VnPolicyState, POLICY_ACTION_PROVIDER,
+};
+use mlua::{Function, Lua, LuaSerdeExt, Table};
+use std::{
+    cell::{Cell, RefCell},
+    collections::BTreeMap,
+    rc::Rc,
+};
+
+struct RegisteredAction {
+    descriptor: ExtensionCommandDescriptor,
+    handler: Function,
+}
+
+/// Execute a registration-only entry. The same VM owns both registration and handler.
+fn register(
+    lua: &Lua,
+    source: &str,
+    budget: PolicyExecutionBudget,
+    shared: Option<super::luau_budget::SharedBudget>,
+) -> mlua::Result<(Table, BTreeMap<String, RegisteredAction>)> {
+    let host_budget = match shared {
+        Some(shared) => shared,
+        None => super::luau_budget::HostBudget::new(
+            &VnPolicyState::default(),
+            &PolicyQueryContext::default(),
+            budget,
+        )?,
+    };
+    let registration_budget = host_budget.clone();
+    let registered = Rc::new(RefCell::new(BTreeMap::new()));
+    let registrations = registered.clone();
+    let registration_open = Rc::new(Cell::new(true));
+    let callback_open = registration_open.clone();
+    let command = lua.create_table()?;
+    command.set(
+        "register",
+        lua.create_function(
+            move |lua, (name, manifest, handler): (String, Table, Function)| {
+                if !callback_open.get() {
+                    return Err(mlua::Error::runtime(
+                        "ROUKAKU_VN_POLICY_ACTION_REGISTRATION_CLOSED",
+                    ));
+                }
+                let bytes = registration_budget
+                    .borrow()
+                    .lua_value_bytes(&mlua::Value::Table(manifest.clone()), 0)?
+                    .saturating_add(256 + name.len());
+                registration_budget.borrow_mut().replace(0, bytes)?;
+                let fields: BTreeMap<String, ExtensionFieldContract> =
+                    lua.from_value(mlua::Value::Table(manifest.get("fields")?))?;
+                let descriptor = ExtensionCommandDescriptor {
+                    command: name.clone(),
+                    provider_id: POLICY_ACTION_PROVIDER.into(),
+                    schema: manifest.get("schema")?,
+                    fields,
+                };
+                descriptor
+                    .validate()
+                    .map_err(|d| mlua::Error::runtime(d.code))?;
+                let mut registrations = registrations.borrow_mut();
+                if registrations.len() >= 64 || registrations.contains_key(&name) {
+                    return Err(mlua::Error::runtime(
+                        "ROUKAKU_VN_POLICY_ACTION_DUPLICATE_OR_LIMIT",
+                    ));
+                }
+                registrations.insert(
+                    name,
+                    RegisteredAction {
+                        descriptor,
+                        handler,
+                    },
+                );
+                Ok(())
+            },
+        )?,
+    )?;
+    let roukaku = lua.create_table()?;
+    roukaku.set("command", command)?;
+    lua.globals().set("roukaku", roukaku.clone())?;
+    let result = lua.load(source).exec();
+    registration_open.set(false);
+    result?;
+    host_budget.borrow().check()?;
+    let mut actions = registered.borrow_mut();
+    Ok((roukaku, std::mem::take(&mut *actions)))
+}
+
+impl mlua::UserData for PolicyActionOutcome {}
+
+impl LuauPolicy {
+    /// Cook uses the same registration path and budget as runtime invocation.
+    pub fn action_descriptors(
+        source: &str,
+        budget: PolicyExecutionBudget,
+    ) -> Result<Vec<ExtensionCommandDescriptor>, VnError> {
+        if source.len() > crate::POLICY_IO_MAX_BYTES {
+            return Err(action_error("action source too large"));
+        }
+        let lua = roukaku_policy::create_sandboxed_lua(budget)
+            .map_err(|e| VnError::diagnostic(e.code(), e.to_string()))?;
+        let (_, actions) = register(&lua, source, budget, None)
+            .map_err(|_| action_error("action registration failed"))?;
+        if actions.is_empty() {
+            return Err(action_error("entry registers no actions"));
+        }
+        Ok(actions.into_values().map(|a| a.descriptor).collect())
+    }
+
+    /// Await commits explicit snapshots and IO only. Gameplay writes commit once on Complete.
+    pub fn invoke_action(
+        &mut self,
+        binding: &PolicyActionBinding,
+        continuation: &mut PolicyActionContinuation,
+        state: &mut VnPolicyState,
+        queries: &PolicyQueryContext,
+        budget: PolicyExecutionBudget,
+        host: PolicyIoContext<'_>,
+    ) -> Result<PolicyActionOutcome, VnError> {
+        binding.validate_command(&continuation.command)?;
+        continuation.validate()?;
+        let mut staged = state.clone();
+        staged.snapshots = continuation.state.clone();
+        // Action effects are a fresh transaction, never a replay of prior traces.
+        staged.mutation_trace.clear();
+        staged.command_trace.clear();
+        let capabilities = host.capabilities.restrict(&binding.read_text);
+        let mut staged_io = host.state.clone();
+        let scoped_host = PolicyIoContext {
+            state: &mut staged_io,
+            capabilities: &capabilities,
+        };
+        let outcome = self.evaluate_with(
+            &mut staged,
+            queries,
+            budget,
+            scoped_host,
+            |lua, roukaku, io, host_budget| {
+                let (registered_api, mut registered) =
+                    register(lua, &binding.source, budget, Some(host_budget.clone()))?;
+                let action = registered
+                    .remove(&binding.descriptor.command)
+                    .ok_or_else(|| mlua::Error::runtime("ROUKAKU_VN_POLICY_ACTION_MISSING"))?;
+                if action.descriptor != binding.descriptor {
+                    return Err(mlua::Error::runtime("ROUKAKU_VN_POLICY_ACTION_DESCRIPTOR"));
+                }
+                // No trace-only command effects or dynamic registrations inside a handler.
+                roukaku.set("command", mlua::Value::Nil)?;
+                let api = lua.create_table()?;
+                api.set(
+                    "complete",
+                    lua.create_function(|_, ()| Ok(PolicyActionOutcome::Complete))?,
+                )?;
+                api.set(
+                    "await",
+                    lua.create_function(|_, key: String| {
+                        Ok(PolicyActionOutcome::Await { request_key: key })
+                    })?,
+                )?;
+                roukaku.set("action", api)?;
+                let host: Table = roukaku.get("host")?;
+                for name in ["read_text", "cancel", "release"] {
+                    let original: Function = host.get(name)?;
+                    let continuation = continuation.clone();
+                    host.set(
+                        name,
+                        lua.create_function(move |_, mut args: mlua::MultiValue| {
+                            let key = match args.pop_front() {
+                                Some(mlua::Value::String(key)) => key.to_str()?.to_owned(),
+                                _ => {
+                                    return Err(mlua::Error::runtime("ROUKAKU_VN_POLICY_ACTION_KEY"))
+                                }
+                            };
+                            let key = continuation
+                                .request_key(&key)
+                                .map_err(mlua::Error::external)?;
+                            // Calling the original function preserves the typed host API and bounds.
+                            original.call::<mlua::MultiValue>((key, args))
+                        })?,
+                    )?;
+                }
+                // Preserve the table captured by module-local aliases and closures.
+                // Install only the runtime APIs after host scoping is complete.
+                registered_api.set("command", mlua::Value::Nil)?;
+                for entry in roukaku.pairs::<mlua::Value, mlua::Value>() {
+                    let (key, value) = entry?;
+                    registered_api.raw_set(key, value)?;
+                }
+                lua.globals().set("roukaku", registered_api)?;
+                let args = lua.create_table()?;
+                for (key, value) in &continuation.command.fields {
+                    let value = match value {
+                        ExtensionValue::String(s)
+                        | ExtensionValue::Symbol(s)
+                        | ExtensionValue::AssetUri(s) => mlua::Value::String(lua.create_string(s)?),
+                        ExtensionValue::Integer(i) => {
+                            if i.unsigned_abs() > super::luau::LUAU_MAX_EXACT_INTEGER {
+                                return Err(mlua::Error::runtime(
+                                    "ROUKAKU_VN_POLICY_ACTION_INTEGER_RANGE",
+                                ));
+                            }
+                            mlua::Value::Number(*i as f64)
+                        }
+                        ExtensionValue::Fixed(f) => {
+                            mlua::Value::Number(f.millionths as f64 / 1_000_000.0)
+                        }
+                        ExtensionValue::Boolean(b) => mlua::Value::Boolean(*b),
+                    };
+                    args.set(key.as_str(), value)?;
+                }
+                let result: mlua::AnyUserData = action.handler.call(args)?;
+                let outcome = result.borrow::<PolicyActionOutcome>()?.clone();
+                if let PolicyActionOutcome::Await { request_key } = &outcome {
+                    let key = continuation
+                        .request_key(request_key)
+                        .map_err(mlua::Error::external)?;
+                    if !io
+                        .borrow()
+                        .requests
+                        .get(&key)
+                        .is_some_and(|record| record.status == PolicyIoStatus::Pending)
+                    {
+                        return Err(mlua::Error::runtime(
+                            "ROUKAKU_VN_POLICY_ACTION_AWAIT_NOT_PENDING",
+                        ));
+                    }
+                }
+                if outcome == PolicyActionOutcome::Complete {
+                    let prefix = format!("a{}.", continuation.instance);
+                    if io.borrow().requests.iter().any(|(key, record)| {
+                        key.starts_with(&prefix) && record.status == PolicyIoStatus::Pending
+                    }) {
+                        return Err(mlua::Error::runtime(
+                            "ROUKAKU_VN_POLICY_ACTION_PENDING_ON_COMPLETE",
+                        ));
+                    }
+                }
+                Ok(outcome)
+            },
+        )?;
+        let mut next = continuation.clone();
+        next.state = staged.snapshots.clone();
+        next.waiting_key = match &outcome {
+            PolicyActionOutcome::Complete => None,
+            PolicyActionOutcome::Await { request_key } => Some(request_key.clone()),
+        };
+        next.validate()?;
+        *continuation = next;
+        *host.state = staged_io;
+        if outcome == PolicyActionOutcome::Complete {
+            *state = staged;
+        }
+        Ok(outcome)
+    }
+}

@@ -1,0 +1,100 @@
+schema: roukaku.target_manifest.v3
+id: com.roukaku.nativevn.signal-glass-rain
+platform_profiles:
+  windows-release:
+    schema: roukaku.platform_host_profile.v3
+    id: windows-release
+    platform: windows
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_hardware], allow_software: false }
+    decode: { providers: [wmf], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [wasapi], allow_software: false }
+    save: { providers: [saved_games], allow_software: false }
+    package_sources: [{ kind: bundled }, { kind: user_authorized }]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  linux-steam-sniper-release:
+    schema: roukaku.platform_host_profile.v3
+    id: linux-steam-sniper-release
+    platform: linux
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_vulkan], allow_software: false }
+    decode: { providers: [gstreamer], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [alsa], allow_software: false }
+    save: { providers: [xdg_data], allow_software: false }
+    package_sources: [{ kind: bundled }, { kind: user_authorized }]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  macos-release:
+    schema: roukaku.platform_host_profile.v3
+    id: macos-release
+    platform: macos
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_metal], allow_software: false }
+    decode: { providers: [avfoundation], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [coreaudio], allow_software: false }
+    save: { providers: [application_support], allow_software: false }
+    package_sources: [{ kind: bundled }, { kind: user_authorized }]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  android-release:
+    schema: roukaku.platform_host_profile.v3
+    id: android-release
+    platform: android
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_vulkan], allow_software: false }
+    decode: { providers: [mediacodec], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [oboe_aaudio, oboe_opensl_es], allow_software: false }
+    save: { providers: [android_app_storage], allow_software: false }
+    package_sources:
+      - { kind: bundled }
+      - { kind: user_authorized }
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+targets:
+  - id: nativevn-flagship-game
+    kind: game
+    crate: roukaku-vn
+    default_profile: advanced-vn
+    platforms: [windows, linux, macos, android]
+    packaged: true
+nativevn:
+  default_locale: zh-Hans
+  sources: [Scripts]
+  ui_sources: [UI]
+  ui_themes: [Themes]
+  ui_controllers: [Controllers]
+  profiles: [classic, advanced-vn]
+  asset_roots: [AssetSidecars]
+  display:
+    original_resolution: { width: 1920, height: 1080 }
+    scale_filter: linear
+    preview_layers:
+      - { vfs_uri: "package:/Visual/KeyArt/title-background.png", x: 0, y: 0 }
+package_sections:
+  - id: vn.localization.zh-Hans
+    schema: roukaku.vn.localization_table.v1
+    path: Localization/zh-Hans.json
+    codec: raw
+    targets: [nativevn-flagship-game]
+    profiles: [classic, advanced-vn]
+  - id: vn.localization.en
+    schema: roukaku.vn.localization_table.v1
+    path: Localization/en.json
+    codec: raw
+    targets: [nativevn-flagship-game]
+    profiles: [classic, advanced-vn]
+  - id: vn.flagship.route_graph
+    schema: roukaku.nativevn.flagship.route_graph.v1
+    path: Narrative/route-graph.json
+    codec: raw
+    targets: [nativevn-flagship-game]
+    profiles: [classic, advanced-vn]

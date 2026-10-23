@@ -1,0 +1,41 @@
+local controllers = {
+    { "system.quick", "ui.system.quick_panel", "roukaku.vn.ui_model.quick_panel.v1" },
+    { "system.quick.modern", "ui.system.quick_panel", "roukaku.vn.ui_model.quick_panel.v1" },
+    { "message.classic", "ui.message.classic", "roukaku.vn.ui_model.message.v2" },
+    { "choice.classic", "ui.choice.classic", "roukaku.vn.ui_model.choice.v1" },
+    { "system.standard", "ui.system.title", "roukaku.vn.ui_model.title.v1" },
+    { "system.save", "ui.system.save", "roukaku.vn.ui_model.save.v1" },
+    { "system.load", "ui.system.load", "roukaku.vn.ui_model.load.v1" },
+    { "system.config", "ui.system.config", "roukaku.vn.ui_model.config.v1" },
+    { "system.backlog", "ui.system.backlog", "roukaku.vn.ui_model.backlog.v1" },
+    { "system.gallery", "ui.system.gallery", "roukaku.vn.ui_model.gallery.v1" },
+    { "system.replay", "ui.system.replay", "roukaku.vn.ui_model.replay.v1" },
+    { "system.voice", "ui.system.voice_replay", "roukaku.vn.ui_model.voice_replay.v1" },
+    { "system.route", "ui.system.route_chart", "roukaku.vn.ui_model.route_chart.v1" },
+    { "system.localization", "ui.system.localization", "roukaku.vn.ui_model.localization_preview.v1" },
+    { "message.modern", "ui.message.modern", "roukaku.vn.ui_model.message.v2" },
+    { "choice.modern", "ui.choice.modern", "roukaku.vn.ui_model.choice.v1" },
+    { "system.modern", "ui.system.title", "roukaku.vn.ui_model.title.v1" },
+    { "system.save.modern", "ui.system.save", "roukaku.vn.ui_model.save.v1" },
+    { "system.load.modern", "ui.system.load", "roukaku.vn.ui_model.load.v1" },
+    { "system.config.modern", "ui.system.config", "roukaku.vn.ui_model.config.v1" },
+    { "system.backlog.modern", "ui.system.backlog", "roukaku.vn.ui_model.backlog.v1" },
+    { "system.gallery.modern", "ui.system.gallery", "roukaku.vn.ui_model.gallery.v1" },
+    { "system.replay.modern", "ui.system.replay", "roukaku.vn.ui_model.replay.v1" },
+    { "system.voice.modern", "ui.system.voice_replay", "roukaku.vn.ui_model.voice_replay.v1" },
+    { "system.route.modern", "ui.system.route_chart", "roukaku.vn.ui_model.route_chart.v1" },
+    { "system.localization.modern", "ui.system.localization", "roukaku.vn.ui_model.localization_preview.v1" },
+}
+
+for _, definition in controllers do
+    roukaku.ui.controller.register(definition[1], {
+        schema = "roukaku.vn.ui_controller.v1",
+        view = definition[2],
+        model_schema = definition[3],
+        snapshot = "none",
+    }, {
+        on_action = function(_context, _model, action)
+            return { roukaku.ui.effect.forward(action) }
+        end,
+    })
+end

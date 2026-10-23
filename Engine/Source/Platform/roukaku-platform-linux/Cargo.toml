@@ -1,0 +1,44 @@
+[package]
+name = "roukaku-platform-linux"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-platform = { path = "../roukaku-platform", features = ["platform-test-driver"] }
+
+[features]
+default = []
+platform-test-driver = [
+    "roukaku-platform/platform-test-driver",
+    "roukaku-platform-common/platform-test-driver",
+    "dep:evdev",
+]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+ashpd.workspace = true
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-platform-common = { path = "../roukaku-platform-common", features = ["platform-test-driver"] }
+cpal.workspace = true
+directories.workspace = true
+evdev = { workspace = true, optional = true }
+gilrs = { workspace = true, features = ["wgi"] }
+gstreamer.workspace = true
+gstreamer-app.workspace = true
+gstreamer-video = "=0.24.2"
+libc.workspace = true
+pollster.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+wgpu.workspace = true
+winit = { workspace = true, features = [
+    "rwh_06",
+    "wayland",
+    "wayland-dlopen",
+    "wayland-csd-adwaita",
+] }
+
+[dev-dependencies]
+serde_json.workspace = true

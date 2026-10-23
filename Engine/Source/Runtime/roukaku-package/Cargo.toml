@@ -1,0 +1,27 @@
+[package]
+name = "roukaku-package"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+aes-gcm-siv.workspace = true
+roukaku-asset = { path = "../roukaku-asset" }
+roukaku-byte-source = { path = "../roukaku-byte-source" }
+roukaku-core = { path = "../roukaku-core" }
+roukaku-plugin-abi = { path = "../roukaku-plugin-abi", default-features = false }
+roukaku-target = { path = "../../Platform/roukaku-target" }
+hkdf.workspace = true
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+zeroize.workspace = true
+zstd.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

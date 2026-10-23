@@ -1,0 +1,180 @@
+#![cfg(target_os = "windows")]
+
+use std::sync::atomic::AtomicBool;
+
+use roukaku_platform::{
+    AudioOutputRequest, DecodeKind, DecodeOutput, PlatformDecodeRequest, PlatformErrorCode,
+    PlatformHostFactory, PlatformHostProfile,
+};
+use cpal::traits::{DeviceTrait, HostTrait};
+
+#[tokio::test]
+async fn windows_host_uses_real_wasapi_stream_and_wmf_decode_session() {
+    let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.game");
+    let session = roukaku_platform_windows::factory()
+        .start(roukaku_platform::HostLaunchProfile::platform(profile))
+        .await
+        .expect("start Windows host");
+
+    let native_host = cpal::default_host();
+    let native_device = native_host
+        .default_output_device()
+        .expect("WASAPI default output device");
+    let native_format = native_device
+        .default_output_config()
+        .expect("WASAPI default output format");
+    let sample_rate = native_format.sample_rate();
+    let channels = native_format.channels();
+    let mut audio = session
+        .client
+        .open_audio_output(AudioOutputRequest {
+            sample_rate,
+            channels,
+            chunk_frames: 480,
+            max_buffered_frames: 4_800,
+            start_paused: false,
+            capture_samples: false,
+        })
+        .await
+        .expect("open WASAPI output");
+    let mut samples = Vec::with_capacity(960);
+    for frame in 0..480 {
+        let sample =
+            ((frame as f32 / sample_rate as f32) * 440.0 * std::f32::consts::TAU).sin() * 0.2;
+        samples.extend(std::iter::repeat_n(sample, usize::from(channels)));
+    }
+    let invalid = audio
+        .lane
+        .submit(vec![0.0; usize::from(channels)])
+        .unwrap_err();
+    assert_eq!(invalid.code, PlatformErrorCode::QueueOverflow);
+    audio
+        .lane
+        .wait_for_capacity(samples.len(), &AtomicBool::new(false))
+        .unwrap();
+    let _recycled = audio.lane.submit(samples).expect("submit audio chunk");
+    session.client.pause_audio(audio.handle).await.unwrap();
+    assert_eq!(
+        session
+            .client
+            .pause_audio(audio.handle)
+            .await
+            .unwrap_err()
+            .code,
+        PlatformErrorCode::InvalidState
+    );
+    session.client.resume_audio(audio.handle).await.unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while audio.lane.consumed_samples() < u64::from(channels) * 480 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("WASAPI consumes submitted Kira lane chunk");
+    session.client.close_audio(audio.handle).await.unwrap();
+    let aborted_audio = session
+        .client
+        .open_audio_output(AudioOutputRequest {
+            sample_rate,
+            channels,
+            chunk_frames: 480,
+            max_buffered_frames: 4_800,
+            start_paused: false,
+            capture_samples: false,
+        })
+        .await
+        .unwrap();
+    session
+        .client
+        .abort_audio(aborted_audio.handle)
+        .await
+        .unwrap();
+
+    let decode = session
+        .client
+        .open_decode(DecodeKind::Video)
+        .await
+        .expect("open WMF session");
+    for codec in ["webm", "ogg"] {
+        let error = session
+            .client
+            .decode(
+                decode,
+                PlatformDecodeRequest {
+                    sequence: 1,
+                    kind: DecodeKind::Video,
+                    codec: codec.to_string(),
+                    description: Vec::new(),
+                    sample_rate: None,
+                    channels: None,
+                    coded_width: None,
+                    coded_height: None,
+                    keyframe: true,
+                    stream_action: roukaku_platform::DecodeStreamAction::OneShot,
+                    bytes: b"invalid-media".to_vec().into(),
+                },
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(
+            error.fields.get("diagnostic_code").map(String::as_str),
+            Some("ROUKAKU_WMF_CODEC_UNSUPPORTED")
+        );
+        assert_eq!(error.code, PlatformErrorCode::ProviderUnavailable);
+        assert_eq!(error.fields.get("codec").map(String::as_str), Some(codec));
+    }
+    let corrupt = session
+        .client
+        .decode(
+            decode,
+            PlatformDecodeRequest {
+                sequence: 1,
+                kind: DecodeKind::Video,
+                codec: "mp4".to_string(),
+                description: Vec::new(),
+                sample_rate: None,
+                channels: None,
+                coded_width: None,
+                coded_height: None,
+                keyframe: true,
+                stream_action: roukaku_platform::DecodeStreamAction::OneShot,
+                bytes: b"not-an-mp4".to_vec().into(),
+            },
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(
+        corrupt.fields.get("diagnostic_code").map(String::as_str),
+        Some("ROUKAKU_WMF_DECODE")
+    );
+    let output = session
+        .client
+        .decode(
+            decode,
+            PlatformDecodeRequest {
+                sequence: 1,
+                kind: DecodeKind::Video,
+                codec: "mp4".to_string(),
+                description: Vec::new(),
+                sample_rate: None,
+                channels: None,
+                coded_width: None,
+                coded_height: None,
+                keyframe: true,
+                stream_action: roukaku_platform::DecodeStreamAction::OneShot,
+                bytes: include_bytes!("../../../../Fixtures/PublicDomainMedia/flower.mp4")
+                    .to_vec()
+                    .into(),
+            },
+        )
+        .await
+        .expect("decode public MP4");
+    match output {
+        DecodeOutput::CpuBuffer { bytes, .. } => {
+            assert!(bytes.len() >= 320 * 180 * 4);
+        }
+        _ => panic!("WMF conformance requires bounded CPU output"),
+    }
+    session.client.close_decode(decode).await.unwrap();
+    session.client.shutdown().await.unwrap();
+}

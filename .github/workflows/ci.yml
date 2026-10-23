@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  products:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        workspace: [engine, emu, editor]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: ${{ matrix.workspace == 'emu' && 'recursive' || 'false' }}
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Linux native dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libwayland-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libfontconfig1-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libvulkan-dev clang cmake
+      - name: Check product workspace
+        run: cargo xtask check --workspace ${{ matrix.workspace }}
+
+  ffmpeg:
+    runs-on: windows-latest
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Build optional FFmpeg tests
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git .tmp/vcpkg
+          .tmp/vcpkg/bootstrap-vcpkg.bat -disableMetrics
+          .tmp/vcpkg/vcpkg.exe install ffmpeg:x64-windows --clean-after-build
+          python Tools/configure_ci_ffmpeg.py
+      - name: Validate explicit decoder
+        run: cargo test -p roukaku-media --features ffmpeg-vcpkg

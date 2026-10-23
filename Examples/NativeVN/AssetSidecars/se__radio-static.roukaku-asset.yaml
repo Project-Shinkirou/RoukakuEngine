@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/radio-static
+source: Audio/Master/se/radio-static.wav
+source_hash: sha256:380b549fb4e3689ddaf2472ef4f2cc89f5553b32942daf059ed591fbecea657c
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

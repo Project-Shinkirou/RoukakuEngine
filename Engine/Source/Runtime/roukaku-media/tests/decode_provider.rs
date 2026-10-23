@@ -1,0 +1,481 @@
+use roukaku_media::{
+    open_symphonia_audio_stream, DecodeBindingContext, DecodeKind, DecodeOutput, DecodeProvider,
+    DecodeProviderRegistry, DecodeRequest, ImageDecodeProvider, SymphoniaAudioDecodeProvider,
+    SyntheticPlatformDecodeProvider,
+};
+use serde_json::Value;
+
+#[test]
+fn decode_provider_selection_is_profile_bound_not_load_order() {
+    let mut registry = DecodeProviderRegistry::default();
+    assert!(ImageDecodeProvider
+        .capability()
+        .codecs
+        .iter()
+        .any(|codec| codec == "bmp"));
+    registry.register(Box::new(ImageDecodeProvider)).unwrap();
+    registry
+        .register(Box::new(SyntheticPlatformDecodeProvider::new(
+            "platform.desktop",
+            vec!["png"],
+        )))
+        .unwrap();
+
+    let request = DecodeRequest {
+        kind: DecodeKind::Image,
+        codec: "png".to_string(),
+        bytes: vec![1].into(),
+        profile: "desktop-release".to_string(),
+    };
+    let shipping_platform =
+        DecodeBindingContext::shipping("platform.desktop", "native-game", "desktop-release");
+    assert!(registry.select(&request, &shipping_platform).is_err());
+
+    let reference_platform = shipping_platform.for_reference_tests();
+    let selected = registry.select(&request, &reference_platform).unwrap();
+    assert_eq!(selected.provider_id, "platform.desktop");
+
+    let image =
+        DecodeBindingContext::shipping("roukaku.decode.image", "native-game", "desktop-release");
+    let selected = registry.select(&request, &image).unwrap();
+    assert_eq!(selected.provider_id, "roukaku.decode.image");
+
+    assert!(registry
+        .select(
+            &request,
+            &DecodeBindingContext::shipping("missing.provider", "native-game", "desktop-release",)
+        )
+        .is_err());
+
+    assert!(registry.register(Box::new(ImageDecodeProvider)).is_err());
+
+    let mismatched_profile = DecodeRequest {
+        profile: "classic".into(),
+        ..request
+    };
+    assert!(registry
+        .select(&mismatched_profile, &reference_platform)
+        .is_err());
+}
+
+#[test]
+fn symphonia_decode_provider_decodes_bounded_wav_to_cpu_pcm() {
+    let provider = SymphoniaAudioDecodeProvider;
+    let result = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Audio,
+            codec: "wav".to_string(),
+            bytes: tiny_wav().into(),
+            profile: "desktop-release".to_string(),
+        })
+        .unwrap();
+    assert_eq!(result.provider_id, "roukaku.decode.symphonia");
+    match result.output {
+        DecodeOutput::AudioPcmI16 {
+            sample_rate,
+            channels,
+            samples,
+        } => {
+            assert_eq!(sample_rate, 8_000);
+            assert_eq!(channels, 1);
+            assert_eq!(samples.len(), 4);
+        }
+        _ => panic!("expected typed PCM output"),
+    }
+}
+
+#[test]
+fn symphonia_stream_decoder_emits_bounded_chunks_without_whole_file_pcm() {
+    let source = tiny_wav().into();
+    let mut decoder = open_symphonia_audio_stream("wav", source, 8).unwrap();
+    assert_eq!(decoder.sample_rate(), 8_000);
+    assert_eq!(decoder.channels(), 1);
+    let chunk = decoder.next_chunk().unwrap().unwrap();
+    assert_eq!(chunk.samples.len(), 4);
+    assert!(decoder.next_chunk().unwrap().is_none());
+
+    let source = tiny_wav().into();
+    let mut decoder = open_symphonia_audio_stream("wav", source, 7).unwrap();
+    assert!(decoder.next_chunk().is_err());
+}
+
+#[test]
+fn registry_executes_only_the_explicit_provider_and_validates_output_identity() {
+    let mut registry = DecodeProviderRegistry::default();
+    registry
+        .register(Box::new(SymphoniaAudioDecodeProvider))
+        .unwrap();
+    registry.register(Box::new(ImageDecodeProvider)).unwrap();
+    let request = DecodeRequest {
+        kind: DecodeKind::Audio,
+        codec: "wav".into(),
+        bytes: tiny_wav().into(),
+        profile: "desktop-release".into(),
+    };
+    let binding =
+        DecodeBindingContext::shipping("roukaku.decode.symphonia", "native-game", "desktop-release")
+            .with_declared_fallback();
+    let result = registry.decode(&request, &binding).unwrap();
+    assert_eq!(result.provider_id, "roukaku.decode.symphonia");
+    assert!(matches!(result.output, DecodeOutput::AudioPcmI16 { .. }));
+}
+
+#[test]
+fn symphonia_stream_rejects_truncated_pcm_instead_of_reporting_completion() {
+    let mut source = tiny_wav();
+    source.truncate(source.len() - 2);
+    let mut decoder = open_symphonia_audio_stream("wav", source.into(), 8).unwrap();
+    assert_eq!(decoder.next_chunk().unwrap().unwrap().samples.len(), 3);
+    let error = decoder.next_chunk().unwrap_err();
+    match error {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_AUDIO_STREAM_TRUNCATED_INPUT")),
+        error => panic!("expected a structured truncation diagnostic, got {error}"),
+    }
+}
+
+#[test]
+fn public_domain_media_manifest_matches_checked_in_assets() {
+    let manifest = public_media_manifest();
+    assert_eq!(manifest["license"], "CC0-1.0");
+    let assets = manifest["assets"].as_array().unwrap();
+    for id in [
+        "flower_mp4",
+        "flower_webm",
+        "trex_roar_mp3",
+        "flower_roar_mp4",
+    ] {
+        let asset = assets
+            .iter()
+            .find(|asset| asset["id"] == id)
+            .unwrap_or_else(|| panic!("missing fixture asset {id}"));
+        let bytes = fixture_bytes(asset["file"].as_str().unwrap());
+        assert_eq!(asset["byte_size"].as_u64().unwrap(), bytes.len() as u64);
+        assert_eq!(
+            asset["sha256"].as_str().unwrap(),
+            roukaku_core::Hash256::from_sha256(&bytes).to_string()
+        );
+        assert_eq!(asset["license"].as_str().unwrap(), "CC0-1.0");
+        if id == "flower_roar_mp4" {
+            assert_eq!(
+                asset["derived_from"],
+                serde_json::json!(["flower_mp4", "trex_roar_mp3"])
+            );
+            assert!(asset["derivation"]
+                .as_str()
+                .is_some_and(|value| { value.contains("H.264") && value.contains("AAC") }));
+        } else {
+            assert!(asset["source_url"]
+                .as_str()
+                .unwrap()
+                .starts_with("https://"));
+        }
+    }
+}
+
+#[cfg(not(feature = "ffmpeg-vcpkg"))]
+#[test]
+fn ffmpeg_probe_is_a_structured_blocker_when_feature_is_absent() {
+    assert!(!roukaku_media::ffmpeg_compiled());
+    match roukaku_media::probe_ffmpeg_provider().unwrap_err() {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_FFMPEG_FEATURE_DISABLED")),
+        other => panic!("expected structured FFmpeg diagnostic, got {other:?}"),
+    }
+}
+
+#[test]
+fn symphonia_decode_provider_decodes_public_mp3_to_cpu_pcm() {
+    let provider = SymphoniaAudioDecodeProvider;
+    let result = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Audio,
+            codec: "mp3".to_string(),
+            bytes: fixture_bytes("t-rex-roar.mp3").into(),
+            profile: "desktop-release".to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(result.provider_id, "roukaku.decode.symphonia");
+    match result.output {
+        DecodeOutput::AudioPcmI16 { samples, .. } => {
+            assert!(samples.len() > 8_000);
+            let mut stream = open_symphonia_audio_stream(
+                "mp3",
+                fixture_bytes("t-rex-roar.mp3").into(),
+                (samples.len() * 2) as u64,
+            )
+            .unwrap();
+            let mut streamed = Vec::new();
+            while let Some(chunk) = stream.next_chunk().unwrap() {
+                streamed.extend(chunk.samples);
+            }
+            assert_eq!(streamed, samples);
+        }
+        _ => panic!("expected typed PCM output"),
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_wmf_decode_provider_decodes_public_mp3_to_cpu_pcm() {
+    let provider = roukaku_media::WindowsMediaFoundationDecodeProvider::probe().unwrap();
+    let result = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Audio,
+            codec: "mp3".to_string(),
+            bytes: fixture_bytes("t-rex-roar.mp3").into(),
+            profile: "desktop-release".to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(result.provider_id, "roukaku.decode.wmf");
+    match result.output {
+        DecodeOutput::AudioPcmI16 { samples, .. } => {
+            assert!(samples.len() > 8_000);
+        }
+        _ => panic!("expected typed PCM output"),
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_wmf_decode_provider_decodes_public_mp4_first_frame_to_bgra() {
+    let provider = roukaku_media::WindowsMediaFoundationDecodeProvider::probe().unwrap();
+    let result = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Video,
+            codec: "mp4".to_string(),
+            bytes: fixture_bytes("flower.mp4").into(),
+            profile: "desktop-release".to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(result.provider_id, "roukaku.decode.wmf");
+    match result.output {
+        DecodeOutput::CpuBuffer { bytes, format } => {
+            assert!(format.starts_with("bgra8:first_frame:"));
+            assert!(bytes.len() > 320 * 180 * 4);
+        }
+        _ => panic!("expected CPU first-frame output"),
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_wmf_full_stream_decoder_enforces_frame_and_byte_budgets() {
+    let bytes = fixture_bytes("flower.mp4");
+    let frame_limited =
+        roukaku_media::decode_windows_video_stream(&bytes, 1, 64 * 1024 * 1024).unwrap_err();
+    assert_wmf_diagnostic(frame_limited);
+    let malformed =
+        roukaku_media::decode_windows_video_stream(b"not an mp4", 64, 64 * 1024 * 1024).unwrap_err();
+    assert_wmf_diagnostic(malformed);
+}
+
+#[cfg(windows)]
+fn assert_wmf_diagnostic(error: roukaku_media::MediaError) {
+    match error {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")),
+        other => panic!("expected WMF diagnostic, got {other:?}"),
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_wmf_incremental_stream_releases_frames_and_enforces_running_budget() {
+    let bytes = fixture_bytes("flower.mp4");
+    let mut decoder =
+        roukaku_media::open_windows_video_stream(&bytes, 3, 3 * 64 * 1024 * 1024).unwrap();
+    let first = decoder.next_frame().unwrap().unwrap();
+    let second = decoder.next_frame().unwrap().unwrap();
+    assert_eq!(first.sequence, 1);
+    assert_eq!(second.sequence, 2);
+    assert!(second.pts_us >= first.pts_us);
+    assert!(!first.bgra8.is_empty());
+
+    let mut limited = roukaku_media::open_windows_video_stream(&bytes, 1, 64 * 1024 * 1024).unwrap();
+    assert!(limited.next_frame().unwrap().is_some());
+    let error = limited.next_frame().unwrap_err();
+    match error {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")),
+        other => panic!("expected WMF diagnostic, got {other:?}"),
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_wmf_incremental_audio_releases_ordered_bounded_pcm_chunks() {
+    let bytes = fixture_bytes("flower.mp4");
+    let mut decoder = roukaku_media::open_windows_audio_stream(&bytes, 1_000_000).unwrap();
+    let first = decoder.next_chunk().unwrap().unwrap();
+    let second = decoder.next_chunk().unwrap().unwrap();
+    assert!((8_000..=384_000).contains(&first.sample_rate));
+    assert!((1..=8).contains(&first.channels));
+    assert!(!first.samples.is_empty());
+    assert_eq!(first.samples.len() % usize::from(first.channels), 0);
+    assert!(second.pts_us >= first.pts_us);
+
+    let mut limited = roukaku_media::open_windows_audio_stream(&bytes, 1).unwrap();
+    let error = limited.next_chunk().unwrap_err();
+    match error {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")),
+        other => panic!("expected WMF diagnostic, got {other:?}"),
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_wmf_decode_provider_video_without_transform_reports_blocking_diagnostic() {
+    let provider = roukaku_media::WindowsMediaFoundationDecodeProvider::probe().unwrap();
+    let err = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Video,
+            codec: "wmv".to_string(),
+            bytes: b"not a video".to_vec().into(),
+            profile: "desktop-release".to_string(),
+        })
+        .unwrap_err();
+
+    match err {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => {
+            assert!(diagnostics
+                .iter()
+                .any(|diag| diag.code == "ROUKAKU_WMF_DECODE"));
+        }
+        other => panic!("expected WMF diagnostic, got {other:?}"),
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[test]
+fn webcodecs_decode_provider_returns_browser_surface_token() {
+    let provider = roukaku_media::WebCodecsDecodeProvider;
+    let capability = provider.capability();
+    assert_eq!(capability.provider_id, "roukaku.decode.webcodecs");
+    assert!(capability.codecs.iter().any(|codec| codec == "mp4"));
+
+    let result = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Video,
+            codec: "mp4".to_string(),
+            bytes: vec![1, 2, 3, 4].into(),
+            profile: "web-release".to_string(),
+        })
+        .unwrap();
+
+    match result.output {
+        DecodeOutput::MediaSurfaceToken(token) => {
+            assert_eq!(token.provider_id, "roukaku.decode.webcodecs");
+            assert_eq!(token.format, "mp4");
+        }
+        DecodeOutput::CpuBuffer { .. } => panic!("expected browser-owned media token"),
+    }
+}
+
+fn tiny_wav() -> Vec<u8> {
+    let samples = [0i16, 1000, -1000, 0];
+    let data_len = samples.len() * 2;
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&(36 + data_len as u32).to_le_bytes());
+    bytes.extend_from_slice(b"WAVE");
+    bytes.extend_from_slice(b"fmt ");
+    bytes.extend_from_slice(&16u32.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&8000u32.to_le_bytes());
+    bytes.extend_from_slice(&(8000u32 * 2).to_le_bytes());
+    bytes.extend_from_slice(&2u16.to_le_bytes());
+    bytes.extend_from_slice(&16u16.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&(data_len as u32).to_le_bytes());
+    for sample in samples {
+        bytes.extend_from_slice(&sample.to_le_bytes());
+    }
+    bytes
+}
+
+fn public_media_manifest() -> Value {
+    serde_json::from_str(include_str!(
+        "../../../../Fixtures/PublicDomainMedia/manifest.json"
+    ))
+    .unwrap()
+}
+
+fn fixture_bytes(file: &str) -> Vec<u8> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../Fixtures/PublicDomainMedia")
+        .join(file);
+    std::fs::read(path).unwrap()
+}
+
+#[cfg(feature = "ffmpeg-vcpkg")]
+#[test]
+fn ffmpeg_decode_provider_decodes_real_audio_and_video() {
+    let unavailable = roukaku_media::FfmpegDecodeProvider::new_unprobed()
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Audio,
+            codec: "mp3".to_string(),
+            bytes: fixture_bytes("t-rex-roar.mp3").into(),
+            profile: "desktop".to_string(),
+        })
+        .unwrap_err();
+    assert!(unavailable.to_string().contains("explicitly probed"));
+
+    let provider = roukaku_media::FfmpegDecodeProvider::probe()
+        .expect("ROUKAKU_RUN_FFMPEG_TESTS requires the ffmpeg-vcpkg feature and native FFmpeg");
+    assert!(!provider.capability().feature_gated);
+
+    let audio = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Audio,
+            codec: "mp3".to_string(),
+            bytes: fixture_bytes("t-rex-roar.mp3").into(),
+            profile: "desktop".to_string(),
+        })
+        .unwrap();
+    assert!(matches!(
+        audio.output,
+        DecodeOutput::AudioPcmI16 { ref samples, sample_rate, channels }
+            if sample_rate > 0 && channels > 0 && !samples.is_empty()
+                && samples.len().is_multiple_of(usize::from(channels))
+    ));
+
+    let video = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Video,
+            codec: "mp4".to_string(),
+            bytes: fixture_bytes("flower.mp4").into(),
+            profile: "desktop".to_string(),
+        })
+        .unwrap();
+    assert!(matches!(
+        video.output,
+        DecodeOutput::CpuBuffer { ref format, ref bytes, .. }
+            if format.starts_with("bgra8:first_frame:") && !bytes.is_empty()
+    ));
+
+    let corrupt = provider
+        .decode(&DecodeRequest {
+            kind: DecodeKind::Video,
+            codec: "mp4".to_string(),
+            bytes: b"not an mp4 container".to_vec().into(),
+            profile: "desktop".to_string(),
+        })
+        .unwrap_err();
+    match corrupt {
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_FFMPEG_DEMUX")),
+        other => panic!("expected structured FFmpeg diagnostic, got {other:?}"),
+    }
+}

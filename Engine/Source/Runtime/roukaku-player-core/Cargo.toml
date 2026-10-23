@@ -1,0 +1,22 @@
+[package]
+name = "roukaku-player-core"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+tracing.workspace = true
+roukaku-core = { path = "../roukaku-core" }
+roukaku-byte-source = { path = "../roukaku-byte-source" }
+roukaku-media-core = { path = "../roukaku-media-core" }
+roukaku-media = { path = "../roukaku-media" }
+roukaku-ui-core = { path = "../roukaku-ui-core" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rubato.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

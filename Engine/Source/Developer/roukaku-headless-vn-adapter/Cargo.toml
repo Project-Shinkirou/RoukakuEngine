@@ -1,0 +1,28 @@
+[package]
+name = "roukaku-headless-vn-adapter"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-runtime = { path = "../../Runtime/roukaku-runtime" }
+roukaku-headless-protocol = { path = "../../Runtime/roukaku-headless-protocol" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
+roukaku-player-vn = { path = "../../Programs/roukaku-player-vn", features = ["headless-test-fixtures"] }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+roukaku-platform-headless = { path = "../../Platform/roukaku-platform-headless" }
+tempfile.workspace = true
+tokio.workspace = true

@@ -1,0 +1,87 @@
+use roukaku_package::{PackageBuildRequest, PackageBuilder, SectionPayload};
+use roukaku_platform::PlatformHostProfile;
+use roukaku_player_web::{
+    validate_package, WebPlayerConfig, WebPlayerLiveEvidence, WEB_PLAYER_LIVE_EVIDENCE_SCHEMA,
+};
+
+#[test]
+fn web_live_evidence_roundtrips_stable_runtime_identity_without_payload() {
+    let evidence = WebPlayerLiveEvidence {
+        schema: WEB_PLAYER_LIVE_EVIDENCE_SCHEMA.to_string(),
+        event: "runtime.input_consumed".to_string(),
+        target: "nativevn-game".to_string(),
+        profile: "classic".to_string(),
+        package_hash: format!("sha256:{}", "1".repeat(64)),
+        package_byte_size: None,
+        session_id: Some("session.web.1".to_string()),
+        player_sequence: Some(7),
+        input_kind: Some("pointer".to_string()),
+        fixed_step: Some(3),
+        coverage_reached: vec!["route.library".to_string()],
+        current_state_id: Some("route.library".to_string()),
+        terminal_route_ids: vec!["route.library".to_string()],
+        pending_choice_ids: vec!["choice.library".to_string()],
+        audio_meter: None,
+    };
+    let encoded = serde_json::to_vec(&evidence).unwrap();
+    let decoded: WebPlayerLiveEvidence = serde_json::from_slice(&encoded).unwrap();
+    assert_eq!(decoded, evidence);
+    let text = String::from_utf8(encoded).unwrap();
+    assert!(!text.contains("D:\\"));
+    assert!(!text.contains("payload"));
+    assert!(!text.contains("provider_id"));
+    assert!(!text.contains("runtime_state_hash"));
+}
+
+#[test]
+fn web_player_binds_profile_to_validated_package() {
+    let package = PackageBuilder::build(PackageBuildRequest::fixture(
+        "com.example.game",
+        "web-release",
+        vec![platform_profiles("game-web", "com.example.game")],
+    ))
+    .unwrap();
+    let config = WebPlayerConfig {
+        schema: "roukaku.player_config.v2".to_string(),
+        target: "game-web".to_string(),
+        profile: "web-release".to_string(),
+        platform: "web".to_string(),
+        locale: "en".to_string(),
+        package: "package/game.roukakupkg".to_string(),
+    };
+    let profile = validate_package(&config, package.as_bytes()).unwrap();
+    assert_eq!(profile.package_id, "com.example.game");
+    assert_eq!(profile.target, "game-web");
+}
+
+#[test]
+fn web_player_rejects_profile_mismatch_and_corrupt_package() {
+    let package = PackageBuilder::build(PackageBuildRequest::fixture(
+        "com.example.game",
+        "classic",
+        vec![platform_profiles("game-web", "com.example.game")],
+    ))
+    .unwrap();
+    let config = WebPlayerConfig {
+        schema: "roukaku.player_config.v2".to_string(),
+        target: "game-web".to_string(),
+        profile: "web-release".to_string(),
+        platform: "web".to_string(),
+        locale: "en".to_string(),
+        package: "package/game.roukakupkg".to_string(),
+    };
+    assert!(validate_package(&config, package.as_bytes()).is_err());
+    assert!(validate_package(&config, b"not-a-package").is_err());
+}
+
+fn platform_profiles(target: &str, package_id: &str) -> SectionPayload {
+    SectionPayload::raw(
+        "platform.profiles",
+        "roukaku.platform_profiles.v3",
+        serde_json::to_vec(&serde_json::json!({
+            "schema": "roukaku.platform_profiles.v3",
+            "profiles": [PlatformHostProfile::web_release(target, package_id)]
+        }))
+        .unwrap(),
+    )
+}

@@ -1,0 +1,336 @@
+use std::collections::BTreeMap;
+
+use roukaku_media_core::{
+    FilterGraph, FilterNode, FilterParam, FilterTarget, SceneCommand, TextureFrame,
+};
+use roukaku_platform::SceneFrame;
+use roukaku_platform_common::WgpuOffscreenRenderer;
+
+#[tokio::test]
+#[ignore = "requires a native hardware GPU runner"]
+async fn large_scene_preserves_draw_order_and_rejects_duplicate_ids() {
+    let mut renderer =
+        WgpuOffscreenRenderer::new(&roukaku_platform_common::native_wgpu_instance().unwrap())
+            .await
+            .unwrap();
+    assert_ne!(renderer.identity().device_type, "cpu");
+    let mut frame = SceneFrame {
+        sequence: 1,
+        width: 4,
+        height: 4,
+        clear_rgba: [0, 0, 0, 255],
+        commands: (0..512)
+            .map(|index| {
+                SceneCommand::rect(
+                    format!("rect.{index}"),
+                    0,
+                    0,
+                    4,
+                    4,
+                    if index == 511 {
+                        [0, 255, 0, 255]
+                    } else {
+                        [255, 0, 0, 255]
+                    },
+                )
+            })
+            .collect(),
+        semantics: None,
+    };
+    let capture = renderer.render(&frame).unwrap();
+    assert!(capture
+        .rgba8
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .all(|p| *p == [0, 255, 0, 255]));
+    frame.sequence = 2;
+    frame.commands.push(frame.commands[0].clone());
+    assert!(renderer.render(&frame).is_err());
+    frame.commands.pop();
+    frame.sequence = 3;
+    assert_eq!(renderer.render(&frame).unwrap().rgba8, capture.rgba8);
+}
+
+#[tokio::test]
+#[ignore = "requires a native hardware GPU runner"]
+async fn incremental_atlas_grows_for_wide_and_tall_textures() {
+    let mut renderer =
+        WgpuOffscreenRenderer::new(&roukaku_platform_common::native_wgpu_instance().unwrap())
+            .await
+            .unwrap();
+    assert_ne!(renderer.identity().device_type, "cpu");
+    for (index, (width, height, color)) in [
+        (2, 2, [255, 0, 0, 255]),
+        (1280, 720, [0, 255, 0, 255]),
+        (8, 2560, [0, 0, 255, 255]),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let capture = renderer
+            .render(&SceneFrame {
+                sequence: index as u64 + 1,
+                width: 8,
+                height: 8,
+                clear_rgba: [0, 0, 0, 255],
+                commands: vec![SceneCommand::Texture {
+                    id: "image".into(),
+                    frame: TextureFrame::from_vec(
+                        width,
+                        height,
+                        color.repeat((width * height) as usize),
+                    )
+                    .unwrap(),
+                    destination: roukaku_media_core::RectI::new(0, 0, 8, 8),
+                    opacity: 1.0,
+                    blend: roukaku_media_core::BlendMode::Alpha,
+                }],
+                semantics: None,
+            })
+            .unwrap();
+        assert!(capture.rgba8.as_chunks::<4>().0.iter().all(|p| *p == color));
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires a native hardware GPU runner"]
+async fn transient_texture_ids_reallocate_released_slots_across_frames() {
+    let mut renderer =
+        WgpuOffscreenRenderer::new(&roukaku_platform_common::native_wgpu_instance().unwrap())
+            .await
+            .unwrap();
+    for sequence in 1..=6 {
+        let (width, height, color) = if sequence % 2 == 0 {
+            (3, 1, [0, 255, 0, 255])
+        } else {
+            (2, 2, [255, 0, 0, 255])
+        };
+        let capture = renderer
+            .render(&SceneFrame {
+                sequence,
+                width: 4,
+                height: 4,
+                clear_rgba: [0, 0, 0, 255],
+                commands: vec![SceneCommand::Texture {
+                    id: "image".into(),
+                    frame: TextureFrame::from_vec(
+                        width,
+                        height,
+                        color.repeat((width * height) as usize),
+                    )
+                    .unwrap(),
+                    destination: roukaku_media_core::RectI::new(0, 0, 4, 4),
+                    opacity: 1.0,
+                    blend: roukaku_media_core::BlendMode::Alpha,
+                }],
+                semantics: None,
+            })
+            .unwrap();
+        assert!(capture
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == color));
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires a native hardware GPU runner"]
+async fn native_offscreen_gpu_renders_scene_filter_and_readback() {
+    let mut renderer =
+        WgpuOffscreenRenderer::new(&roukaku_platform_common::native_wgpu_instance().unwrap())
+            .await
+            .unwrap();
+    assert_eq!(renderer.identity().provider, "wgpu_offscreen");
+    assert_eq!(
+        renderer.identity().backend,
+        if cfg!(target_os = "windows") {
+            "dx12"
+        } else if cfg!(target_os = "linux") {
+            "vulkan"
+        } else {
+            "metal"
+        }
+    );
+    assert_ne!(renderer.identity().device_type, "cpu");
+    let mut params = BTreeMap::new();
+    params.insert("amount".into(), FilterParam::Float(0.5));
+    let mut frame = SceneFrame {
+        sequence: 1,
+        width: 4,
+        height: 4,
+        clear_rgba: [0, 0, 0, 255],
+        commands: vec![
+            SceneCommand::rect("gpu.rect", 0, 0, 4, 4, [200, 100, 50, 255]),
+            SceneCommand::FilterGraph {
+                graph: FilterGraph {
+                    schema: "roukaku.filter_graph.v1".into(),
+                    nodes: vec![FilterNode {
+                        id: "gpu.fade".into(),
+                        kind: "roukaku.filter.fade".into(),
+                        input: FilterTarget::Final,
+                        output: FilterTarget::Final,
+                        params,
+                        deterministic: true,
+                        allow_cpu_fallback: false,
+                    }],
+                },
+            },
+        ],
+        semantics: None,
+    };
+    let capture = renderer.render(&frame).unwrap();
+    assert_eq!((capture.width, capture.height), (4, 4));
+    assert_eq!(capture.rgba8.len(), 64);
+    assert!(capture.rgba8.as_chunks::<4>().0.iter().all(|pixel| {
+        pixel
+            .iter()
+            .zip([146u8, 71, 34, 255])
+            .all(|(actual, expected)| actual.abs_diff(expected) <= 1)
+    }));
+    assert_eq!(renderer.performance_counters().readback_bytes, 64);
+    for sequence in 2..=4 {
+        frame.sequence = sequence;
+        renderer.submit_frame(&frame).unwrap();
+        assert_eq!(renderer.capture_checkpoint().unwrap().rgba8, capture.rgba8);
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires a native hardware GPU runner"]
+async fn animated_filter_reuses_pipeline_and_rebinds_resized_input() {
+    let mut renderer =
+        WgpuOffscreenRenderer::new(&roukaku_platform_common::native_wgpu_instance().unwrap())
+            .await
+            .unwrap();
+    for sequence in 1..=64 {
+        let amount = sequence as f32 / 64.0;
+        let side = if sequence % 2 == 0 { 8 } else { 4 };
+        let frame = SceneFrame {
+            sequence,
+            width: side,
+            height: side,
+            clear_rgba: [255; 4],
+            commands: vec![SceneCommand::FilterGraph {
+                graph: FilterGraph {
+                    schema: "roukaku.filter_graph.v1".into(),
+                    nodes: vec![FilterNode {
+                        id: "fade".into(),
+                        kind: "roukaku.filter.fade".into(),
+                        input: FilterTarget::Final,
+                        output: FilterTarget::Final,
+                        params: BTreeMap::from([("amount".into(), FilterParam::Float(amount))]),
+                        deterministic: true,
+                        allow_cpu_fallback: false,
+                    }],
+                },
+            }],
+            semantics: None,
+        };
+        let capture = renderer.render(&frame).unwrap();
+        let expected = ((1.055 * amount.powf(1.0 / 2.4) - 0.055) * 255.0).round() as u8;
+        assert!(capture.rgba8.as_chunks::<4>().0.iter().all(|pixel| {
+            pixel[..3]
+                .iter()
+                .all(|channel| channel.abs_diff(expected) <= 1)
+                && pixel[3] == 255
+        }));
+        assert_eq!(renderer.performance_counters().pipeline_count, 2);
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires the Windows integrated-GPU performance runner"]
+async fn integrated_gpu_timestamp_profile_has_zero_stable_atlas_upload() {
+    let policy = roukaku_platform::GpuAdapterPolicy {
+        backend: roukaku_platform::GpuBackendPolicy::Dx12,
+        device_type: roukaku_platform::GpuDeviceTypePolicy::Integrated,
+        require_timestamp_query: true,
+        adapter_identity_hash: None,
+    };
+    let mut renderer = WgpuOffscreenRenderer::new_with_policy(
+        &roukaku_platform_common::native_wgpu_instance().unwrap(),
+        &policy,
+    )
+    .await
+    .unwrap();
+    let mut frame = SceneFrame {
+        sequence: 1,
+        width: 64,
+        height: 64,
+        clear_rgba: [0, 0, 0, 255],
+        commands: vec![SceneCommand::rect(
+            "performance.rect",
+            0,
+            0,
+            64,
+            64,
+            [255; 4],
+        )],
+        semantics: None,
+    };
+    let first = renderer.submit_frame_profiled(&frame).unwrap();
+    assert!(first.gpu_duration_ns > 0);
+    assert!(first.atlas_upload_gpu_ns > 0);
+    assert!(renderer.performance_counters().upload_bytes > 0);
+    frame.sequence += 1;
+    let second = renderer.submit_frame_profiled(&frame).unwrap();
+    assert!(second.gpu_duration_ns > 0);
+    assert_eq!(second.atlas_upload_gpu_ns, 0);
+    assert_eq!(renderer.performance_counters().upload_bytes, 0);
+
+    let pixels = [12_u8, 34, 56, 255].repeat(8 * 8);
+    frame.sequence += 1;
+    frame.commands.insert(
+        0,
+        SceneCommand::UploadTexture {
+            resource_id: "performance.incremental".into(),
+            frame: TextureFrame {
+                width: 8,
+                height: 8,
+                rgba8: pixels.into(),
+            },
+        },
+    );
+    let incremental = renderer.submit_frame_profiled(&frame).unwrap();
+    assert!(incremental.atlas_upload_gpu_ns > 0);
+    let counters = renderer.performance_counters();
+    // The incremental copy includes the atlas' one-pixel sampling guard on every edge.
+    assert_eq!(counters.upload_bytes, (8 + 2) * (8 + 2) * 4);
+    assert_eq!(counters.queue_submissions, 3);
+
+    frame.sequence += 1;
+    frame.commands.remove(0);
+    let stable = renderer.submit_frame_profiled(&frame).unwrap();
+    assert_eq!(stable.atlas_upload_gpu_ns, 0);
+    let counters = renderer.performance_counters();
+    assert_eq!(counters.upload_bytes, 0);
+    assert_eq!(counters.queue_submissions, 2);
+
+    // Two pending frames share one resolve/copy submission. Resolving another
+    // member of that batch must not count the same submission again.
+    frame.sequence += 1;
+    let pending_first = renderer.submit_frame_timestamped(&frame).unwrap();
+    frame.sequence += 1;
+    let pending_second = renderer.submit_frame_timestamped(&frame).unwrap();
+    assert_eq!(renderer.performance_counters().queue_submissions, 1);
+    if renderer
+        .try_resolve_profiled_submission(pending_first)
+        .unwrap()
+        .is_none()
+    {
+        assert_eq!(renderer.performance_counters().queue_submissions, 2);
+        renderer.resolve_profiled_submission(pending_first).unwrap();
+    }
+    assert_eq!(renderer.performance_counters().queue_submissions, 2);
+    renderer
+        .resolve_profiled_submission(pending_second)
+        .unwrap();
+    assert_eq!(renderer.performance_counters().queue_submissions, 2);
+
+    frame.sequence += 1;
+    renderer.submit_frame(&frame).unwrap();
+    assert_eq!(renderer.performance_counters().queue_submissions, 1);
+}

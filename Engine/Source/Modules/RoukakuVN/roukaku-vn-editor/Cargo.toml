@@ -1,0 +1,14 @@
+[package]
+name = "roukaku-vn-editor"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+tracing.workspace = true
+roukaku-core = { path = "../../../Runtime/roukaku-core" }
+roukaku-vn-script = { path = "../roukaku-vn-script" }
+schemars.workspace = true
+serde.workspace = true
+parking_lot = "0.12"

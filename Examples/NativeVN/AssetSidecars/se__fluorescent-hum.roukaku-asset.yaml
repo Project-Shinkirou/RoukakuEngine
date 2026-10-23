@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/fluorescent-hum
+source: Audio/Master/se/fluorescent-hum.wav
+source_hash: sha256:e6c9207f329a1e496c8bc793d2bdaa7347e0d026da559647601b26796b5476b0
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

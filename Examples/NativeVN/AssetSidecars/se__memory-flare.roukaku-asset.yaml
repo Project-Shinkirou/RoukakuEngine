@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/memory-flare
+source: Audio/Master/se/memory-flare.wav
+source_hash: sha256:3909020f0226bc62df29d0e344d4dd115a8c1849f5e3307fa1a469a9f879c342
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

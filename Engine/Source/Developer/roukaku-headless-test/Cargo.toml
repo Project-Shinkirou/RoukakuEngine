@@ -1,0 +1,15 @@
+[package]
+name = "roukaku-headless-test"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+roukaku-headless-protocol = { path = "../../Runtime/roukaku-headless-protocol" }
+serde_json.workspace = true
+thiserror.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tempfile.workspace = true

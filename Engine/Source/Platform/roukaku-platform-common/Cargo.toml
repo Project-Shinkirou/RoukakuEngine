@@ -1,0 +1,33 @@
+[package]
+name = "roukaku-platform-common"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+platform-test-driver = []
+
+[dependencies]
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-media-core = { path = "../../Runtime/roukaku-media-core" }
+roukaku-observability = { path = "../../Developer/roukaku-observability" }
+roukaku-platform = { path = "../roukaku-platform" }
+tempfile.workspace = true
+tracing.workspace = true
+rtrb.workspace = true
+sha2.workspace = true
+smallvec.workspace = true
+wgpu.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_System_Threading"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+directories.workspace = true
+reqwest = { workspace = true, features = ["rustls"] }
+futures-util.workspace = true
+tokio.workspace = true
+url.workspace = true

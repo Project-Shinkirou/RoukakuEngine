@@ -1,0 +1,126 @@
+use std::fmt;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{parse_roukaku_source, AuthoringWorkspace, ParsedRoukakuSource};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TextEdit {
+    /// UTF-8 byte offsets in the specified document version, end exclusive.
+    pub start: usize,
+    pub end: usize,
+    pub replacement: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DocumentEdits {
+    pub path: String,
+    pub version: u64,
+    pub edits: Vec<TextEdit>,
+}
+
+impl DocumentEdits {
+    pub(crate) fn apply_to(&self, source: &str) -> Result<String, EditError> {
+        crate::history::apply_text(source, &self.edits)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EditBatch {
+    pub documents: Vec<DocumentEdits>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditError {
+    NotOpen,
+    AlreadyOpen,
+    InvalidPath,
+    Conflict,
+    InvalidRange,
+    OverlappingEdits,
+    DuplicateDocument,
+    EmptyBatch,
+    NoHistory,
+    Limit,
+    HistoryLimit,
+    MissingAttribute,
+    InvalidValue,
+}
+
+impl fmt::Display for EditError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ROUKAKU_EDITOR_{self:?}")
+    }
+}
+impl std::error::Error for EditError {}
+
+impl AuthoringWorkspace {
+    /// Graph, Inspector and Timeline update the existing CST span, preserving trivia.
+    pub fn attribute_edit(
+        &self,
+        path: &str,
+        command_id: &str,
+        attribute: &str,
+        value: &str,
+    ) -> Result<EditBatch, EditError> {
+        let document = self.document(path)?;
+        let parsed = parse_roukaku_source(path, &document.text);
+        let command = parsed
+            .ast
+            .commands()
+            .find(|c| c.source_id() == Some(command_id))
+            .ok_or(EditError::MissingAttribute)?;
+        let span = command
+            .attribute(attribute)
+            .ok_or(EditError::MissingAttribute)?
+            .value_span;
+        let replacement = if value
+            .chars()
+            .all(|c| c.is_alphanumeric() || "_./-".contains(c))
+            && !value.is_empty()
+        {
+            value.to_string()
+        } else {
+            format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+        };
+        let batch = EditBatch {
+            documents: vec![DocumentEdits {
+                path: path.to_string(),
+                version: document.version,
+                edits: vec![TextEdit {
+                    start: u32::from(span.start) as usize,
+                    end: u32::from(span.end) as usize,
+                    replacement,
+                }],
+            }],
+        };
+        // Reject values the current grammar cannot represent (including multiline injection).
+        let candidate = batch.documents[0].apply_to(&document.text)?;
+        let updated = parse_roukaku_source(path, &candidate);
+        validate_edit_syntax(&updated)?;
+        if updated
+            .ast
+            .commands()
+            .find(|c| c.source_id() == Some(command_id))
+            .and_then(|c| c.attribute(attribute))
+            .map(|a| a.value())
+            != Some(value)
+        {
+            return Err(EditError::InvalidValue);
+        }
+        Ok(batch)
+    }
+}
+
+/// Extension names remain editable before project binding. This does not authorize
+/// execution: Cook still rejects every command without an explicit descriptor.
+pub(crate) fn validate_edit_syntax(parsed: &ParsedRoukakuSource) -> Result<(), EditError> {
+    if parsed
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.code != "ROUKAKU_VN_UNKNOWN_COMMAND")
+    {
+        return Err(EditError::InvalidValue);
+    }
+    Ok(())
+}

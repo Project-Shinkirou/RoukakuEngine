@@ -1,0 +1,26 @@
+use std::{fs, process::Command};
+
+#[test]
+fn player_host_uses_shared_stable_logging_pipeline() {
+    let logs = tempfile::tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_roukaku-player"))
+        .args(["--log-filter", "trace", "--log-format", "json", "--log-dir"])
+        .arg(logs.path())
+        .arg("--help")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "status={:?}\nstderr={}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let log = fs::read_to_string(logs.path().join("roukaku.jsonl")).unwrap();
+    assert!(log.contains("\"schema\":\"roukaku.log_event.v1\""));
+    assert!(log.contains("\"event\":\"player.host.start\""));
+    assert!(log.contains("\"process_role\":\"player\""));
+    let help = String::from_utf8(output.stdout).unwrap();
+    assert!(help.contains("--web-bundle"));
+    assert!(help.contains("--browser-executable"));
+    assert!(help.contains("--web-headless"));
+}

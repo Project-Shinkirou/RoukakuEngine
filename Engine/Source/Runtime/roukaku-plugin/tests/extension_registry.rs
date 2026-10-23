@@ -1,0 +1,157 @@
+use roukaku_plugin::{
+    provider_binding_context_from_runtime_package, EngineModuleSlot, ExtensionConflict, LoadPhase,
+    PluginDependency, PluginRegistrar, ProviderBindingContext, RegisteredProvider,
+};
+
+fn provider(id: &str) -> RegisteredProvider {
+    RegisteredProvider {
+        slot: EngineModuleSlot("presentation".to_string()),
+        provider_id: id.to_string(),
+        capability: "presentation.headless".to_string(),
+        phase: LoadPhase::Runtime,
+        packaged: true,
+        engine_version: "0.1.0".to_string(),
+        rustc_fingerprint: "rustc-stable".to_string(),
+        feature_fingerprint: "runtime-typed-v3".to_string(),
+        abi_fingerprint: "roukaku-plugin-abi-v3".to_string(),
+    }
+}
+
+fn context() -> ProviderBindingContext {
+    provider_binding_context_from_runtime_package(
+        &roukaku_runtime::PackageHandle::default(),
+        "presentation.headless",
+    )
+}
+
+#[test]
+fn extension_registry_preserves_explicit_binding_and_reports_conflicts() {
+    let mut registrar = PluginRegistrar::default();
+    registrar
+        .register_provider(provider("roukaku.provider.first"))
+        .unwrap();
+    registrar
+        .bind_provider(
+            &EngineModuleSlot("presentation".to_string()),
+            "roukaku.provider.first",
+            context(),
+        )
+        .unwrap();
+
+    registrar
+        .register_provider(provider("roukaku.provider.second"))
+        .unwrap();
+
+    let selected = registrar
+        .selected_provider(&EngineModuleSlot("presentation".to_string()))
+        .unwrap();
+    assert_eq!(selected.provider_id, "roukaku.provider.first");
+
+    let snapshot = registrar.extension_registry_snapshot().unwrap();
+    assert_eq!(snapshot.providers.len(), 2);
+    assert!(snapshot.conflicts.is_empty());
+
+    let error = registrar
+        .bind_provider(
+            &EngineModuleSlot("presentation".to_string()),
+            "roukaku.provider.second",
+            context(),
+        )
+        .unwrap_err();
+    assert!(error.contains("ROUKAKU_PLUGIN_BINDING_CONFLICT"));
+    assert_eq!(
+        registrar
+            .selected_provider(&EngineModuleSlot("presentation".to_string()))
+            .unwrap()
+            .provider_id,
+        "roukaku.provider.first"
+    );
+    assert_eq!(
+        registrar.extension_registry_snapshot().unwrap().conflicts,
+        vec![ExtensionConflict {
+            slot: "presentation".to_string(),
+            selected_provider: "roukaku.provider.first".to_string(),
+            conflicting_provider: "roukaku.provider.second".to_string(),
+            reason: "provider slot already has an explicit binding".to_string(),
+        }]
+    );
+
+    registrar.record_dependency(PluginDependency {
+        plugin_id: "roukaku.provider.first".to_string(),
+        version_req: ">=0.1.0".to_string(),
+        required: true,
+        reason: "renderer replacement".to_string(),
+        resolved: true,
+    });
+    assert_eq!(registrar.dependency_graph().len(), 1);
+
+    let selected_provider = registrar
+        .selected_provider(&EngineModuleSlot("presentation".to_string()))
+        .unwrap()
+        .clone();
+    registrar.unregister_provider(&selected_provider);
+    assert!(registrar
+        .selected_provider(&EngineModuleSlot("presentation".to_string()))
+        .is_none());
+}
+
+#[test]
+fn explicit_binding_is_order_independent_and_only_blocks_abi_drift() {
+    for order in [
+        ["roukaku.provider.first", "roukaku.provider.second"],
+        ["roukaku.provider.second", "roukaku.provider.first"],
+    ] {
+        let mut registrar = PluginRegistrar::default();
+        for id in order {
+            registrar.register_provider(provider(id)).unwrap();
+        }
+        let mut drifted = context();
+        drifted.abi_fingerprint = "wrong-abi".to_string();
+        assert!(registrar
+            .bind_provider(
+                &EngineModuleSlot("presentation".to_string()),
+                "roukaku.provider.second",
+                drifted,
+            )
+            .unwrap_err()
+            .contains("ROUKAKU_PLUGIN_BINDING_FINGERPRINT_MISMATCH"));
+        assert!(registrar.services.get("presentation").is_none());
+
+        let mut warning_only = context();
+        warning_only.feature_fingerprint = "different-feature".to_string();
+        warning_only.rustc_fingerprint = "different-rustc".to_string();
+        registrar
+            .bind_provider(
+                &EngineModuleSlot("presentation".to_string()),
+                "roukaku.provider.second",
+                warning_only,
+            )
+            .unwrap();
+        assert_eq!(
+            registrar
+                .selected_provider(&EngineModuleSlot("presentation".to_string()))
+                .unwrap()
+                .provider_id,
+            "roukaku.provider.second"
+        );
+    }
+}
+
+#[test]
+fn provider_registration_rejects_duplicate_and_malformed_identity_without_partial_insert() {
+    let mut registrar = PluginRegistrar::default();
+    registrar
+        .register_provider(provider("roukaku.provider.first"))
+        .unwrap();
+    let duplicate = registrar
+        .register_provider(provider("roukaku.provider.first"))
+        .unwrap_err();
+    assert!(duplicate.contains("ROUKAKU_PLUGIN_PROVIDER_DUPLICATE"));
+    assert_eq!(registrar.extensions.providers().len(), 1);
+
+    let mut malformed = provider("roukaku.provider.second");
+    malformed.capability = "renderer capability with spaces".to_string();
+    let error = registrar.register_provider(malformed).unwrap_err();
+    assert!(error.contains("ROUKAKU_PLUGIN_PROVIDER_IDENTITY_INVALID"));
+    assert_eq!(registrar.extensions.providers().len(), 1);
+}

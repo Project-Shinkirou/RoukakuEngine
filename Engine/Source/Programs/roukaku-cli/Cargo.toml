@@ -1,0 +1,63 @@
+[package]
+name = "roukaku-cli"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+ffmpeg-vcpkg = ["roukaku-release/ffmpeg-vcpkg"]
+
+[[bin]]
+name = "roukaku"
+path = "src/main.rs"
+
+[dependencies]
+roukaku-asset = { path = "../../Runtime/roukaku-asset" }
+roukaku-observability = { path = "../../Developer/roukaku-observability" }
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-cook = { path = "../../Developer/roukaku-cook" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
+roukaku-player-vn = { path = "../roukaku-player-vn" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-platform-android = { path = "../../Platform/roukaku-platform-android" }
+roukaku-platform-linux = { path = "../../Platform/roukaku-platform-linux" }
+roukaku-platform-macos = { path = "../../Platform/roukaku-platform-macos" }
+roukaku-platform-web = { path = "../../Platform/roukaku-platform-web" }
+roukaku-platform-windows = { path = "../../Platform/roukaku-platform-windows" }
+roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi" }
+roukaku-release = { path = "../../Developer/roukaku-release" }
+roukaku-target = { path = "../../Platform/roukaku-target" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+roukaku-vn = { path = "../../Modules/RoukakuVN/roukaku-vn" }
+roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
+roukaku-vn-policy = { path = "../../Modules/RoukakuVN/roukaku-vn-policy" }
+roukaku-vn-script = { path = "../../Modules/RoukakuVN/roukaku-vn-script" }
+clap.workspace = true
+image.workspace = true
+hex.workspace = true
+object.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+postcard.workspace = true
+serde_yaml.workspace = true
+tracing.workspace = true
+wasmparser.workspace = true
+tempfile.workspace = true
+ctrlc.workspace = true
+
+[dev-dependencies]
+roukaku-headless-test = { path = "../../Developer/roukaku-headless-test" }
+roukaku-headless-protocol = { path = "../../Runtime/roukaku-headless-protocol" }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_WindowsAndMessaging",
+] }

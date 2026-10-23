@@ -1,0 +1,58 @@
+use roukaku_vn_core::{
+    compile_roukaku_project, RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind,
+};
+
+const MOVIE_WAIT_STORY: &str = r#"
+story main #@id story.main
+
+state prologue #@id state.prologue
+  scene opening #@id scene.opening
+    movie layer:video.opening asset:asset:/movie/op end:wait fence:movie.opening.end fallback:asset:/movie/op_fallback interrupt:reject #@id movie.opening
+    text key:opening.after_movie speaker:narrator #@id line.after_movie
+"#;
+
+#[test]
+fn movie_end_wait_blocks_cursor_and_resumes_from_serializable_fence() {
+    let compiled = compile_roukaku_project(
+        [RoukakuSource::story("movie_wait.roukaku", MOVIE_WAIT_STORY)],
+        Default::default(),
+    )
+    .unwrap();
+    let mut runtime = VnRuntime::new(compiled, VnRunConfig::classic("zh-Hans")).unwrap();
+
+    let output = runtime
+        .apply(VnPlayerCommand::Launch {
+            story_id: "story.main".to_string(),
+            state_id: "state.prologue".to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(output.presentation.len(), 1);
+    let wait = runtime.state().pending_wait.as_ref().unwrap();
+    assert_eq!(wait.kind, VnWaitKind::MovieEnd);
+    assert_eq!(wait.fence, "movie.opening.end");
+    assert_eq!(runtime.state().cursor.as_ref().unwrap().ordinal, 1);
+
+    let still_blocked = runtime.apply(VnPlayerCommand::Advance).unwrap();
+    assert!(still_blocked.presentation.is_empty());
+    assert_eq!(runtime.state().cursor.as_ref().unwrap().ordinal, 1);
+
+    let save = runtime.save_slot("wait").unwrap();
+    assert_eq!(
+        save.state.pending_wait.as_ref().unwrap().fence,
+        "movie.opening.end"
+    );
+
+    let output = runtime
+        .apply(VnPlayerCommand::CompleteWait {
+            fence: "movie.opening.end".to_string(),
+        })
+        .unwrap();
+
+    assert_eq!(
+        runtime.state().pending_wait.as_ref().map(|wait| wait.kind),
+        Some(VnWaitKind::Dialogue)
+    );
+    assert_eq!(runtime.state().backlog[0].key, "opening.after_movie");
+    assert_eq!(output.presentation.len(), 1);
+}

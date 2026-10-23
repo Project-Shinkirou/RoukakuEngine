@@ -1,0 +1,14 @@
+[package]
+name = "roukaku-engine"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["rlib", "dylib"]
+
+[dependencies]
+roukaku-core = { path = "../roukaku-core" }
+roukaku-package = { path = "../roukaku-package" }
+roukaku-plugin = { path = "../roukaku-plugin" }
+roukaku-runtime = { path = "../roukaku-runtime" }

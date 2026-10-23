@@ -1,0 +1,48 @@
+[package]
+name = "roukaku-platform-windows"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+platform-test-driver = [
+    "roukaku-platform/platform-test-driver",
+    "roukaku-platform-common/platform-test-driver",
+]
+ffmpeg-vcpkg = ["roukaku-media/ffmpeg-vcpkg"]
+
+[dependencies]
+roukaku-platform = { path = "../roukaku-platform" }
+
+[target.'cfg(windows)'.dependencies]
+tracing.workspace = true
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-platform-common = { path = "../roukaku-platform-common" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+cpal.workspace = true
+gilrs = { workspace = true, features = ["wgi"] }
+rfd.workspace = true
+pollster.workspace = true
+postcard.workspace = true
+tokio.workspace = true
+wgpu.workspace = true
+winit = { workspace = true, features = ["rwh_06"] }
+accesskit.workspace = true
+accesskit_winit.workspace = true
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Threading",
+    "Win32_UI_Input_XboxController",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true

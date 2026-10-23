@@ -1,0 +1,45 @@
+[package]
+name = "roukaku-media"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+ffmpeg-vcpkg = ["dep:ffmpeg-next", "dep:tempfile"]
+
+[dependencies]
+roukaku-byte-source = { path = "../roukaku-byte-source" }
+roukaku-core = { path = "../roukaku-core" }
+roukaku-worker-budget = { path = "../roukaku-worker-budget" }
+roukaku-asset = { path = "../roukaku-asset" }
+roukaku-media-core = { path = "../roukaku-media-core" }
+roukaku-package = { path = "../roukaku-package" }
+roukaku-text = { path = "../roukaku-text" }
+ffmpeg-next = { workspace = true, optional = true }
+tempfile = { workspace = true, optional = true }
+image.workspace = true
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+symphonia.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+rubato.workspace = true
+sha2.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+    "Win32_System_Memory",
+] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys.workspace = true
+wasm-bindgen.workspace = true

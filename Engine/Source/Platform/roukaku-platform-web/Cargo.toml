@@ -1,0 +1,62 @@
+[package]
+name = "roukaku-platform-web"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+web-code-check = []
+platform-test-driver = ["roukaku-platform/platform-test-driver"]
+
+[dependencies]
+tracing.workspace = true
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-platform = { path = "../roukaku-platform" }
+roukaku-platform-common = { path = "../roukaku-platform-common" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+tokio.workspace = true
+serde_json.workspace = true
+wgpu.workspace = true
+rfd.workspace = true
+gilrs = { workspace = true, features = ["wgi"] }
+js-sys.workspace = true
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+web-sys = { workspace = true, features = [
+    "AudioBuffer",
+    "AudioBufferSourceNode",
+    "AudioContext",
+    "AudioContextState",
+    "AudioDestinationNode",
+    "AudioNode",
+    "AudioScheduledSourceNode",
+    "AudioWorklet",
+    "AudioWorkletNode",
+    "BaseAudioContext",
+    "CompositionEvent",
+    "Document",
+    "CssStyleDeclaration",
+    "Element",
+    "Event",
+    "EventTarget",
+    "HtmlCanvasElement",
+    "HtmlElement",
+    "Headers",
+    "KeyboardEvent",
+    "MessageEvent",
+    "MessagePort",
+    "MouseEvent",
+    "Node",
+    "PointerEvent",
+    "Response",
+    "Touch",
+    "TouchEvent",
+    "TouchList",
+    "Url",
+    "WheelEvent",
+    "Window",
+] }
+
+[dev-dependencies]
+wasm-bindgen-test.workspace = true

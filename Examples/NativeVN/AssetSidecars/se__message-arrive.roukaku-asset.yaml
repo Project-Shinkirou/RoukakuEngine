@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/message-arrive
+source: Audio/Master/se/message-arrive.wav
+source_hash: sha256:b65768d90dcf49a245572d919974ed21a5ce7567dd409df145fcafd685557d9f
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

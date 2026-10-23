@@ -1,0 +1,286 @@
+use std::collections::BTreeMap;
+
+use roukaku_core::StableId;
+use roukaku_runtime::{
+    ActionAccess, ActionDescriptor, ActionExecutionClass, ActionInvocation, ActionResourceKey,
+    ActionTrace, BlackboardValue, ComponentId, DeterministicActionContext, EventPayload,
+    EventSource, GuardExpr, RuntimeAction, RuntimeConfig, RuntimeWorld, StateDefinition,
+    StateMachineDefinition, TickInput, TransitionDefinition,
+};
+use serde::{Deserialize, Serialize};
+
+#[test]
+fn action_context_exposes_transition_trigger_event() {
+    let mut world = RuntimeWorld::create(RuntimeConfig::default()).unwrap();
+    world
+        .register_action("roukaku.test", CaptureTriggerAction)
+        .unwrap();
+    let owner = world.create_actor("vn.driver", vec![]).unwrap();
+
+    let start = StableId::deterministic_v7(1, 1, 1);
+    let done = StableId::deterministic_v7(1, 2, 1);
+    world
+        .add_state_machine(StateMachineDefinition {
+            id: StableId::deterministic_v7(1, 3, 1),
+            owner,
+            states: vec![
+                StateDefinition {
+                    id: start,
+                    name: "start".to_string(),
+                    terminal: false,
+                },
+                StateDefinition {
+                    id: done,
+                    name: "done".to_string(),
+                    terminal: true,
+                },
+            ],
+            transitions: vec![TransitionDefinition {
+                from: start,
+                to: done,
+                guard: GuardExpr::EventIs {
+                    kind: "vn.advance".to_string(),
+                },
+                actions: vec![ActionInvocation {
+                    action_id: "roukaku.test.capture_trigger".to_string(),
+                    input: BTreeMap::new(),
+                }],
+                priority: 0,
+                source_ref: None,
+            }],
+            initial_state: start,
+        })
+        .unwrap();
+
+    world
+        .emit_event(EventSource::PlayerInput, EventPayload::new("vn.advance"))
+        .unwrap();
+    world
+        .tick(roukaku_runtime::TickRequest::live(
+            TickInput {
+                fixed_step: 1,
+                delta_ns: 16_666_667,
+                seed: 0,
+            },
+            Vec::new(),
+        ))
+        .unwrap();
+
+    assert_eq!(
+        world.snapshot().unwrap().blackboard.get("trigger.kind"),
+        Some(&BlackboardValue::String("vn.advance".to_string()))
+    );
+}
+
+#[test]
+fn compiled_event_dispatch_preserves_original_event_order() {
+    let mut world = RuntimeWorld::create(RuntimeConfig::default()).unwrap();
+    world
+        .register_action("roukaku.test", CaptureTriggerAction)
+        .unwrap();
+    let owner = world.create_actor("vn.driver", vec![]).unwrap();
+    let start = StableId::deterministic_v7(3, 1, 1);
+    let done = StableId::deterministic_v7(3, 2, 1);
+    world
+        .add_state_machine(StateMachineDefinition {
+            id: StableId::deterministic_v7(3, 3, 1),
+            owner,
+            states: vec![
+                StateDefinition {
+                    id: start,
+                    name: "start".to_string(),
+                    terminal: false,
+                },
+                StateDefinition {
+                    id: done,
+                    name: "done".to_string(),
+                    terminal: true,
+                },
+            ],
+            transitions: vec![TransitionDefinition {
+                from: start,
+                to: done,
+                guard: GuardExpr::Or {
+                    terms: vec![
+                        GuardExpr::EventIs {
+                            kind: "vn.z_first".to_string(),
+                        },
+                        GuardExpr::EventIs {
+                            kind: "vn.a_second".to_string(),
+                        },
+                    ],
+                },
+                actions: vec![ActionInvocation {
+                    action_id: "roukaku.test.capture_trigger".to_string(),
+                    input: BTreeMap::new(),
+                }],
+                priority: 0,
+                source_ref: None,
+            }],
+            initial_state: start,
+        })
+        .unwrap();
+
+    world
+        .emit_event(EventSource::PlayerInput, EventPayload::new("vn.z_first"))
+        .unwrap();
+    world
+        .emit_event(EventSource::PlayerInput, EventPayload::new("vn.a_second"))
+        .unwrap();
+    world
+        .tick(roukaku_runtime::TickRequest::live(
+            TickInput {
+                fixed_step: 1,
+                delta_ns: 16_666_667,
+                seed: 0,
+            },
+            Vec::new(),
+        ))
+        .unwrap();
+
+    assert_eq!(
+        world.snapshot().unwrap().blackboard.get("trigger.kind"),
+        Some(&BlackboardValue::String("vn.z_first".to_string()))
+    );
+}
+
+struct CaptureTriggerAction;
+
+impl RuntimeAction for CaptureTriggerAction {
+    fn descriptor(&self) -> ActionDescriptor {
+        ActionDescriptor::declared(
+            "roukaku.test.capture_trigger",
+            "roukaku.test.capture_trigger.v1",
+            "roukaku.action_trace.v1",
+            ActionExecutionClass::ParallelTransactional,
+            ActionAccess::new(
+                [ActionResourceKey::EventQueue],
+                [ActionResourceKey::Blackboard],
+            ),
+            0,
+        )
+    }
+
+    fn run(
+        &self,
+        ctx: &mut DeterministicActionContext<'_>,
+        input: &BTreeMap<String, BlackboardValue>,
+    ) -> Result<ActionTrace, roukaku_runtime::RuntimeError> {
+        let kind = ctx
+            .trigger_event()
+            .expect("trigger event is present for event-guarded transition")
+            .payload
+            .kind
+            .clone();
+        ctx.set_blackboard("trigger.kind", BlackboardValue::String(kind));
+        Ok(ActionTrace {
+            action_id: self.descriptor().id,
+            payload: input.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct CounterComponent {
+    value: u32,
+}
+
+#[test]
+fn action_context_commits_typed_component_mutation() {
+    let mut world = RuntimeWorld::create(RuntimeConfig::default()).unwrap();
+    let owner = world.create_actor("runtime.owner", vec![]).unwrap();
+    let component = world
+        .attach_component(owner, "roukaku.test.counter", &CounterComponent { value: 1 })
+        .unwrap();
+    world
+        .register_action("roukaku.test", IncrementComponentAction { component })
+        .unwrap();
+    let start = StableId::deterministic_v7(2, 1, 1);
+    let done = StableId::deterministic_v7(2, 2, 1);
+    world
+        .add_state_machine(StateMachineDefinition {
+            id: StableId::deterministic_v7(2, 3, 1),
+            owner,
+            states: vec![
+                StateDefinition {
+                    id: start,
+                    name: "start".to_string(),
+                    terminal: false,
+                },
+                StateDefinition {
+                    id: done,
+                    name: "done".to_string(),
+                    terminal: true,
+                },
+            ],
+            transitions: vec![TransitionDefinition {
+                from: start,
+                to: done,
+                guard: GuardExpr::Always,
+                actions: vec![ActionInvocation {
+                    action_id: "roukaku.test.increment_component".to_string(),
+                    input: BTreeMap::new(),
+                }],
+                priority: 0,
+                source_ref: None,
+            }],
+            initial_state: start,
+        })
+        .unwrap();
+
+    world
+        .tick(roukaku_runtime::TickRequest::live(
+            TickInput {
+                fixed_step: 1,
+                delta_ns: 16_666_667,
+                seed: 0,
+            },
+            Vec::new(),
+        ))
+        .unwrap();
+
+    assert_eq!(
+        world.read_component::<CounterComponent>(component).unwrap(),
+        CounterComponent { value: 2 }
+    );
+    let mutations = world.debug_session().mutation_trace();
+    assert_eq!(mutations.len(), 1);
+    assert_eq!(mutations[0].source, "roukaku.test.increment_component");
+}
+
+struct IncrementComponentAction {
+    component: ComponentId,
+}
+
+impl RuntimeAction for IncrementComponentAction {
+    fn descriptor(&self) -> ActionDescriptor {
+        ActionDescriptor::declared(
+            "roukaku.test.increment_component",
+            "roukaku.test.increment_component.v1",
+            "roukaku.action_trace.v1",
+            ActionExecutionClass::ParallelTransactional,
+            ActionAccess::new(
+                [ActionResourceKey::ActorStore],
+                [
+                    ActionResourceKey::ActorStore,
+                    ActionResourceKey::MutationLog,
+                ],
+            ),
+            0,
+        )
+    }
+
+    fn run(
+        &self,
+        ctx: &mut DeterministicActionContext<'_>,
+        input: &BTreeMap<String, BlackboardValue>,
+    ) -> Result<ActionTrace, roukaku_runtime::RuntimeError> {
+        let mut counter = ctx.read_component::<CounterComponent>(self.component)?;
+        counter.value += 1;
+        ctx.replace_component(self.component, &counter)?;
+        Ok(ActionTrace {
+            action_id: self.descriptor().id,
+            payload: input.clone(),
+        })
+    }
+}

@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/distant-thunder
+source: Audio/Master/se/distant-thunder.wav
+source_hash: sha256:467d187ed0b4de8fdaaf0d9320d0a62151b9bc8055ef77f44b18869f9fe4ca73
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

@@ -1,0 +1,295 @@
+use std::{collections::BTreeSet, sync::Arc};
+
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    validate_id, UiRect, UiValidationError, UiViewport, ValidateUi, MAX_DRAW_CALLS,
+    MAX_INDICES_PER_FRAME, MAX_TEXTURE_BYTES, MAX_VERTICES_PER_FRAME,
+};
+
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
+pub struct UiTextureId(pub u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum UiTextureFormat {
+    R8Unorm,
+    Rgba8SrgbPremultiplied,
+}
+
+impl UiTextureFormat {
+    pub fn bytes_per_pixel(self) -> usize {
+        match self {
+            Self::R8Unorm => 1,
+            Self::Rgba8SrgbPremultiplied => 4,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct UiTextureUpload {
+    pub id: UiTextureId,
+    pub generation: u64,
+    pub width: u32,
+    pub height: u32,
+    pub format: UiTextureFormat,
+    pub pixels: Arc<[u8]>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct UiTextureRelease {
+    pub id: UiTextureId,
+    pub generation: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct UiTextureDelta {
+    pub uploads: Vec<UiTextureUpload>,
+    pub releases: Vec<UiTextureRelease>,
+    pub full_resync: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct UiVertex {
+    pub position_points: [f32; 2],
+    pub uv: [f32; 2],
+    pub premultiplied_rgba: [u8; 4],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum UiMaterialKind {
+    SolidColor,
+    ColorTexture,
+    GlyphMask,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct UiMeshPrimitive {
+    pub id: String,
+    pub layer: i32,
+    pub clip_rect_points: Option<UiRect>,
+    pub material: UiMaterialKind,
+    pub texture: Option<UiTextureId>,
+    pub texture_generation: Option<u64>,
+    pub vertices: Vec<UiVertex>,
+    pub indices: Vec<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct UiRenderFrame {
+    pub schema: String,
+    pub session_id: String,
+    pub generation: u64,
+    pub viewport: UiViewport,
+    pub textures: UiTextureDelta,
+    pub primitives: Vec<UiMeshPrimitive>,
+}
+
+impl ValidateUi for UiRenderFrame {
+    fn validate(&self) -> Result<(), UiValidationError> {
+        if self.schema != "roukaku.ui_render_frame.v1" {
+            return Err(UiValidationError::invalid(
+                "ROUKAKU_UI_RENDER_SCHEMA",
+                "render frame schema must be roukaku.ui_render_frame.v1",
+            ));
+        }
+        validate_id("render.session_id", &self.session_id)?;
+        self.viewport.validate()?;
+        if self.primitives.len() > MAX_DRAW_CALLS {
+            return Err(UiValidationError::invalid(
+                "ROUKAKU_UI_DRAW_CALL_LIMIT",
+                format!("draw call count exceeds {MAX_DRAW_CALLS}"),
+            ));
+        }
+        let mut uploaded = BTreeSet::new();
+        let mut released = BTreeSet::new();
+        let mut texture_bytes = 0usize;
+        for upload in &self.textures.uploads {
+            if upload.width == 0 || upload.height == 0 {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_TEXTURE_DIMENSIONS",
+                    "texture dimensions must be positive",
+                ));
+            }
+            let expected =
+                upload.width as usize * upload.height as usize * upload.format.bytes_per_pixel();
+            if expected != upload.pixels.len() {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_TEXTURE_LENGTH",
+                    "texture byte length does not match dimensions and format",
+                ));
+            }
+            if upload.format == UiTextureFormat::Rgba8SrgbPremultiplied
+                && upload
+                    .pixels
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .any(|pixel| pixel[0] > pixel[3] || pixel[1] > pixel[3] || pixel[2] > pixel[3])
+            {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_TEXTURE_ALPHA",
+                    "RGBA texture is not premultiplied",
+                ));
+            }
+            let key = (upload.id, upload.generation);
+            if !uploaded.insert(key) {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_TEXTURE_DUPLICATE",
+                    "duplicate texture operation in frame",
+                ));
+            }
+            texture_bytes = texture_bytes.saturating_add(upload.pixels.len());
+        }
+        for release in &self.textures.releases {
+            let key = (release.id, release.generation);
+            if !released.insert(key) {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_TEXTURE_DUPLICATE",
+                    "duplicate texture release in frame",
+                ));
+            }
+            if uploaded.contains(&key) && !self.textures.full_resync {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_TEXTURE_CONFLICT",
+                    "texture cannot be uploaded and released in one transaction without a full resync",
+                ));
+            }
+        }
+        if texture_bytes > MAX_TEXTURE_BYTES {
+            return Err(UiValidationError::invalid(
+                "ROUKAKU_UI_TEXTURE_BUDGET",
+                format!("texture updates exceed {MAX_TEXTURE_BYTES} bytes"),
+            ));
+        }
+        let mut vertices = 0usize;
+        let mut indices = 0usize;
+        let mut primitive_ids = BTreeSet::new();
+        for primitive in &self.primitives {
+            validate_id("render.primitive.id", &primitive.id)?;
+            if !primitive_ids.insert(primitive.id.as_str()) {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_PRIMITIVE_DUPLICATE",
+                    format!("duplicate primitive id {}", primitive.id),
+                ));
+            }
+            if primitive.vertices.is_empty()
+                || primitive.indices.is_empty()
+                || primitive.indices.len() % 3 != 0
+            {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_MESH_EMPTY",
+                    "mesh must contain vertices and triangle indices",
+                ));
+            }
+            if primitive
+                .indices
+                .iter()
+                .any(|index| *index as usize >= primitive.vertices.len())
+            {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_MESH_INDEX",
+                    "mesh index is outside the vertex buffer",
+                ));
+            }
+            if primitive.vertices.iter().any(|vertex| {
+                vertex
+                    .position_points
+                    .iter()
+                    .any(|value| !value.is_finite())
+                    || vertex.uv.iter().any(|value| !value.is_finite())
+            }) {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_MESH_NON_FINITE",
+                    "mesh contains non-finite coordinates",
+                ));
+            }
+            if primitive
+                .clip_rect_points
+                .is_some_and(|rect| !rect.is_finite_and_ordered())
+            {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_MESH_CLIP",
+                    "mesh clip rectangle is invalid",
+                ));
+            }
+            match (
+                primitive.material,
+                primitive.texture,
+                primitive.texture_generation,
+            ) {
+                (UiMaterialKind::SolidColor, None, None) => {}
+                (UiMaterialKind::ColorTexture | UiMaterialKind::GlyphMask, Some(_), Some(_)) => {}
+                _ => {
+                    return Err(UiValidationError::invalid(
+                        "ROUKAKU_UI_MESH_MATERIAL",
+                        "material and texture reference do not match",
+                    ));
+                }
+            }
+            vertices += primitive.vertices.len();
+            indices += primitive.indices.len();
+        }
+        if vertices > MAX_VERTICES_PER_FRAME || indices > MAX_INDICES_PER_FRAME {
+            return Err(UiValidationError::invalid(
+                "ROUKAKU_UI_MESH_BUDGET",
+                "frame mesh budget exceeded",
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{UiInsets, ValidateUi};
+
+    fn frame(full_resync: bool) -> UiRenderFrame {
+        let pixels: Arc<[u8]> = vec![255].into();
+        UiRenderFrame {
+            schema: "roukaku.ui_render_frame.v1".into(),
+            session_id: "ui.test".into(),
+            generation: 1,
+            viewport: UiViewport {
+                physical_width: 1,
+                physical_height: 1,
+                scale_factor: 1.0,
+                font_scale: 1.0,
+                safe_area_points: UiInsets {
+                    left: 0.0,
+                    top: 0.0,
+                    right: 0.0,
+                    bottom: 0.0,
+                },
+            },
+            textures: UiTextureDelta {
+                uploads: vec![UiTextureUpload {
+                    id: UiTextureId(1),
+                    generation: 1,
+                    width: 1,
+                    height: 1,
+                    format: UiTextureFormat::R8Unorm,
+                    pixels,
+                }],
+                releases: vec![UiTextureRelease {
+                    id: UiTextureId(1),
+                    generation: 1,
+                }],
+                full_resync,
+            },
+            primitives: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn full_resync_allows_ordered_release_and_reupload() {
+        frame(true).validate().unwrap();
+        let error = frame(false).validate().unwrap_err();
+        assert_eq!(error.code(), "ROUKAKU_UI_TEXTURE_CONFLICT");
+    }
+}

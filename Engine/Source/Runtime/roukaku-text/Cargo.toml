@@ -1,0 +1,18 @@
+[package]
+name = "roukaku-text"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-core = { path = "../roukaku-core" }
+roukaku-media-core = { path = "../roukaku-media-core" }
+roukaku-worker-budget = { path = "../roukaku-worker-budget" }
+cosmic-text.workspace = true
+schemars.workspace = true
+serde.workspace = true
+tracing.workspace = true
+unicode-segmentation.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -1,0 +1,20 @@
+[package]
+name = "roukaku-policy"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = ["luau-runtime"]
+luau-runtime = ["dep:mlua"]
+portable-luau-runtime = ["dep:luaur-rt"]
+
+[dependencies]
+roukaku-core = { path = "../roukaku-core" }
+mlua = { workspace = true, optional = true }
+luaur-rt = { workspace = true, optional = true }
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

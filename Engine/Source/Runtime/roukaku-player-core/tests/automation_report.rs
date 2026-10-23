@@ -1,0 +1,303 @@
+use roukaku_player_core::{
+    PlayerAudioMeterEvidence, PlayerAutomationScript, PlayerAutomationStatus, PlayerAutomationStep,
+    PlayerAutomationValidator, PlayerInputConsumptionEvidence, PlayerInputEvent,
+    PlayerInputTranscript, PlayerPlatform, PlayerPlatformEvidenceIdentity,
+    PlayerRuntimeRouteEvidence, PlayerVisualComparisonEvidence, PlayerVisualRegionEvidence,
+};
+
+#[test]
+fn player_automation_report_passes_for_live_windows_input() {
+    let script = script(PlayerPlatform::Windows);
+    let transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+
+    assert_eq!(report.schema, "roukaku.player_automation_report.v1");
+    assert_eq!(report.status, PlayerAutomationStatus::Pass);
+    assert!(report.full_playable_passed());
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.live_input_surface" && check.status == PlayerAutomationStatus::Pass
+    }));
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.visual_comparison" && check.status == PlayerAutomationStatus::Pass
+    }));
+}
+
+#[test]
+fn player_automation_report_accepts_only_linux_uinput() {
+    let report = PlayerAutomationValidator.validate(
+        &script(PlayerPlatform::Linux),
+        &transcript(PlayerPlatform::Linux, "uinput.mouse"),
+    );
+    assert_eq!(report.status, PlayerAutomationStatus::Pass);
+
+    let blocked = PlayerAutomationValidator.validate(
+        &script(PlayerPlatform::Linux),
+        &transcript(PlayerPlatform::Linux, "sendinput.mouse"),
+    );
+    assert_eq!(blocked.status, PlayerAutomationStatus::Blocked);
+}
+
+#[test]
+fn player_automation_report_binds_platform_identity_to_full_playable() {
+    let report = PlayerAutomationValidator.validate_with_platform_identity(
+        &script(PlayerPlatform::Windows),
+        &transcript(PlayerPlatform::Windows, "sendinput.mouse"),
+        &PlayerPlatformEvidenceIdentity {
+            profile_hash: "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                .to_string(),
+            build_fingerprint:
+                "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                    .to_string(),
+            session_id: "session.windows.1".to_string(),
+        },
+    );
+    let full = report
+        .checks
+        .iter()
+        .find(|check| check.id == "player.full_playable")
+        .unwrap();
+    assert!(full
+        .evidence
+        .iter()
+        .any(|entry| entry.key == "session_id" && entry.value == "session.windows.1"));
+}
+
+#[test]
+fn player_automation_report_blocks_direct_route_scenario_input() {
+    let script = script(PlayerPlatform::Windows);
+    let transcript = transcript(PlayerPlatform::Windows, "route_scenario");
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+
+    assert_eq!(report.status, PlayerAutomationStatus::Blocked);
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.live_input_surface"
+            && check.status == PlayerAutomationStatus::Blocked
+            && check
+                .diagnostic
+                .as_ref()
+                .is_some_and(|diagnostic| diagnostic.code == "ROUKAKU_PLAYER_FORBIDDEN_INPUT_SURFACE")
+    }));
+    assert!(!report.full_playable_passed());
+}
+
+#[test]
+fn player_automation_report_blocks_missing_visual_comparison() {
+    let script = script(PlayerPlatform::Windows);
+    let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+    transcript.visual_comparison = None;
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+
+    assert_eq!(report.status, PlayerAutomationStatus::Blocked);
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.visual_comparison"
+            && check.status == PlayerAutomationStatus::Blocked
+            && check.diagnostic.as_ref().is_some_and(|diagnostic| {
+                diagnostic.code == "ROUKAKU_PLAYER_VISUAL_COMPARISON_MISSING"
+            })
+    }));
+    assert!(!report.full_playable_passed());
+}
+
+#[test]
+fn player_automation_report_blocks_missing_consumed_trace() {
+    let script = script(PlayerPlatform::Windows);
+    let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+    transcript.input_consumption.clear();
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+
+    assert_eq!(report.status, PlayerAutomationStatus::Blocked);
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.input_consumption_trace"
+            && check.status == PlayerAutomationStatus::Blocked
+            && check.diagnostic.as_ref().is_some_and(|diagnostic| {
+                diagnostic.code == "ROUKAKU_PLAYER_INPUT_CONSUMPTION_TRACE_MISSING"
+            })
+    }));
+    assert!(!report.full_playable_passed());
+}
+
+#[test]
+fn player_automation_report_blocks_route_coverage_without_runtime_evidence() {
+    let script = script(PlayerPlatform::Windows);
+    let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+    transcript.runtime_routes.clear();
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+
+    assert_eq!(report.status, PlayerAutomationStatus::Blocked);
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.runtime_route_evidence"
+            && check.status == PlayerAutomationStatus::Blocked
+            && check.diagnostic.as_ref().is_some_and(|diagnostic| {
+                diagnostic.code == "ROUKAKU_PLAYER_RUNTIME_ROUTE_EVIDENCE_MISSING"
+            })
+    }));
+}
+
+#[test]
+fn player_automation_report_blocks_route_without_terminal_signature() {
+    let script = script(PlayerPlatform::Windows);
+    let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+    transcript.runtime_routes[0].terminal_route_ids.clear();
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.runtime_route_evidence"
+            && check.status == PlayerAutomationStatus::Blocked
+            && check.diagnostic.as_ref().is_some_and(|diagnostic| {
+                diagnostic.code == "ROUKAKU_PLAYER_RUNTIME_ROUTE_EVIDENCE_INVALID"
+            })
+    }));
+}
+
+fn script(platform: PlayerPlatform) -> PlayerAutomationScript {
+    let mut script = PlayerAutomationScript::new(
+        "test-game",
+        "classic",
+        platform,
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "scenario.refs/demo.route.yaml",
+    );
+    script.expected_routes = vec!["route.opening".to_string()];
+    script.steps = vec![PlayerAutomationStep {
+        id: "step.choose.opening".to_string(),
+        action: "choose".to_string(),
+        expected_route_id: Some("route.opening".to_string()),
+    }];
+    script
+}
+
+fn transcript(platform: PlayerPlatform, source: &str) -> PlayerInputTranscript {
+    PlayerInputTranscript {
+        schema: "roukaku.player_input_transcript.v3".to_string(),
+        target: "test-game".to_string(),
+        profile: "classic".to_string(),
+        platform,
+        package_hash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            .to_string(),
+        events: vec![PlayerInputEvent {
+            step_id: "step.choose.opening".to_string(),
+            source: source.to_string(),
+            kind: "pointer_up".to_string(),
+            sequence: 1,
+            route_id: Some("route.opening".to_string()),
+        }],
+        input_consumption: vec![PlayerInputConsumptionEvidence {
+            input_sequence: 1,
+            player_sequence: 1,
+            source: "player_host.trace".to_string(),
+            kind: "pointer_up".to_string(),
+            trace_event: "roukaku.player.input.consumed".to_string(),
+            trace_hash: "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+                .to_string(),
+            route_id: Some("route.opening".to_string()),
+        }],
+        visual_regions: vec![PlayerVisualRegionEvidence {
+            region_id: "stage".to_string(),
+            before_hash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                .to_string(),
+            after_hash: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                .to_string(),
+            width: 1280,
+            height: 720,
+        }],
+        audio_meter: PlayerAudioMeterEvidence {
+            provider: match platform {
+                PlayerPlatform::Windows => "wasapi",
+                PlayerPlatform::Web => "webaudio",
+                PlayerPlatform::Linux => "pipewire",
+                PlayerPlatform::Macos => "coreaudio",
+                PlayerPlatform::Android => "oboe_aaudio",
+            }
+            .into(),
+            callback_count: 4,
+            host_report_hash: "sha256:host".into(),
+            sample_count: 48_000,
+            peak_dbfs: -12.0,
+            rms_dbfs: -24.0,
+        },
+        visual_comparison: Some(PlayerVisualComparisonEvidence {
+            report_hash: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+                .to_string(),
+            checkpoint_count: 1,
+            status: PlayerAutomationStatus::Pass,
+        }),
+        runtime_routes: vec![PlayerRuntimeRouteEvidence {
+            session_id: "session.test".into(),
+            input_sequence: 1,
+            player_sequence: 1,
+            fixed_step: 1,
+            coverage_reached: vec!["route.opening".to_string()],
+            current_state_id: Some("route.opening".to_string()),
+            pending_choice_ids: Vec::new(),
+            terminal_route_ids: vec!["route.opening".to_string()],
+            trace_hash: "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+                .to_string(),
+        }],
+        route_coverage: vec!["route.opening".to_string()],
+    }
+}
+
+#[test]
+fn transcript_hash_failure_blocks_full_playable_instead_of_hashing_empty_bytes() {
+    let script = script(PlayerPlatform::Windows);
+    let mut transcript = transcript(PlayerPlatform::Windows, "send_input");
+    transcript.audio_meter.peak_dbfs = f32::NAN;
+
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+    assert_eq!(report.status, PlayerAutomationStatus::Blocked);
+    assert!(report.transcript_hash.is_empty());
+    assert!(report.checks.iter().any(|check| {
+        check.id == "player.transcript_serialization"
+            && check.status == PlayerAutomationStatus::Blocked
+            && check.diagnostic.as_ref().is_some_and(|diagnostic| {
+                diagnostic.code == "ROUKAKU_PLAYER_TRANSCRIPT_SERIALIZATION"
+            })
+    }));
+    assert!(!report.full_playable_passed());
+}
+
+#[test]
+fn typed_routes_reject_mixed_sessions_and_unbound_trace_hashes() {
+    let script = script(PlayerPlatform::Windows);
+    for mixed_session in [false, true] {
+        let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+        if mixed_session {
+            let mut consumed = transcript.input_consumption[0].clone();
+            consumed.input_sequence = 2;
+            consumed.player_sequence = 2;
+            transcript.input_consumption.push(consumed);
+            let mut route = transcript.runtime_routes[0].clone();
+            route.input_sequence = 2;
+            route.player_sequence = 2;
+            route.fixed_step = 2;
+            route.session_id = "another.session".into();
+            transcript.runtime_routes.push(route);
+        } else {
+            transcript.runtime_routes[0].trace_hash = format!("sha256:{}", "f".repeat(64));
+        }
+        let report = PlayerAutomationValidator.validate(&script, &transcript);
+        assert!(report
+            .checks
+            .iter()
+            .any(|check| check.id == "player.runtime_route_evidence"
+                && check.status == PlayerAutomationStatus::Blocked));
+    }
+}
+
+#[test]
+fn legacy_hash_transcript_schema_is_rejected() {
+    let script = script(PlayerPlatform::Windows);
+    let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
+    transcript.schema = "roukaku.player_input_transcript.v2".into();
+    let report = PlayerAutomationValidator.validate(&script, &transcript);
+    assert!(report.checks.iter().any(|check| check
+        .diagnostic
+        .as_ref()
+        .is_some_and(|d| d.code == "ROUKAKU_PLAYER_AUTOMATION_SCHEMA")));
+}

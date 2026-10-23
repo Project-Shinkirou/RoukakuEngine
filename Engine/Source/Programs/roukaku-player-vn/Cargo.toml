@@ -1,0 +1,51 @@
+[package]
+name = "roukaku-player-vn"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+platform-test-driver = ["roukaku-platform-windows/platform-test-driver"]
+headless-test-fixtures = []
+
+[dependencies]
+roukaku-vn = { path = "../../Modules/RoukakuVN/roukaku-vn" }
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-byte-source = { path = "../../Runtime/roukaku-byte-source" }
+roukaku-asset = { path = "../../Runtime/roukaku-asset" }
+roukaku-media-core = { path = "../../Runtime/roukaku-media-core" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-audio-kira = { path = "../../Runtime/roukaku-audio-kira" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-plugin = { path = "../../Runtime/roukaku-plugin", default-features = false }
+roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi", default-features = false }
+roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+roukaku-ui-yakui = { path = "../../Runtime/roukaku-ui-yakui" }
+roukaku-worker-budget = { path = "../../Runtime/roukaku-worker-budget" }
+roukaku-runtime = { path = "../../Runtime/roukaku-runtime" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
+roukaku-vn-presentation = { path = "../../Modules/RoukakuVN/roukaku-vn-presentation" }
+roukaku-vn-ui = { path = "../../Modules/RoukakuVN/roukaku-vn-ui" }
+image.workspace = true
+postcard.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+unicode-segmentation.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+roukaku-vn-policy = { path = "../../Modules/RoukakuVN/roukaku-vn-policy", default-features = false, features = ["luau-runtime"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+roukaku-vn-policy = { path = "../../Modules/RoukakuVN/roukaku-vn-policy", default-features = false, features = ["portable-luau-runtime"] }
+
+[dev-dependencies]
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-platform-windows = { path = "../../Platform/roukaku-platform-windows" }
+tokio.workspace = true

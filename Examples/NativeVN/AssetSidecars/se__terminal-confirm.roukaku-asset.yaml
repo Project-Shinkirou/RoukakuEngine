@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/terminal-confirm
+source: Audio/Master/se/terminal-confirm.wav
+source_hash: sha256:9f98e734dc1918e4adec4da969d52064a7b98dd9ea45c5fbdb6f6a18a759aafd
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

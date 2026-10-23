@@ -1,0 +1,15 @@
+[package]
+name = "roukaku-audio-kira"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+roukaku-byte-source = { path = "../roukaku-byte-source" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+kira.workspace = true
+schemars.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+rtrb.workspace = true

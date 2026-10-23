@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/voice/vc_ln_g03_007
+source: Audio/Voice/Master/zhou_heng/vc_ln_g03_007.wav
+source_hash: sha256:489b585adb79e5129eee7812548a698a560d88250cd6954cf227135a1d466550
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

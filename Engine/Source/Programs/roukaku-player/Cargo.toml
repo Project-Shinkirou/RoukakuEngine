@@ -1,0 +1,62 @@
+[package]
+name = "roukaku-player"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+platform-test-driver = [
+    "roukaku-platform-windows/platform-test-driver",
+    "roukaku-platform-linux/platform-test-driver",
+    "roukaku-platform-macos/platform-test-driver",
+]
+
+[lib]
+name = "roukaku_player"
+path = "src/lib.rs"
+
+[[bin]]
+name = "roukaku-player"
+path = "src/main.rs"
+
+[dependencies]
+tracing.workspace = true
+base64.workspace = true
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-runtime = { path = "../../Runtime/roukaku-runtime" }
+roukaku-byte-source = { path = "../../Runtime/roukaku-byte-source" }
+roukaku-observability = { path = "../../Developer/roukaku-observability" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
+roukaku-player-vn = { path = "../roukaku-player-vn" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+tokio.workspace = true
+tungstenite.workspace = true
+tempfile.workspace = true
+time = { workspace = true, features = ["local-offset"] }
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_System_IO", "Win32_Foundation"] }
+roukaku-platform-windows = { path = "../../Platform/roukaku-platform-windows" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+roukaku-platform-linux = { path = "../../Platform/roukaku-platform-linux" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+roukaku-platform-macos = { path = "../../Platform/roukaku-platform-macos" }
+
+[dev-dependencies]
+tempfile.workspace = true
+roukaku-asset = { path = "../../Runtime/roukaku-asset" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-media-core = { path = "../../Runtime/roukaku-media-core" }

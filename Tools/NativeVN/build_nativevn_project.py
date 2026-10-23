@@ -1,0 +1,372 @@
+#!/usr/bin/env python3
+"""Refresh NativeVN derived assets and descriptors; .roukaku sources stay authoritative."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import shutil
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+PACK = ROOT / "Examples" / "NativeVN"
+PROFILE = "advanced-vn"
+
+SYSTEM_STRINGS = {
+    "speaker.lin_yao": {"zh-Hans": "林瑶", "en": "Lin Yao"},
+    "speaker.zhou_heng": {"zh-Hans": "周衡", "en": "Zhou Heng"},
+    "system.back": {"zh-Hans": "返回", "en": "Back"},
+    "system.continue": {"zh-Hans": "继续", "en": "Continue"},
+    "system.title": {"zh-Hans": "玻璃雨中的信号", "en": "Signal in the Glass Rain"},
+    "system.save": {"zh-Hans": "保存", "en": "Save"},
+    "system.load": {"zh-Hans": "读取", "en": "Load"},
+    "system.quick_panel": {"zh-Hans": "快捷菜单", "en": "Quick Menu"},
+    "system.config": {"zh-Hans": "设置", "en": "Settings"},
+    "system.config.master_volume": {"zh-Hans": "主音量", "en": "Master Volume"},
+    "system.config.text_speed": {"zh-Hans": "文字速度", "en": "Text Speed"},
+    "system.config.auto_delay": {"zh-Hans": "自动播放延迟", "en": "Auto Delay"},
+    "system.config.high_contrast": {"zh-Hans": "高对比度", "en": "High Contrast"},
+    "system.gallery": {"zh-Hans": "鉴赏", "en": "Gallery"},
+    "system.replay": {"zh-Hans": "回放", "en": "Replay"},
+    "system.voice_replay": {"zh-Hans": "语音回放", "en": "Voice Replay"},
+    "system.route_chart": {"zh-Hans": "路线图", "en": "Route Chart"},
+    "system.backlog": {"zh-Hans": "历史记录", "en": "Backlog"},
+    "system.localization_preview": {"zh-Hans": "本地化预览", "en": "Localization Preview"},
+}
+
+
+SYSTEM_STRINGS.update(
+{'experience.back': {'en': 'Return to the rainy platform', 'zh-Hans': '返回雨中的站台'},
+ 'experience.media': {'en': 'Watch and listen to the rain', 'zh-Hans': '听雨与看雨'},
+ 'experience.media.after': {'en': 'The rain clears. The city remains. At last they can read the '
+                                  'overdue letter.',
+                            'zh-Hans': '雨幕散开，城市还在。他们终于可以把那封迟来的信读下去了。'},
+ 'experience.media.before': {'en': 'The platform lights go out, but the signal holds. Listen until '
+                                   'the distant thunder passes.',
+                             'zh-Hans': '站台的灯熄了，信号却没有断。听一会儿雨，等远处的雷声过去。'},
+ 'experience.read': {'en': 'A few words', 'zh-Hans': '读一句话'},
+ 'experience.read.again': {'en': 'Read it again', 'zh-Hans': '再读一次'},
+ 'experience.read.first': {'en': 'The last train has left, but a reflection remains. Tap once to '
+                                 'reveal the sentence, then again to continue.',
+                           'zh-Hans': '末班列车已经离站，玻璃上的倒影却留在原处。轻触一下读完这句话，再轻触一次继续。'},
+ 'experience.read.question': {'en': 'What remains in the rain?', 'zh-Hans': '雨声里还有什么？'},
+ 'experience.read.second': {'en': 'Someone calls Lin Yao. The rain is close; the voice sounds '
+                                  'years away.',
+                            'zh-Hans': '林瑶听见有人叫她。雨声很近，那个人的声音却像隔着许多年。'},
+ 'experience.save': {'en': 'Keep this moment', 'zh-Hans': '留住这一刻'},
+ 'experience.save.after': {'en': '“I can hear you,” she says. This time, the man behind the glass '
+                                 'nods.',
+                           'zh-Hans': '“我听见了。”她说。这次，玻璃另一侧的人点了点头。'},
+ 'experience.save.before': {'en': 'Zhou Heng slowly comes into focus. Use Save below to keep this '
+                                  'moment and Load to return, or continue onward.',
+                            'zh-Hans': '周衡的身影慢慢清晰起来。想留住现在的光影，可以点下方“保存”，再用“读取”回到这一刻；也可以继续向前。'},
+ 'experience.stage': {'en': 'A moment on stage', 'zh-Hans': '看一段演出'},
+ 'experience.stage.first': {'en': 'She steps out of the shadows. Zhou Heng waits on the other side '
+                                  'of the glass.',
+                            'zh-Hans': '她走出暗处。周衡没有上前，只在玻璃另一侧等她。'},
+ 'experience.stage.second': {'en': '“Stay there.” The signal dims. She stops, watching the face '
+                                   'fade.',
+                             'zh-Hans': '“别动。”信号忽然暗下去。她停住脚步，盯着那张正在消失的脸。'},
+ 'experience.stage.third': {'en': 'She steadies the receiver. The image holds. Rain falls; neither '
+                                  'of them leaves.',
+                            'zh-Hans': '她按住接收器，终于让影子稳定下来。雨还在落，两个人都没有离开。'},
+ 'experience.story': {'en': 'Begin the full story', 'zh-Hans': '开始完整故事'},
+ 'experience.title': {'en': 'Return to the title', 'zh-Hans': '返回标题'},
+ 'experience.welcome': {'en': 'Where shall we begin before the rain stops?',
+                        'zh-Hans': '雨停之前，想从哪里开始？'},
+ 'system.experience': {'en': 'Moments in the rain', 'zh-Hans': '雨中的片刻'},
+ 'system.new_game': {'en': 'Start story', 'zh-Hans': '开始故事'}}
+)
+
+
+def read_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
+def write_json(path: Path, payload: dict) -> None:
+    write_text(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def asset_id(source: str) -> str:
+    path = Path(source)
+    parts = list(path.with_suffix("").parts)
+    if parts[:2] == ["Visual", "Backgrounds"]:
+        return f"asset:/background/{parts[-1]}"
+    if parts[:2] == ["Visual", "CG"]:
+        return f"asset:/cg/{parts[-1]}"
+    if parts[:2] == ["Visual", "Characters"]:
+        normalized = "/".join(part.lower() for part in parts[2:])
+        return f"asset:/character/{normalized}"
+    if parts[:2] == ["Visual", "Endings"]:
+        return f"asset:/ending/{parts[-1]}"
+    if parts[:2] == ["Visual", "Gallery"]:
+        return f"asset:/gallery/{'/'.join(part.lower() for part in parts[2:])}"
+    if parts[:2] == ["Visual", "KeyArt"]:
+        return f"asset:/key-art/{parts[-1]}"
+    if parts[:2] == ["Visual", "UI"]:
+        return f"asset:/ui/{parts[-1]}"
+    if parts[:2] == ["Visual", "Video"]:
+        return f"asset:/movie/{parts[-1]}"
+    if parts[:3] == ["Audio", "Master", "bgm"]:
+        return f"asset:/bgm/{parts[-1]}"
+    if parts[:3] == ["Audio", "Master", "se"]:
+        return f"asset:/se/{parts[-1]}"
+    if parts[:3] == ["Audio", "Master", "stinger"]:
+        return f"asset:/stinger/{parts[-1]}"
+    if parts[:3] == ["Audio", "Voice", "Master"]:
+        return f"asset:/voice/{parts[-1]}"
+    if parts[:2] == ["Assets", "Fonts"]:
+        return f"asset:/font/{parts[-1].lower()}"
+    raise ValueError(f"unsupported project asset source: {source}")
+
+
+def asset_type(source: str) -> tuple[str, str, str]:
+    suffix = Path(source).suffix.lower()
+    if suffix == ".png":
+        return "image.png", "roukaku.import.image", "roukaku.cook.texture2d"
+    if suffix == ".wav":
+        return "audio.wav", "roukaku.import.audio", "roukaku.cook.audio"
+    if suffix == ".mp4":
+        return "video.mp4", "roukaku.import.video", "roukaku.cook.video"
+    if suffix == ".ttf":
+        return "font.ttf", "roukaku.import.font", "roukaku.cook.font"
+    raise ValueError(f"unsupported asset type: {source}")
+
+
+def discover_runtime_assets() -> list[str]:
+    sources = []
+    for path in sorted((PACK / "Visual").rglob("*.png")):
+        relative = path.relative_to(PACK).as_posix()
+        if "/Video/Source/" not in f"/{relative}":
+            sources.append(relative)
+    sources.append("Visual/Video/rain-signal-loop.mp4")
+    for category in ("bgm", "se", "stinger"):
+        for path in sorted((PACK / "Audio" / "Master" / category).glob("*.wav")):
+            sources.append(path.relative_to(PACK).as_posix())
+    for path in sorted((PACK / "Audio" / "Voice" / "Master").rglob("*.wav")):
+        sources.append(path.relative_to(PACK).as_posix())
+    sources.extend(["Assets/Fonts/NotoSansJP-Variable.ttf", "Assets/Fonts/NotoSansSC-Variable.ttf"])
+    return sources
+
+
+def build_sidecars() -> None:
+    sidecar_root = PACK / "AssetSidecars"
+    if sidecar_root.exists():
+        shutil.rmtree(sidecar_root)
+    for source in discover_runtime_assets():
+        source_path = PACK / source
+        kind, importer, processor = asset_type(source)
+        lines = [
+            "schema: roukaku.asset.v1",
+            f"id: {asset_id(source)}",
+            f"source: {source}",
+            f"source_hash: sha256:{sha256(source_path)}",
+            f"type: {kind}",
+            "license: OFL-1.1" if kind.startswith("font.") else "license: project-owned-generated",
+            f"importer: {importer}",
+        ]
+        if kind.startswith("font."):
+            lines.extend([
+                "font:",
+                "  family: Noto Sans SC" if "NotoSansSC" in source else "  family: Noto Sans JP",
+                "  face_index: 0",
+                "  subset: cjk-production",
+                "  coverage:",
+                "    - { start: 32, end: 126 }",
+                "    - { start: 8220, end: 8221 }",
+                "    - { start: 12288, end: 12543 }",
+            ])
+            if "NotoSansSC" in source:
+                lines.append("    - { start: 13312, end: 40959 }")
+            lines.append("    - { start: 65280, end: 65519 }")
+        lines.extend([
+            "cook:",
+            f"  processor: {processor}",
+            f"  target_profiles: [{PROFILE}]",
+            "  params: { color_space: srgb }" if suffix_is_image(source) else "  params: {}",
+            "review: accepted",
+            "",
+        ])
+        name = asset_id(source).removeprefix("asset:/").replace("/", "__") + ".roukaku-asset.yaml"
+        write_text(sidecar_root / name, "\n".join(lines))
+
+
+def suffix_is_image(source: str) -> bool:
+    return Path(source).suffix.lower() == ".png"
+
+
+def build_localization() -> None:
+    payloads = {
+        "zh-Hans": read_json(PACK / "Narrative" / "screenplay.zh-Hans.json"),
+        "en": read_json(PACK / "Localization" / "screenplay.en.json"),
+    }
+    for locale, screenplay in payloads.items():
+        strings = {key: value[locale] for key, value in SYSTEM_STRINGS.items()}
+        for scene in screenplay["scenes"]:
+            for line in scene["lines"]:
+                strings[f"line.{line['id']}"] = line["text"]
+        for choice in screenplay["choices"]:
+            strings[f"choice.{choice['id']}"] = choice["prompt"]
+            for option in choice["options"]:
+                strings[f"choice.{option['id']}"] = option["text"]
+        write_json(PACK / "Localization" / f"{locale}.json", {
+            "schema": "roukaku.vn.localization_table.v1",
+            "locale": locale,
+            "strings": dict(sorted(strings.items())),
+        })
+
+
+def build_ui() -> None:
+    required = [
+        PACK / "UI" / "flagship.roukaku",
+        PACK / "Controllers" / "standard_ui.luau",
+        PACK / "Themes" / "classic.json",
+        PACK / "Themes" / "modern.json",
+        PACK / "Scripts" / "system.roukaku",
+    ]
+    missing = [path.relative_to(PACK).as_posix() for path in required if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"self-contained UI sources are missing: {', '.join(missing)}")
+
+
+def build_project_descriptor() -> None:
+    write_text(PACK / "project.yaml", """schema: roukaku.target_manifest.v3
+id: com.roukaku.nativevn.signal-glass-rain
+platform_profiles:
+  windows-release:
+    schema: roukaku.platform_host_profile.v3
+    id: windows-release
+    platform: windows
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_hardware], allow_software: false }
+    decode: { providers: [wmf], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [wasapi], allow_software: false }
+    save: { providers: [saved_games], allow_software: false }
+    package_sources: [{ kind: bundled }, { kind: user_authorized }]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  linux-steam-sniper-release:
+    schema: roukaku.platform_host_profile.v3
+    id: linux-steam-sniper-release
+    platform: linux
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_vulkan], allow_software: false }
+    decode: { providers: [gstreamer], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [alsa], allow_software: false }
+    save: { providers: [xdg_data], allow_software: false }
+    package_sources: [{ kind: bundled }, { kind: user_authorized }]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  macos-release:
+    schema: roukaku.platform_host_profile.v3
+    id: macos-release
+    platform: macos
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_metal], allow_software: false }
+    decode: { providers: [avfoundation], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [coreaudio], allow_software: false }
+    save: { providers: [application_support], allow_software: false }
+    package_sources: [{ kind: bundled }, { kind: user_authorized }]
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+  android-release:
+    schema: roukaku.platform_host_profile.v3
+    id: android-release
+    platform: android
+    target: nativevn-flagship-game
+    package_id: com.roukaku.nativevn.signal-glass-rain
+    renderer: { providers: [wgpu_vulkan], allow_software: false }
+    decode: { providers: [mediacodec], allow_software: false }
+    audio_mixer: { providers: [kira], allow_software: false }
+    audio_output: { providers: [oboe_aaudio, oboe_opensl_es], allow_software: false }
+    save: { providers: [android_app_storage], allow_software: false }
+    package_sources:
+      - { kind: bundled }
+      - { kind: user_authorized }
+    limits: { command_queue_capacity: 256, event_queue_capacity: 1024, max_frame_bytes: 67108864, max_audio_frames: 192000, audio_pcm_cache_bytes: 268435456, audio_chunk_frames: 512, max_package_read_bytes: 8388608 }
+    package_cache: { max_entry_bytes: 17179869184, max_total_bytes: 68719476736 }
+targets:
+  - id: nativevn-flagship-game
+    kind: game
+    crate: roukaku-vn
+    default_profile: advanced-vn
+    platforms: [windows, linux, macos, android]
+    packaged: true
+nativevn:
+  default_locale: zh-Hans
+  sources: [Scripts]
+  ui_sources: [UI]
+  ui_themes: [Themes]
+  ui_controllers: [Controllers]
+  profiles: [classic, advanced-vn]
+  asset_roots: [AssetSidecars]
+  display:
+    original_resolution: { width: 1920, height: 1080 }
+    scale_filter: linear
+    preview_layers:
+      - { vfs_uri: "package:/Visual/KeyArt/title-background.png", x: 0, y: 0 }
+package_sections:
+  - id: vn.localization.zh-Hans
+    schema: roukaku.vn.localization_table.v1
+    path: Localization/zh-Hans.json
+    codec: raw
+    targets: [nativevn-flagship-game]
+    profiles: [classic, advanced-vn]
+  - id: vn.localization.en
+    schema: roukaku.vn.localization_table.v1
+    path: Localization/en.json
+    codec: raw
+    targets: [nativevn-flagship-game]
+    profiles: [classic, advanced-vn]
+  - id: vn.flagship.route_graph
+    schema: roukaku.nativevn.flagship.route_graph.v1
+    path: Narrative/route-graph.json
+    codec: raw
+    targets: [nativevn-flagship-game]
+    profiles: [classic, advanced-vn]
+""")
+
+
+def copy_fonts() -> None:
+    required = [
+        PACK / "Assets" / "Fonts" / "NotoSansJP-Variable.ttf",
+        PACK / "Assets" / "Fonts" / "OFL-NotoSansJP.txt",
+        PACK / "Assets" / "Fonts" / "NotoSansSC-Variable.ttf",
+        PACK / "Assets" / "Fonts" / "OFL.txt",
+    ]
+    missing = [path.relative_to(PACK).as_posix() for path in required if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"self-contained font assets are missing: {', '.join(missing)}")
+
+
+def main() -> int:
+    copy_fonts()
+    build_localization()
+    build_ui()
+    build_sidecars()
+    build_project_descriptor()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

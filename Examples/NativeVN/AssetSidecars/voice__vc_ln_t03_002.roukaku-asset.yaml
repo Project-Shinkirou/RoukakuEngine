@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/voice/vc_ln_t03_002
+source: Audio/Voice/Master/lin_yao/vc_ln_t03_002.wav
+source_hash: sha256:0f46e24bbc072f14d763fce300e3fff2720cdd907692c45e02e9a9cf300f2e1e
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

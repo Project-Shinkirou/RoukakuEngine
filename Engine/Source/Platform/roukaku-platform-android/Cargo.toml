@@ -1,0 +1,40 @@
+[package]
+name = "roukaku-platform-android"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+platform-test-driver = [
+    "roukaku-platform/platform-test-driver",
+    "roukaku-platform-common/platform-test-driver",
+]
+
+[dependencies]
+tracing.workspace = true
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-platform = { path = "../roukaku-platform" }
+roukaku-platform-common = { path = "../roukaku-platform-common" }
+roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+pollster.workspace = true
+schemars.workspace = true
+serde.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+wgpu.workspace = true
+
+[target.'cfg(target_os = "android")'.dependencies]
+winit = { workspace = true, features = ["android-game-activity", "rwh_06"] }
+accesskit.workspace = true
+accesskit_android.workspace = true
+android-activity = { workspace = true, features = ["game-activity"] }
+jni.workspace = true
+ndk = { workspace = true, features = ["media", "api-level-28"] }
+ndk-sys.workspace = true
+oboe = { workspace = true, features = ["java-interface"] }
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile.workspace = true

@@ -1,0 +1,126 @@
+use roukaku_core::StableId;
+use roukaku_runtime::{
+    ActorId, EngineModuleSlot, ModuleBindingContext, PackageHandle, RuntimeConfig, RuntimeWorld,
+    SaveRequest, TickInput, ValidatedModuleBinding,
+};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct TestComponent {
+    status: String,
+    count: u32,
+}
+
+#[test]
+fn world_actor_owns_typed_components_and_tracks_revisions() {
+    let mut world = RuntimeWorld::create(RuntimeConfig {
+        seed: 7,
+        required_slots: vec!["presentation".to_string()],
+    })
+    .and_then(|world| world.with_package(PackageHandle::default()))
+    .unwrap();
+    let slot = EngineModuleSlot("presentation".to_string());
+    let binding = ValidatedModuleBinding::validate(
+        slot.clone(),
+        "roukaku.fixture.headless_presentation",
+        "presentation.headless",
+        ModuleBindingContext {
+            package_id: "stage1.headless".to_string(),
+            target: "headless".to_string(),
+            profile: "test".to_string(),
+            engine_version: env!("CARGO_PKG_VERSION").to_string(),
+            rustc_fingerprint: "rustc-stable".to_string(),
+            feature_fingerprint: "runtime-typed-v3".to_string(),
+            abi_fingerprint: "roukaku-plugin-abi-v3".to_string(),
+        },
+        true,
+        true,
+    )
+    .unwrap();
+    world.mount_module(slot, binding).unwrap();
+    let actor = world
+        .create_actor("hero", vec!["player".to_string()])
+        .unwrap();
+    let component = world
+        .attach_component(
+            actor,
+            "roukaku.test.component",
+            &TestComponent {
+                status: "ready".to_string(),
+                count: 1,
+            },
+        )
+        .unwrap();
+
+    world
+        .tick(roukaku_runtime::TickRequest::live(
+            TickInput {
+                fixed_step: 1,
+                delta_ns: 16_666_667,
+                seed: 7,
+            },
+            Vec::new(),
+        ))
+        .unwrap();
+    assert_eq!(world.debug_session().actors().len(), 1);
+    assert_eq!(world.debug_session().components(actor).len(), 1);
+    assert_eq!(
+        world
+            .read_component::<TestComponent>(component)
+            .unwrap()
+            .count,
+        1
+    );
+
+    world
+        .replace_component(
+            component,
+            &TestComponent {
+                status: "running".to_string(),
+                count: 2,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        world
+            .read_component::<TestComponent>(component)
+            .unwrap()
+            .count,
+        2
+    );
+    let mutations = world.debug_session().mutation_trace();
+    assert_eq!(mutations.len(), 1);
+    assert_eq!(mutations[0].component_id, component);
+    assert!(mutations[0].after_revision > mutations[0].before_revision);
+
+    assert!(world.detach_component(component).unwrap());
+    assert!(world.remove_actor(actor).unwrap());
+    assert!(!world.save(SaveRequest::default()).unwrap().0.is_empty());
+}
+
+#[test]
+fn world_actor_rejects_component_for_missing_actor() {
+    let mut world = RuntimeWorld::create(RuntimeConfig::default())
+        .and_then(|world| world.with_package(PackageHandle::default()))
+        .unwrap();
+    let missing = ActorId(StableId::deterministic_v7(1, 2, 3));
+    let error = world
+        .attach_component(missing, "roukaku.test.component", &"orphan")
+        .unwrap_err();
+    assert!(error.to_string().contains("ROUKAKU_RUNTIME_ACTOR_MISSING"));
+}
+
+#[test]
+fn replacing_snapshot_payload_preserves_schema_and_advances_revision() {
+    let original = roukaku_runtime::RuntimeComponentPayload::typed(
+        "test.counter",
+        roukaku_core::SchemaVersion::new(2, 0, 0),
+        3_u64,
+    );
+    let replaced = original.replaced(5_u64).unwrap();
+    assert_eq!(replaced.schema(), original.schema());
+    assert_eq!(replaced.version(), original.version());
+    assert_eq!(replaced.revision(), original.revision() + 1);
+    assert_eq!(replaced.decode::<u64>().unwrap(), 5);
+    assert_eq!(original.decode::<u64>().unwrap(), 3);
+}

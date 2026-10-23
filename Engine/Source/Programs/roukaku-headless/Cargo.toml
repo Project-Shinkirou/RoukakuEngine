@@ -1,0 +1,38 @@
+[package]
+name = "roukaku-headless"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+publish = false
+
+[features]
+default = []
+ffmpeg-vcpkg = ["roukaku-platform-headless/ffmpeg-vcpkg"]
+
+[dependencies]
+roukaku-headless-protocol = { path = "../../Runtime/roukaku-headless-protocol" }
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-byte-source = { path = "../../Runtime/roukaku-byte-source" }
+roukaku-observability = { path = "../../Developer/roukaku-observability" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-platform-headless = { path = "../../Platform/roukaku-platform-headless" }
+roukaku-platform-common = { path = "../../Platform/roukaku-platform-common" }
+roukaku-media-core = { path = "../../Runtime/roukaku-media-core" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-plugin = { path = "../../Runtime/roukaku-plugin", default-features = false }
+roukaku-player-vn = { path = "../roukaku-player-vn" }
+roukaku-headless-vn-adapter = { path = "../../Developer/roukaku-headless-vn-adapter" }
+clap.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+image.workspace = true
+hound.workspace = true
+rustfft.workspace = true
+
+[dev-dependencies]
+roukaku-headless-test = { path = "../../Developer/roukaku-headless-test" }
+tempfile.workspace = true

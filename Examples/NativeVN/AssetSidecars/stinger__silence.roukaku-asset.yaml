@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/stinger/silence
+source: Audio/Master/stinger/silence.wav
+source_hash: sha256:738167c21add47952592463ffbac4e102d9bf5ea625ce15bc2c7107242341563
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

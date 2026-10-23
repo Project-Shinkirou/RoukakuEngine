@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/stinger/truth
+source: Audio/Master/stinger/truth.wav
+source_hash: sha256:30514cb0571b20a722dd213baf2a7e7b85ac4672593916f89aa4fab9f2a3c108
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

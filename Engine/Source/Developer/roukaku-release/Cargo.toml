@@ -1,0 +1,36 @@
+[package]
+name = "roukaku-release"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[features]
+default = []
+ffmpeg-vcpkg = ["roukaku-media/ffmpeg-vcpkg"]
+
+[dependencies]
+roukaku-asset = { path = "../../Runtime/roukaku-asset" }
+roukaku-core = { path = "../../Runtime/roukaku-core" }
+roukaku-media = { path = "../../Runtime/roukaku-media" }
+roukaku-package = { path = "../../Runtime/roukaku-package" }
+roukaku-runtime = { path = "../../Runtime/roukaku-runtime" }
+roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
+roukaku-platform = { path = "../../Platform/roukaku-platform" }
+roukaku-platform-android = { path = "../../Platform/roukaku-platform-android" }
+roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi", default-features = false }
+roukaku-target = { path = "../../Platform/roukaku-target" }
+roukaku-vn = { path = "../../Modules/RoukakuVN/roukaku-vn" }
+roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
+roukaku-vn-policy = { path = "../../Modules/RoukakuVN/roukaku-vn-policy" }
+roukaku-vn-script = { path = "../../Modules/RoukakuVN/roukaku-vn-script" }
+postcard.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

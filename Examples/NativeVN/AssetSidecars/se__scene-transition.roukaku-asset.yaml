@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/scene-transition
+source: Audio/Master/se/scene-transition.wav
+source_hash: sha256:14ec44af86d656e1d726a037bc0707bdf9f5dd608e151a6c3d6dbf810f2bcecb
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

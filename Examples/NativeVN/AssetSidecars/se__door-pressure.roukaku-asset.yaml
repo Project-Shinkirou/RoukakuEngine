@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/door-pressure
+source: Audio/Master/se/door-pressure.wav
+source_hash: sha256:c62e2ffe5f34d31c56cbdbeebf3dde7b8a0341a80e48e5c7ce12f6bac483c185
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted

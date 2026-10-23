@@ -1,0 +1,12 @@
+schema: roukaku.asset.v1
+id: asset:/se/terminal-wake
+source: Audio/Master/se/terminal-wake.wav
+source_hash: sha256:7b23553e553f9f60fee8a1a5b20d275ff79473f8cf509969395352647813217c
+type: audio.wav
+license: project-owned-generated
+importer: roukaku.import.audio
+cook:
+  processor: roukaku.cook.audio
+  target_profiles: [advanced-vn]
+  params: {}
+review: accepted
