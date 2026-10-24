@@ -6,7 +6,7 @@ use std::{
         mpsc as std_mpsc, Arc,
     },
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use crate::accessibility::MacosAccessibilityBridge;
@@ -48,9 +48,7 @@ pub use backend_setup::start;
 pub(super) use backend_setup::BackendSetup;
 use backend_setup::MacosHostApp;
 pub use backend_setup::MacosHostRunner;
-use backend_setup::MacosRunnerApp;
 use backend_setup::PackageHostConfig;
-use backend_setup::SingleInstanceGuard;
 mod new;
 
 mod process_commands;
@@ -58,19 +56,12 @@ mod process_commands;
 mod macos_host_app;
 use macos_host_app::capture_surface;
 use macos_host_app::create_surface;
-use macos_host_app::input_state;
-use macos_host_app::pointer_button;
 use macos_host_app::raw_gamepad_event;
-use macos_host_app::touch_phase;
 use macos_host_app::AudioResource;
 use macos_host_app::PackageCompletion;
 use macos_host_app::PackageSourceResource;
 use macos_host_app::SurfaceResource;
 mod audio_resource;
-use audio_resource::decode_image;
-use audio_resource::sample_format_rank;
-use audio_resource::set_stream_error;
-use audio_resource::supported_codec;
 use audio_resource::DecodeResource;
 mod decode_avfoundation;
 use decode_avfoundation::decode_avfoundation;

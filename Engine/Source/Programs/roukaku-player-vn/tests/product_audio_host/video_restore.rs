@@ -1,6 +1,7 @@
 use super::*;
 
 #[tokio::test]
+#[ignore = "requires a real audio output device"]
 pub(super) async fn shared_product_audio_host_owns_format_queue_control_and_cleanup() {
     let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.game");
     let (client, mut backend, _events) = host_channel(profile, 16, 16).unwrap();

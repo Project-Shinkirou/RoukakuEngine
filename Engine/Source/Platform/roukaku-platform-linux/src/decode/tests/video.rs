@@ -168,7 +168,7 @@ fn every_decoded_frame_reaches_the_hardware_renderer() {
             panic!("expected frame");
         };
         let mut rgba = bgra8.to_vec();
-        for pixel in rgba.chunks_exact_mut(4) {
+        for pixel in rgba.as_chunks_mut::<4>().0 {
             pixel.swap(0, 2);
         }
         let capture = renderer

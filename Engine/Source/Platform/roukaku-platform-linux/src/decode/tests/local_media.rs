@@ -60,7 +60,7 @@ fn complete_local_movie_streams_through_worker_and_gpu() {
         next_pts = pts_us + duration_us;
         total_bytes += bgra8.len() as u64;
         let mut rgba = bgra8.to_vec();
-        for pixel in rgba.chunks_exact_mut(4) {
+        for pixel in rgba.as_chunks_mut::<4>().0 {
             pixel.swap(0, 2);
         }
         let capture = renderer
