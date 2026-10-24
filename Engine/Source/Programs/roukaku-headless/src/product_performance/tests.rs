@@ -3,13 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use roukaku_core::{PerformanceBudget, PerformanceRunIdentity};
-use roukaku_headless_protocol::ProductPerformanceSample;
-use roukaku_platform_headless::{HeadlessGpuFrameSample, HeadlessPerformanceObserver};
-
 use super::*;
-
-use roukaku_core::{Hash256, PerformanceMetricBudget, PerformanceUnit, PERFORMANCE_BUDGET_SCHEMA};
 
 #[test]
 fn frame_deadlines_do_not_accumulate_fractional_rate_drift() {
@@ -133,225 +127,241 @@ fn deterministic_measurement_duration_covers_all_120hz_intervals() {
     );
 }
 
-#[test]
-fn product_recorder_writes_identity_bound_report_and_trace_manifest() {
-    let temp = tempfile::tempdir().unwrap();
-    let profile_hash = hash(b"profile");
-    let metrics = [
-        ("frame.cpu_ns", PerformanceUnit::Nanoseconds),
-        ("frame.gpu_ns", PerformanceUnit::Nanoseconds),
-        ("frame.end_to_end_ns", PerformanceUnit::Nanoseconds),
-        ("deadline.miss_count", PerformanceUnit::Count),
-        ("memory.working_set_bytes", PerformanceUnit::Bytes),
-        ("memory.private_bytes", PerformanceUnit::Bytes),
-        ("memory.growth_bytes", PerformanceUnit::Bytes),
-        ("gpu.resource_bytes", PerformanceUnit::Bytes),
-        ("gpu.atlas_bytes", PerformanceUnit::Bytes),
-        ("cache.decoded_bytes", PerformanceUnit::Bytes),
-        ("gpu.upload_bytes", PerformanceUnit::Bytes),
-        ("gpu.readback_bytes", PerformanceUnit::Bytes),
-        ("renderer.draw_calls", PerformanceUnit::Count),
-        ("renderer.queue_submissions", PerformanceUnit::Count),
-        ("renderer.pipeline_count", PerformanceUnit::Count),
-        ("heap.allocation_bytes", PerformanceUnit::Bytes),
-        ("heap.allocation_count", PerformanceUnit::Count),
-    ]
-    .into_iter()
-    .map(|(id, unit)| PerformanceMetricBudget {
-        id: id.into(),
-        unit,
-        min_samples: 1,
-        max_samples: 1,
-        thresholds: crate::performance_e2::metric_thresholds(id),
-    })
-    .collect();
-    let recorder = ProductPerformanceRecorder::create(
-        PerformanceBudget {
-            schema: PERFORMANCE_BUDGET_SCHEMA.into(),
-            budget_id: "product.performance.test".into(),
-            target: "nativevn.test".into(),
-            profile: "classic".into(),
-            profile_hash: profile_hash.clone(),
-            min_run_duration_us: 1,
-            metrics,
-        },
-        &temp.path().join("trace.json"),
-        1,
-        roukaku_platform::HEADLESS_PERFORMANCE_PRESENTATION_RATE_HZ,
-        1,
-    )
-    .unwrap();
-    recorder.begin_input_flow(1).unwrap();
-    let mut sample = HeadlessGpuFrameSample {
-        sequence: 1,
-        input_flow_id: Some(1),
-        scene_build_ns: 10,
-        scene_digest_ns: 3,
-        scene_validation_ns: 4,
-        scene_pending_ns: 3,
-        cpu_submit_ns: 20,
-        gpu_duration_ns: 30,
-        scene_cpu_ns: 15,
-        filter_cpu_ns: 5,
-        scene_command_cpu_ns: 3,
-        scene_atlas_cpu_ns: 0,
-        scene_geometry_cpu_ns: 4,
-        scene_vertex_upload_cpu_ns: 3,
-        scene_render_encode_cpu_ns: 2,
-        scene_queue_submit_cpu_ns: 3,
-        scene_render_submit_cpu_ns: 5,
-        atlas_upload_gpu_ns: 0,
-        scene_gpu_ns: 20,
-        filter_gpu_ns: 10,
-        gpu_resource_bytes: 1024,
-        atlas_bytes: 512,
-        upload_bytes: 0,
-        readback_bytes: 0,
-        draw_calls: 1,
-        queue_submissions: 1,
-        pipeline_count: 1,
-        heap_allocation_bytes: 0,
-        heap_allocation_count: 0,
-        command_allocation_bytes: 0,
-        atlas_allocation_bytes: 0,
-        geometry_allocation_bytes: 0,
-    };
-    let product_sample = ProductPerformanceSample {
-        bind_to_next_presentation: true,
-        runtime_tick_ns: 5,
-        vn_step_ns: 2,
-        ui_layout_paint_ns: 40,
-        ui_request_validation_ns: 1,
-        ui_input_routing_ns: 1,
-        ui_tree_build_ns: 2,
-        ui_layout_finalize_ns: 3,
-        ui_semantics_ns: 1,
-        ui_update_layout_ns: 10,
-        ui_paint_conversion_ns: 5,
-        ui_output_validation_ns: 1,
-        ui_host_scene_ns: 25,
-        ui_model_binding_ns: 4,
-        ui_controller_ns: 3,
-        ui_frame_model_ns: 2,
-        ui_text_scene_ns: 1,
-        ui_text_layout_ns: 1,
-        ui_text_resource_ns: 1,
-        ui_text_compose_ns: 1,
-        ui_action_dispatch_ns: 1,
-        ui_present_scene_ns: 1,
-        ui_runtime_host_step_ns: 1,
-        ui_runtime_output_decode_ns: 1,
-        ui_runtime_render_ns: 1,
-        vn_stage_prepare_ns: 1,
-        vn_stage_scene_ns: 1,
-        vn_scene_compose_ns: 1,
-        vn_stage_texture_ns: 1,
-        vn_stage_command_ns: 1,
-        vn_stage_lifecycle_ns: 1,
-        media_decode_ns: 6,
-        media_prewarm_ns: 1,
-        media_provider_decode_ns: 3,
-        media_parse_convert_ns: 2,
-        media_mixer_ns: 1,
-        media_audio_query_ns: 1,
-        media_audio_render_ns: 1,
-        media_audio_submit_ns: 1,
-        media_audio_completion_ns: 1,
-        save_load_ns: 7,
-    };
-    // The production observer receives measured durations after the work
-    // completes. Keep this synthetic sample inside the active flow's real
-    // elapsed interval so the streamed timestamp contract remains valid.
-    std::thread::sleep(Duration::from_millis(1));
-    recorder
-        .record_product_sample(
-            1,
-            ProductPerformanceSample {
-                bind_to_next_presentation: false,
-                runtime_tick_ns: 100_000,
-                media_decode_ns: 100_000,
-                ..ProductPerformanceSample::default()
-            },
-        )
-        .unwrap();
-    recorder.record_product_sample(1, product_sample).unwrap();
-    recorder.pace_gpu_frame(1).unwrap();
-    assert_eq!(recorder.bind_gpu_frame(1).unwrap(), Some(1));
-    recorder.record_gpu_frame(sample).unwrap();
-    recorder.finish_presentation_scope().unwrap();
-    recorder.end_input_flow(1).unwrap();
+// Process memory sampling exists on Windows and Linux only (roukaku-observability).
+#[cfg(any(windows, target_os = "linux"))]
+mod recorder {
+    use std::time::Duration;
 
-    recorder.begin_input_flow(2).unwrap();
-    recorder
-        .record_product_sample(
-            2,
-            ProductPerformanceSample {
-                bind_to_next_presentation: true,
-                runtime_tick_ns: 9_000_000,
-                ..ProductPerformanceSample::default()
-            },
-        )
-        .unwrap();
-    recorder.finish_presentation_scope().unwrap();
-    recorder.end_input_flow(2).unwrap();
-    {
-        let guard = recorder.state.lock().unwrap();
-        let state = guard.as_ref().unwrap();
-        assert!(state.pending_product_sample.is_none());
-        assert_eq!(state.skipped_presentation_samples, 1);
-    }
+    use roukaku_core::{
+        Hash256, PerformanceBudget, PerformanceMetricBudget, PerformanceRunIdentity,
+        PerformanceUnit, PERFORMANCE_BUDGET_SCHEMA,
+    };
+    use roukaku_headless_protocol::ProductPerformanceSample;
+    use roukaku_platform_headless::{HeadlessGpuFrameSample, HeadlessPerformanceObserver};
 
-    recorder.begin_input_flow(3).unwrap();
-    sample.sequence = 2;
-    sample.input_flow_id = Some(3);
-    recorder.record_product_sample(3, product_sample).unwrap();
-    recorder.pace_gpu_frame(2).unwrap();
-    assert_eq!(recorder.bind_gpu_frame(2).unwrap(), Some(3));
-    recorder.record_gpu_frame(sample).unwrap();
-    recorder.finish_presentation_scope().unwrap();
-    recorder.end_input_flow(3).unwrap();
-    {
-        let guard = recorder.state.lock().unwrap();
-        let state = guard.as_ref().unwrap();
-        assert_eq!(state.measurement_frame_count, 1);
-        assert_eq!(state.gpu_measurement_cutoff, Some(2));
-    }
-    // The product may still have physical inputs after the budget closes.
-    // Shutdown must preserve the exact completed measurement instead of
-    // treating that normal path as a duplicate-stop error.
-    recorder.stop_gpu_measurement().unwrap();
-    recorder
-        .finish(
-            PerformanceRunIdentity {
-                source_revision: "a".repeat(40),
-                dirty: false,
+    use super::super::*;
+
+    #[test]
+    fn product_recorder_writes_identity_bound_report_and_trace_manifest() {
+        let temp = tempfile::tempdir().unwrap();
+        let profile_hash = hash(b"profile");
+        let metrics = [
+            ("frame.cpu_ns", PerformanceUnit::Nanoseconds),
+            ("frame.gpu_ns", PerformanceUnit::Nanoseconds),
+            ("frame.end_to_end_ns", PerformanceUnit::Nanoseconds),
+            ("deadline.miss_count", PerformanceUnit::Count),
+            ("memory.working_set_bytes", PerformanceUnit::Bytes),
+            ("memory.private_bytes", PerformanceUnit::Bytes),
+            ("memory.growth_bytes", PerformanceUnit::Bytes),
+            ("gpu.resource_bytes", PerformanceUnit::Bytes),
+            ("gpu.atlas_bytes", PerformanceUnit::Bytes),
+            ("cache.decoded_bytes", PerformanceUnit::Bytes),
+            ("gpu.upload_bytes", PerformanceUnit::Bytes),
+            ("gpu.readback_bytes", PerformanceUnit::Bytes),
+            ("renderer.draw_calls", PerformanceUnit::Count),
+            ("renderer.queue_submissions", PerformanceUnit::Count),
+            ("renderer.pipeline_count", PerformanceUnit::Count),
+            ("heap.allocation_bytes", PerformanceUnit::Bytes),
+            ("heap.allocation_count", PerformanceUnit::Count),
+        ]
+        .into_iter()
+        .map(|(id, unit)| PerformanceMetricBudget {
+            id: id.into(),
+            unit,
+            min_samples: 1,
+            max_samples: 1,
+            thresholds: crate::performance_e2::metric_thresholds(id),
+        })
+        .collect();
+        let recorder = ProductPerformanceRecorder::create(
+            PerformanceBudget {
+                schema: PERFORMANCE_BUDGET_SCHEMA.into(),
+                budget_id: "product.performance.test".into(),
                 target: "nativevn.test".into(),
                 profile: "classic".into(),
-                profile_hash,
-                package_hash: hash(b"package"),
-                build_fingerprint: hash(b"build"),
-                session_id: "product.performance.test".into(),
+                profile_hash: profile_hash.clone(),
+                min_run_duration_us: 1,
+                metrics,
             },
-            "product.performance.test",
-            hash(b"adapter"),
-            hash(b"driver"),
-            &temp.path().join("report.json"),
-            &temp.path().join("trace-manifest.json"),
+            &temp.path().join("trace.json"),
+            1,
+            roukaku_platform::HEADLESS_PERFORMANCE_PRESENTATION_RATE_HZ,
+            1,
         )
         .unwrap();
-    assert!(temp.path().join("trace.json").is_file());
-    assert!(temp.path().join("report.json").is_file());
-    assert!(temp.path().join("trace-manifest.json").is_file());
-    let report: roukaku_core::PerformanceReport =
-        serde_json::from_slice(&std::fs::read(temp.path().join("report.json")).unwrap()).unwrap();
-    let cpu = report
-        .metrics
-        .iter()
-        .find(|metric| metric.id == "frame.cpu_ns")
-        .unwrap();
-    assert_eq!(cpu.p95, 88);
-}
+        recorder.begin_input_flow(1).unwrap();
+        let mut sample = HeadlessGpuFrameSample {
+            sequence: 1,
+            input_flow_id: Some(1),
+            scene_build_ns: 10,
+            scene_digest_ns: 3,
+            scene_validation_ns: 4,
+            scene_pending_ns: 3,
+            cpu_submit_ns: 20,
+            gpu_duration_ns: 30,
+            scene_cpu_ns: 15,
+            filter_cpu_ns: 5,
+            scene_command_cpu_ns: 3,
+            scene_atlas_cpu_ns: 0,
+            scene_geometry_cpu_ns: 4,
+            scene_vertex_upload_cpu_ns: 3,
+            scene_render_encode_cpu_ns: 2,
+            scene_queue_submit_cpu_ns: 3,
+            scene_render_submit_cpu_ns: 5,
+            atlas_upload_gpu_ns: 0,
+            scene_gpu_ns: 20,
+            filter_gpu_ns: 10,
+            gpu_resource_bytes: 1024,
+            atlas_bytes: 512,
+            upload_bytes: 0,
+            readback_bytes: 0,
+            draw_calls: 1,
+            queue_submissions: 1,
+            pipeline_count: 1,
+            heap_allocation_bytes: 0,
+            heap_allocation_count: 0,
+            command_allocation_bytes: 0,
+            atlas_allocation_bytes: 0,
+            geometry_allocation_bytes: 0,
+        };
+        let product_sample = ProductPerformanceSample {
+            bind_to_next_presentation: true,
+            runtime_tick_ns: 5,
+            vn_step_ns: 2,
+            ui_layout_paint_ns: 40,
+            ui_request_validation_ns: 1,
+            ui_input_routing_ns: 1,
+            ui_tree_build_ns: 2,
+            ui_layout_finalize_ns: 3,
+            ui_semantics_ns: 1,
+            ui_update_layout_ns: 10,
+            ui_paint_conversion_ns: 5,
+            ui_output_validation_ns: 1,
+            ui_host_scene_ns: 25,
+            ui_model_binding_ns: 4,
+            ui_controller_ns: 3,
+            ui_frame_model_ns: 2,
+            ui_text_scene_ns: 1,
+            ui_text_layout_ns: 1,
+            ui_text_resource_ns: 1,
+            ui_text_compose_ns: 1,
+            ui_action_dispatch_ns: 1,
+            ui_present_scene_ns: 1,
+            ui_runtime_host_step_ns: 1,
+            ui_runtime_output_decode_ns: 1,
+            ui_runtime_render_ns: 1,
+            vn_stage_prepare_ns: 1,
+            vn_stage_scene_ns: 1,
+            vn_scene_compose_ns: 1,
+            vn_stage_texture_ns: 1,
+            vn_stage_command_ns: 1,
+            vn_stage_lifecycle_ns: 1,
+            media_decode_ns: 6,
+            media_prewarm_ns: 1,
+            media_provider_decode_ns: 3,
+            media_parse_convert_ns: 2,
+            media_mixer_ns: 1,
+            media_audio_query_ns: 1,
+            media_audio_render_ns: 1,
+            media_audio_submit_ns: 1,
+            media_audio_completion_ns: 1,
+            save_load_ns: 7,
+        };
+        // The production observer receives measured durations after the work
+        // completes. Keep this synthetic sample inside the active flow's real
+        // elapsed interval so the streamed timestamp contract remains valid.
+        std::thread::sleep(Duration::from_millis(1));
+        recorder
+            .record_product_sample(
+                1,
+                ProductPerformanceSample {
+                    bind_to_next_presentation: false,
+                    runtime_tick_ns: 100_000,
+                    media_decode_ns: 100_000,
+                    ..ProductPerformanceSample::default()
+                },
+            )
+            .unwrap();
+        recorder.record_product_sample(1, product_sample).unwrap();
+        recorder.pace_gpu_frame(1).unwrap();
+        assert_eq!(recorder.bind_gpu_frame(1).unwrap(), Some(1));
+        recorder.record_gpu_frame(sample).unwrap();
+        recorder.finish_presentation_scope().unwrap();
+        recorder.end_input_flow(1).unwrap();
 
-fn hash(bytes: &[u8]) -> String {
-    Hash256::from_sha256(bytes).to_string()
+        recorder.begin_input_flow(2).unwrap();
+        recorder
+            .record_product_sample(
+                2,
+                ProductPerformanceSample {
+                    bind_to_next_presentation: true,
+                    runtime_tick_ns: 9_000_000,
+                    ..ProductPerformanceSample::default()
+                },
+            )
+            .unwrap();
+        recorder.finish_presentation_scope().unwrap();
+        recorder.end_input_flow(2).unwrap();
+        {
+            let guard = recorder.state.lock().unwrap();
+            let state = guard.as_ref().unwrap();
+            assert!(state.pending_product_sample.is_none());
+            assert_eq!(state.skipped_presentation_samples, 1);
+        }
+
+        recorder.begin_input_flow(3).unwrap();
+        sample.sequence = 2;
+        sample.input_flow_id = Some(3);
+        recorder.record_product_sample(3, product_sample).unwrap();
+        recorder.pace_gpu_frame(2).unwrap();
+        assert_eq!(recorder.bind_gpu_frame(2).unwrap(), Some(3));
+        recorder.record_gpu_frame(sample).unwrap();
+        recorder.finish_presentation_scope().unwrap();
+        recorder.end_input_flow(3).unwrap();
+        {
+            let guard = recorder.state.lock().unwrap();
+            let state = guard.as_ref().unwrap();
+            assert_eq!(state.measurement_frame_count, 1);
+            assert_eq!(state.gpu_measurement_cutoff, Some(2));
+        }
+        // The product may still have physical inputs after the budget closes.
+        // Shutdown must preserve the exact completed measurement instead of
+        // treating that normal path as a duplicate-stop error.
+        recorder.stop_gpu_measurement().unwrap();
+        recorder
+            .finish(
+                PerformanceRunIdentity {
+                    source_revision: "a".repeat(40),
+                    dirty: false,
+                    target: "nativevn.test".into(),
+                    profile: "classic".into(),
+                    profile_hash,
+                    package_hash: hash(b"package"),
+                    build_fingerprint: hash(b"build"),
+                    session_id: "product.performance.test".into(),
+                },
+                "product.performance.test",
+                hash(b"adapter"),
+                hash(b"driver"),
+                &temp.path().join("report.json"),
+                &temp.path().join("trace-manifest.json"),
+            )
+            .unwrap();
+        assert!(temp.path().join("trace.json").is_file());
+        assert!(temp.path().join("report.json").is_file());
+        assert!(temp.path().join("trace-manifest.json").is_file());
+        let report: roukaku_core::PerformanceReport =
+            serde_json::from_slice(&std::fs::read(temp.path().join("report.json")).unwrap())
+                .unwrap();
+        let cpu = report
+            .metrics
+            .iter()
+            .find(|metric| metric.id == "frame.cpu_ns")
+            .unwrap();
+        assert_eq!(cpu.p95, 88);
+    }
+
+    fn hash(bytes: &[u8]) -> String {
+        Hash256::from_sha256(bytes).to_string()
+    }
 }
