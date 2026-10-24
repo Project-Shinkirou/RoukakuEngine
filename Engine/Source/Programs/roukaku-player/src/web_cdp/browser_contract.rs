@@ -148,6 +148,9 @@ impl Drop for BundleHttpServer {
 }
 
 pub(super) fn serve_bundle_request(root: &Path, mut stream: TcpStream) -> std::io::Result<()> {
+    // BSD-derived systems (macOS) hand out accepted sockets that inherit the
+    // listener's non-blocking mode; the request loop below needs blocking reads.
+    stream.set_nonblocking(false)?;
     stream.set_read_timeout(Some(Duration::from_secs(2)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     let mut request = Vec::with_capacity(1024);
