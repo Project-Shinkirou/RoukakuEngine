@@ -1,6 +1,8 @@
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod accessibility;
 mod factory;
+#[cfg(target_os = "ios")]
+pub use factory::macos::ios;
 #[cfg(all(target_os = "macos", feature = "platform-test-driver"))]
 mod test_driver;
 

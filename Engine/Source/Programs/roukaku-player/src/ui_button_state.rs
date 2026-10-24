@@ -1,6 +1,11 @@
 use super::*;
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) fn ui_button_state(
     state: roukaku_platform::InputState,
 ) -> roukaku_ui_core::UiButtonState {
@@ -10,7 +15,12 @@ pub(super) fn ui_button_state(
     }
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) fn ui_pointer_button(
     button: roukaku_platform::PointerButton,
 ) -> roukaku_ui_core::UiPointerButton {
@@ -26,7 +36,12 @@ pub(super) fn ui_pointer_button(
     }
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) fn gamepad_navigation(
     control: roukaku_platform::GamepadControl,
 ) -> Option<roukaku_ui_core::UiNavigationAction> {
@@ -45,7 +60,12 @@ pub(super) fn gamepad_navigation(
     }
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) async fn execute_platform_save(
     source: &mut roukaku_player::NativeVnHostCommandSource,
     media: &roukaku_player::NativeVnProductMediaHost,
@@ -71,7 +91,12 @@ pub(super) async fn execute_platform_save(
     Ok(())
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) async fn capture_gameplay_surface(
     source: &mut roukaku_player::NativeVnHostCommandSource,
     executor: &mut roukaku_player::PlayerHostCommandExecutor<roukaku_player::PlatformCommandSink>,
@@ -103,7 +128,12 @@ pub(super) async fn capture_gameplay_surface(
         .map_err(|error| player_platform_error("player.save.capture.cache", error))
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) async fn execute_platform_load(
     source: &mut roukaku_player::NativeVnHostCommandSource,
     media: &mut roukaku_player::NativeVnProductMediaHost,
@@ -139,7 +169,12 @@ pub(super) async fn execute_platform_load(
     Ok(())
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) fn player_platform_error(
     operation: &'static str,
     error: impl std::fmt::Display,
@@ -151,7 +186,12 @@ pub(super) fn player_platform_error(
     )
 }
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) fn log_consumed_vn_step(
     player_sequence: u64,
     kind: &str,
@@ -213,7 +253,12 @@ pub(super) fn log_consumed_vn_step(
     Ok(())
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+)))]
 pub(super) fn run_bundled_game(
     _test_null_audio: bool,
     _preview_control: bool,

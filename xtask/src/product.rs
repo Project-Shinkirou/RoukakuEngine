@@ -1,10 +1,7 @@
 use crate::util::{capture, run as command};
 use anyhow::{bail, Context, Result};
 use clap::{Args, ValueEnum};
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{path::Path, process::Command};
 
 #[derive(Clone, Copy, ValueEnum)]
 pub enum Workspace {
@@ -23,11 +20,61 @@ pub struct Selection {
     /// Run ignored hardware-dependent tests on a machine with the required devices.
     #[arg(long)]
     hardware: bool,
+    /// Rust target triple. Apple targets use cross on Linux and Cargo on macOS.
+    #[arg(long)]
+    target: Option<String>,
+    #[arg(long)]
+    release: bool,
 }
 
 pub fn run(root: &Path, task: &str, selected: &Selection) -> Result<()> {
     if selected.hardware && !matches!(task, "test" | "check") {
         bail!("--hardware is supported only by test and check");
+    }
+    if let Some(target) = &selected.target {
+        if task != "build" {
+            bail!("--target is supported by build; use cross for target check/clippy");
+        }
+        let workspace = match selected.workspace {
+            Workspace::Engine => root.to_path_buf(),
+            Workspace::Editor => root.join("Editor"),
+            Workspace::All => bail!("target builds require an explicit workspace"),
+        };
+        let packages = if selected.packages.is_empty() {
+            vec![if matches!(selected.workspace, Workspace::Editor) {
+                "roukaku-editor"
+            } else {
+                "roukaku-player"
+            }
+            .into()]
+        } else {
+            selected.packages.clone()
+        };
+        let mut cmd = if crate::apple::supported(target) {
+            crate::apple::command(root, target)?
+        } else {
+            Command::new("cargo")
+        };
+        cmd.current_dir(workspace).args([
+            "build",
+            "--locked",
+            "--target",
+            target,
+            "--message-format=json-render-diagnostics",
+        ]);
+        for package in packages {
+            cmd.args(["-p", &package]);
+        }
+        for feature in &selected.features {
+            cmd.args(["--features", feature]);
+        }
+        if selected.release {
+            cmd.arg("--release");
+        }
+        return command(&mut cmd);
+    }
+    if selected.release {
+        bail!("--release requires --target");
     }
     if !selected.packages.is_empty() && matches!(selected.workspace, Workspace::All) {
         bail!("--package requires an explicit workspace");
@@ -146,76 +193,13 @@ pub struct Cross {
 }
 
 pub fn cross(root: &Path, options: &Cross) -> Result<()> {
-    let (cc, cxx, arch) = match options.target.as_str() {
-        "aarch64-apple-darwin" => ("oa64-clang", "oa64-clang++", "aarch64"),
-        "x86_64-apple-darwin" => ("o64-clang", "o64-clang++", "x86_64"),
-        _ => bail!("cross supports only macOS x64 and arm64"),
-    };
-    let toolchain = PathBuf::from(
-        std::env::var_os("ROUKAKU_OSXCROSS_ROOT").context("ROUKAKU_OSXCROSS_ROOT is required")?,
-    )
-    .canonicalize()?;
-    let bin = toolchain.join("bin");
-    let sdk = if let Some(value) = std::env::var_os("SDKROOT") {
-        PathBuf::from(value)
-    } else {
-        let sdks: Vec<_> = std::fs::read_dir(toolchain.join("SDK"))?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.join("SDKSettings.json").is_file())
-            .collect();
-        if sdks.len() != 1 {
-            bail!("set SDKROOT to one explicit macOS SDK");
-        }
-        sdks[0].clone()
-    };
-    let mut ars: Vec<_> = std::fs::read_dir(&bin)?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.file_name().is_some_and(|n| {
-                let n = n.to_string_lossy();
-                n.starts_with(&format!("{arch}-apple-darwin")) && n.ends_with("-ar")
-            })
-        })
-        .collect();
-    ars.sort();
-    if !bin.join(cc).is_file()
-        || !bin.join(cxx).is_file()
-        || ars.len() != 1
-        || !sdk.join("SDKSettings.json").is_file()
-    {
-        bail!("osxcross compiler, archiver or SDK is missing/ambiguous");
-    }
-    let installed = capture(Command::new("rustup").args(["target", "list", "--installed"]))?;
-    if !String::from_utf8_lossy(&installed.stdout)
-        .lines()
-        .any(|t| t == options.target)
-    {
-        bail!("install Rust target {} explicitly", options.target);
-    }
-    let target_env = options.target.replace('-', "_");
-    let mut paths = vec![bin.clone()];
-    paths.extend(std::env::split_paths(
-        &std::env::var_os("PATH").unwrap_or_default(),
-    ));
-    let mut c = Command::new("cargo");
-    c.current_dir(root)
+    let mut cmd = crate::apple::command(root, &options.target)?;
+    cmd.current_dir(root)
         .args([&options.task, "--locked", "--target", &options.target])
         .args(&options.args)
-        .env("PATH", std::env::join_paths(paths)?)
-        .env("SDKROOT", sdk)
-        .env("MACOSX_DEPLOYMENT_TARGET", "13.0")
-        .env(format!("CC_{target_env}"), bin.join(cc))
-        .env(format!("CXX_{target_env}"), bin.join(cxx))
-        .env(format!("AR_{target_env}"), &ars[0])
-        .env(
-            format!("CARGO_TARGET_{}_LINKER", target_env.to_uppercase()),
-            bin.join(cc),
-        )
         .env(
             "CARGO_TARGET_DIR",
             root.join(".work/cross").join(&options.target),
         );
-    command(&mut c)
+    command(&mut cmd)
 }

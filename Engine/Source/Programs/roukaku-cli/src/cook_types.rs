@@ -118,6 +118,7 @@ pub(crate) struct BundleArtifactInputs {
     pub(crate) windows_runtime: Option<PathBuf>,
     pub(crate) linux_player: Option<PathBuf>,
     pub(crate) macos_player: Option<PathBuf>,
+    pub(crate) ios_player: Option<PathBuf>,
     pub(crate) crash_reporter: Option<PathBuf>,
     pub(crate) web_player_wasm: Option<PathBuf>,
     pub(crate) web_player_glue: Option<PathBuf>,

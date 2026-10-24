@@ -471,7 +471,49 @@ pub(crate) fn build_standalone_bundle_into(
             entrypoint.to_string()
         }
         PlatformId::Ios => {
-            return Err(format!("standalone bundle platform {platform_name} is Stage 6").into());
+            let player = artifacts.ios_player.as_deref().ok_or(
+                "iOS bundle requires --ios-player pointing to the built device or simulator Player",
+            )?;
+            let bytes = fs::read(player)?;
+            {
+                use object::Object;
+                let binary = object::File::parse(bytes.as_slice())?;
+                if binary.format() != object::BinaryFormat::MachO
+                    || binary.kind() != object::ObjectKind::Executable
+                    || !matches!(
+                        binary.architecture(),
+                        object::Architecture::Aarch64 | object::Architecture::X86_64
+                    )
+                {
+                    return Err(
+                        "iOS Player must be a real arm64 or x86_64 Mach-O executable".into(),
+                    );
+                }
+            }
+            let entrypoint = "roukaku-player";
+            fs::write(out.join(entrypoint), &bytes)?;
+            make_executable(&out.join(entrypoint))?;
+            files.push(bundle_file(entrypoint, "ios_player", &bytes));
+            let config = player_config_bytes(PlayerConfigInput {
+                target,
+                profile,
+                platform_name,
+                package_storage_hash: &package_storage_hash,
+                display_config: &display_config,
+                locale_config: &locale_config,
+                source_unlock_profile: source_locked.then_some(source_profile_bundle_path),
+            })?;
+            fs::write(out.join("RoukakuPlayer.config.json"), &config)?;
+            files.push(bundle_file(
+                "RoukakuPlayer.config.json",
+                "player_config",
+                &config,
+            ));
+            bundle_checks.push(PlayerLaunchCheck {
+                id: "ios.bundle_signing".into(),
+                status: "required_external".into(),
+            });
+            entrypoint.to_string()
         }
     };
 

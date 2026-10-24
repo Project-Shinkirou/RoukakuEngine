@@ -1,5 +1,5 @@
 mod handle;
-mod ios;
+pub mod ios;
 mod launch_profile;
 mod profile;
 mod report;
@@ -9,7 +9,7 @@ mod source_directory;
 mod types;
 
 pub use handle::*;
-pub use ios::{factory as ios_factory, probe as probe_ios};
+pub use ios::probe as probe_ios;
 pub use launch_profile::*;
 pub use profile::*;
 pub use report::*;

@@ -70,15 +70,59 @@ cargo xtask android --package .work/nativevn.roukakupkg --target nativevn-flagsh
 
 Android 包必须有对应平台 profile，不能靠重命名桌面包获得 Android 支持。触控、返回键、前后台、音频和存读档需要真机检查。
 
-## macOS 交叉检查
+## 从 Linux 构建 Apple 目标
 
-在已有 osxcross 和合法 macOS SDK 的环境中，设置 `ROUKAKU_OSXCROSS_ROOT`。SDK 不唯一时显式设置 `SDKROOT`，并预先安装目标 Rust 标准库：
+原生 macOS CI 继续使用 `macos-15` / `macos-15-intel` 上的 Cargo 和 Xcode。Linux 上的 Apple 构建通过 cross 0.2.5 使用 `Cross.toml` 中的私有镜像。最低版本为 macOS 13.0、iOS 16.0。目标包括 `x86_64-apple-darwin`、`aarch64-apple-darwin`、设备目标 `aarch64-apple-ios`，以及模拟器目标 `aarch64-apple-ios-sim`、`x86_64-apple-ios`。
+
+### 准备合法 SDK
+
+从 [Mac App Store](https://apps.apple.com/app/xcode/id497799835) 或 [Apple Developer Downloads](https://developer.apple.com/download/all/) 取得 Xcode，遵守 Apple 许可。在 Mac 上用 `xip --expand` 展开官方 `.xip`，选择这套 Xcode，并在该 Mac 上接受许可。单独的 Command Line Tools 不含 iOS SDK。随后导出 SDK 内容，保留内部符号链接：
 
 ```sh
-cargo xtask cross --target aarch64-apple-darwin check -- -p roukaku-core
-cargo xtask cross --target x86_64-apple-darwin clippy -- -p roukaku-core -- -D warnings
+for sdk in macosx iphoneos iphonesimulator; do
+  tar -C "$(xcrun --sdk "$sdk" --show-sdk-path)" -cJf "$sdk.sdk.tar.xz" .
+done
 ```
 
-入口只接受这两个 macOS target 和 `check|clippy`，检查对应编译器、archiver 与 SDK，将结果隔离到 `.work/cross/<target>`，部署目标为 macOS 13.0。它不下载 SDK、不生成签名应用，也不替代原生 macOS 运行检查。
+私下把归档传到 Linux，每个 SDK 解压到独立目录。`SHINKI_APPLE_SDK_DIR` 直接指向含 `SDKSettings.json`、`usr/`、`System/` 的 SDK 内容目录。Darwin 使用 `macosx`，设备使用 `iphoneos`，两个模拟器目标使用 `iphonesimulator`。xtask 和 Dockerfile 都不下载 Apple SDK。SDK 归档及含 SDK 的镜像不得提交到 Git 或公共镜像仓库。
+
+### 准备工具与构建
+
+将源码、缓存和工具放在专用目录，预留足够空间；创建镜像时 `/` 可用空间不足 8 GiB 会直接拒绝。不要删除无关缓存或 Docker 镜像。Linux 配置示例：
+
+Docker 必须提供 Buildx/BuildKit（用 `docker buildx version` 检查）。任务专用插件可放在 `DOCKER_CONFIG=~/shinkirou-apple/docker` 的 `cli-plugins/docker-buildx` 路径。[Buildx v0.38.1 官方 Linux x86_64 附件](https://github.com/docker/buildx/releases/download/v0.38.1/buildx-v0.38.1.linux-amd64) 的 SHA256 为 `e25d5cd675092bb5d1d03632fdc46cdf3fede7b514dc5f023a105e00d3ce5ad4`，核对后再赋予执行权限。无需 sudo，也不修改已有 Docker 配置。
+
+```sh
+export CARGO_HOME="$HOME/shinkirou-apple/cargo"
+export RUSTUP_HOME="$HOME/shinkirou-apple/rustup"
+export CARGO_TARGET_DIR="$HOME/shinkirou-apple/target"
+export PATH="$HOME/shinkirou-apple/tools/bin:$PATH"
+export DOCKER_CONFIG="$HOME/shinkirou-apple/docker"
+rustup toolchain install 1.98.0 --profile minimal
+rustup target add --toolchain 1.98.0 x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" cross --version 0.2.5
+cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" apple-codesign --version 0.29.0
+export SHINKI_APPLE_SDK_DIR="$HOME/shinkirou-apple/sdks/macosx.sdk"
+cargo xtask apple-image --target aarch64-apple-darwin
+cargo xtask build --workspace engine --target aarch64-apple-darwin -p roukaku-player --release
+cargo xtask cross --target aarch64-apple-darwin check -- -p roukaku-core
+```
+
+每个目标单独创建镜像，构建 iOS 时切换 SDK 目录。镜像固定 Rust 1.98.0；macOS 使用固定 revision 的 [osxcross](https://github.com/tpoechtrager/osxcross)，iOS 使用 LLVM/LLD，并配置目标专用的 C/C++、CMake 工具及 `build/cross/` 中固定 vcpkg 输入的静态 libass。宿主工具仍用 Linux 编译器。原生依赖许可导出到 `.work/apple-native/<target>`，只有镜像身份相同时才复用。构建 JSON 包含 Cargo 实际返回的 `compiler-artifact.executable`，打包使用该路径，不猜测 target 目录。
+
+### Player 资源与测试包
+
+共享 Apple factory 使用 winit/Metal、AVFoundation 解码、CoreAudio 播放及已激活的 iOS 音频会话，接入 AccessKit 语义、触控/输入法、沙箱原子存档和带持久授权的原生 Files 选择器。iOS 的主线程由 UIKit 持有，VM future 在 owner 工作线程运行，不使用桌面事件泵。iOS 不启用桌面的 gilrs 手柄后端。
+
+先 cook 含 `ios-release` profile 的包（对应 `PlatformHostProfile::ios_release`），再用 `roukaku package bundle --platform ios --ios-player <built-player>` 生成平铺资源，补齐通常的 package、target、profile、out 参数。最后把 Cargo 返回的真实可执行文件和资源目录交给打包入口：
+
+```sh
+cargo xtask package --target aarch64-apple-ios --binary <compiler-artifact-executable> --resources .work/ios-resources --version 0.1.0-beta.1 --out .work/ios-player-test
+```
+
+macOS 输出 ad-hoc 签名的 `.app` 和 ZIP；模拟器输出明确标为测试用的 `.app` 和 ZIP；设备输出带 `Payload/*.app` 的 `adhoc-device-test.ipa`。打包先检查 Mach-O 架构、设备/模拟器平台和依赖闭包，再修改并签署副本。Linux 使用 `rcodesign` 签名并逐个验证 Mach-O，原生 macOS 使用 `codesign`。ad-hoc 签名不包含 provisioning profile、公证或 App Store 身份；安装到设备仍需有效的 Apple 签名与 provisioning，不能当作正式安装包。设备/模拟器的生命周期和运行时符合性另行验证。
+
+真实产物应保留路径、大小，以及 `file`、`llvm-objdump --macho --dylibs-used --private-headers <executable>`、`rcodesign verify <executable>` 的输出。缺少合法 SDK 时，SDK 构建和真实签名验收仍然受阻。
+
 
 回到[文档首页](index.md)或继续[快速开始](quick-start.md)。

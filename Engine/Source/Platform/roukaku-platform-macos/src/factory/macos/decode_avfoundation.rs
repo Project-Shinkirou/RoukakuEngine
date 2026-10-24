@@ -238,9 +238,19 @@ pub(super) fn host_error(operation: &'static str, message: &'static str) -> Plat
 pub(super) fn default_roots(package_id: &str) -> Option<super::super::HostRoots> {
     let project = directories::ProjectDirs::from("com", "RoukakuEngine", package_id)?;
     let executable = std::env::current_exe().ok()?;
+    #[cfg(target_os = "macos")]
     let contents = executable.parent()?.parent()?;
     Some(super::super::HostRoots {
         save_base: project.data_dir().join("SavedGames"),
-        bundle_root: contents.join("Resources"),
+        bundle_root: {
+            #[cfg(target_os = "macos")]
+            {
+                contents.join("Resources")
+            }
+            #[cfg(target_os = "ios")]
+            {
+                executable.parent()?.to_path_buf()
+            }
+        },
     })
 }

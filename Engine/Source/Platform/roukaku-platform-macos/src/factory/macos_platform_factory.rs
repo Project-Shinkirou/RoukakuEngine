@@ -2,15 +2,15 @@ use super::*;
 
 #[derive(Clone, Default)]
 pub struct MacosPlatformFactory {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub(super) roots: Option<HostRoots>,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub(super) pending: std::sync::Arc<std::sync::Mutex<Option<macos::BackendSetup>>>,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub(super) start_wake: Option<winit::event_loop::EventLoopProxy<()>>,
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 #[derive(Debug, Clone)]
 pub(super) struct HostRoots {
     pub(super) save_base: std::path::PathBuf,
@@ -44,7 +44,7 @@ pub fn factory_with_test_roots(
 
 impl PlatformHostFactory for MacosPlatformFactory {
     fn start(&self, profile: HostLaunchProfile) -> HostStartFuture {
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
         {
             Box::pin(crate::factory::macos::start(
                 profile,
@@ -53,7 +53,7 @@ impl PlatformHostFactory for MacosPlatformFactory {
                 self.start_wake.clone(),
             ))
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(not(any(target_os = "macos", target_os = "ios")))]
         {
             Box::pin(async move {
                 profile.require_platform()?;

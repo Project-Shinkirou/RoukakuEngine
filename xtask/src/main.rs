@@ -1,4 +1,6 @@
 mod android;
+mod apple;
+mod apple_package;
 mod dependencies;
 mod docs;
 mod product;
@@ -33,8 +35,15 @@ enum Task {
     UiCheck,
     /// Build Android JNI libraries and real Gradle artifacts.
     Android(android::Options),
-    /// Run Cargo using an explicitly configured osxcross installation.
+    /// Run Cargo/cross with the private Apple toolchain image on Linux.
     Cross(product::Cross),
+    /// Build a private Apple cross image from SHINKI_APPLE_SDK_DIR.
+    AppleImage {
+        #[arg(long)]
+        target: String,
+    },
+    /// Package a built Apple Player and generated game resources.
+    Package(apple_package::Options),
     /// Build and stage desktop release binaries from Cargo artifact messages.
     Release {
         #[arg(long)]
@@ -76,6 +85,8 @@ fn main() -> Result<()> {
         Task::UiCheck => ui::run(root()),
         Task::Android(o) => android::run(root(), &o),
         Task::Cross(o) => product::cross(root(), &o),
+        Task::AppleImage { target } => apple::image(root(), &target),
+        Task::Package(options) => apple_package::run(root(), &options),
         Task::Release {
             target,
             version,

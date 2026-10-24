@@ -303,12 +303,18 @@ impl MacosHostApp {
                             self.package_sources
                                 .insert(PackageSourceResource::Bundled(source))
                         }),
+                        #[cfg(target_os = "macos")]
                         PackageSourceRequest::UserAuthorized { expected_hash } => self
                             .open_user_authorized_package(&expected_hash)
                             .and_then(|source| {
                                 self.package_sources
                                     .insert(PackageSourceResource::Cached(source))
                             }),
+                        #[cfg(target_os = "ios")]
+                        PackageSourceRequest::UserAuthorized { expected_hash } => {
+                            self.start_user_authorized_package(expected_hash, reply);
+                            continue;
+                        }
                         PackageSourceRequest::HttpsRange { url, expected_hash } => {
                             self.start_https_package_open(url, expected_hash, reply);
                             continue;
@@ -372,6 +378,7 @@ impl MacosHostApp {
         }
     }
 
+    #[cfg(target_os = "macos")]
     pub(super) fn open_user_authorized_package(
         &mut self,
         expected_hash: &str,
@@ -398,6 +405,66 @@ impl MacosHostApp {
         })?;
         self.package_cache.store_verified(expected_hash, &bytes)?;
         self.package_cache.open_source(expected_hash)
+    }
+
+    #[cfg(target_os = "ios")]
+    fn start_user_authorized_package(
+        &mut self,
+        expected_hash: String,
+        reply: oneshot::Sender<Result<PackageSourceHandle, PlatformError>>,
+    ) {
+        let completion = self.package_completion_tx.clone();
+        let wake = self.command_wake.clone();
+        let package_id = self.package_id.clone();
+        let policy = self.package_cache_policy.clone();
+        let bookmarks = match ios::document_bookmarks() {
+            Ok(path) => path,
+            Err(error) => {
+                let _ = reply.send(Err(error));
+                return;
+            }
+        };
+        self.pending_package_opens += 1;
+        roukaku_platform::ios::pick_document(
+            "Open Roukaku package",
+            false,
+            &bookmarks,
+            Box::new(move |selection| {
+                thread::spawn(move || {
+                    let result = (|| {
+                        use std::io::Read;
+                        let path = selection?.ok_or_else(|| {
+                            PlatformError::new(
+                                PlatformErrorCode::Cancelled,
+                                "package.open_user_authorized",
+                                "user cancelled package selection",
+                            )
+                        })?;
+                        let file = std::fs::File::open(path).map_err(|_| {
+                            host_error(
+                                "package.open_user_authorized",
+                                "selected package could not be read",
+                            )
+                        })?;
+                        let mut bytes = Vec::new();
+                        file.take(policy.max_entry_bytes.saturating_add(1))
+                            .read_to_end(&mut bytes)
+                            .map_err(|_| {
+                                host_error(
+                                    "package.open_user_authorized",
+                                    "selected package read failed",
+                                )
+                            })?;
+                        let root = VerifiedPackageCache::platform_cache_root(&package_id)?;
+                        let mut cache = VerifiedPackageCache::open(root, policy)?;
+                        cache.store_verified(&expected_hash, &bytes)?;
+                        cache.open_source(&expected_hash)
+                    })();
+                    let _ = completion.send(PackageCompletion { reply, result });
+                    wake.notify();
+                });
+            }),
+        );
     }
 
     pub(super) fn start_https_package_open(

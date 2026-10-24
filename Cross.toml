@@ -1,0 +1,14 @@
+# Private images contain locally supplied Apple SDKs; never publish them.
+[build.env]
+passthrough = ["MACOSX_DEPLOYMENT_TARGET", "IPHONEOS_DEPLOYMENT_TARGET"]
+
+[target.x86_64-apple-darwin]
+image = "shinkirou/apple-cross:x86_64-apple-darwin-1.98.0"
+[target.aarch64-apple-darwin]
+image = "shinkirou/apple-cross:aarch64-apple-darwin-1.98.0"
+[target.aarch64-apple-ios]
+image = "shinkirou/apple-cross:aarch64-apple-ios-1.98.0"
+[target.aarch64-apple-ios-sim]
+image = "shinkirou/apple-cross:aarch64-apple-ios-sim-1.98.0"
+[target.x86_64-apple-ios]
+image = "shinkirou/apple-cross:x86_64-apple-ios-1.98.0"

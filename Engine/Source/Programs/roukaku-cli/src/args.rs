@@ -194,6 +194,8 @@ pub(crate) struct PackageBundleArgs {
     #[arg(long)]
     pub(crate) macos_player: Option<PathBuf>,
     #[arg(long)]
+    pub(crate) ios_player: Option<PathBuf>,
+    #[arg(long)]
     pub(crate) crash_reporter: Option<PathBuf>,
     #[arg(long)]
     pub(crate) web_player_wasm: Option<PathBuf>,

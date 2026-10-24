@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+use std::time::Duration;
 use std::{
     collections::BTreeMap,
     future::Future,
@@ -6,7 +8,6 @@ use std::{
         mpsc as std_mpsc, Arc,
     },
     thread,
-    time::Duration,
 };
 
 use crate::accessibility::MacosAccessibilityBridge;
@@ -32,6 +33,8 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use tokio::sync::oneshot;
 
+#[cfg(target_os = "macos")]
+use winit::platform::pump_events::EventLoopExtPumpEvents;
 use winit::{
     application::ApplicationHandler,
     event::{
@@ -39,14 +42,16 @@ use winit::{
         WindowEvent,
     },
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
-    platform::pump_events::EventLoopExtPumpEvents,
     window::{Window, WindowAttributes, WindowId},
 };
 
 mod backend_setup;
+#[cfg(target_os = "ios")]
+pub mod ios;
 pub use backend_setup::start;
 pub(super) use backend_setup::BackendSetup;
 use backend_setup::MacosHostApp;
+#[cfg(target_os = "macos")]
 pub use backend_setup::MacosHostRunner;
 use backend_setup::PackageHostConfig;
 mod new;
@@ -56,6 +61,7 @@ mod process_commands;
 mod macos_host_app;
 use macos_host_app::capture_surface;
 use macos_host_app::create_surface;
+#[cfg(target_os = "macos")]
 use macos_host_app::raw_gamepad_event;
 use macos_host_app::AudioResource;
 use macos_host_app::PackageCompletion;

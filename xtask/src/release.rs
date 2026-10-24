@@ -23,7 +23,9 @@ pub fn build(root: &Path, target: &str, ver: &str, output: &Path) -> Result<()> 
     version(ver)?;
     let host = capture(Command::new("rustc").arg("-vV"))?;
     let rustc = String::from_utf8(host.stdout)?;
-    if !rustc.lines().any(|line| line == format!("host: {target}")) {
+    if !crate::apple::supported(target)
+        && !rustc.lines().any(|line| line == format!("host: {target}"))
+    {
         bail!("desktop release requires a native runner matching {target}");
     }
     if !matches!(
@@ -53,7 +55,11 @@ fn stage(root: &Path, target: &str, ver: &str, output: &Path, rustc: &str) -> Re
         (root.to_path_buf(), vec!["roukaku-player", "roukaku-cli"]),
         (root.join("Editor"), vec!["roukaku-editor"]),
     ] {
-        let mut c = Command::new("cargo");
+        let mut c = if crate::apple::supported(target) {
+            crate::apple::command(root, target)?
+        } else {
+            Command::new("cargo")
+        };
         c.current_dir(&workspace).args([
             "build",
             "--locked",
@@ -121,6 +127,24 @@ fn stage(root: &Path, target: &str, ver: &str, output: &Path, rustc: &str) -> Re
     for file in ["LICENSE-MIT", "LICENSE-APACHE", "ORIGINS.md"] {
         copy(&root.join(file), &licenses.join(file))?;
     }
+    if crate::apple::supported(target) {
+        for entry in walkdir::WalkDir::new(crate::apple_package::native_share(root, target)?)
+            .follow_links(false)
+        {
+            let entry = entry?;
+            if entry.file_name() == "copyright" && entry.file_type().is_file() {
+                let port = entry
+                    .path()
+                    .parent()
+                    .and_then(Path::file_name)
+                    .context("Apple native license port")?;
+                copy(
+                    entry.path(),
+                    &licenses.join(format!("{}-copyright", port.to_string_lossy())),
+                )?;
+            }
+        }
+    }
     // The subtitle owner has one dynamic Windows dependency. Ship it with its port licenses.
     if target.contains("windows") {
         let native = PathBuf::from(
@@ -168,6 +192,40 @@ fn stage(root: &Path, target: &str, ver: &str, output: &Path, rustc: &str) -> Re
             &serde_json::json!({"version":ver,"target":target,"source_commit":String::from_utf8_lossy(&commit.stdout).trim(),"rustc":rustc,"profile":"release","features":"package defaults","cargo_lock_sha256":hash(&root.join("Cargo.lock"))?,"editor_lock_sha256":hash(&root.join("Editor/Cargo.lock"))?}),
         )?,
     )?;
+    if crate::apple::supported(target) {
+        for (executable, name, id) in [
+            (
+                "roukaku-player",
+                "RoukakuPlayer",
+                "org.shinkirou.roukakuplayer",
+            ),
+            (
+                "roukaku-editor",
+                "RoukakuEditor",
+                "org.shinkirou.roukakueditor",
+            ),
+        ] {
+            let app_stage = tempfile::tempdir_in(stage)?;
+            copy(&bin.join(executable), &app_stage.path().join(executable))?;
+            for entry in fs::read_dir(&bin)? {
+                let path = entry?.path();
+                if path
+                    .extension()
+                    .is_some_and(|extension| extension == "dylib")
+                {
+                    copy(
+                        &path,
+                        &app_stage
+                            .path()
+                            .join(path.file_name().context("dylib filename")?),
+                    )?;
+                }
+            }
+            let app = crate::apple::bundle(app_stage.path(), target, executable, name, id, ver)?;
+            fs::rename(&app, stage.join(app.file_name().context("app filename")?))?;
+            fs::remove_file(bin.join(executable))?;
+        }
+    }
     let archive_path = output.join(format!("roukaku-{ver}-{target}.zip"));
     archive(stage, &archive_path)?;
     fs::write(
@@ -181,7 +239,7 @@ fn stage(root: &Path, target: &str, ver: &str, output: &Path, rustc: &str) -> Re
     Ok(())
 }
 
-fn archive(source: &Path, destination: &Path) -> Result<()> {
+pub(crate) fn archive(source: &Path, destination: &Path) -> Result<()> {
     let mut writer = zip::ZipWriter::new(
         fs::OpenOptions::new()
             .create_new(true)
@@ -206,7 +264,10 @@ fn archive(source: &Path, destination: &Path) -> Result<()> {
             .replace('\\', "/");
         let mut options = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated);
-        if name.starts_with("bin/") {
+        if name.starts_with("bin/")
+            || name.contains(".app/Contents/MacOS/")
+            || name.ends_with(".app/roukaku-player")
+        {
             options = options.unix_permissions(0o755);
         }
         writer.start_file(name, options)?;

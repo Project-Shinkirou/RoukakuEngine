@@ -91,6 +91,13 @@ pub struct PlatformHostProfile {
 }
 
 impl PlatformHostProfile {
+    pub fn ios_release(target: impl Into<String>, package_id: impl Into<String>) -> Self {
+        let mut profile = Self::macos_release(target, package_id);
+        profile.id = "ios-release".to_string();
+        profile.platform = PlatformId::Ios;
+        profile
+    }
+
     pub fn macos_release(target: impl Into<String>, package_id: impl Into<String>) -> Self {
         Self {
             schema: PLATFORM_HOST_PROFILE_SCHEMA.to_string(),
@@ -407,7 +414,13 @@ fn validate_release_provider_policy(profile: &PlatformHostProfile) -> Result<(),
             }
             return Ok(());
         }
-        PlatformId::Ios => return Ok(()),
+        PlatformId::Ios => [
+            "wgpu_metal",
+            "avfoundation",
+            "kira",
+            "coreaudio",
+            "application_support",
+        ],
     };
     for ((field, policy), required) in [
         ("renderer", &profile.renderer),

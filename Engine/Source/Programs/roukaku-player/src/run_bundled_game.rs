@@ -1,6 +1,11 @@
 use super::*;
 
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub(super) fn run_bundled_game(
     test_null_audio: bool,
     preview_control: bool,
@@ -19,6 +24,8 @@ pub(super) fn run_bundled_game(
     let (config, package, manifest, profile, package_storage_hash) = bundle_config::load_bundle()?;
     #[cfg(target_os = "macos")]
     let (mut runner, factory) = roukaku_platform_macos::main_thread_host()?;
+    #[cfg(target_os = "ios")]
+    let (runner, factory) = roukaku_platform_macos::ios::main_thread_host()?;
     let player = move || async move {
         #[cfg(target_os = "windows")]
         let factory = roukaku_platform_windows::factory().with_test_null_audio(test_null_audio);
@@ -469,7 +476,9 @@ pub(super) fn run_bundled_game(
     };
     #[cfg(target_os = "macos")]
     runner.run(player)??;
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "ios")]
+    runner.run(player)?;
+    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?

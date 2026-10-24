@@ -148,6 +148,7 @@ impl PackageSourceResource {
     }
 }
 
+#[cfg(target_os = "macos")]
 impl Drop for MacosHostApp {
     fn drop(&mut self) {
         self.gamepad_stop.store(true, Ordering::Release);
@@ -162,6 +163,7 @@ impl Drop for MacosHostApp {
     }
 }
 
+#[cfg(target_os = "macos")]
 pub(super) fn raw_gamepad_event(
     event: gilrs::Event,
 ) -> Option<roukaku_platform_common::RawGamepadEvent> {

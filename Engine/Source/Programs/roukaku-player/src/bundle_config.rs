@@ -57,6 +57,7 @@ pub(super) fn load_bundle() -> Result<
     let expected_platform = match () {
         _ if cfg!(target_os = "windows") => "windows",
         _ if cfg!(target_os = "macos") => "macos",
+        _ if cfg!(target_os = "ios") => "ios",
         _ => "linux",
     };
     if config.schema != "roukaku.player_config.v2" || config.platform != expected_platform {
@@ -142,6 +143,7 @@ pub(super) fn load_bundle() -> Result<
                 == match () {
                     _ if cfg!(target_os = "windows") => PlatformId::Windows,
                     _ if cfg!(target_os = "macos") => PlatformId::Macos,
+                    _ if cfg!(target_os = "ios") => PlatformId::Ios,
                     _ => PlatformId::Linux,
                 }
                 && profile.target == config.target

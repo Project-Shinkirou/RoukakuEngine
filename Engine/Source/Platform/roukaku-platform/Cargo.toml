@@ -20,3 +20,9 @@ serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 url.workspace = true
+
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2.workspace = true
+objc2-foundation = { workspace = true, features = ["NSArray", "NSData", "NSDictionary", "NSError", "NSString", "NSURL", "NSSet"] }
+objc2-ui-kit = { version = "0.3.2", default-features = false, features = ["std", "UIApplication", "UIDocumentPickerViewController", "UIDocumentInteractionController", "UIResponder", "UIViewController", "UIWindow", "UIView", "UIScene", "UIWindowScene", "objc2-core-foundation", "block2"] }
+objc2-avf-audio = { version = "0.3.2", default-features = false, features = ["std", "AVAudioSession", "AVAudioSessionTypes"] }

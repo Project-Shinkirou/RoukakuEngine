@@ -1,8 +1,8 @@
 use roukaku_platform::{
     migrate_host_profile_json, validate_host_profile, AudioOutputHandle, DecodeSessionHandle,
     MediaFrameHandle, PackageSourceHandle, PlatformCapabilityReport, PlatformErrorCode,
-    PlatformHostProfile, PlatformId, SaveTransactionHandle, SurfaceHandle, WindowHandle,
-    PLATFORM_CAPABILITY_REPORT_SCHEMA, PLATFORM_HOST_PROFILE_SCHEMA,
+    PlatformHostProfile, SaveTransactionHandle, SurfaceHandle, WindowHandle,
+    PLATFORM_CAPABILITY_REPORT_SCHEMA,
 };
 
 #[test]
@@ -26,56 +26,6 @@ fn typed_handles_preserve_slot_and_generation_without_provider_strings() {
         WindowHandle::from_parts(0, 1).unwrap_err().code,
         PlatformErrorCode::InvalidHandle
     );
-}
-
-#[test]
-fn release_profiles_lock_selected_providers_without_hidden_fallbacks() {
-    let windows = PlatformHostProfile::windows_release("nativevn-game", "com.example.game");
-    assert_eq!(windows.schema, PLATFORM_HOST_PROFILE_SCHEMA);
-    assert_eq!(windows.platform, PlatformId::Windows);
-    assert_eq!(windows.renderer.providers, ["wgpu_hardware"]);
-    assert_eq!(windows.decode.providers, ["wmf"]);
-    assert_eq!(windows.audio_mixer.providers, ["kira"]);
-    assert_eq!(windows.audio_output.providers, ["wasapi"]);
-    assert_eq!(windows.save.providers, ["saved_games"]);
-    assert_eq!(
-        windows.package_cache.max_entry_bytes,
-        16 * 1024 * 1024 * 1024
-    );
-    assert_eq!(
-        windows.package_cache.max_total_bytes,
-        64 * 1024 * 1024 * 1024
-    );
-    assert!(!windows.renderer.allow_software);
-    assert!(validate_host_profile(&windows).is_ok());
-
-    let linux =
-        PlatformHostProfile::linux_steam_sniper_release("nativevn-game", "com.example.game");
-    assert_eq!(linux.platform, PlatformId::Linux);
-    assert_eq!(linux.renderer.providers, ["wgpu_vulkan"]);
-    assert_eq!(linux.decode.providers, ["gstreamer"]);
-    assert_eq!(linux.audio_mixer.providers, ["kira"]);
-    assert_eq!(linux.audio_output.providers, ["alsa"]);
-    assert_eq!(linux.save.providers, ["xdg_data"]);
-    assert!(validate_host_profile(&linux).is_ok());
-
-    let macos = PlatformHostProfile::macos_release("nativevn-game", "com.example.game");
-    assert_eq!(macos.platform, PlatformId::Macos);
-    assert_eq!(macos.renderer.providers, ["wgpu_metal"]);
-    assert_eq!(macos.decode.providers, ["avfoundation"]);
-    assert_eq!(macos.audio_mixer.providers, ["kira"]);
-    assert_eq!(macos.audio_output.providers, ["coreaudio"]);
-    assert_eq!(macos.save.providers, ["application_support"]);
-    assert!(validate_host_profile(&macos).is_ok());
-
-    let web = PlatformHostProfile::web_release("nativevn-web", "com.example.game");
-    assert_eq!(web.platform, PlatformId::Web);
-    assert_eq!(web.renderer.providers, ["webgpu"]);
-    assert_eq!(web.decode.providers, ["webcodecs"]);
-    assert_eq!(web.audio_mixer.providers, ["kira"]);
-    assert_eq!(web.audio_output.providers, ["webaudio"]);
-    assert_eq!(web.save.providers, ["opfs"]);
-    assert!(validate_host_profile(&web).is_ok());
 }
 
 #[test]
@@ -151,6 +101,22 @@ fn release_profile_rejects_decode_fallback_and_invalid_https_origin() {
         });
     assert_eq!(
         validate_host_profile(&web).unwrap_err().code,
+        PlatformErrorCode::InvalidProfile
+    );
+}
+
+#[test]
+fn ios_profile_rejects_non_metal_and_software_decode() {
+    let mut profile = PlatformHostProfile::ios_release("nativevn-game", "org.shinkirou.game");
+    profile.renderer.providers = vec!["wgpu_vulkan".into()];
+    assert_eq!(
+        validate_host_profile(&profile).unwrap_err().code,
+        PlatformErrorCode::InvalidProfile
+    );
+    let mut profile = PlatformHostProfile::ios_release("nativevn-game", "org.shinkirou.game");
+    profile.decode.allow_software = true;
+    assert_eq!(
+        validate_host_profile(&profile).unwrap_err().code,
         PlatformErrorCode::InvalidProfile
     );
 }

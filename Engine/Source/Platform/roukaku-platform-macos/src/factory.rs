@@ -1,13 +1,13 @@
 use roukaku_platform::{HostLaunchProfile, HostStartFuture, PlatformHostFactory};
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "ios")))]
 use roukaku_platform::{PlatformError, PlatformErrorCode, PlatformId};
 
 #[cfg(target_os = "macos")]
 pub use macos::MacosHostRunner;
 
-#[cfg(target_os = "macos")]
-mod macos;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub(crate) mod macos;
 
 mod macos_platform_factory;
 pub use macos_platform_factory::factory;
@@ -15,6 +15,6 @@ pub use macos_platform_factory::factory;
 pub use macos_platform_factory::factory_with_test_roots;
 #[cfg(target_os = "macos")]
 pub use macos_platform_factory::main_thread_host;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use macos_platform_factory::HostRoots;
 pub use macos_platform_factory::MacosPlatformFactory;

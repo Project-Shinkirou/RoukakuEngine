@@ -1,0 +1,4 @@
+**
+!build/
+!build/cross/
+!build/cross/**

@@ -326,7 +326,20 @@ pub fn required_conformance_checks(platform: PlatformId) -> &'static [&'static s
             "host.resume_recreate",
             "resource.zero_leaks",
         ],
-        PlatformId::Ios => &[],
+        PlatformId::Ios => &[
+            "host.lifecycle",
+            "window.uikit_create_destroy",
+            "surface.metal_present_readback",
+            "input.touch_consumption",
+            "input.ime_consumption",
+            "accessibility.accesskit",
+            "audio.coreaudio_output_meter",
+            "decode.avfoundation",
+            "save.application_support_atomic_reopen",
+            "package.document_picker_hash_range",
+            "host.resume_recreate",
+            "resource.zero_leaks",
+        ],
     }
 }
 

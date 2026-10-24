@@ -70,15 +70,59 @@ Here `--target` is the product target ID, not a Rust triple. The current command
 
 Android requires its matching platform profile; renaming a desktop package does not add Android support. Check touch, Back, foreground/background transitions, audio, and saves on a device.
 
-## macOS cross-checks
+## Apple builds from Linux
 
-Use an existing osxcross installation and a legally obtained macOS SDK. Set `ROUKAKU_OSXCROSS_ROOT`, set `SDKROOT` explicitly when SDK selection is ambiguous, and install the relevant Rust target first:
+Native macOS CI stays on `macos-15` / `macos-15-intel` and uses Cargo and Xcode. On Linux, Apple target builds use cross 0.2.5 with private images in `Cross.toml`. macOS requires 13.0 or later; iOS requires 16.0 or later. Targets are `x86_64-apple-darwin`, `aarch64-apple-darwin`, `aarch64-apple-ios` (device), `aarch64-apple-ios-sim` and `x86_64-apple-ios` (simulators).
+
+### Obtain the SDKs
+
+Obtain Xcode from the [Mac App Store](https://apps.apple.com/app/xcode/id497799835) or [Apple Developer Downloads](https://developer.apple.com/download/all/) under Apple's license. Expand an official `.xip` with macOS's `xip --expand`, select that Xcode installation, and accept its license on that Mac. Command Line Tools alone do not include the iOS SDKs. On the Mac, export SDK contents while preserving their internal symlinks:
 
 ```sh
-cargo xtask cross --target aarch64-apple-darwin check -- -p roukaku-core
-cargo xtask cross --target x86_64-apple-darwin clippy -- -p roukaku-core -- -D warnings
+for sdk in macosx iphoneos iphonesimulator; do
+  tar -C "$(xcrun --sdk "$sdk" --show-sdk-path)" -cJf "$sdk.sdk.tar.xz" .
+done
 ```
 
-Only those two macOS targets and `check|clippy` are accepted. The command validates the compiler, archiver, and SDK, isolates output under `.work/cross/<target>`, and sets the deployment target to macOS 13.0. It does not download SDKs, sign applications, or replace native macOS runtime checks.
+Transfer these archives privately to the Linux host and extract each into its own directory. `SHINKI_APPLE_SDK_DIR` points directly to the extracted `.sdk` contents, containing `SDKSettings.json`, `usr/` and `System/`. Match `macosx` to Darwin, `iphoneos` to the device and `iphonesimulator` to both simulator triples. Neither xtask nor the Dockerfile downloads an Apple SDK. Keep SDK archives and SDK-containing images out of public registries and Git.
+
+### Prepare and build
+
+Keep the checkout, caches and tools under a dedicated directory with sufficient space; image creation refuses less than 8 GiB free on `/`. Do not delete unrelated caches or Docker images. Example Linux setup:
+
+Docker must provide Buildx/BuildKit (`docker buildx version`). For a task-local plugin, use `DOCKER_CONFIG=~/shinkirou-apple/docker` and its `cli-plugins/docker-buildx` path. The official [Buildx v0.38.1 Linux x86_64 asset](https://github.com/docker/buildx/releases/download/v0.38.1/buildx-v0.38.1.linux-amd64) has SHA256 `e25d5cd675092bb5d1d03632fdc46cdf3fede7b514dc5f023a105e00d3ce5ad4`; verify it before making it executable. No sudo or changes to an existing Docker configuration are needed.
+
+```sh
+export CARGO_HOME="$HOME/shinkirou-apple/cargo"
+export RUSTUP_HOME="$HOME/shinkirou-apple/rustup"
+export CARGO_TARGET_DIR="$HOME/shinkirou-apple/target"
+export PATH="$HOME/shinkirou-apple/tools/bin:$PATH"
+export DOCKER_CONFIG="$HOME/shinkirou-apple/docker"
+rustup toolchain install 1.98.0 --profile minimal
+rustup target add --toolchain 1.98.0 x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" cross --version 0.2.5
+cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" apple-codesign --version 0.29.0
+export SHINKI_APPLE_SDK_DIR="$HOME/shinkirou-apple/sdks/macosx.sdk"
+cargo xtask apple-image --target aarch64-apple-darwin
+cargo xtask build --workspace engine --target aarch64-apple-darwin -p roukaku-player --release
+cargo xtask cross --target aarch64-apple-darwin check -- -p roukaku-core
+```
+
+Build one image per target, switching SDK directories for iOS. Images use Rust 1.98.0, pinned [osxcross](https://github.com/tpoechtrager/osxcross) for macOS, LLVM/LLD for iOS, target-scoped C/C++/CMake tools and static libass from the pinned vcpkg input in `build/cross/`. Host tools keep their Linux compiler. Native licenses are exported to `.work/apple-native/<target>` and reused only for the same image identity. Build JSON includes Cargo's actual `compiler-artifact.executable` paths; packaging takes that path, not a guessed target directory.
+
+### Player resources and test bundles
+
+The shared Apple factory uses winit/Metal, AVFoundation decoding, CoreAudio playback with an active iOS audio session, AccessKit semantics, touch/IME input, atomic sandbox saves and the native Files picker with persistent authorization. UIKit owns the iOS main-thread event loop; the VM future runs on its worker, rather than pumping a desktop event loop. iOS does not use the desktop gilrs gamepad backend.
+
+Cook a package containing an `ios-release` profile (`PlatformHostProfile::ios_release`) and create flat resources with `roukaku package bundle --platform ios --ios-player <built-player>`, supplying the usual package, target, profile and output arguments. Then package the actual Cargo executable and that resource directory:
+
+```sh
+cargo xtask package --target aarch64-apple-ios --binary <compiler-artifact-executable> --resources .work/ios-resources --version 0.1.0-beta.1 --out .work/ios-player-test
+```
+
+macOS output is an ad-hoc-signed `.app` and ZIP; simulator output is a clearly named test `.app` and ZIP; device output is an `adhoc-device-test.ipa` with `Payload/*.app`. Packaging validates Mach-O architecture, device/simulator platform and dependency closure before rewriting or signing copied files. Linux signs using `rcodesign` and verifies each Mach-O; native macOS uses `codesign`. Ad-hoc signing provides no provisioning profile, notarization or App Store identity. Device installation still needs valid Apple signing/provisioning; no production-installable IPA is claimed. Native device/simulator lifecycle and runtime conformance remain separate from compilation.
+
+For a built artifact, retain `file`, `llvm-objdump --macho --dylibs-used --private-headers <executable>` and `rcodesign verify <executable>` output alongside its actual path and size. SDK-backed builds and signatures cannot be verified when the legal SDK input is absent.
+
 
 Return to the [documentation index](index.md) or continue with [Quick start](quick-start.md).

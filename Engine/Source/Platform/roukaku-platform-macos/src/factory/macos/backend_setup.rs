@@ -8,11 +8,13 @@ pub(in super::super) struct BackendSetup {
     pub(super) _instance_guard: SingleInstanceGuard,
 }
 
+#[cfg(target_os = "macos")]
 pub struct MacosHostRunner {
     pub(super) event_loop: EventLoop<()>,
     pub(super) app: MacosRunnerApp,
 }
 
+#[cfg(target_os = "macos")]
 impl MacosHostRunner {
     pub(in super::super) fn new(
     ) -> Result<(Self, super::super::MacosPlatformFactory), PlatformError> {
@@ -206,15 +208,20 @@ pub async fn start(
         return Err(PlatformError::new(
             PlatformErrorCode::InvalidState,
             "host.start",
-            "macOS host requires main_thread_host and MacosHostRunner",
+            "Apple host requires the platform's main_thread_host runner",
         ));
     };
     let profile = launch_profile.require_platform()?.clone();
-    if profile.platform != roukaku_platform::PlatformId::Macos {
+    let native_platform = if cfg!(target_os = "ios") {
+        roukaku_platform::PlatformId::Ios
+    } else {
+        roukaku_platform::PlatformId::Macos
+    };
+    if profile.platform != native_platform {
         return Err(PlatformError::new(
             PlatformErrorCode::InvalidProfile,
             "host.start",
-            "macOS factory requires a macOS profile",
+            "Apple factory profile does not match the running platform",
         ));
     }
     let command_capacity = profile.limits.command_queue_capacity;
@@ -343,7 +350,9 @@ pub(super) struct MacosHostApp {
     pub(super) bundle_root: std::path::PathBuf,
     pub(super) package_sources: ResourceTable<PackageSourceResource, PackageSourceHandle>,
     pub(super) event_sequence: u64,
+    #[cfg(target_os = "macos")]
     pub(super) gamepad_stop: Arc<AtomicBool>,
+    #[cfg(target_os = "macos")]
     pub(super) gamepad_thread: Option<thread::JoinHandle<()>>,
 }
 
