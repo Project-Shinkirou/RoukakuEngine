@@ -9,6 +9,7 @@ use roukaku_platform::{
 };
 
 #[tokio::test]
+#[ignore = "requires a real audio output device"]
 async fn windows_host_uses_real_wasapi_stream_and_wmf_decode_session() {
     let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.game");
     let session = roukaku_platform_windows::factory()

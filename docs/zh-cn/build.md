@@ -8,7 +8,7 @@ sidebar: { order: 3 }
 
 ## 工具链与 workspace
 
-`rust-toolchain.toml` 选择 Rust `stable`，并声明 `rustfmt`、`clippy` 和目标列表。这个列表用于安装 Rust 标准库，不是平台运行支持矩阵。安装本机 C/C++ 编译器、链接器、CMake，以及所选原生依赖需要的工具；Windows 使用 MSVC 工具链。
+`rust-toolchain.toml` 选择 Rust `1.98.0`，并声明 `rustfmt`、`clippy` 和目标列表。这个列表用于安装 Rust 标准库，不是平台运行支持矩阵。安装本机 C/C++ 编译器、链接器、CMake，以及所选原生依赖需要的工具；Windows 使用 MSVC 工具链。
 
 根 workspace 包含 Engine、RoukakuVN、Player、CLI 和共享库。Editor 使用 `Editor/Cargo.toml` 及自己的 lockfile。根目录的 `cargo xtask` 统一选择 `engine`、`editor` 或 `all`，底层 Cargo 命令使用 `--locked`。
 
@@ -24,6 +24,15 @@ cargo xtask ui-check
 ```
 
 `check` 依次检查文档、格式、Clippy、构建和测试。`fmt` 是格式检查，不改写文件；`lint` 执行 Clippy 并拒绝 warning。`test` 未指定 package 时先构建产品，供真实 CLI/宿主测试使用；定向 `-p` 不执行这项预构建。`-p` 必须配合明确的 workspace。
+
+需要真实窗口、GPU surface 或音频输出设备的测试默认忽略，托管 CI 也不运行这些测试；测试断言和原生后端保持不变。在具备相应设备的开发机上，给 `test` 或 `check` 加上 `--hardware`：
+
+```sh
+cargo xtask test --workspace engine --hardware -p roukaku-platform-windows
+cargo xtask check --workspace engine --hardware
+```
+
+此参数向测试 harness 传入 `--include-ignored`，因此也会运行此前已忽略的测试。按各测试要求准备平台 codec 和 fixture。由 `platform-test-driver` 控制的测试仍需 `--features platform-test-driver`；输入驱动测试会聚焦真实窗口并发送输入。CI 不传 `--hardware`。
 
 `check-fast` 只检查文档链接和文本卫生，不编译或运行测试。`docs` 使用同一文档检查。`ui-check` 显式下载锁定的 Luau analyzer 并检查 NativeVN controller；它需要联网。
 

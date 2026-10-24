@@ -202,6 +202,7 @@ fn request() -> TextLayoutRequest {
 }
 
 #[tokio::test]
+#[ignore = "requires a hardware GPU adapter"]
 async fn player_command_path_presents_packaged_layout_and_records_live_gpu_identity() {
     let golden: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../Fixtures/PublicDomainFonts/windows-glyph-golden.json"

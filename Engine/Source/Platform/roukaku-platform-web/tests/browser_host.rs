@@ -32,6 +32,7 @@ async fn same_game_profile_rejects_a_second_browser_host() {
 }
 
 #[wasm_bindgen_test(async)]
+#[ignore = "requires a hardware GPU adapter"]
 async fn browser_host_owns_canvas_webgpu_present_and_readback() {
     let profile = PlatformHostProfile::web_release("nativevn-web", "com.example.game");
     let session = roukaku_platform_web::factory()

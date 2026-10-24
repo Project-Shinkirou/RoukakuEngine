@@ -20,9 +20,15 @@ pub struct Selection {
     packages: Vec<String>,
     #[arg(long)]
     features: Vec<String>,
+    /// Run ignored hardware-dependent tests on a machine with the required devices.
+    #[arg(long)]
+    hardware: bool,
 }
 
 pub fn run(root: &Path, task: &str, selected: &Selection) -> Result<()> {
+    if selected.hardware && !matches!(task, "test" | "check") {
+        bail!("--hardware is supported only by test and check");
+    }
     if !selected.packages.is_empty() && matches!(selected.workspace, Workspace::All) {
         bail!("--package requires an explicit workspace");
     }
@@ -69,7 +75,12 @@ pub fn run(root: &Path, task: &str, selected: &Selection) -> Result<()> {
             }
         }
         if matches!(task, "test" | "check") {
-            cargo(&workspace, "test", &packages, &selected.features, &[])?;
+            let extra: &[&str] = if selected.hardware {
+                &["--", "--include-ignored"]
+            } else {
+                &[]
+            };
+            cargo(&workspace, "test", &packages, &selected.features, extra)?;
         }
     }
     Ok(())

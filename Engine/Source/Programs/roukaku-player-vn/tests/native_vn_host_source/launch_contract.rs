@@ -378,6 +378,7 @@ state start #@id state.start
 
 #[cfg(all(target_os = "windows", feature = "platform-test-driver"))]
 #[tokio::test]
+#[ignore = "requires a hardware GPU adapter"]
 pub(super) async fn packaged_native_vn_scene_reaches_live_windows_wgpu_and_releases_resources() {
     use roukaku_platform::{
         HostLaunchProfile, PlatformHostFactory, PlatformHostProfile, SurfaceRequest, WindowRequest,

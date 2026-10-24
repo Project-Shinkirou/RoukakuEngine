@@ -1,3 +1,4 @@
+#[cfg(any(windows, target_arch = "wasm32", feature = "ffmpeg-vcpkg"))]
 use super::*;
 
 #[cfg(windows)]

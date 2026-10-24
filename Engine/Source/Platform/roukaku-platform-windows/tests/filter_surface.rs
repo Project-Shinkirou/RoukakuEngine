@@ -7,6 +7,7 @@ use roukaku_platform::{
 use std::collections::BTreeMap;
 
 #[tokio::test]
+#[ignore = "requires a hardware GPU adapter"]
 async fn window_filter_matches_offscreen_after_resize_and_device_recovery() {
     let host = roukaku_platform_windows::factory()
         .start(roukaku_platform::HostLaunchProfile::platform(

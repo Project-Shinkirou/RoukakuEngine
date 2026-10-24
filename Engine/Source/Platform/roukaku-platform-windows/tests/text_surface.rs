@@ -142,6 +142,7 @@ fn request() -> TextLayoutRequest {
 }
 
 #[tokio::test]
+#[ignore = "requires a hardware GPU adapter"]
 async fn windows_wgpu_renders_multiscript_layout_through_live_glyph_atlas() {
     let golden: serde_json::Value = serde_json::from_slice(include_bytes!(
         "../../../../Fixtures/PublicDomainFonts/windows-glyph-golden.json"

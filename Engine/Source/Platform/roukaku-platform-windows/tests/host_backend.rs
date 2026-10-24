@@ -6,6 +6,7 @@ use roukaku_platform::{
 };
 
 #[tokio::test]
+#[ignore = "requires a hardware GPU adapter"]
 async fn windows_host_owns_window_surface_present_capture_and_shutdown() {
     let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.game");
     let mut session = roukaku_platform_windows::factory()

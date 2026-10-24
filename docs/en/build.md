@@ -8,7 +8,7 @@ sidebar: { order: 3 }
 
 ## Toolchain and workspaces
 
-`rust-toolchain.toml` selects Rust `stable`, `rustfmt`, `clippy`, and a list of Rust targets. That list installs standard libraries; it is not a runtime support matrix. Install the native C/C++ compiler, linker, CMake, and tools required by the selected dependencies. Windows builds use MSVC.
+`rust-toolchain.toml` selects Rust `1.98.0`, `rustfmt`, `clippy`, and a list of Rust targets. That list installs standard libraries; it is not a runtime support matrix. Install the native C/C++ compiler, linker, CMake, and tools required by the selected dependencies. Windows builds use MSVC.
 
 The root workspace contains Engine, RoukakuVN, Player, CLI, and shared libraries. Editor has its own `Editor/Cargo.toml` and lockfile. Run `cargo xtask` from the repository root, selecting `engine`, `editor`, or `all`. Cargo subprocesses use `--locked`.
 
@@ -24,6 +24,15 @@ cargo xtask ui-check
 ```
 
 `check` runs documentation, formatting, Clippy, build, and tests. `fmt` checks formatting without rewriting files; `lint` rejects Clippy warnings. An unfiltered `test` builds product executables first for real CLI/host tests; a targeted `-p` test does not perform that prebuild. Package selection requires an explicit workspace.
+
+Tests that open real windows/GPU surfaces or use a physical audio output device are ignored by default, including on hosted CI runners. Their assertions and native backends remain unchanged. On a development machine with the required devices, opt in with `--hardware` on `test` or `check`:
+
+```sh
+cargo xtask test --workspace engine --hardware -p roukaku-platform-windows
+cargo xtask check --workspace engine --hardware
+```
+
+The flag passes `--include-ignored` to the test harness, so it also runs previously ignored tests. Install any additional platform codecs and provide fixtures required by those tests. Tests gated by `platform-test-driver` still require `--features platform-test-driver`; input-driver tests can focus a real window and send input. CI omits `--hardware`.
 
 `check-fast` checks documentation links and hygiene only; it does not compile or test code. `docs` runs the same documentation check. `ui-check` explicitly downloads a pinned Luau analyzer and checks NativeVN controllers, requiring network access.
 
