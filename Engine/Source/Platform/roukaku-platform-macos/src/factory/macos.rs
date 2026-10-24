@@ -48,7 +48,7 @@ use winit::{
 mod backend_setup;
 #[cfg(target_os = "ios")]
 pub mod ios;
-pub use backend_setup::start;
+pub(super) use backend_setup::start;
 pub(super) use backend_setup::BackendSetup;
 use backend_setup::MacosHostApp;
 #[cfg(target_os = "macos")]

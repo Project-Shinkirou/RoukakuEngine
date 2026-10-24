@@ -198,7 +198,7 @@ impl ApplicationHandler for MacosRunnerApp {
     }
 }
 
-pub async fn start(
+pub(in super::super) async fn start(
     launch_profile: HostLaunchProfile,
     roots: Option<super::super::HostRoots>,
     pending: Arc<std::sync::Mutex<Option<BackendSetup>>>,
