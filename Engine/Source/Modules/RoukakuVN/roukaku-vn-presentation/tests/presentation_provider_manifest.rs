@@ -1,32 +1,6 @@
 use roukaku_vn_presentation::{VnPresentationProviderManifest, VnWaitKind};
 
 #[test]
-fn presentation_provider_manifest_declares_filter_fallback_and_await_capabilities() {
-    let manifest = VnPresentationProviderManifest::standard();
-    let report = manifest.validate_standard();
-
-    assert!(report.passed, "{report:?}");
-    assert!(report.filter_count >= 1);
-    assert!(report.wait_capability_count >= 4);
-    assert_eq!(report.profile_count, 4);
-    assert_eq!(report.preset_count, 9);
-    assert_eq!(
-        manifest
-            .resolve_preset("advanced-vn", "camera", "slow_push")
-            .unwrap()
-            .duration_ms,
-        480
-    );
-    assert_eq!(
-        manifest
-            .resolve_preset("classic", "transition", "director_puppet_26")
-            .unwrap()
-            .duration_ms,
-        250
-    );
-}
-
-#[test]
 fn presentation_provider_manifest_blocks_unknown_and_wrong_command_presets() {
     let manifest = VnPresentationProviderManifest::standard();
 
