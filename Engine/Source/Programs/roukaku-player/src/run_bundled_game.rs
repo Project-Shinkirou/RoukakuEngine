@@ -19,7 +19,7 @@ pub(super) fn run_bundled_game(
     let (config, package, manifest, profile, package_storage_hash) = bundle_config::load_bundle()?;
     #[cfg(target_os = "macos")]
     let (mut runner, factory) = roukaku_platform_macos::main_thread_host()?;
-    let player = async move {
+    let player = move || async move {
         #[cfg(target_os = "windows")]
         let factory = roukaku_platform_windows::factory().with_test_null_audio(test_null_audio);
         #[cfg(target_os = "linux")]
@@ -473,6 +473,6 @@ pub(super) fn run_bundled_game(
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?
-        .block_on(player)?;
+        .block_on(player())?;
     Ok(())
 }

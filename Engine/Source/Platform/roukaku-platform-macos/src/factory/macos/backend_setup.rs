@@ -42,9 +42,13 @@ impl MacosHostRunner {
         ))
     }
 
-    pub fn run<F>(&mut self, future: F) -> Result<F::Output, PlatformError>
+    /// Runs the async player on a worker thread. The future is built on that
+    /// thread, so it may hold non-`Send` state across awaits; only its
+    /// constructor and output cross threads.
+    pub fn run<M, F>(&mut self, make_future: M) -> Result<F::Output, PlatformError>
     where
-        F: Future + Send + 'static,
+        M: FnOnce() -> F + Send + 'static,
+        F: Future + 'static,
         F::Output: Send + 'static,
     {
         // Tokio and winit cannot both own the macOS main-thread event
@@ -64,7 +68,7 @@ impl MacosHostRunner {
                         .map_err(|_| {
                             host_error("host.runner.run", "Tokio runtime could not be created")
                         })?;
-                    Ok::<_, PlatformError>(runtime.block_on(future))
+                    Ok::<_, PlatformError>(runtime.block_on(make_future()))
                 }))
                 .unwrap_or_else(|_| {
                     Err(host_error(
