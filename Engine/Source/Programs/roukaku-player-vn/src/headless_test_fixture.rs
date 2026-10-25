@@ -61,12 +61,24 @@ pub fn source_for(story: &str) -> NativeVnHostCommandSource {
 }
 
 pub fn product_package(story: &str) -> Vec<u8> {
+    product_package_with_extensions(story, &[])
+}
+
+pub fn product_package_with_extensions(
+    story: &str,
+    extensions: &[roukaku_vn_core::ExtensionCommandDescriptor],
+) -> Vec<u8> {
+    let options = extensions
+        .iter()
+        .fold(test_compile_options(), |options, descriptor| {
+            options.bind_extension(descriptor.clone())
+        });
     let compiled = compile_roukaku_project(
         [
             RoukakuSource::story("main.roukaku", story),
             RoukakuSource::ui("test-ui.roukaku", TEST_UI),
         ],
-        test_compile_options(),
+        options,
     )
     .unwrap();
     let mut sections =

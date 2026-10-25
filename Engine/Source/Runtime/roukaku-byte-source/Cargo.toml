@@ -8,10 +8,9 @@ publish = false
 
 [features]
 default = []
-ffi = ["dep:abi_stable"]
+ffi = []
 
 [dependencies]
-abi_stable = { workspace = true, optional = true }
 roukaku-core = { path = "../roukaku-core" }
 schemars.workspace = true
 serde.workspace = true

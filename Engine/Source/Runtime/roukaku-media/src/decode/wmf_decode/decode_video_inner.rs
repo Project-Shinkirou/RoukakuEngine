@@ -4,6 +4,8 @@ pub(super) fn decode_video_inner(bytes: &[u8]) -> windows::core::Result<VideoOut
     unsafe {
         let reader = source_reader_from_bytes(bytes)?;
         let stream_index = MF_SOURCE_READER_FIRST_VIDEO_STREAM.0 as u32;
+        reader.SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS.0 as u32, false)?;
+        reader.SetStreamSelection(stream_index, true)?;
         let media_type = media_type(&MFMediaType_Video, &MFVideoFormat_RGB32)?;
         reader.SetCurrentMediaType(stream_index, None, &media_type)?;
         let current_type = reader.GetCurrentMediaType(stream_index)?;
@@ -66,6 +68,8 @@ pub(super) fn decode_video_stream_inner(
         }
         let reader = source_reader_from_bytes(bytes)?;
         let stream_index = MF_SOURCE_READER_FIRST_VIDEO_STREAM.0 as u32;
+        reader.SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS.0 as u32, false)?;
+        reader.SetStreamSelection(stream_index, true)?;
         let media_type = media_type(&MFMediaType_Video, &MFVideoFormat_RGB32)?;
         reader.SetCurrentMediaType(stream_index, None, &media_type)?;
         let current_type = reader.GetCurrentMediaType(stream_index)?;
@@ -173,6 +177,8 @@ pub(super) unsafe fn audio_stream_setup(bytes: &[u8]) -> windows::core::Result<A
     unsafe {
         let reader = source_reader_from_bytes(bytes)?;
         let stream_index = MF_SOURCE_READER_FIRST_AUDIO_STREAM.0 as u32;
+        reader.SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS.0 as u32, false)?;
+        reader.SetStreamSelection(stream_index, true)?;
         let requested = media_type(&MFMediaType_Audio, &MFAudioFormat_PCM)?;
         reader.SetCurrentMediaType(stream_index, None, &requested)?;
         let media_type = reader.GetCurrentMediaType(stream_index)?;

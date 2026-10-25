@@ -108,12 +108,25 @@ impl NativeVnProductMediaHost {
         paused: bool,
         executor: &PlayerHostCommandExecutor<PlatformCommandSink>,
     ) -> Result<(), PlatformError> {
-        self.audio.set_output_paused(paused, executor).await
+        self.audio.set_output_paused(paused, executor).await?;
+        self.clock.set_paused(paused);
+        if paused {
+            for video in &mut self.active_videos {
+                if let Some(sync) = &mut video.audio_sync
+                    && sync.scheduler.state == roukaku_media::MediaPlaybackState::Playing
+                {
+                    sync.scheduler
+                        .pause()
+                        .map_err(|error| media_error("player.video.pause", error))?;
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn snapshot(&self) -> NativeVnProductMediaSnapshot {
         NativeVnProductMediaSnapshot {
-            schema: "roukaku.player.native_vn_media_snapshot.v4".into(),
+            schema: "roukaku.player.native_vn_media_snapshot.v5".into(),
             playback_time_ms: self.clock.time_ms(),
             audio: self.audio.snapshot(),
             timeline: self.timeline.snapshot(),
@@ -142,6 +155,11 @@ impl NativeVnProductMediaHost {
                     next_frame: video.next_frame,
                     loop_index: video.loop_index,
                     started_at_ms: video.started_at_ms,
+                    seek_offset_us: video.seek_offset_us,
+                    audio_position_us: video
+                        .audio_sync
+                        .as_ref()
+                        .map(|sync| sync.scheduler.position_us),
                 })
                 .chain(self.restored_videos.iter().cloned())
                 .collect(),
@@ -151,7 +169,7 @@ impl NativeVnProductMediaHost {
     pub(crate) fn validate_snapshot_data(
         snapshot: &NativeVnProductMediaSnapshot,
     ) -> Result<(), PlatformError> {
-        if snapshot.schema != "roukaku.player.native_vn_media_snapshot.v4" {
+        if snapshot.schema != "roukaku.player.native_vn_media_snapshot.v5" {
             return Err(media_error(
                 "player.media.restore",
                 "ROUKAKU_PLAYER_MEDIA_SNAPSHOT_INVALID",
@@ -273,6 +291,13 @@ impl NativeVnProductMediaHost {
         mut completed: Vec<PlayerTimelineCompletion>,
         render_audio_tick: bool,
     ) -> Result<(), PlatformError> {
+        for video in &self.active_videos {
+            if video.request.is_cancelled()
+                && let Some(sync) = &video.audio_sync
+            {
+                self.audio.stop_movie(&sync.voice_id)?;
+            }
+        }
         self.active_videos.retain(|video| {
             if video.request.is_cancelled() {
                 self.pending_video_closes.push(video.session);
@@ -372,16 +397,11 @@ impl NativeVnProductMediaHost {
             }
 
             for request in source.take_video_requests() {
-                let decode_lease = roukaku_plugin::WorkerBudgetBroker::global()
-                    .acquire()
-                    .await
-                    .map_err(|error| media_error("player.video.decode.budget", error))?;
                 match self
                     .open_video_stream(source, executor, request.clone(), now_ms)
                     .await
                 {
                     Ok(video) => {
-                        drop(decode_lease);
                         self.active_videos.push(video);
                         tracing::info!(
                             event = "roukaku.player.video.started",
@@ -391,7 +411,6 @@ impl NativeVnProductMediaHost {
                         );
                     }
                     Err(error) => {
-                        drop(decode_lease);
                         return Err(media_error("player.video.decode", error));
                     }
                 }

@@ -14,6 +14,8 @@ sidebar: { order: 3 }
 
 依赖基线固定为 vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`、libass 0.17.5，以及可选 FFmpeg 9.0.2 port revision 2。`mlua` 保持最新发行版 0.12.2；其发行版 `mlua-sys` 0.13.0 会在 VM 初始化时拒绝 Luau 744 生成的字节码，因此 workspace 固定使用[上游 loader 修复](https://github.com/mlua-rs/mlua/blob/ff96ed786295cae96f43ef1372bd22be0fbf7866/mlua-sys/src/luau/compat.rs)，不降级 Luau，也不跳过运行时测试。
 
+Engine 渲染使用 wgpu 30.0.x，与 ShinkiEMU 及 Slint 1.18.1 的 `unstable-wgpu-30` 后端一致。Windows 保留 `static-dxc` feature。呈现通过提交命令的 queue 执行，surface 使用默认 `Auto` 色彩空间，保持 SDR 输出。Editor 当前不通过 Engine crate 依赖 wgpu，其 GPUI 渲染器及独立 lockfile 不变。
+
 ```sh
 cargo xtask docs
 cargo xtask check --workspace engine
@@ -36,7 +38,44 @@ cargo xtask check --workspace engine --hardware
 
 此参数向测试 harness 传入 `--include-ignored`，因此也会运行此前已忽略的测试。按各测试要求准备平台 codec 和 fixture。由 `platform-test-driver` 控制的测试仍需 `--features platform-test-driver`；输入驱动测试会聚焦真实窗口并发送输入。CI 不传 `--hardware`。
 
+以下测试不打开窗口，会在原生 GPU 上实际执行场景绘制、WGSL 滤镜、纹理上传与回读：
+
+```sh
+cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
+```
+
 `check-fast` 只检查文档链接和文本卫生，不编译或运行测试。`docs` 使用同一文档检查。`ui-check` 显式下载锁定的 Luau analyzer 并检查 NativeVN controller；它需要联网。
+
+## 编译集成作品扩展
+
+作品扩展实现 `roukaku_plugin::WorkExtension`，在工程的 `player` crate 中通过
+`WorkExtensionRegistry::register` 注册 Rust 类型。调用 `roukaku_player::run()`
+前安装注册表，每个会话独立创建扩展实例。Player 启动时检查 provider、命令和 schema；
+未注册的 provider 报 `ROUKAKU_EXTENSION_PROVIDER_UNREGISTERED`。
+命令通过 `ExtensionInvocation` 接收参数，输出真实 `SceneCommand`，按 provider
+保留到后续帧。标量参数对应 JSON 值，定点参数使用整数百万分位。
+
+`Examples/ExtensionPlayer/extension` 提供可公开复用的进度条扩展，旁边的 `player`
+crate 将它链接进正常 Player 宿主。测试启动作品包中的命令并检查最终呈现输出。
+
+```sh
+cargo xtask project-player Examples/ExtensionPlayer --output ./project-player.exe
+# 可用 --target 指定 Cargo 目标，构建机需安装对应原生 SDK。
+cargo xtask project-player ./ContentProject --prebuilt ./roukaku-player.exe --output ./content-player.exe
+```
+
+`project-player` 用 `--locked --release` 构建 `player/Cargo.toml`，从 Cargo
+产物消息中读取唯一可执行文件并复制到输出路径。纯内容工程没有 `player/Cargo.toml`，
+直接复用 `--prebuilt`。把输出文件传给现有 package bundle 命令对应平台的 Player
+选项即可打包；扩展工程不能用预构建文件替代专用 Player。
+
+`WorkExtensionDeclaration` 和 `ExtensionCommandDeclaration` 只含 provider ID、
+命令 schema 和参数 schema。编译集成的 Editor 面板可以共享这些类型，Player
+无需依赖 Editor UI。运行时动态库加载器、二进制描述符和插件 ABI 门禁已移除。
+`roukaku-engine` 和 `roukaku-vn` 按普通 `rlib` 依赖编译，不再生成多余的 Rust
+`dylib`。Android 和 Web 宿主的 `cdylib` 入口仍作为平台产物保留。
+扩展必须通过 `restoration()` 明确选择 `Transient` 或 `Restorable`；
+`ExtensionState` 提供业务状态采集、候选验证和恢复接口，由检查点/恢复切片接入。
 
 ## 原生依赖
 
@@ -58,9 +97,47 @@ $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dy
 
 准备 FFmpeg 后还要设置打印的 `VCPKG_ROOT`、`VCPKG_DEFAULT_TRIPLET` 和运行库 PATH。非 Windows 目标按输出设置 `PKG_CONFIG_PATH` 及 `LD_LIBRARY_PATH` 或 `DYLD_LIBRARY_PATH`。原生依赖的分发许可与动态库仍需随最终产品处理。
 
+## 视频播放与音画同步
+
+平台解码器仍是主路径：Windows 用 WMF，Apple 平台用 AVFoundation，Linux 用
+GStreamer，Android 用 MediaCodec，实验性 Web 目标用 WebCodecs。FFmpeg 保持可选。
+AVFoundation 视频通过 `AVAssetReader` 按需读取带 PTS 的帧，只保留一个预读 sample
+和 Player 的一个待呈现帧，不再将整段视频聚合成 `CpuBuffer`。关闭流会取消 reader；
+seek 会重建解码器，让旧呈现工作失效。
+
+Player 将同一视频容器的音轨交给所选平台音频解码器，再送入现有 Kira mixer。
+公共媒体 scheduler 用 PCM voice cursor 扣除已渲染但未消费的样本和设备输出延迟，
+得到音频主时钟。CPAL 输出读取 callback/playback 时间戳，Android 读取 Oboe 延迟。
+无音轨的视频才使用宿主时间。暂停会冻结 transport；seek 清空旧输出队列，在目标位置
+重建双轨。设备恢复从可听位置重建 PCM voice。电影音频沿用现有 PCM 预算；
+音轨结束后，设备实际消费的 mixer 静音继续驱动视频尾部；完成时间取双轨实际 EOS，
+不依赖容器时长估计。
+
+Windows 回归用 WMF 解码双轨，经真实 Kira mixer 写入有界原生输出队列，再用受控软件
+callback 消费样本：
+
+```sh
+cargo test --locked -p roukaku-audio-kira --test native_movie_sync -- --nocapture
+cargo test --locked -p roukaku-media --test container_tracks
+```
+
+测试覆盖暂停、seek 和输出重建，检查视频 PTS 与音频进度的偏差不超过 scheduler 的
+100 ms 滞后 / 20 ms 提前阈值，不打开物理音频设备。Apple 的 reader、PTS、seek、
+cancel 回归需要 Apple SDK，由 CI `products` 的 `macos-15` 和 `macos-15-intel` 行执行。
+
+`roukaku-media/tests/fixtures` 中的 `av-clock.mp4`、`silent.mp4`、`silent.webm`
+由测试图案和正弦波生成，按 CC0 提供，不含下载的媒体内容。音视频样本生成命令：
+
+```sh
+ffmpeg -f lavfi -i testsrc2=size=64x64:rate=25:duration=3 -f lavfi -i sine=frequency=440:sample_rate=48000:duration=1.8 -c:v libx264 -pix_fmt yuv420p -bf 0 -g 25 -c:a aac -ac 2 -b:a 32k -movflags +faststart av-clock.mp4
+```
+
+
 ## Android Player
 
 入口是 `cargo xtask android`。需要 JDK 27、`cargo-ndk`、Rust `aarch64-linux-android` target，设置 `ANDROID_SDK_ROOT` 或 `ANDROID_HOME`。安装 SDK 平台 `platforms;android-37.2`、Build Tools `37.0.0` 和稳定版 [NDK r30](https://developer.android.com/ndk/downloads) `30.0.16248370`。工程使用 AGP 9.4.1 和 Gradle 9.8.2。JNI 库继续使用 16 KiB ELF 页对齐；APK 中不压缩的原生库使用现代 zip 对齐。
+
+构建 JVM 继续使用 JDK 27：[Gradle 9.8.2 明确支持 Java 27](https://docs.gradle.org/9.8.2/userguide/compatibility.html)，[Android 的 JDK 指引](https://developer.android.com/build/jdks)要求构建 JDK 不低于 AGP 的最低版本（AGP 9.4 为 JDK 17）。这里选择的是运行构建工具的 JVM，不是 Android 应用的 Java API 或字节码版本。
 
 先按[快速开始](quick-start.md)生成含 Android host profile 的 `.roukakupkg`，再运行：
 

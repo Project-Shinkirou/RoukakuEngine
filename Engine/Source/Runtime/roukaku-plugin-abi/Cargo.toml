@@ -4,12 +4,7 @@ edition.workspace = true
 license.workspace = true
 version.workspace = true
 
-[features]
-default = ["ffi"]
-ffi = ["dep:abi_stable"]
-
 [dependencies]
-abi_stable = { workspace = true, optional = true }
 roukaku-core = { path = "../roukaku-core" }
 schemars.workspace = true
 serde.workspace = true

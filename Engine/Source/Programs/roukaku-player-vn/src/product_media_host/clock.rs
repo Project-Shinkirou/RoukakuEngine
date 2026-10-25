@@ -4,6 +4,7 @@ use super::{PlatformError, media_error};
 pub(super) struct PlaybackClock {
     playback_time_ms: u64,
     host_time_ms: Option<u64>,
+    paused: bool,
 }
 
 impl PlaybackClock {
@@ -11,6 +12,7 @@ impl PlaybackClock {
         Self {
             playback_time_ms,
             host_time_ms: None,
+            paused: false,
         }
     }
 
@@ -18,7 +20,19 @@ impl PlaybackClock {
         self.playback_time_ms
     }
 
+    pub(super) fn set_paused(&mut self, paused: bool) {
+        self.paused = paused;
+        self.host_time_ms = None;
+    }
+
+    pub(super) fn is_paused(&self) -> bool {
+        self.paused
+    }
+
     pub(super) fn advance(&mut self, host_time_ms: u64) -> Result<u64, PlatformError> {
+        if self.paused {
+            return Ok(self.playback_time_ms);
+        }
         let delta = match self.host_time_ms {
             Some(previous) => host_time_ms.checked_sub(previous).ok_or_else(|| {
                 media_error(

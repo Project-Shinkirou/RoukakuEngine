@@ -2,7 +2,9 @@ mod clock;
 
 mod restore;
 
+mod video_audio;
 mod video_open;
+mod video_seek;
 
 use std::{
     collections::{BTreeMap, BTreeSet, VecDeque},

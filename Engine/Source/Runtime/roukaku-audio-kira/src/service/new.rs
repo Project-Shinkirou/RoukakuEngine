@@ -321,10 +321,12 @@ impl AudioServiceSession {
             if voice.handle.is_completed() && voice.completion_target_samples.is_none() {
                 voice.completion_target_samples = Some(telemetry.submitted_samples);
             }
-            if voice
-                .completion_target_samples
-                .is_some_and(|target| telemetry.consumed_samples >= target)
-            {
+            if voice.completion_target_samples.is_some_and(|target| {
+                telemetry
+                    .consumed_samples
+                    .saturating_sub(telemetry.output_latency_samples)
+                    >= target
+            }) {
                 completed.push((voice_id.clone(), voice.command_sequence));
             }
         }
@@ -361,6 +363,64 @@ impl AudioServiceSession {
     #[must_use]
     pub fn timeline(&self) -> &AudioTimelineStateV1 {
         &self.timeline
+    }
+
+    /// The PCM render cursor corrected for queued mixer samples and device latency.
+    /// Unlike the host tick, this stops when the device stops consuming samples.
+    pub fn playback_progress(&mut self, voice_id: &str) -> crate::AudioPlaybackProgress {
+        let telemetry = self.manager.backend_mut().telemetry();
+        let audible_samples = telemetry
+            .consumed_samples
+            .saturating_sub(telemetry.output_latency_samples);
+        let channels = u64::from(self.timeline.device_channels);
+        let rate = u64::from(self.timeline.device_sample_rate);
+        crate::AudioPlaybackProgress {
+            voice_position_us: self.voices.get(voice_id).map(|voice| {
+                Self::audible_voice_frames(
+                    voice,
+                    telemetry.rendered_samples,
+                    audible_samples,
+                    self.timeline.device_channels,
+                )
+                .saturating_mul(1_000_000)
+                    / rate
+            }),
+            output_position_us: (audible_samples / channels).saturating_mul(1_000_000) / rate,
+        }
+    }
+
+    /// Native objects are rebuilt at the audible cursor, not at the render-ahead cursor.
+    pub fn audible_timeline(&mut self) -> AudioTimelineStateV1 {
+        let mut timeline = self.timeline.clone();
+        let telemetry = self.manager.backend_mut().telemetry();
+        let audible_samples = telemetry
+            .consumed_samples
+            .saturating_sub(telemetry.output_latency_samples);
+        for (id, voice) in &mut timeline.voices {
+            if let Some(active) = self.voices.get(id) {
+                voice.cursor_frames = Self::audible_voice_frames(
+                    active,
+                    telemetry.rendered_samples,
+                    audible_samples,
+                    timeline.device_channels,
+                );
+            }
+        }
+        timeline
+    }
+
+    fn audible_voice_frames(
+        voice: &ActiveVoice,
+        rendered_samples: u64,
+        audible_samples: u64,
+        channels: u16,
+    ) -> u64 {
+        let pending = voice
+            .completion_target_samples
+            .unwrap_or(rendered_samples)
+            .saturating_sub(audible_samples)
+            / u64::from(channels);
+        voice.handle.cursor_frames().saturating_sub(pending)
     }
 
     #[must_use]

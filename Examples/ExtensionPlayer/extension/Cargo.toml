@@ -1,0 +1,11 @@
+[package]
+name = "roukaku-example-progress-meter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+roukaku-plugin = { path = "../../../Engine/Source/Runtime/roukaku-plugin" }
+roukaku-media-core = { path = "../../../Engine/Source/Runtime/roukaku-media-core" }
+serde.workspace = true
+serde_json.workspace = true

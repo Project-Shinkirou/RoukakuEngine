@@ -311,6 +311,7 @@ pub(in super::super) fn validate_story_presentation(
     assets: &PackageAssetStore,
     manifest: &VnPresentationProviderManifest,
     profile: &str,
+    extensions: &roukaku_plugin::WorkExtensionRuntime,
 ) -> Result<(), NativeVnHostError> {
     for command in compiled
         .states
@@ -383,10 +384,13 @@ pub(in super::super) fn validate_story_presentation(
             PresentationCommand::Extension(extension)
                 if extension.provider_id != roukaku_vn_policy::POLICY_ACTION_PROVIDER =>
             {
-                return Err(NativeVnHostError::Asset(format!(
-                    "ROUKAKU_PLAYER_EXTENSION_PROVIDER_UNWIRED: command {} requires provider {}",
-                    extension.command, extension.provider_id
-                )));
+                extensions
+                    .validate_command(
+                        &extension.provider_id,
+                        &extension.command,
+                        &extension.schema,
+                    )
+                    .map_err(NativeVnHostError::Asset)?;
             }
             PresentationCommand::Extension(_) => {}
             _ => {}

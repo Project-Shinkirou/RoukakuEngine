@@ -63,6 +63,8 @@ impl AudioResource {
                 audio_wake.clone(),
             )?;
         let stream_error = Arc::new(AtomicBool::new(false));
+        let sample_rate = request.sample_rate;
+        let channels = request.channels;
         let stream = match supported.sample_format() {
             cpal::SampleFormat::F32 => {
                 let error = Arc::clone(&stream_error);
@@ -71,7 +73,14 @@ impl AudioResource {
                 let mut consumer = consumer;
                 device.build_output_stream(
                     config,
-                    move |output: &mut [f32], _| {
+                    move |output: &mut [f32], info| {
+                        let time = info.timestamp();
+                        consumer.record_output_latency(
+                            time.playback.duration_since(time.callback),
+                            sample_rate,
+                            channels,
+                            output.len(),
+                        );
                         let _ = consumer.fill_output_f32(output);
                         wake.notify();
                     },
@@ -89,7 +98,14 @@ impl AudioResource {
                 let mut consumer = consumer;
                 device.build_output_stream(
                     config,
-                    move |output: &mut [i16], _| {
+                    move |output: &mut [i16], info| {
+                        let time = info.timestamp();
+                        consumer.record_output_latency(
+                            time.playback.duration_since(time.callback),
+                            sample_rate,
+                            channels,
+                            output.len(),
+                        );
                         let _ = consumer.fill_output_i16(output);
                         wake.notify();
                     },
@@ -107,7 +123,14 @@ impl AudioResource {
                 let mut consumer = consumer;
                 device.build_output_stream(
                     config,
-                    move |output: &mut [u16], _| {
+                    move |output: &mut [u16], info| {
+                        let time = info.timestamp();
+                        consumer.record_output_latency(
+                            time.playback.duration_since(time.callback),
+                            sample_rate,
+                            channels,
+                            output.len(),
+                        );
                         let _ = consumer.fill_output_u16(output);
                         wake.notify();
                     },
@@ -198,6 +221,7 @@ pub(super) fn set_stream_error(error: &AtomicBool, _value: cpal::Error) {
 pub(super) struct DecodeResource {
     pub(super) kind: DecodeKind,
     pub(super) next_sequence: u64,
+    video: Option<video_stream::VideoStream>,
 }
 
 impl DecodeResource {
@@ -205,6 +229,7 @@ impl DecodeResource {
         Ok(Self {
             kind,
             next_sequence: 1,
+            video: None,
         })
     }
 
@@ -214,8 +239,10 @@ impl DecodeResource {
     ) -> Result<DecodeOutput, PlatformError> {
         if request.sequence != self.next_sequence
             || request.kind != self.kind
-            || request.bytes.is_empty()
-            || !supported_codec(request.kind, &request.codec)
+            || (request.bytes.is_empty()
+                != (request.stream_action == roukaku_platform::DecodeStreamAction::Next))
+            || (request.stream_action != roukaku_platform::DecodeStreamAction::Next
+                && !supported_codec(request.kind, &request.codec))
             || !request.description.is_empty()
             || request.sample_rate.is_some()
             || request.channels.is_some()
@@ -235,9 +262,30 @@ impl DecodeResource {
                 "decode request sequence overflowed",
             )
         })?;
-        let output = match request.kind {
-            DecodeKind::Image => decode_image(request)?,
-            DecodeKind::Audio | DecodeKind::Video => decode_avfoundation(request)?,
+        let output = match (request.kind, request.stream_action) {
+            (DecodeKind::Video, roukaku_platform::DecodeStreamAction::Start) => {
+                let video = video_stream::VideoStream::open(&request)?;
+                let descriptor = video.descriptor();
+                self.video = Some(video);
+                descriptor
+            }
+            (DecodeKind::Video, roukaku_platform::DecodeStreamAction::Next) => self
+                .video
+                .as_mut()
+                .ok_or_else(|| host_error("decode.stream.next", "video stream is not open"))?
+                .next()?,
+            (DecodeKind::Image, roukaku_platform::DecodeStreamAction::OneShot) => {
+                decode_image(request)?
+            }
+            (DecodeKind::Audio, roukaku_platform::DecodeStreamAction::OneShot) => {
+                decode_avfoundation(request)?
+            }
+            _ => {
+                return Err(host_error(
+                    "decode.submit",
+                    "unsupported decode stream action",
+                ));
+            }
         };
         self.next_sequence = next_sequence;
         Ok(output)

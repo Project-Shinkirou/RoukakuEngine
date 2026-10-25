@@ -130,15 +130,10 @@ impl NativeVnProductMediaHost {
             let request = source
                 .rehydrate_video_request(&snapshot)
                 .map_err(|error| media_error("player.video.restore.asset", error))?;
-            let decode_lease = roukaku_plugin::WorkerBudgetBroker::global()
-                .acquire()
-                .await
-                .map_err(|error| media_error("player.video.restore.budget", error))?;
             let mut video = self
                 .open_video_stream(source, executor, request, snapshot.started_at_ms)
                 .await
                 .map_err(|error| media_error("player.video.restore.decode", error))?;
-            drop(decode_lease);
             video.loop_duration_us = snapshot.loop_duration_us;
             let restored_frame = async {
                 let mut restored_frame = None;
@@ -186,6 +181,13 @@ impl NativeVnProductMediaHost {
                 }
             };
             video.loop_index = snapshot.loop_index;
+            video.seek_offset_us = snapshot.seek_offset_us;
+            if let (Some(sync), Some(position)) =
+                (&mut video.audio_sync, snapshot.audio_position_us)
+            {
+                self.seek_video_audio(source, executor, sync, position)
+                    .await?;
+            }
             if let Some(frame) = restored_frame {
                 let result = async {
                     let texture = decoded_bgra_frame(frame.width, frame.height, frame.bgra8)?;

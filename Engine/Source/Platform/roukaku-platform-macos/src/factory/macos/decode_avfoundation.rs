@@ -9,13 +9,7 @@ pub(super) fn decode_avfoundation(
 
     use objc2::runtime::AnyObject;
     use objc2_av_foundation::{
-        AVAsset, AVAssetReader, AVAssetReaderTrackOutput, AVMediaTypeAudio, AVMediaTypeVideo,
-        AVURLAsset,
-    };
-    use objc2_core_video::{
-        CVPixelBufferGetBaseAddress, CVPixelBufferGetBytesPerRow, CVPixelBufferGetHeight,
-        CVPixelBufferGetWidth, CVPixelBufferLockBaseAddress, CVPixelBufferLockFlags,
-        CVPixelBufferUnlockBaseAddress,
+        AVAsset, AVAssetReader, AVAssetReaderTrackOutput, AVMediaTypeAudio, AVURLAsset,
     };
     use objc2_foundation::{NSDictionary, NSNumber, NSString, NSURL};
 
@@ -46,17 +40,13 @@ pub(super) fn decode_avfoundation(
     unsafe {
         let asset = AVURLAsset::URLAssetWithURL_options(&url, None);
         let asset: &AVAsset = &asset;
-        let media_type = match request.kind {
-            DecodeKind::Audio => AVMediaTypeAudio,
-            DecodeKind::Video => AVMediaTypeVideo,
-            DecodeKind::Image => unreachable!(),
-        }
-        .ok_or_else(|| host_error("decode.submit", "AVFoundation media type is unavailable"))?;
+        let media_type = AVMediaTypeAudio
+            .ok_or_else(|| host_error("decode.submit", "AVFoundation media type is unavailable"))?;
         let track = asset
             .tracksWithMediaType(media_type)
             .firstObject()
             .ok_or_else(|| host_error("decode.submit", "AVFoundation found no matching track"))?;
-        let settings = if request.kind == DecodeKind::Audio {
+        let settings = {
             let keys = [
                 NSString::from_str("AVFormatIDKey"),
                 NSString::from_str("AVLinearPCMIsFloatKey"),
@@ -79,13 +69,6 @@ pub(super) fn decode_avfoundation(
                 &keys.iter().map(|value| &**value).collect::<Vec<_>>(),
                 &values.iter().map(|value| &**value).collect::<Vec<_>>(),
             )
-        } else {
-            NSDictionary::from_slices(
-                &[&*NSString::from_str("PixelFormatType")],
-                &[&*NSNumber::numberWithUnsignedInt(u32::from_be_bytes(
-                    *b"BGRA",
-                ))],
-            )
         };
         let settings = settings.cast_unchecked::<NSString, AnyObject>();
         let output = AVAssetReaderTrackOutput::assetReaderTrackOutputWithTrack_outputSettings(
@@ -104,106 +87,50 @@ pub(super) fn decode_avfoundation(
         if !reader.startReading() {
             return Err(host_error("decode.submit", "AVAssetReader could not start"));
         }
-        let mut bytes = Vec::new();
         let mut audio_samples = Vec::<f32>::new();
         while let Some(sample) = output.copyNextSampleBuffer() {
-            if request.kind == DecodeKind::Audio {
-                let block = sample.data_buffer().ok_or_else(|| {
-                    host_error("decode.submit", "AVFoundation audio sample has no data")
-                })?;
-                let length = block.data_length();
-                if !length.is_multiple_of(std::mem::size_of::<f32>()) {
-                    return Err(host_error(
-                        "decode.submit",
-                        "AVFoundation audio sample ends inside an f32 value",
-                    ));
-                }
-                let sample_count = length / std::mem::size_of::<f32>();
-                let start = audio_samples.len();
-                audio_samples.resize(
-                    start
-                        .checked_add(sample_count)
-                        .filter(|size| {
-                            size.saturating_mul(std::mem::size_of::<f32>()) <= MAX_DECODED_BYTES
-                        })
-                        .ok_or_else(|| {
-                            host_error("decode.submit", "decoded audio exceeds the byte limit")
-                        })?,
-                    0.0,
-                );
-                let destination = NonNull::new(audio_samples[start..].as_mut_ptr().cast()).unwrap();
-                if block.copy_data_bytes(0, length, destination) != 0 {
-                    return Err(host_error(
-                        "decode.submit",
-                        "AVFoundation audio copy failed",
-                    ));
-                }
-            } else {
-                let image = sample.image_buffer().ok_or_else(|| {
-                    host_error("decode.submit", "AVFoundation video sample has no image")
-                })?;
-                let flags = CVPixelBufferLockFlags(1);
-                if CVPixelBufferLockBaseAddress(&image, flags) != 0 {
-                    return Err(host_error(
-                        "decode.submit",
-                        "video pixel buffer lock failed",
-                    ));
-                }
-                let width = CVPixelBufferGetWidth(&image);
-                let height = CVPixelBufferGetHeight(&image);
-                let stride = CVPixelBufferGetBytesPerRow(&image);
-                let base = CVPixelBufferGetBaseAddress(&image).cast::<u8>();
-                if base.is_null() || stride < width.saturating_mul(4) {
-                    let _ = CVPixelBufferUnlockBaseAddress(&image, flags);
-                    return Err(host_error(
-                        "decode.submit",
-                        "video pixel buffer layout is invalid",
-                    ));
-                }
-                let frame_bytes = width
-                    .checked_mul(height)
-                    .and_then(|value| value.checked_mul(4))
+            let block = sample.data_buffer().ok_or_else(|| {
+                host_error("decode.submit", "AVFoundation audio sample has no data")
+            })?;
+            let length = block.data_length();
+            if !length.is_multiple_of(std::mem::size_of::<f32>()) {
+                return Err(host_error(
+                    "decode.submit",
+                    "AVFoundation audio sample ends inside an f32 value",
+                ));
+            }
+            let sample_count = length / std::mem::size_of::<f32>();
+            let start = audio_samples.len();
+            audio_samples.resize(
+                start
+                    .checked_add(sample_count)
+                    .filter(|size| {
+                        size.saturating_mul(std::mem::size_of::<f32>()) <= MAX_DECODED_BYTES
+                    })
                     .ok_or_else(|| {
-                        host_error("decode.submit", "decoded video dimensions overflow")
-                    })?;
-                if bytes
-                    .len()
-                    .checked_add(frame_bytes)
-                    .is_none_or(|size| size > MAX_DECODED_BYTES)
-                {
-                    let _ = CVPixelBufferUnlockBaseAddress(&image, flags);
-                    return Err(host_error(
-                        "decode.submit",
-                        "decoded video exceeds the byte limit",
-                    ));
-                }
-                for row in 0..height {
-                    let source = std::slice::from_raw_parts(base.add(row * stride), width * 4);
-                    for pixel in source.as_chunks::<4>().0.iter() {
-                        bytes.extend_from_slice(&[pixel[2], pixel[1], pixel[0], pixel[3]]);
-                    }
-                }
-                let _ = CVPixelBufferUnlockBaseAddress(&image, flags);
+                        host_error("decode.submit", "decoded audio exceeds the byte limit")
+                    })?,
+                0.0,
+            );
+            let destination = NonNull::new(audio_samples[start..].as_mut_ptr().cast()).unwrap();
+            if block.copy_data_bytes(0, length, destination) != 0 {
+                return Err(host_error(
+                    "decode.submit",
+                    "AVFoundation audio copy failed",
+                ));
             }
         }
-        if bytes.is_empty() && audio_samples.is_empty() {
+        if audio_samples.is_empty() {
             return Err(host_error(
                 "decode.submit",
                 "AVFoundation produced no decoded samples",
             ));
         }
-        if request.kind == DecodeKind::Audio {
-            Ok(DecodeOutput::AudioPcmF32 {
-                sample_rate: 48_000,
-                channels: 2,
-                samples: audio_samples,
-            })
-        } else {
-            Ok(DecodeOutput::CpuBuffer {
-                format: "rgba8".to_string(),
-                bytes: bytes.into(),
-            })
-        }
+        Ok(DecodeOutput::AudioPcmF32 {
+            sample_rate: 48_000,
+            channels: 2,
+            samples: audio_samples,
+        })
     }
 }
 

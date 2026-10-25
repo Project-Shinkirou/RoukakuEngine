@@ -97,11 +97,11 @@ pub(crate) fn create_blend_pipeline_set(
                 module: shader,
                 entry_point: Some("vs_main"),
                 compilation_options: Default::default(),
-                buffers: &[wgpu::VertexBufferLayout {
+                buffers: &[Some(wgpu::VertexBufferLayout {
                     array_stride: VERTEX_STRIDE,
                     step_mode: wgpu::VertexStepMode::Vertex,
                     attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32x4, 3 => Uint32x2, 4 => Float32x2, 5 => Float32],
-                }],
+                })],
             },
             fragment: Some(wgpu::FragmentState {
                 module: shader,

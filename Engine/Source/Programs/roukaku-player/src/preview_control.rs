@@ -1,4 +1,4 @@
-use crate::preview_transport::PreviewTransport;
+use super::preview_transport::PreviewTransport;
 use roukaku_platform::{PlatformError, PlatformErrorCode};
 use roukaku_player_core::{PlatformCommandSink, PlayerHostCommandExecutor};
 use roukaku_player_vn::{NativeVnHostCommandSource, NativeVnPreview, NativeVnProductMediaHost};

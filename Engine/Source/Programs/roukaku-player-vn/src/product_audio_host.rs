@@ -33,6 +33,7 @@ pub struct NativeVnProductAudioHost {
     pending_restore: Option<AudioTimelineStateV1>,
     pending_recovery_assets: Vec<(AudioAssetRevision, u32, u16, Arc<Vec<f32>>)>,
     previous_telemetry: AudioChunkTelemetry,
+    output_epoch: u64,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -98,6 +99,7 @@ impl NativeVnProductAudioHost {
             pending_restore: None,
             pending_recovery_assets: Vec::new(),
             previous_telemetry: AudioChunkTelemetry::default(),
+            output_epoch: 0,
         }
     }
 
@@ -111,6 +113,24 @@ impl NativeVnProductAudioHost {
         self.voice_kinds.values().any(|kind| kind == "voice")
     }
 
+    pub(crate) fn movie_progress(
+        &mut self,
+        voice_id: &str,
+    ) -> Result<(roukaku_audio_kira::AudioPlaybackProgress, u64), PlatformError> {
+        Ok((
+            self.service_mut()?.playback_progress(voice_id),
+            self.output_epoch,
+        ))
+    }
+
+    pub(crate) fn stop_movie(&mut self, voice_id: &str) -> Result<(), PlatformError> {
+        if self.voice_kinds.remove(voice_id).is_some() {
+            self.apply(AudioServiceCommand::Stop {
+                voice_id: voice_id.to_owned(),
+            })?;
+        }
+        Ok(())
+    }
     pub async fn start(
         &mut self,
         source: &mut crate::NativeVnHostCommandSource,

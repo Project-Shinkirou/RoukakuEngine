@@ -14,6 +14,8 @@ The root workspace contains Engine, RoukakuVN, Player, CLI, and shared libraries
 
 The dependency baseline uses vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`, libass 0.17.5, and optional FFmpeg 9.0.2 port revision 2. The latest released `mlua` 0.12.2 is retained. Its released `mlua-sys` 0.13.0 loader rejects the bytecode emitted by Luau 744 during VM initialization, so the workspace pins the [upstream loader fix](https://github.com/mlua-rs/mlua/blob/ff96ed786295cae96f43ef1372bd22be0fbf7866/mlua-sys/src/luau/compat.rs) instead of downgrading Luau or skipping runtime tests.
 
+Engine rendering uses wgpu 30.0.x, matching ShinkiEMU and Slint 1.18.1's `unstable-wgpu-30` backend. Windows keeps the `static-dxc` feature. Presentation uses the submitting queue and the default `Auto` surface color space, preserving SDR output. Editor currently does not consume wgpu through Engine crates; its GPUI renderer and independent lockfile remain unchanged.
+
 ```sh
 cargo xtask docs
 cargo xtask check --workspace engine
@@ -36,7 +38,51 @@ cargo xtask check --workspace engine --hardware
 
 The flag passes `--include-ignored` to the test harness, so it also runs previously ignored tests. Install any additional platform codecs and provide fixtures required by those tests. Tests gated by `platform-test-driver` still require `--features platform-test-driver`; input-driver tests can focus a real window and send input. CI omits `--hardware`.
 
+To exercise the native GPU scene, WGSL filter, texture upload and readback without opening a window, run:
+
+```sh
+cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
+```
+
 `check-fast` checks documentation links and hygiene only; it does not compile or test code. `docs` runs the same documentation check. `ui-check` explicitly downloads a pinned Luau analyzer and checks NativeVN controllers, requiring network access.
+
+## Compiled work extensions
+
+Work extensions implement `roukaku_plugin::WorkExtension` and register their Rust
+types with `WorkExtensionRegistry::register` in a project's `player` crate.
+Install that registry before calling `roukaku_player::run()`. Each session gets
+its own instances. Player preflight checks provider, command and schema identity;
+an unregistered provider reports `ROUKAKU_EXTENSION_PROVIDER_UNREGISTERED`.
+Commands receive typed `ExtensionInvocation` data and return real `SceneCommand`
+output, retained per provider across frames. Scalar arguments map to JSON values;
+fixed-point arguments use integer millionths.
+
+`Examples/ExtensionPlayer/extension` is a public progress-meter implementation.
+Its companion `player` crate links it into the ordinary Player host; its tests
+launch a packaged story command and inspect the resulting presentation.
+
+```sh
+cargo xtask project-player Examples/ExtensionPlayer --output ./project-player.exe
+# Optional --target selects a Cargo target; the required native SDK must be installed.
+cargo xtask project-player ./ContentProject --prebuilt ./roukaku-player.exe --output ./content-player.exe
+```
+
+`project-player` builds `player/Cargo.toml` with `--locked --release`, reads Cargo's
+artifact messages and stages its single executable. A pure-content project has
+no `player/Cargo.toml` and reuses `--prebuilt`. Pass the staged executable to the
+existing package bundle command's platform Player option. Extension projects
+cannot substitute a prebuilt binary.
+
+`WorkExtensionDeclaration` and `ExtensionCommandDeclaration` contain only data
+(provider IDs, command schemas and argument schemas). Compiled Editor panels
+can share those types without pulling Editor UI dependencies into Player.
+There is no runtime library loader, binary descriptor or plugin ABI gate.
+The `roukaku-engine` and `roukaku-vn` Rust facades build as ordinary `rlib`
+dependencies; redundant Rust `dylib` outputs are removed. Android and Web host
+`cdylib` entrypoints remain platform artifacts.
+Extensions explicitly return `Transient` or `Restorable` from `restoration()`;
+`ExtensionState` supplies capture, candidate validation and restore hooks for
+business state. The checkpoint/restore owner integrates those hooks separately.
 
 ## Native dependencies
 
@@ -58,9 +104,52 @@ $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dy
 
 After preparing FFmpeg, also apply the printed `VCPKG_ROOT`, `VCPKG_DEFAULT_TRIPLET`, and runtime DLL PATH. For non-Windows targets, apply `PKG_CONFIG_PATH` and `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH` as printed. Account for native dependency licenses and dynamic libraries when distributing the product.
 
+## Movie playback and synchronization
+
+Platform decoders remain primary: WMF on Windows, AVFoundation on Apple platforms,
+GStreamer on Linux, MediaCodec on Android, and WebCodecs on the experimental Web target.
+FFmpeg is optional. AVFoundation video uses a pull-driven `AVAssetReader` with PTS,
+one look-ahead sample, and one Player-owned pending frame; it never batches a movie
+into a `CpuBuffer`. Closing the stream cancels its reader; seeking recreates the
+reader and invalidates old presentation work.
+
+Player sends a movie's same-container audio through the selected platform audio
+decoder and the existing Kira mixer. Its public media scheduler uses the PCM voice
+cursor corrected by rendered-but-unconsumed samples and endpoint output latency.
+CPAL endpoints report callback/playback timestamp latency; Android reports Oboe
+latency. Silent movies use host time. Pause freezes transport; seek discards the
+old output queue and rebuilds both tracks at the target. Device recovery rebuilds
+PCM voices at their audible positions. Decoded movie audio obeys the existing PCM
+budget. After audio EOS, device-consumed mixer silence clocks any remaining video;
+completion follows actual track EOS, never a container duration estimate.
+
+The Windows regression decodes both tracks with WMF, renders real Kira PCM into the
+bounded native output queue, and consumes it with a controlled software callback:
+
+```sh
+cargo test --locked -p roukaku-audio-kira --test native_movie_sync -- --nocapture
+cargo test --locked -p roukaku-media --test container_tracks
+```
+
+It asserts video PTS versus audio progress across pause, seek, and output rebuild
+against the scheduler's 100 ms lag / 20 ms lead limits. It does not open a physical
+audio device. Apple's reader/PTS/seek/cancel regression requires Apple SDKs; CI
+`products` runs it on `macos-15` and `macos-15-intel`.
+
+`av-clock.mp4`, `silent.mp4`, and `silent.webm` in `roukaku-media/tests/fixtures`
+contain generated patterns/tones and are dedicated to CC0, with no downloaded media.
+Regenerate the A/V sample with:
+
+```sh
+ffmpeg -f lavfi -i testsrc2=size=64x64:rate=25:duration=3 -f lavfi -i sine=frequency=440:sample_rate=48000:duration=1.8 -c:v libx264 -pix_fmt yuv420p -bf 0 -g 25 -c:a aac -ac 2 -b:a 32k -movflags +faststart av-clock.mp4
+```
+
+
 ## Android Player
 
 Use `cargo xtask android`. Install JDK 27, `cargo-ndk`, and the Rust `aarch64-linux-android` target. Set `ANDROID_SDK_ROOT` or `ANDROID_HOME`. Install SDK platform `platforms;android-37.2`, Build Tools `37.0.0`, and stable [NDK r30](https://developer.android.com/ndk/downloads) `30.0.16248370`. The project uses AGP 9.4.1 and Gradle 9.8.2. JNI libraries retain 16 KiB ELF page alignment; uncompressed APK native libraries use modern zip alignment.
+
+The build JVM stays on JDK 27: [Gradle 9.8.2 explicitly supports Java 27](https://docs.gradle.org/9.8.2/userguide/compatibility.html), and [Android's JDK guidance](https://developer.android.com/build/jdks) requires a build JDK at least as new as AGP's minimum (JDK 17 for AGP 9.4). This selects the JVM running the build, not the Android app's Java API or bytecode level.
 
 First create a `.roukakupkg` with an Android host profile using [Quick start](quick-start.md), then run:
 

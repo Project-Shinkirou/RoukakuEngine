@@ -97,6 +97,11 @@ impl HostBudget {
         self.outputs += 1;
         Ok(())
     }
+    /// Host-controlled dispatch boundary; exhaustion remains sticky.
+    pub(super) fn begin_dispatch(&mut self) {
+        self.outputs = 0;
+    }
+
     pub(super) fn check(&self) -> mlua::Result<()> {
         if self.failed {
             Err(memory_error())

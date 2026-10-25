@@ -18,6 +18,7 @@ struct SharedTelemetry {
     queued_samples: AtomicU64,
     consumed_samples: AtomicU64,
     underflow_count: AtomicU64,
+    output_latency_samples: AtomicU64,
 }
 
 #[derive(Clone)]
@@ -99,6 +100,12 @@ impl AudioOutputLane for NativeAudioProducer {
         self.telemetry.consumed_samples.load(Ordering::Acquire)
     }
 
+    fn output_latency_samples(&self) -> u64 {
+        self.telemetry
+            .output_latency_samples
+            .load(Ordering::Acquire)
+    }
+
     fn underflow_count(&self) -> u64 {
         self.telemetry.underflow_count.load(Ordering::Relaxed)
     }
@@ -117,6 +124,24 @@ pub struct NativeAudioConsumer {
 }
 
 impl NativeAudioConsumer {
+    pub fn record_output_latency(
+        &self,
+        latency: std::time::Duration,
+        sample_rate: u32,
+        channels: u16,
+        callback_samples: usize,
+    ) {
+        let samples = latency
+            .as_nanos()
+            .saturating_mul(u128::from(sample_rate))
+            .saturating_mul(u128::from(channels))
+            / 1_000_000_000;
+        self.telemetry.output_latency_samples.store(
+            (samples.min(u128::from(u64::MAX)) as u64).saturating_add(callback_samples as u64),
+            Ordering::Release,
+        );
+    }
+
     /// Copies only into the final device callback buffer. Source chunks remain owned and are
     /// returned whole to the mixer after the last sample is consumed.
     pub fn pop_samples(&mut self, target: &mut [f32]) -> usize {

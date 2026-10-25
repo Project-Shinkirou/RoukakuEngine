@@ -20,6 +20,4 @@ serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
-roukaku-plugin = { path = "../../../Runtime/roukaku-plugin" }
 roukaku-vn-policy = { path = "../roukaku-vn-policy", features = ["luau-runtime"] }
-semver.workspace = true

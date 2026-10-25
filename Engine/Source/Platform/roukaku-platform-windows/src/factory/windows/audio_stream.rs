@@ -96,6 +96,8 @@ impl AudioResource {
                 audio_wake.clone(),
             )?;
         let stream_error = Arc::new(AtomicBool::new(false));
+        let sample_rate = request.sample_rate;
+        let channels = request.channels;
         let stream = match supported.sample_format() {
             cpal::SampleFormat::F32 => {
                 let error = Arc::clone(&stream_error);
@@ -104,7 +106,14 @@ impl AudioResource {
                 let mut consumer = consumer;
                 device.build_output_stream(
                     config,
-                    move |output: &mut [f32], _| {
+                    move |output: &mut [f32], info| {
+                        let time = info.timestamp();
+                        consumer.record_output_latency(
+                            time.playback.duration_since(time.callback),
+                            sample_rate,
+                            channels,
+                            output.len(),
+                        );
                         let _ = consumer.fill_output_f32(output);
                         wake.notify();
                     },
@@ -122,7 +131,14 @@ impl AudioResource {
                 let mut consumer = consumer;
                 device.build_output_stream(
                     config,
-                    move |output: &mut [i16], _| {
+                    move |output: &mut [i16], info| {
+                        let time = info.timestamp();
+                        consumer.record_output_latency(
+                            time.playback.duration_since(time.callback),
+                            sample_rate,
+                            channels,
+                            output.len(),
+                        );
                         let _ = consumer.fill_output_i16(output);
                         wake.notify();
                     },
@@ -140,7 +156,14 @@ impl AudioResource {
                 let mut consumer = consumer;
                 device.build_output_stream(
                     config,
-                    move |output: &mut [u16], _| {
+                    move |output: &mut [u16], info| {
+                        let time = info.timestamp();
+                        consumer.record_output_latency(
+                            time.playback.duration_since(time.callback),
+                            sample_rate,
+                            channels,
+                            output.len(),
+                        );
                         let _ = consumer.fill_output_u16(output);
                         wake.notify();
                     },

@@ -1,10 +1,3 @@
-#[cfg(feature = "ffi")]
-use abi_stable::{
-    StableAbi,
-    library::RootModule,
-    sabi_types::VersionStrings,
-    std_types::{RString, RVec},
-};
 use roukaku_core::Hash256;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -486,54 +479,4 @@ fn is_safe_provider_symbol(value: &str) -> bool {
 pub struct PluginDependencyGraphSnapshot {
     pub schema: String,
     pub dependencies: Vec<PluginDependency>,
-}
-
-#[repr(C)]
-#[cfg(feature = "ffi")]
-#[derive(Debug, Clone, StableAbi)]
-pub struct FfiProviderRegistration {
-    pub slot: RString,
-    pub provider_id: RString,
-    pub capability: RString,
-    pub phase: RString,
-    pub packaged: bool,
-}
-
-#[repr(C)]
-#[cfg(feature = "ffi")]
-#[derive(Debug, Clone, StableAbi)]
-pub struct FfiPluginRegistration {
-    pub providers: RVec<FfiProviderRegistration>,
-    pub callbacks: u32,
-}
-
-#[repr(C)]
-#[cfg(feature = "ffi")]
-#[derive(Debug, Clone, StableAbi)]
-pub struct FfiPluginShutdown {
-    pub callbacks_released: bool,
-}
-
-#[repr(C)]
-#[cfg(feature = "ffi")]
-#[derive(StableAbi)]
-#[sabi(kind(Prefix(
-    prefix_ref = RoukakuPluginModuleRef,
-    prefix_fields = RoukakuPluginModulePrefix
-)))]
-#[sabi(missing_field(panic))]
-pub struct RoukakuPluginModule {
-    pub descriptor_yaml: extern "C" fn() -> RString,
-    pub register: extern "C" fn() -> FfiPluginRegistration,
-    #[sabi(last_prefix_field)]
-    pub shutdown: extern "C" fn() -> FfiPluginShutdown,
-}
-
-#[cfg(feature = "ffi")]
-impl RootModule for RoukakuPluginModuleRef {
-    abi_stable::declare_root_module_statics! {RoukakuPluginModuleRef}
-
-    const BASE_NAME: &'static str = "roukaku_plugin_module";
-    const NAME: &'static str = "roukaku-plugin";
-    const VERSION_STRINGS: VersionStrings = abi_stable::package_version_strings!();
 }

@@ -9,7 +9,7 @@ aes-gcm-siv.workspace = true
 roukaku-asset = { path = "../roukaku-asset" }
 roukaku-byte-source = { path = "../roukaku-byte-source" }
 roukaku-core = { path = "../roukaku-core" }
-roukaku-plugin-abi = { path = "../roukaku-plugin-abi", default-features = false }
+roukaku-plugin-abi = { path = "../roukaku-plugin-abi" }
 roukaku-target = { path = "../../Platform/roukaku-target" }
 hkdf.workspace = true
 postcard.workspace = true

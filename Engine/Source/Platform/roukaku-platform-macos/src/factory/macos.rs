@@ -70,6 +70,7 @@ use macos_host_app::raw_gamepad_event;
 mod audio_resource;
 use audio_resource::DecodeResource;
 mod decode_avfoundation;
+mod video_stream;
 use decode_avfoundation::decode_avfoundation;
 use decode_avfoundation::default_roots;
 use decode_avfoundation::host_error;

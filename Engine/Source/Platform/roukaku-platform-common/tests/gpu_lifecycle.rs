@@ -58,8 +58,8 @@ async fn owner_keeps_instance_while_96_renderers_release_session_resources() {
 fn assert_session_resources_released(instance: &wgpu::Instance) {
     assert!(instance.poll_all(true));
     let report = instance.generate_report().unwrap();
-    // HubReport::is_empty only checks adapters in wgpu 29. Inspect the actual
-    // registries so device, queue and session resource retention cannot hide.
+    // Inspect every registry so device, queue and session resource retention
+    // cannot hide behind an aggregate report.
     for (name, registry) in [
         ("adapters", &report.hub.adapters),
         ("devices", &report.hub.devices),

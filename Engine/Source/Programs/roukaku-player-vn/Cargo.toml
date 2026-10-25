@@ -18,8 +18,8 @@ roukaku-media-core = { path = "../../Runtime/roukaku-media-core" }
 roukaku-media = { path = "../../Runtime/roukaku-media" }
 roukaku-audio-kira = { path = "../../Runtime/roukaku-audio-kira" }
 roukaku-package = { path = "../../Runtime/roukaku-package" }
-roukaku-plugin = { path = "../../Runtime/roukaku-plugin", default-features = false }
-roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi", default-features = false }
+roukaku-plugin = { path = "../../Runtime/roukaku-plugin" }
+roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi" }
 roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
 roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
 roukaku-ui-yakui = { path = "../../Runtime/roukaku-ui-yakui" }

@@ -52,8 +52,8 @@ members = [
     "Engine/Source/Programs/roukaku-crash-reporter",
     "xtask",
     "Examples/TsuiNoSora/Tools/original-patcher",
-    "Engine/Plugins/Fixtures/headless-presentation-provider",
-    "Engine/Plugins/Fixtures/vn-extension-provider",
+    "Examples/ExtensionPlayer/extension",
+    "Examples/ExtensionPlayer/player",
 ]
 exclude = ["Editor"]
 
@@ -68,7 +68,6 @@ aes-gcm-siv = "0.12"
 accesskit = "=0.25.1"
 accesskit_android = { version = "=0.9.0", features = ["embedded-dex"] }
 accesskit_winit = { version = "=0.34.1", default-features = false, features = ["rwh_06"] }
-abi_stable = "0.11"
 ashpd = { version = "=0.13.13", default-features = false, features = ["tokio"] }
 base64 = "0.23"
 base16ct = "1"
@@ -123,7 +122,7 @@ objc2-core-media = { version = "0.3.2", default-features = false }
 objc2-core-video = { version = "0.3.2", default-features = false }
 objc2-foundation = { version = "0.3.2", default-features = false }
 miette = { version = "7", features = ["fancy"] }
-naga = { version = "29", features = ["spv-in", "wgsl-out"] }
+naga = { version = "30.0", features = ["spv-in", "wgsl-out"] }
 postcard = { version = "1", features = ["alloc"] }
 proptest = "1.12.0"
 pollster = "1.0"
@@ -195,7 +194,7 @@ web-sys = "0.3"
 windows = { version = "0.62", default-features = false }
 winit = { version = "0.30", default-features = false }
 keyring = "=4.2.0"
-wgpu = { version = "29", features = ["static-dxc"] }
+wgpu = { version = "30.0", features = ["static-dxc"] }
 rayon = "1.12"
 yakui-core = { git = "https://github.com/SecondHalfGames/yakui", rev = "f686b70396a3f325093ab44181f86f6d496597f9", default-features = false }
 yakui-widgets = { git = "https://github.com/SecondHalfGames/yakui", rev = "f686b70396a3f325093ab44181f86f6d496597f9", default-features = false }
