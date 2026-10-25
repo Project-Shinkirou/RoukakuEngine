@@ -175,7 +175,11 @@ impl Editor {
                         if this.poll_diagnostics() {
                             cx.notify();
                         }
-                        while let Ok(request) = this.requests.try_recv() {
+                        loop {
+                            let result = this.requests.try_recv();
+                            let Ok(request) = result else {
+                                break;
+                            };
                             match request {
                                 Request::Permission {
                                     generation,

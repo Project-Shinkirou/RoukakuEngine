@@ -231,11 +231,14 @@ impl Preview {
             self.status = "Preview cancelled: source changed".into();
             return Ok(());
         }
-        while let Some(response) = self
-            .pipe
-            .as_ref()
-            .and_then(|pipe| pipe.responses.try_recv().ok())
-        {
+        loop {
+            let next_response = self
+                .pipe
+                .as_ref()
+                .and_then(|pipe| pipe.responses.try_recv().ok());
+            let Some(response) = next_response else {
+                break;
+            };
             let response = match response {
                 Ok(response) => response,
                 Err(_) if self.stop_deadline.is_some() => break,

@@ -66,7 +66,9 @@ pub async fn prompt(
                 request.tool_call.fields.title.get_or_insert(call.title.clone());
                 if request.tool_call.fields.raw_input.is_none() { request.tool_call.fields.raw_input = call.raw_input.clone(); }
             }
-            responder.respond(RequestPermissionResponse::new(permission_bridge.permission(generation, request).await))
+            let outcome = permission_bridge.permission(generation, request).await;
+            let response = RequestPermissionResponse::new(outcome);
+            responder.respond(response)
         }, agent_client_protocol::on_receive_request!())
         .connect_with(agent, |connection: ConnectionTo<Agent>| async move {
             let initialized = connection.send_request(InitializeRequest::new(ProtocolVersion::V1).client_capabilities(ClientCapabilities::new())).block_task().await?;
