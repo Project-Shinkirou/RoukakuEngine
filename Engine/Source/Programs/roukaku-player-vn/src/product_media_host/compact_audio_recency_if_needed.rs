@@ -38,6 +38,9 @@ impl NativeVnProductMediaHost {
         executor: &mut PlayerHostCommandExecutor<PlatformCommandSink>,
         now_ms: u64,
     ) -> Result<(), PlatformError> {
+        if self.clock.is_paused() {
+            return Ok(());
+        }
         let mut completed = Vec::new();
         let mut restarts = Vec::new();
         for (index, video) in self.active_videos.iter_mut().enumerate() {
@@ -45,15 +48,28 @@ impl NativeVnProductMediaHost {
                 completed.push(index);
                 continue;
             }
-            let elapsed_us = now_ms
-                .checked_sub(video.started_at_ms)
-                .and_then(|elapsed| elapsed.checked_mul(1_000))
-                .ok_or_else(|| {
-                    media_error(
-                        "player.video.stream.clock",
-                        "ROUKAKU_PLAYER_VIDEO_TIME_OVERFLOW",
-                    )
-                })?;
+            let audio_us = if let Some(sync) = &mut video.audio_sync {
+                let (progress, epoch) = self.audio.movie_progress(&sync.voice_id)?;
+                Some(sync.clock.update(progress, epoch))
+            } else {
+                None
+            };
+            let loop_offset = video
+                .loop_index
+                .saturating_mul(video.loop_duration_us.unwrap_or(0));
+            let elapsed_us = match audio_us {
+                Some(position) => loop_offset.saturating_add(position),
+                None => now_ms
+                    .checked_sub(video.started_at_ms)
+                    .and_then(|elapsed| elapsed.checked_mul(1_000))
+                    .and_then(|elapsed| elapsed.checked_add(video.seek_offset_us))
+                    .ok_or_else(|| {
+                        media_error(
+                            "player.video.stream.clock",
+                            "ROUKAKU_PLAYER_VIDEO_TIME_OVERFLOW",
+                        )
+                    })?,
+            };
             loop {
                 if video.pending_frame.is_none() && !video.reached_end {
                     video.pending_frame = Self::fetch_video_frame(
@@ -81,16 +97,29 @@ impl NativeVnProductMediaHost {
                             "ROUKAKU_PLAYER_VIDEO_FRAME_TIME_OVERFLOW",
                         )
                     })?;
-                    if due_us > elapsed_us {
-                        break;
-                    }
+                    let present_frame = if let Some(sync) = &mut video.audio_sync {
+                        let Some(present) =
+                            sync.due(frame, audio_us.expect("audio clock is present"))?
+                        else {
+                            break;
+                        };
+                        present
+                    } else {
+                        if due_us > elapsed_us {
+                            break;
+                        }
+                        true
+                    };
                     let frame = video
                         .pending_frame
                         .take()
                         .expect("pending frame was checked");
-                    let texture = decoded_bgra_frame(frame.width, frame.height, frame.bgra8)?;
                     video.next_frame = frame.sequence;
                     video.presented_end_us = video.decoded_end_us;
+                    if !present_frame {
+                        continue;
+                    }
+                    let texture = decoded_bgra_frame(frame.width, frame.height, frame.bgra8)?;
                     let present = source
                         .bind_decoded_video_frame(&video.request, texture, false)
                         .map_err(|error| media_error("player.video.stream.bind", error))?;
@@ -102,6 +131,26 @@ impl NativeVnProductMediaHost {
                 }
                 if !video.reached_end {
                     break;
+                }
+                if let Some(sync) = &mut video.audio_sync {
+                    if sync.scheduler.video_eos_us.is_none() {
+                        sync.scheduler
+                            .mark_eos(roukaku_media::MediaTrackKind::Video, video.decoded_end_us)
+                            .map_err(|error| media_error("player.video.sync.eos", error))?;
+                    }
+                    if sync.scheduler.state == roukaku_media::MediaPlaybackState::Playing {
+                        sync.scheduler
+                            .tick(roukaku_media::PlaybackTickRequest {
+                                sequence: sync.scheduler.last_tick_sequence + 1,
+                                delta_us: 1,
+                                audio_playhead_us: Some(
+                                    audio_us
+                                        .expect("audio clock is present")
+                                        .max(sync.scheduler.position_us),
+                                ),
+                            })
+                            .map_err(|error| media_error("player.video.sync.eos", error))?;
+                    }
                 }
                 let loop_end_us = video
                     .loop_index
@@ -116,7 +165,11 @@ impl NativeVnProductMediaHost {
                             "ROUKAKU_PLAYER_VIDEO_LOOP_TIME_OVERFLOW",
                         )
                     })?;
-                if elapsed_us < loop_end_us {
+                if elapsed_us < loop_end_us
+                    || video.audio_sync.as_ref().is_some_and(|sync| {
+                        sync.scheduler.state != roukaku_media::MediaPlaybackState::Ended
+                    })
+                {
                     break;
                 }
                 if video.request.looping {
@@ -172,6 +225,9 @@ impl NativeVnProductMediaHost {
         }
         for index in completed.into_iter().rev() {
             let video = self.active_videos.remove(index);
+            if let Some(sync) = &video.audio_sync {
+                self.audio.stop_movie(&sync.voice_id)?;
+            }
             self.pending_video_closes.push(video.session);
         }
         self.close_pending_video_streams(source, executor).await?;

@@ -15,9 +15,17 @@ pub struct AudioChunkTelemetry {
     pub rendered_samples: u64,
     pub submitted_samples: u64,
     pub consumed_samples: u64,
+    pub output_latency_samples: u64,
     pub underflow_count: u64,
     pub render_ns: u64,
     pub submit_wait_ns: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AudioPlaybackProgress {
+    pub voice_position_us: Option<u64>,
+    /// Device-consumed output, including mixer silence after a voice reaches EOS.
+    pub output_position_us: u64,
 }
 
 pub struct RoukakuChunkBackendSettings {
@@ -45,6 +53,7 @@ struct SharedTelemetry {
     rendered_samples: AtomicU64,
     submitted_samples: AtomicU64,
     consumed_samples: AtomicU64,
+    output_latency_samples: AtomicU64,
     underflow_count: AtomicU64,
     render_ns: AtomicU64,
     submit_wait_ns: AtomicU64,
@@ -71,6 +80,10 @@ impl RoukakuChunkBackend {
             rendered_samples: self.telemetry.rendered_samples.load(Ordering::Relaxed),
             submitted_samples: self.telemetry.submitted_samples.load(Ordering::Relaxed),
             consumed_samples: self.telemetry.consumed_samples.load(Ordering::Acquire),
+            output_latency_samples: self
+                .telemetry
+                .output_latency_samples
+                .load(Ordering::Acquire),
             underflow_count: self.telemetry.underflow_count.load(Ordering::Relaxed),
             render_ns: self.telemetry.render_ns.load(Ordering::Relaxed),
             submit_wait_ns: self.telemetry.submit_wait_ns.load(Ordering::Relaxed),
@@ -119,6 +132,9 @@ impl RoukakuChunkBackend {
                 .consumed_samples
                 .store(endpoint.consumed_samples(), Ordering::Release);
             self.telemetry
+                .output_latency_samples
+                .store(endpoint.output_latency_samples(), Ordering::Release);
+            self.telemetry
                 .underflow_count
                 .store(endpoint.underflow_count(), Ordering::Relaxed);
             self.telemetry
@@ -145,6 +161,9 @@ impl RoukakuChunkBackend {
             self.telemetry
                 .consumed_samples
                 .store(endpoint.consumed_samples(), Ordering::Release);
+            self.telemetry
+                .output_latency_samples
+                .store(endpoint.output_latency_samples(), Ordering::Release);
             self.telemetry
                 .underflow_count
                 .store(endpoint.underflow_count(), Ordering::Relaxed);
@@ -241,6 +260,9 @@ impl Backend for RoukakuChunkBackend {
                             .consumed_samples
                             .store(endpoint.consumed_samples(), Ordering::Release);
                         telemetry
+                            .output_latency_samples
+                            .store(endpoint.output_latency_samples(), Ordering::Release);
+                        telemetry
                             .underflow_count
                             .store(endpoint.underflow_count(), Ordering::Relaxed);
                         telemetry
@@ -262,6 +284,9 @@ impl Backend for RoukakuChunkBackend {
                         telemetry
                             .consumed_samples
                             .store(endpoint.consumed_samples(), Ordering::Release);
+                        telemetry
+                            .output_latency_samples
+                            .store(endpoint.output_latency_samples(), Ordering::Release);
                         telemetry
                             .underflow_count
                             .store(endpoint.underflow_count(), Ordering::Relaxed);

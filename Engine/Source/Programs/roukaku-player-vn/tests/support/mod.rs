@@ -54,8 +54,8 @@ pub fn source_for(story: &str) -> NativeVnHostCommandSource {
 
 #[allow(dead_code)]
 pub fn source_for_video(story: &str) -> NativeVnHostCommandSource {
-    let mut bytes = vec![0, 0, 0, 16];
-    bytes.extend_from_slice(b"ftypisom0000");
+    let bytes =
+        include_bytes!("../../../../Runtime/roukaku-media/tests/fixtures/silent.mp4").to_vec();
     source_from_package(product_package_with_video(story, Some(bytes), false))
 }
 

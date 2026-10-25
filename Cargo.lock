@@ -4778,7 +4778,9 @@ version = "0.1.0"
 dependencies = [
  "kira",
  "roukaku-byte-source",
+ "roukaku-media",
  "roukaku-platform",
+ "roukaku-platform-common",
  "rtrb",
  "schemars",
  "serde",

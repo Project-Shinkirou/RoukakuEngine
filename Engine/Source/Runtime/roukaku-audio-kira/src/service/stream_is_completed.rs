@@ -119,6 +119,19 @@ impl AudioServiceSession {
             }
         }
         for (voice_id, state) in &snapshot.voices {
+            let frame_count = self
+                .pcm_cache
+                .iter()
+                .find(|(key, _)| key.asset == state.asset)
+                .map(|(_, pcm)| pcm.samples.len() / usize::from(snapshot.device_channels))
+                .expect("restore validation requires prepared PCM");
+            if state.cursor_frames == frame_count as u64 {
+                self.push_event(AudioServiceEvent::VoiceCompleted {
+                    sequence: state.command_sequence,
+                    voice_id: voice_id.clone(),
+                })?;
+                continue;
+            }
             self.play(
                 state.command_sequence,
                 voice_id.clone(),

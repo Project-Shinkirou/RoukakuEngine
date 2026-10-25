@@ -73,6 +73,8 @@ pub(super) struct ActiveVideoStream {
     pub(super) reached_end: bool,
     pub(super) loop_index: u64,
     pub(super) started_at_ms: u64,
+    pub(super) audio_sync: Option<super::video_audio::VideoAudioSync>,
+    pub(super) seek_offset_us: u64,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -102,6 +104,8 @@ pub struct NativeVnVideoStreamSnapshot {
     #[serde(default)]
     pub loop_index: u64,
     pub started_at_ms: u64,
+    pub seek_offset_us: u64,
+    pub audio_position_us: Option<u64>,
 }
 
 impl Default for NativeVnProductMediaHost {
