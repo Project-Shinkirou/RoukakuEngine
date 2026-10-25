@@ -140,6 +140,12 @@ pub trait AudioOutputLane: Send + 'static {
 
     fn consumed_samples(&self) -> u64;
 
+    /// Samples removed by the callback but not yet audible at the device.
+    /// Immediate/headless endpoints have no downstream latency.
+    fn output_latency_samples(&self) -> u64 {
+        0
+    }
+
     fn underflow_count(&self) -> u64;
 }
 

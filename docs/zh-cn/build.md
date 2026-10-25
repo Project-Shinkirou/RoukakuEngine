@@ -56,6 +56,42 @@ $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dy
 
 准备 FFmpeg 后还要设置打印的 `VCPKG_ROOT`、`VCPKG_DEFAULT_TRIPLET` 和运行库 PATH。非 Windows 目标按输出设置 `PKG_CONFIG_PATH` 及 `LD_LIBRARY_PATH` 或 `DYLD_LIBRARY_PATH`。原生依赖的分发许可与动态库仍需随最终产品处理。
 
+## 视频播放与音画同步
+
+平台解码器仍是主路径：Windows 用 WMF，Apple 平台用 AVFoundation，Linux 用
+GStreamer，Android 用 MediaCodec，实验性 Web 目标用 WebCodecs。FFmpeg 保持可选。
+AVFoundation 视频通过 `AVAssetReader` 按需读取带 PTS 的帧，只保留一个预读 sample
+和 Player 的一个待呈现帧，不再将整段视频聚合成 `CpuBuffer`。关闭流会取消 reader；
+seek 会重建解码器，让旧呈现工作失效。
+
+Player 将同一视频容器的音轨交给所选平台音频解码器，再送入现有 Kira mixer。
+公共媒体 scheduler 用 PCM voice cursor 扣除已渲染但未消费的样本和设备输出延迟，
+得到音频主时钟。CPAL 输出读取 callback/playback 时间戳，Android 读取 Oboe 延迟。
+无音轨的视频才使用宿主时间。暂停会冻结 transport；seek 清空旧输出队列，在目标位置
+重建双轨。设备恢复从可听位置重建 PCM voice。电影音频沿用现有 PCM 预算；
+音轨结束后，设备实际消费的 mixer 静音继续驱动视频尾部；完成时间取双轨实际 EOS，
+不依赖容器时长估计。
+
+Windows 回归用 WMF 解码双轨，经真实 Kira mixer 写入有界原生输出队列，再用受控软件
+callback 消费样本：
+
+```sh
+cargo test --locked -p roukaku-audio-kira --test native_movie_sync -- --nocapture
+cargo test --locked -p roukaku-media --test container_tracks
+```
+
+测试覆盖暂停、seek 和输出重建，检查视频 PTS 与音频进度的偏差不超过 scheduler 的
+100 ms 滞后 / 20 ms 提前阈值，不打开物理音频设备。Apple 的 reader、PTS、seek、
+cancel 回归需要 Apple SDK，由 CI `products` 的 `macos-15` 和 `macos-15-intel` 行执行。
+
+`roukaku-media/tests/fixtures` 中的 `av-clock.mp4`、`silent.mp4`、`silent.webm`
+由测试图案和正弦波生成，按 CC0 提供，不含下载的媒体内容。音视频样本生成命令：
+
+```sh
+ffmpeg -f lavfi -i testsrc2=size=64x64:rate=25:duration=3 -f lavfi -i sine=frequency=440:sample_rate=48000:duration=1.8 -c:v libx264 -pix_fmt yuv420p -bf 0 -g 25 -c:a aac -ac 2 -b:a 32k -movflags +faststart av-clock.mp4
+```
+
+
 ## Android Player
 
 入口是 `cargo xtask android`。需要 JDK 17、`cargo-ndk`、Rust `aarch64-linux-android` target，设置 `ANDROID_SDK_ROOT` 或 `ANDROID_HOME`。SDK 需包含 Android 36、Build Tools 36.0.0 和 NDK 30.0.15729638。

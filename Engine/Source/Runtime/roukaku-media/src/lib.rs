@@ -1,4 +1,5 @@
 mod audio_asset;
+mod container_tracks;
 pub mod decode;
 mod decoded_audio;
 mod decoded_video;
@@ -9,6 +10,7 @@ pub mod renderer2d;
 pub mod text_layout;
 
 pub use audio_asset::*;
+pub use container_tracks::container_audio_start_us;
 pub use decode::*;
 pub use decoded_audio::*;
 pub use decoded_video::*;

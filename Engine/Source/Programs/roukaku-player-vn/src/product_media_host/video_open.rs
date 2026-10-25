@@ -55,6 +55,7 @@ impl NativeVnProductMediaHost {
                     "ROUKAKU_PLAYER_VIDEO_STREAM_DESCRIPTOR_INVALID",
                 ));
             }
+            let audio_sync = self.start_video_audio(source, executor, &request).await?;
             Ok(ActiveVideoStream {
                 request,
                 session: plan.session,
@@ -70,6 +71,8 @@ impl NativeVnProductMediaHost {
                 reached_end: false,
                 loop_index: 0,
                 started_at_ms,
+                audio_sync,
+                seek_offset_us: 0,
             })
         }
         .await;

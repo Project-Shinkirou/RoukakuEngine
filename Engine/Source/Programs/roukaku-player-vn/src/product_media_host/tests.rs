@@ -26,6 +26,8 @@ fn test_video(scope: roukaku_runtime::TaskScope) -> ActiveVideoStream {
         reached_end: false,
         loop_index: 0,
         started_at_ms: 0,
+        audio_sync: None,
+        seek_offset_us: 0,
     }
 }
 

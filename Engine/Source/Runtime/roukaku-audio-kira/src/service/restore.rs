@@ -54,7 +54,9 @@ impl AudioServiceSession {
                     "restored PCM asset is not prepared",
                 ))?;
             let frames = pcm.samples.len() / usize::from(snapshot.device_channels);
-            if voice.cursor_frames >= frames as u64 {
+            if voice.cursor_frames > frames as u64
+                || (voice.looping && voice.cursor_frames == frames as u64)
+            {
                 return Err(AudioServiceError::InvalidCommand(
                     "restored PCM cursor is out of bounds",
                 ));

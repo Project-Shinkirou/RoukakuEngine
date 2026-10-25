@@ -104,6 +104,9 @@ impl NativeVnProductAudioHost {
         }
         self.output = Some(output);
         self.service = Some(service);
+        self.output_epoch = self.output_epoch.checked_add(1).ok_or_else(|| {
+            player_platform_error("player.audio.open", "audio output epoch overflowed")
+        })?;
         self.evidence_capture = evidence_capture;
         self.previous_telemetry = AudioChunkTelemetry::default();
         Ok(())
@@ -127,13 +130,40 @@ impl NativeVnProductAudioHost {
         source: &mut crate::NativeVnHostCommandSource,
         executor: &mut PlayerHostCommandExecutor<PlatformCommandSink>,
     ) -> Result<(), PlatformError> {
+        let timeline = self.service_mut()?.audible_timeline();
+        self.rebuild_at_timeline(source, executor, timeline).await
+    }
+
+    pub(crate) async fn seek_movie(
+        &mut self,
+        source: &mut crate::NativeVnHostCommandSource,
+        executor: &mut PlayerHostCommandExecutor<PlatformCommandSink>,
+        voice_id: &str,
+        position_us: u64,
+    ) -> Result<(), PlatformError> {
+        let mut timeline = self.service_mut()?.audible_timeline();
+        let frame = position_us.saturating_mul(u64::from(timeline.device_sample_rate)) / 1_000_000;
+        timeline
+            .voices
+            .get_mut(voice_id)
+            .ok_or_else(|| player_platform_error("player.video.seek", "movie voice is not active"))?
+            .cursor_frames = frame;
+        self.service_ref()?
+            .validate_timeline_restore(&timeline)
+            .map_err(|error| player_platform_error("player.video.seek", error))?;
+        self.rebuild_at_timeline(source, executor, timeline).await
+    }
+
+    async fn rebuild_at_timeline(
+        &mut self,
+        source: &mut crate::NativeVnHostCommandSource,
+        executor: &mut PlayerHostCommandExecutor<PlatformCommandSink>,
+        timeline: AudioTimelineStateV1,
+    ) -> Result<(), PlatformError> {
         let service = self.service.take().ok_or_else(|| {
-            player_platform_error(
-                "player.audio.recover",
-                "ROUKAKU_PLAYER_AUDIO_RECOVERY_REQUIRES_OPEN_SESSION",
-            )
+            player_platform_error("player.audio.recover", "audio service is closed")
         })?;
-        self.pending_restore = Some(service.timeline().clone());
+        self.pending_restore = Some(timeline);
         self.pending_recovery_assets = service.prepared_pcm_assets();
         drop(service);
         self.evidence_capture = None;

@@ -56,6 +56,47 @@ $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dy
 
 After preparing FFmpeg, also apply the printed `VCPKG_ROOT`, `VCPKG_DEFAULT_TRIPLET`, and runtime DLL PATH. For non-Windows targets, apply `PKG_CONFIG_PATH` and `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH` as printed. Account for native dependency licenses and dynamic libraries when distributing the product.
 
+## Movie playback and synchronization
+
+Platform decoders remain primary: WMF on Windows, AVFoundation on Apple platforms,
+GStreamer on Linux, MediaCodec on Android, and WebCodecs on the experimental Web target.
+FFmpeg is optional. AVFoundation video uses a pull-driven `AVAssetReader` with PTS,
+one look-ahead sample, and one Player-owned pending frame; it never batches a movie
+into a `CpuBuffer`. Closing the stream cancels its reader; seeking recreates the
+reader and invalidates old presentation work.
+
+Player sends a movie's same-container audio through the selected platform audio
+decoder and the existing Kira mixer. Its public media scheduler uses the PCM voice
+cursor corrected by rendered-but-unconsumed samples and endpoint output latency.
+CPAL endpoints report callback/playback timestamp latency; Android reports Oboe
+latency. Silent movies use host time. Pause freezes transport; seek discards the
+old output queue and rebuilds both tracks at the target. Device recovery rebuilds
+PCM voices at their audible positions. Decoded movie audio obeys the existing PCM
+budget. After audio EOS, device-consumed mixer silence clocks any remaining video;
+completion follows actual track EOS, never a container duration estimate.
+
+The Windows regression decodes both tracks with WMF, renders real Kira PCM into the
+bounded native output queue, and consumes it with a controlled software callback:
+
+```sh
+cargo test --locked -p roukaku-audio-kira --test native_movie_sync -- --nocapture
+cargo test --locked -p roukaku-media --test container_tracks
+```
+
+It asserts video PTS versus audio progress across pause, seek, and output rebuild
+against the scheduler's 100 ms lag / 20 ms lead limits. It does not open a physical
+audio device. Apple's reader/PTS/seek/cancel regression requires Apple SDKs; CI
+`products` runs it on `macos-15` and `macos-15-intel`.
+
+`av-clock.mp4`, `silent.mp4`, and `silent.webm` in `roukaku-media/tests/fixtures`
+contain generated patterns/tones and are dedicated to CC0, with no downloaded media.
+Regenerate the A/V sample with:
+
+```sh
+ffmpeg -f lavfi -i testsrc2=size=64x64:rate=25:duration=3 -f lavfi -i sine=frequency=440:sample_rate=48000:duration=1.8 -c:v libx264 -pix_fmt yuv420p -bf 0 -g 25 -c:a aac -ac 2 -b:a 32k -movflags +faststart av-clock.mp4
+```
+
+
 ## Android Player
 
 Use `cargo xtask android`. Install JDK 17, `cargo-ndk`, and the Rust `aarch64-linux-android` target. Set `ANDROID_SDK_ROOT` or `ANDROID_HOME`. The SDK must contain Android 36, Build Tools 36.0.0, and NDK 30.0.15729638.

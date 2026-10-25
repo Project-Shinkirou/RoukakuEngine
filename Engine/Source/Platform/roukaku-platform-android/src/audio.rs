@@ -71,6 +71,24 @@ struct CallbackState {
     audio_wake: AudioWakeRegistration,
 }
 
+fn record_callback_latency(
+    consumer: &NativeAudioConsumer,
+    stream: &mut dyn oboe::AudioOutputStreamSafe,
+    channels: u16,
+    callback_samples: usize,
+) {
+    if let Ok(millis) = stream.calculate_latency_millis() {
+        if millis.is_finite() && millis >= 0.0 {
+            consumer.record_output_latency(
+                std::time::Duration::from_secs_f64(millis / 1_000.0),
+                stream.get_sample_rate() as u32,
+                channels,
+                callback_samples,
+            );
+        }
+    }
+}
+
 struct MonoCallback(CallbackState);
 struct StereoCallback(CallbackState);
 
@@ -79,9 +97,10 @@ impl AudioOutputCallback for MonoCallback {
 
     fn on_audio_ready(
         &mut self,
-        _stream: &mut dyn oboe::AudioOutputStreamSafe,
+        stream: &mut dyn oboe::AudioOutputStreamSafe,
         output: &mut [f32],
     ) -> DataCallbackResult {
+        record_callback_latency(&self.0.consumer, stream, 1, output.len());
         let filled = self.0.consumer.pop_samples(output);
         let gain = f32::from_bits(self.0.gain_bits.load(Ordering::Relaxed));
         for sample in &mut output[..filled] {
@@ -110,9 +129,10 @@ impl AudioOutputCallback for StereoCallback {
 
     fn on_audio_ready(
         &mut self,
-        _stream: &mut dyn oboe::AudioOutputStreamSafe,
+        stream: &mut dyn oboe::AudioOutputStreamSafe,
         output: &mut [(f32, f32)],
     ) -> DataCallbackResult {
+        record_callback_latency(&self.0.consumer, stream, 2, output.len() * 2);
         let gain = f32::from_bits(self.0.gain_bits.load(Ordering::Relaxed));
         let mut scratch = [0.0_f32; 2048];
         let mut written_frames = 0;

@@ -219,6 +219,8 @@ impl IncrementalVideoDecoder {
                 return Err(wmf_error("video decode reported an empty duration"));
             }
             let stream_index = MF_SOURCE_READER_FIRST_VIDEO_STREAM.0 as u32;
+            reader.SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS.0 as u32, false)?;
+            reader.SetStreamSelection(stream_index, true)?;
             let media_type = media_type(&MFMediaType_Video, &MFVideoFormat_RGB32)?;
             reader.SetCurrentMediaType(stream_index, None, &media_type)?;
             let current_type = reader.GetCurrentMediaType(stream_index)?;
