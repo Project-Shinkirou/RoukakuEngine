@@ -5799,6 +5799,8 @@ dependencies = [
  "roukaku-asset",
  "roukaku-core",
  "roukaku-policy",
+ "roukaku-runtime",
+ "roukaku-text",
  "roukaku-ui-core",
  "roukaku-vn-script",
  "roukaku-vn-ui",
