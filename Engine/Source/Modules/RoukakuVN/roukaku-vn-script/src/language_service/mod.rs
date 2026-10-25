@@ -1,6 +1,6 @@
 use roukaku_core::Diagnostic;
 
-use crate::{parse_roukaku_source, ParsedRoukakuSource, TextSpan};
+use crate::{ParsedRoukakuSource, TextSpan, parse_roukaku_source};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScriptSymbol {

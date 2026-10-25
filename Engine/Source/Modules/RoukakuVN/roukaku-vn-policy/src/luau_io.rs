@@ -38,10 +38,10 @@ pub(super) fn install(
     api.set(
         "cancel",
         lua.create_function(move |_, key: String| {
-            if let Some(record) = cancellations.borrow_mut().requests.get_mut(&key) {
-                if record.status == PolicyIoStatus::Pending {
-                    record.status = PolicyIoStatus::Failed(PolicyIoFailure::Cancelled);
-                }
+            if let Some(record) = cancellations.borrow_mut().requests.get_mut(&key)
+                && record.status == PolicyIoStatus::Pending
+            {
+                record.status = PolicyIoStatus::Failed(PolicyIoFailure::Cancelled);
             }
             Ok(())
         })?,

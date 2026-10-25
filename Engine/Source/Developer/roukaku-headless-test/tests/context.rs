@@ -6,10 +6,12 @@ fn starts_and_stops_worktree_local_session() {
     let identity: serde_json::Value =
         serde_json::from_slice(&std::fs::read(identity).unwrap()).unwrap();
     assert_eq!(identity["schema"], "roukaku.build_identity.v1");
-    assert!(identity["identity_hash"]
-        .as_str()
-        .unwrap()
-        .starts_with("sha256:"));
+    assert!(
+        identity["identity_hash"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
     let second = roukaku_headless_test::HeadlessTestContext::start().unwrap();
     assert_ne!(ctx.artifact_root(), second.artifact_root());
     assert!(roukaku_headless_test::active_headless_session_count().unwrap() >= 2);

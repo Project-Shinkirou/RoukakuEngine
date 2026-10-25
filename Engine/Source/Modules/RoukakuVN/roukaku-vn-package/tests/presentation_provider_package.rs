@@ -1,9 +1,9 @@
 use roukaku_package::{PackageBuildRequest, PackageBuilder, PackageReader, SectionPayload};
 use roukaku_vn_package::{
-    decode_compiled_project, load_presentation_provider_manifest, package_sections_for_project,
-    VnCompiledProjectRoot, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA,
+    VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA, VnCompiledProjectRoot, decode_compiled_project,
+    load_presentation_provider_manifest, package_sections_for_project,
 };
-use roukaku_vn_script::{compile_roukaku_project, RoukakuSource};
+use roukaku_vn_script::{RoukakuSource, compile_roukaku_project};
 
 fn compiled_story() -> roukaku_vn_script::CompiledVnProject {
     compile_roukaku_project([RoukakuSource::story(
@@ -31,9 +31,11 @@ fn package_persists_profile_bound_presentation_policy() {
 
     let manifest = load_presentation_provider_manifest(&package, "classic").unwrap();
     assert_eq!(manifest.schema, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA);
-    assert!(manifest
-        .resolve_preset("classic", "background", "soft_fade")
-        .is_ok());
+    assert!(
+        manifest
+            .resolve_preset("classic", "background", "soft_fade")
+            .is_ok()
+    );
     assert_eq!(
         load_presentation_provider_manifest(&package, "undeclared")
             .unwrap_err()
@@ -68,10 +70,12 @@ fn compiled_project_v5_requires_the_v4_root_without_reader_fallback() {
         "roukaku.vn.compiled_project.v5"
     );
 
-    assert!(package
-        .container()
-        .section_entry("vn.ui_component_manifest")
-        .is_none());
+    assert!(
+        package
+            .container()
+            .section_entry("vn.ui_component_manifest")
+            .is_none()
+    );
     assert_eq!(decode_compiled_project(&package).unwrap(), project);
 
     let legacy_root = VnCompiledProjectRoot {
@@ -95,10 +99,12 @@ fn compiled_project_v5_requires_the_v4_root_without_reader_fallback() {
     ))
     .unwrap();
     let package = PackageReader::open(blob.as_bytes()).unwrap();
-    assert!(decode_compiled_project(&package)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_VN_COMPILED_PROJECT_ROOT"));
+    assert!(
+        decode_compiled_project(&package)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_VN_COMPILED_PROJECT_ROOT")
+    );
 }
 
 #[test]
@@ -119,7 +125,9 @@ fn legacy_presentation_policy_requires_recook() {
     let package = PackageReader::open(blob.as_bytes()).unwrap();
 
     let error = load_presentation_provider_manifest(&package, "classic").unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_VN_PRESENTATION_PROVIDER_SCHEMA"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_VN_PRESENTATION_PROVIDER_SCHEMA")
+    );
 }

@@ -1,12 +1,12 @@
 use roukaku_platform::{
-    host_channel, DecodeKind, DecodeOutput, DecodeSessionHandle, DecodeStreamAction, HostCommand,
-    PlatformHostProfile, SurfaceHandle,
+    DecodeKind, DecodeOutput, DecodeSessionHandle, DecodeStreamAction, HostCommand,
+    PlatformHostProfile, SurfaceHandle, host_channel,
 };
 use roukaku_player_core::{PlatformCommandSink, PlayerHostCommandExecutor, PlayerHostResourceId};
 use roukaku_player_vn::{NativeVnHostCommandSource, NativeVnProductMediaHost};
 use std::sync::{
-    atomic::{AtomicU64, Ordering},
     Arc,
+    atomic::{AtomicU64, Ordering},
 };
 
 mod support;
@@ -261,9 +261,11 @@ async fn a_reopened_loop_cannot_change_its_completed_duration() {
         .poll_and_process(&mut source, &mut executor, 61)
         .await
         .unwrap_err();
-    assert!(error
-        .message
-        .contains("ROUKAKU_PLAYER_VIDEO_STREAM_ENDED_EARLY"));
+    assert!(
+        error
+            .message
+            .contains("ROUKAKU_PLAYER_VIDEO_STREAM_ENDED_EARLY")
+    );
     media.shutdown(&mut source, &mut executor).await.unwrap();
     drop(executor);
     task.await.unwrap();

@@ -1,7 +1,7 @@
 use roukaku_platform::{
-    validate_capability_report, validate_conformance_report, ConformanceCheck, ConformanceStatus,
+    ConformanceCheck, ConformanceStatus, PLATFORM_HOST_CONFORMANCE_REPORT_SCHEMA,
     PlatformCapabilityReport, PlatformHostConformanceReport, PlatformHostProfile,
-    PlatformValidationStatus, PLATFORM_HOST_CONFORMANCE_REPORT_SCHEMA,
+    PlatformValidationStatus, validate_capability_report, validate_conformance_report,
 };
 
 #[test]
@@ -15,9 +15,11 @@ fn capability_validation_blocks_declared_provider_without_runtime_availability()
     .unwrap();
     let (status, diagnostics) = validate_capability_report(&report);
     assert_eq!(status, PlatformValidationStatus::Blocked);
-    assert!(diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_PLATFORM_PROVIDER_UNAVAILABLE"));
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_PLATFORM_PROVIDER_UNAVAILABLE")
+    );
 }
 
 #[test]

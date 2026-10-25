@@ -31,13 +31,12 @@ impl VnSession {
                     command: PresentationCommand::Extension(extension),
                     ..
                 } = command
+                    && extension.provider_id == POLICY_ACTION_PROVIDER
                 {
-                    if extension.provider_id == POLICY_ACTION_PROVIDER {
-                        actions
-                            .get(&extension.command)
-                            .ok_or_else(|| action_error("compiled action has no package binding"))?
-                            .validate_command(extension)?;
-                    }
+                    actions
+                        .get(&extension.command)
+                        .ok_or_else(|| action_error("compiled action has no package binding"))?
+                        .validate_command(extension)?;
                 }
             }
         }
@@ -287,10 +286,9 @@ pub(super) fn validate_saved_action(
                 id,
                 command: PresentationCommand::Extension(extension),
             } = command
+                && extension.provider_id == POLICY_ACTION_PROVIDER
             {
-                if extension.provider_id == POLICY_ACTION_PROVIDER {
-                    return Some(id.as_str());
-                }
+                return Some(id.as_str());
             }
             None
         })

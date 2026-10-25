@@ -50,10 +50,10 @@ impl ProductStageDirector {
                 let mut remove = BTreeSet::new();
                 for tween in completing {
                     self.apply_property(&tween.target, tween.property, tween.end)?;
-                    if tween.remove_entity {
-                        if let TweenTarget::Entity(id) = tween.target {
-                            remove.insert(id);
-                        }
+                    if tween.remove_entity
+                        && let TweenTarget::Entity(id) = tween.target
+                    {
+                        remove.insert(id);
                     }
                 }
                 for id in remove {
@@ -314,7 +314,7 @@ pub(super) fn timeline_target_property(
             return Err(stage_error(
                 "ROUKAKU_VN_STAGE_TIMELINE_PROPERTY",
                 "timeline property is not supported by the product stage model",
-            ))
+            ));
         }
     };
     match (&target, property) {

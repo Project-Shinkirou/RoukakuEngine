@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use roukaku_core::{is_safe_path_symbol as is_safe_symbol, Diagnostic};
+use roukaku_core::{Diagnostic, is_safe_path_symbol as is_safe_symbol};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

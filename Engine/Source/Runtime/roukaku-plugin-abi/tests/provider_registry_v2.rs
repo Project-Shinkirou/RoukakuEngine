@@ -1,7 +1,7 @@
 use roukaku_plugin_abi::{
-    LoadPhase, PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
-    ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
-    PROVIDER_POLICY_SCHEMA,
+    LoadPhase, PLUGIN_EXTENSION_REGISTRY_SCHEMA, PROVIDER_POLICY_SCHEMA,
+    PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
+    ProviderExtensionRecord, ProviderPolicy,
 };
 
 fn context(required_capability: &str) -> ProviderBindingContext {

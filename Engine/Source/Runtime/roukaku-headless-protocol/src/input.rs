@@ -136,7 +136,7 @@ impl PhysicalInput {
                 return Err(ProtocolError::invalid(
                     "input.advance_ticks",
                     "tick count must be non-zero",
-                ))
+                ));
             }
             Self::Await {
                 observation,

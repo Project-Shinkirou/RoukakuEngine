@@ -77,17 +77,19 @@ mod tests {
         ] {
             let mut session = session("invalid-step");
             let before = session.runtime.state().clone();
-            assert!(session
-                .step(NativeVnStepInput {
-                    timing: TickInput {
-                        fixed_step: step,
-                        delta_ns: 16_666_667,
-                        seed
-                    },
-                    mode,
-                    command: NativeVnStepCommand::LaunchDefault,
-                })
-                .is_err());
+            assert!(
+                session
+                    .step(NativeVnStepInput {
+                        timing: TickInput {
+                            fixed_step: step,
+                            delta_ns: 16_666_667,
+                            seed
+                        },
+                        mode,
+                        command: NativeVnStepCommand::LaunchDefault,
+                    })
+                    .is_err()
+            );
             assert_eq!(session.runtime.state(), &before);
             assert!(session.engine.world().task_scope().is_cancelled());
         }
@@ -158,27 +160,33 @@ mod tests {
             mode,
             command: NativeVnStepCommand::Execute(command),
         };
-        assert!(session
-            .step(input(
-                CoreVnPlayerCommand::ReturnSystem,
-                roukaku_runtime::TickMode::Live
-            ))
-            .is_err());
+        assert!(
+            session
+                .step(input(
+                    CoreVnPlayerCommand::ReturnSystem,
+                    roukaku_runtime::TickMode::Live
+                ))
+                .is_err()
+        );
         assert!(old_scope.is_cancelled());
-        assert!(session
-            .save()
-            .unwrap_err()
-            .to_string()
-            .contains("SESSION_FAILED"));
+        assert!(
+            session
+                .save()
+                .unwrap_err()
+                .to_string()
+                .contains("SESSION_FAILED")
+        );
         assert!(session.restore(SaveBlob(vec![0])).is_err());
-        assert!(session
-            .step(input(
-                CoreVnPlayerCommand::SetAuto { enabled: true },
-                roukaku_runtime::TickMode::Live
-            ))
-            .unwrap_err()
-            .to_string()
-            .contains("SESSION_FAILED"));
+        assert!(
+            session
+                .step(input(
+                    CoreVnPlayerCommand::SetAuto { enabled: true },
+                    roukaku_runtime::TickMode::Live
+                ))
+                .unwrap_err()
+                .to_string()
+                .contains("SESSION_FAILED")
+        );
         session.restore(saved).unwrap();
         assert!(!session.engine.world().task_scope().is_cancelled());
         session
@@ -195,18 +203,22 @@ mod tests {
         let mut session = session("wait");
         launch(&mut session);
         let original = session.runtime.state().pending_wait.clone().unwrap();
-        assert!(session
-            .runtime
-            .bind_pending_wait(&original, String::new())
-            .is_err());
+        assert!(
+            session
+                .runtime
+                .bind_pending_wait(&original, String::new())
+                .is_err()
+        );
         let bound = session
             .runtime
             .bind_pending_wait(&original, "host.await.new".into())
             .unwrap();
-        assert!(session
-            .runtime
-            .bind_pending_wait(&original, "host.await.stale".into())
-            .is_err());
+        assert!(
+            session
+                .runtime
+                .bind_pending_wait(&original, "host.await.stale".into())
+                .is_err()
+        );
         assert_eq!(session.runtime.state().pending_wait.as_ref(), Some(&bound));
     }
     #[test]
@@ -233,11 +245,11 @@ mod tests {
             Some(token.token_id.0.to_string().as_str())
         );
         assert!(!snapshot.events.pending().is_empty());
-        assert!(snapshot
-            .events
-            .pending()
-            .iter()
-            .all(|event| event.source == roukaku_runtime::EventSource::Runtime && event.step == 1));
+        assert!(
+            snapshot.events.pending().iter().all(|event| event.source
+                == roukaku_runtime::EventSource::Runtime
+                && event.step == 1)
+        );
         let saved = session.save().unwrap();
         session.restore(saved).unwrap();
         session

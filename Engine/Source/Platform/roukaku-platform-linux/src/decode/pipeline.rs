@@ -1,5 +1,5 @@
 use super::{cancelled_error, check_pipeline_error, host_error};
-use gstreamer::{prelude::*, ClockTime};
+use gstreamer::{ClockTime, prelude::*};
 use roukaku_platform::PlatformError;
 use std::{
     io::Write,
@@ -143,8 +143,8 @@ impl Drop for MediaPipeline {
 mod tests {
     use super::*;
     use std::sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     };
 
     #[test]

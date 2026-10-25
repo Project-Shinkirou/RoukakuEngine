@@ -12,7 +12,7 @@ use roukaku_package::{
 };
 
 use roukaku_platform::{
-    SurfaceHandle, SurfaceRequest, WindowHandle, WindowRequest, HEADLESS_PRESENTATION_RATE_HZ,
+    HEADLESS_PRESENTATION_RATE_HZ, SurfaceHandle, SurfaceRequest, WindowHandle, WindowRequest,
 };
 
 use roukaku_player_core::{

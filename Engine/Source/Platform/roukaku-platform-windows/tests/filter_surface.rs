@@ -78,12 +78,14 @@ async fn window_filter_matches_offscreen_after_resize_and_device_recovery() {
         host.client.present_scene(surface, frame).await.unwrap();
         let actual = host.client.capture_surface(surface).await.unwrap();
         assert_eq!(actual.rgba8, expected.rgba8);
-        assert!(actual
-            .rgba8
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .all(|p| p[0].abs_diff(137) <= 1 && p[1] == p[0] && p[2] == p[0] && p[3] == 255));
+        assert!(
+            actual
+                .rgba8
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .all(|p| p[0].abs_diff(137) <= 1 && p[1] == p[0] && p[2] == p[0] && p[3] == 255)
+        );
     }
     host.client.destroy_surface(surface).await.unwrap();
     host.client.destroy_window(window).await.unwrap();

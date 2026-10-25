@@ -99,9 +99,11 @@ fn cross_region_layer_conflict_fails_without_partial_commit() {
     let error = coordinator
         .apply_batch(&[character(1, "foreground"), video(2, "foreground")], 4)
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_VN_PRESENTATION_REGION_WRITE_CONFLICT"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_VN_PRESENTATION_REGION_WRITE_CONFLICT")
+    );
     assert_eq!(coordinator, before);
 }
 
@@ -158,9 +160,11 @@ fn explicit_queue_and_reject_policies_are_enforced() {
     let mut rejected = character(3, "character");
     rejected.interrupt = PresentationInterruptPolicy::Reject;
     let error = coordinator.apply_batch(&[rejected], 1).unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_VN_CHARACTER_INTERRUPT_REJECTED"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_VN_CHARACTER_INTERRUPT_REJECTED")
+    );
 }
 
 #[path = "support/coordinator_tick.rs"]
@@ -226,8 +230,10 @@ state start #@id state.start
 #[test]
 fn old_coordinator_header_is_rejected_before_decoding_changed_fields() {
     let old = postcard::to_allocvec("roukaku.vn.presentation_coordinator.v5").unwrap();
-    assert!(PresentationCoordinator::restore(&old)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_VN_PRESENTATION_SNAPSHOT_SCHEMA"));
+    assert!(
+        PresentationCoordinator::restore(&old)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_VN_PRESENTATION_SNAPSHOT_SCHEMA")
+    );
 }

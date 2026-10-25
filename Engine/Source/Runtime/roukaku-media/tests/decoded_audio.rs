@@ -20,12 +20,14 @@ fn canonical_upsampling_preserves_tone_energy_and_channel_identity() {
     assert_eq!(converted.sample_rate, 48_000);
     assert_eq!(converted.channels, 2);
     assert!(converted.samples.len() >= 95_900 && converted.samples.len() <= 96_100);
-    assert!(converted
-        .samples
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .all(|frame| frame[0].to_bits() == frame[1].to_bits()));
+    assert!(
+        converted
+            .samples
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .all(|frame| frame[0].to_bits() == frame[1].to_bits())
+    );
     let left = converted
         .samples
         .as_chunks::<2>()

@@ -1,7 +1,7 @@
 use roukaku_platform::{
-    build_fingerprint, HostLaunchProfile, PlatformCapabilityReport, PlatformErrorCode,
-    PlatformHostFactory, PlatformHostProfile, PlatformId, SdkStatus, UnavailablePlatformFactory,
-    PLATFORM_CAPABILITY_REPORT_SCHEMA,
+    HostLaunchProfile, PLATFORM_CAPABILITY_REPORT_SCHEMA, PlatformCapabilityReport,
+    PlatformErrorCode, PlatformHostFactory, PlatformHostProfile, PlatformId, SdkStatus,
+    UnavailablePlatformFactory, build_fingerprint,
 };
 
 #[test]

@@ -4,8 +4,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    UiPerformanceSample, UiValidationError, MAX_DRAW_CALLS, MAX_TEXTURE_BYTES,
-    MAX_VERTICES_PER_FRAME,
+    MAX_DRAW_CALLS, MAX_TEXTURE_BYTES, MAX_VERTICES_PER_FRAME, UiPerformanceSample,
+    UiValidationError,
 };
 
 pub const UI_PERFORMANCE_WINDOW: usize = 240;
@@ -194,8 +194,10 @@ mod tests {
         gate.record(slow, true).unwrap();
         let report = gate.report();
         assert_eq!(report.status, "blocking");
-        assert!(report
-            .diagnostics
-            .contains(&"ROUKAKU_UI_PERFORMANCE_STABLE_UPLOAD".to_string()));
+        assert!(
+            report
+                .diagnostics
+                .contains(&"ROUKAKU_UI_PERFORMANCE_STABLE_UPLOAD".to_string())
+        );
     }
 }

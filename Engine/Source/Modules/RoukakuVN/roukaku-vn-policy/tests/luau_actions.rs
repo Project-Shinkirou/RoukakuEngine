@@ -150,13 +150,15 @@ fn action_rejects_invalid_wait_boolean_and_ambient_grants_without_committing() {
     }
     let mut binding = binding(SOURCE);
     binding.read_text.clear();
-    assert!(invoke(
-        &binding,
-        &mut continuation(&binding, 1),
-        &mut VnPolicyState::default(),
-        &mut PolicyIoState::default()
-    )
-    .is_err());
+    assert!(
+        invoke(
+            &binding,
+            &mut continuation(&binding, 1),
+            &mut VnPolicyState::default(),
+            &mut PolicyIoState::default()
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -165,27 +167,33 @@ fn registration_has_no_gameplay_or_io_capabilities() {
         "roukaku.host.read_text('key','asset:/text/note')",
         "roukaku.mutate.set_var('project','count',1)",
     ] {
-        assert!(LuauPolicy::action_descriptors(
-            &format!("{prefix}\n{SOURCE}"),
-            PolicyExecutionBudget::default()
-        )
-        .is_err());
+        assert!(
+            LuauPolicy::action_descriptors(
+                &format!("{prefix}\n{SOURCE}"),
+                PolicyExecutionBudget::default()
+            )
+            .is_err()
+        );
         let mut binding = binding(SOURCE);
         binding.source = format!("{prefix}\n{SOURCE}");
         binding.source_hash = Hash256::from_sha256(binding.source.as_bytes()).to_string();
-        assert!(invoke(
-            &binding,
-            &mut continuation(&binding, 1),
-            &mut VnPolicyState::default(),
-            &mut PolicyIoState::default()
-        )
-        .is_err());
+        assert!(
+            invoke(
+                &binding,
+                &mut continuation(&binding, 1),
+                &mut VnPolicyState::default(),
+                &mut PolicyIoState::default()
+            )
+            .is_err()
+        );
     }
-    assert!(LuauPolicy::action_descriptors(
-        &format!("{SOURCE}\n{SOURCE}"),
-        PolicyExecutionBudget::default()
-    )
-    .is_err());
+    assert!(
+        LuauPolicy::action_descriptors(
+            &format!("{SOURCE}\n{SOURCE}"),
+            PolicyExecutionBudget::default()
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -242,13 +250,15 @@ end)
         .command
         .fields
         .insert("value".into(), ExtensionValue::Integer(i64::MAX));
-    assert!(invoke(
-        &binding,
-        &mut continuation,
-        &mut VnPolicyState::default(),
-        &mut PolicyIoState::default()
-    )
-    .is_err());
+    assert!(
+        invoke(
+            &binding,
+            &mut continuation,
+            &mut VnPolicyState::default(),
+            &mut PolicyIoState::default()
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -292,13 +302,15 @@ end)
         let mut continuation = continuation(&binding, 1);
         continuation.command.fields =
             BTreeMap::from([("value".into(), ExtensionValue::Integer(value))]);
-        assert!(invoke(
-            &binding,
-            &mut continuation,
-            &mut VnPolicyState::default(),
-            &mut PolicyIoState::default()
-        )
-        .is_err());
+        assert!(
+            invoke(
+                &binding,
+                &mut continuation,
+                &mut VnPolicyState::default(),
+                &mut PolicyIoState::default()
+            )
+            .is_err()
+        );
     }
 }
 
@@ -312,12 +324,14 @@ fn snapshot_rejects_ambiguous_numbers_and_out_of_range_saved_integers() {
         "9223372036854775807",
     ] {
         let mut state = VnPolicyState::default();
-        assert!(policy
-            .eval_bool(
-                &format!("roukaku.snapshot.set('value', {number}); return true"),
-                &mut state
-            )
-            .is_err());
+        assert!(
+            policy
+                .eval_bool(
+                    &format!("roukaku.snapshot.set('value', {number}); return true"),
+                    &mut state
+                )
+                .is_err()
+        );
         assert!(state.snapshots.is_empty());
     }
     for integer in [1_i64 << 53, -(1_i64 << 53), i64::MIN, i64::MAX] {
@@ -325,11 +339,13 @@ fn snapshot_rejects_ambiguous_numbers_and_out_of_range_saved_integers() {
         state
             .snapshots
             .insert("value".into(), PolicySnapshotValue::Integer(integer));
-        assert!(policy
-            .eval_bool(
-                "local value = roukaku.snapshot.get('value'); return true",
-                &mut state
-            )
-            .is_err());
+        assert!(
+            policy
+                .eval_bool(
+                    "local value = roukaku.snapshot.get('value'); return true",
+                    &mut state
+                )
+                .is_err()
+        );
     }
 }

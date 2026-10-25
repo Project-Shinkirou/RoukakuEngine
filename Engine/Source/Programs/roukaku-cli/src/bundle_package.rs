@@ -3,11 +3,11 @@ use std::{collections::BTreeMap, env, fs, path::Path};
 use roukaku_core::Hash256;
 use roukaku_media::FONT_PACKAGE_MANIFEST_SCHEMA;
 use roukaku_package::{
-    MigrationPolicy, PackageBuildRequest, PackageBuilder, ScenarioReference, ScenarioRefsManifest,
-    SectionCodec, SectionPayload, SourceUnlockPolicy, CURRENT_CONTAINER_VERSION,
+    CURRENT_CONTAINER_VERSION, MigrationPolicy, PackageBuildRequest, PackageBuilder,
+    ScenarioReference, ScenarioRefsManifest, SectionCodec, SectionPayload, SourceUnlockPolicy,
 };
 use roukaku_platform::PlatformId;
-use roukaku_target::{validate_manifest, TargetManifest};
+use roukaku_target::{TargetManifest, validate_manifest};
 
 use super::*;
 

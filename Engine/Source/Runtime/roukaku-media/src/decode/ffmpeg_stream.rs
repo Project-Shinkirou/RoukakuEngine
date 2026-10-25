@@ -6,7 +6,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tempfile::{Builder, NamedTempFile};
 
-use super::{decode_error, MediaError};
+use super::{MediaError, decode_error};
 use crate::{LateVideoPolicy, MediaPlaybackConfig};
 
 mod audio;

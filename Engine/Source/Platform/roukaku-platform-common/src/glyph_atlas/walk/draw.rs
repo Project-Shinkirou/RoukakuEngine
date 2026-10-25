@@ -137,7 +137,10 @@ impl<'a> WalkedScene<'a> {
             } => {
                 let duplicate = self.run_ids.contains(id);
                 if id.is_empty() || id.len() > 256 || duplicate || *width == 0 || *height == 0 {
-                    let id_hash = format!("sha256:{:x}", Sha256::digest(id.as_bytes()));
+                    let id_hash = format!(
+                        "sha256:{:x}",
+                        base16ct::HexDisplay(&Sha256::digest(id.as_bytes()))
+                    );
                     tracing::error!(
                         event = "platform.wgpu.scene.rectangle_rejected",
                         id_hash,
@@ -228,7 +231,7 @@ impl<'a> WalkedScene<'a> {
                                 return Err(invalid("mesh references a glyph resource as texture"));
                             }
                             None => {
-                                return Err(invalid("mesh references a resource that is not live"))
+                                return Err(invalid("mesh references a resource that is not live"));
                             }
                         }
                         self.drawn_resources.insert(resource_id);
@@ -551,10 +554,11 @@ impl<'a> WalkedScene<'a> {
         let key = mask_reveal_resource_key(id, kind);
         let key = std::str::from_utf8(&key).expect("mask resource key is UTF-8");
         let previous = resources.get_key_value(key);
-        if let Some((key, AtlasResource::Texture(texture))) = previous {
-            if texture.patches.is_empty() && texture.base.as_ref() == frame {
-                return Cow::Borrowed(key);
-            }
+        if let Some((key, AtlasResource::Texture(texture))) = previous
+            && texture.patches.is_empty()
+            && texture.base.as_ref() == frame
+        {
+            return Cow::Borrowed(key);
         }
         let resource = AtlasResource::texture(frame.clone());
         self.render_mutations

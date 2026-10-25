@@ -107,12 +107,14 @@ state popup #@id state.system.popup
         "page.popup"
     );
     assert_ne!(source.pending_wait().unwrap().command_id, wait_before);
-    assert!(source
-        .ui_semantics()
-        .expect("system semantics")
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/back"));
+    assert!(
+        source
+            .ui_semantics()
+            .expect("system semantics")
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/back")
+    );
 
     source
         .dispatch_ui_event(UiInputEventKind::Keyboard {
@@ -313,12 +315,14 @@ state start #@id state.start
         source.pending_wait().expect("dialogue wait").command_id,
         "line.one"
     );
-    assert!(source
-        .ui_semantics()
-        .expect("message semantics")
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/advance"));
+    assert!(
+        source
+            .ui_semantics()
+            .expect("message semantics")
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/advance")
+    );
     source.release_resources().expect("release");
     source.shutdown().expect("shutdown");
 }
@@ -333,10 +337,12 @@ pub(super) fn controller_on_open_focuses_a_stable_semantic_target() {
         })
         .expect("second UI frame");
     let semantics = source.ui_semantics().expect("semantic snapshot");
-    assert!(semantics
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/advance" && node.focused));
+    assert!(
+        semantics
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/advance" && node.focused)
+    );
     source.release_resources().expect("release");
     source.shutdown().expect("shutdown");
 }

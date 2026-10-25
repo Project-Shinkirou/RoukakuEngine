@@ -182,8 +182,8 @@ pub mod windows {
     use windows_sys::Win32::{
         Foundation::{CloseHandle, HANDLE},
         System::Threading::{
-            GetExitCodeProcess, TerminateProcess, WaitForSingleObject, PROCESS_INFORMATION,
-            STARTUPINFOW,
+            GetExitCodeProcess, PROCESS_INFORMATION, STARTUPINFOW, TerminateProcess,
+            WaitForSingleObject,
         },
     };
 

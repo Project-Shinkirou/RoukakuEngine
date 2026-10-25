@@ -191,7 +191,7 @@ impl WgpuPresentationCore {
                     PlatformErrorCode::ContextLost,
                     "surface.present_rgba",
                     "wgpu surface was lost",
-                ))
+                ));
             }
             wgpu::CurrentSurfaceTexture::Timeout
             | wgpu::CurrentSurfaceTexture::Occluded
@@ -199,7 +199,7 @@ impl WgpuPresentationCore {
                 return Err(unavailable(
                     "surface.present_rgba",
                     "surface frame acquisition failed",
-                ))
+                ));
             }
         };
         let output_view = output

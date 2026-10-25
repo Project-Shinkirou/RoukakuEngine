@@ -48,12 +48,15 @@ use roukaku_platform::{PlatformError, SceneFrame};
 
 use sha2::{Digest, Sha256};
 
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 
 #[cfg(test)]
 mod tests;
 
 mod atlas_state;
+use atlas_state::ATLAS_PADDING;
+use atlas_state::ATLAS_SIDE;
+use atlas_state::ATLAS_STAGING_CHUNK_BYTES;
 pub(crate) use atlas_state::AtlasAllocatorState;
 pub(crate) use atlas_state::AtlasPlacement;
 use atlas_state::AtlasPlacementJournal;
@@ -71,6 +74,11 @@ pub(crate) use atlas_state::DrawRun;
 pub(crate) use atlas_state::GlyphCpuProfile;
 pub(crate) use atlas_state::GlyphProfileQueries;
 pub(crate) use atlas_state::GpuAtlas;
+use atlas_state::MAX_ATLAS_UPLOAD_BYTES;
+use atlas_state::MAX_ATLAS_WIDTH;
+use atlas_state::MAX_SCENE_RESOURCE_BYTES;
+use atlas_state::MAX_SCENE_RESOURCES;
+use atlas_state::MIN_ATLAS_SIDE;
 pub(crate) use atlas_state::MaskRunParams;
 pub(crate) use atlas_state::MeshRun;
 pub(crate) use atlas_state::PackedAtlas;
@@ -83,17 +91,9 @@ use atlas_state::ResourceMutationJournal;
 pub(crate) use atlas_state::RetainedTexture;
 pub(crate) use atlas_state::RetainedTexturePatch;
 pub(crate) use atlas_state::TextureRegionUpload;
-pub(crate) use atlas_state::WgpuGlyphAtlasRenderer;
-use atlas_state::ATLAS_PADDING;
-use atlas_state::ATLAS_SIDE;
-use atlas_state::ATLAS_STAGING_CHUNK_BYTES;
-use atlas_state::MAX_ATLAS_UPLOAD_BYTES;
-use atlas_state::MAX_ATLAS_WIDTH;
-use atlas_state::MAX_SCENE_RESOURCES;
-use atlas_state::MAX_SCENE_RESOURCE_BYTES;
-use atlas_state::MIN_ATLAS_SIDE;
 use atlas_state::VERTEX_STRIDE;
+pub(crate) use atlas_state::WgpuGlyphAtlasRenderer;
 mod push_quad_run;
-use push_quad_run::push_quad_run;
 pub(crate) use push_quad_run::DrawBatch;
+use push_quad_run::push_quad_run;
 mod render_internal;

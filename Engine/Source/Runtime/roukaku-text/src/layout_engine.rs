@@ -411,8 +411,7 @@ fn append_raw_layout(
                 if family_index != expected_family_index {
                     return Err(MediaError::message(format!(
                         "ROUKAKU_TEXT_FALLBACK_ORDER: shaper did not select the first eligible declared fallback: actual_index={family_index} expected_index={expected_family_index} source_start={} source_end={}",
-                        glyph.start,
-                        glyph.end,
+                        glyph.start, glyph.end,
                     )));
                 }
                 if family_index > 0

@@ -2,7 +2,7 @@ use crate::{CompilationSnapshot, CompileRoukakuProjectOptions, VnError};
 use parking_lot::{Condvar, Mutex};
 use std::{
     io,
-    sync::{mpsc, Arc},
+    sync::{Arc, mpsc},
     thread::{self, JoinHandle},
     time::{Duration, Instant},
 };

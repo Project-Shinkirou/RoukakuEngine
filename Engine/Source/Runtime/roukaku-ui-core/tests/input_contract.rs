@@ -1,4 +1,4 @@
-use roukaku_ui_core::{UiInsets, UiViewport, ValidateUi, MAX_UI_VIEWPORT_DIMENSION};
+use roukaku_ui_core::{MAX_UI_VIEWPORT_DIMENSION, UiInsets, UiViewport, ValidateUi};
 
 fn viewport(width: u32, height: u32) -> UiViewport {
     UiViewport {

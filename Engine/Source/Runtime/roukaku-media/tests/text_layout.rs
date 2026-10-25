@@ -1,11 +1,11 @@
 use roukaku_asset::VfsUri;
 use roukaku_core::Hash256;
 use roukaku_media::{
-    CosmicTextLayoutProvider, FontBindingContext, FontPackageEntry, FontPackageManifest,
-    LayoutConstraint, OpenTypeFeature, OverflowPolicy, PackagedFont, TextDirection,
-    TextLayoutBindingIdentity, TextLayoutConfig, TextLayoutProvider, TextLayoutReplayInput,
-    TextLayoutReplayLimits, TextLayoutReplaySession, TextLayoutReplaySnapshot, TextLayoutRequest,
-    TextRun, UnicodeRange, WrapPolicy, FONT_PACKAGE_MANIFEST_SCHEMA,
+    CosmicTextLayoutProvider, FONT_PACKAGE_MANIFEST_SCHEMA, FontBindingContext, FontPackageEntry,
+    FontPackageManifest, LayoutConstraint, OpenTypeFeature, OverflowPolicy, PackagedFont,
+    TextDirection, TextLayoutBindingIdentity, TextLayoutConfig, TextLayoutProvider,
+    TextLayoutReplayInput, TextLayoutReplayLimits, TextLayoutReplaySession,
+    TextLayoutReplaySnapshot, TextLayoutRequest, TextRun, UnicodeRange, WrapPolicy,
 };
 use roukaku_package::{PackageBuildRequest, PackageBuilder, PackageReader, SectionPayload};
 
@@ -277,11 +277,13 @@ fn verified_package_vfs_is_the_font_database_authority() {
         TextLayoutConfig::production_defaults(),
     )
     .unwrap();
-    assert!(!provider
-        .layout(&request("package font"))
-        .unwrap()
-        .glyph_resources
-        .is_empty());
+    assert!(
+        !provider
+            .layout(&request("package font"))
+            .unwrap()
+            .glyph_resources
+            .is_empty()
+    );
 
     let wrong_context = roukaku_media::text_layout_from_package(
         &package,
@@ -295,9 +297,11 @@ fn verified_package_vfs_is_the_font_database_authority() {
     )
     .err()
     .unwrap();
-    assert!(wrong_context
-        .to_string()
-        .contains("ROUKAKU_TEXT_PACKAGE_MANIFEST_IDENTITY"));
+    assert!(
+        wrong_context
+            .to_string()
+            .contains("ROUKAKU_TEXT_PACKAGE_MANIFEST_IDENTITY")
+    );
 }
 
 #[test]
@@ -467,12 +471,14 @@ fn layout_snapshot_restore_and_provider_free_replay_are_deterministic() {
         second_layout
     );
     assert_eq!(replay.replayed_layouts(), 2);
-    assert!(replay
-        .replay_next(TextLayoutReplayInput {
-            sequence: 3,
-            request_hash: second_request_hash,
-        })
-        .is_err());
+    assert!(
+        replay
+            .replay_next(TextLayoutReplayInput {
+                sequence: 3,
+                request_hash: second_request_hash,
+            })
+            .is_err()
+    );
 }
 
 #[test]
@@ -495,9 +501,11 @@ fn layout_replay_blocks_request_provider_and_payload_drift_without_advancing() {
             request_hash: Hash256::from_sha256(b"different request"),
         })
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_TEXT_REPLAY_REQUEST_DRIFT"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_TEXT_REPLAY_REQUEST_DRIFT")
+    );
     assert_eq!(replay.replayed_layouts(), 0);
     assert_eq!(
         replay
@@ -549,9 +557,11 @@ fn layout_replay_enforces_record_and_snapshot_budgets_transactionally() {
     let error = live
         .record_live(&provider, &request("overflow record"))
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_TEXT_REPLAY_RECORD_BUDGET"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_TEXT_REPLAY_RECORD_BUDGET")
+    );
     assert_eq!(live.recorded_layouts(), 1);
     assert_eq!(live.transcript_hash(), before);
 }

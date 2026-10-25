@@ -97,7 +97,9 @@ fn prepare_runtime(
     index: Arc<CoreVnRuntimeIndex>,
 ) -> Result<(CoreVnRuntime, u64, u64), RuntimeError> {
     if snapshot.machines != roukaku_runtime::StateMachineStore::default() {
-        return Err(RuntimeError::message("ROUKAKU_NATIVE_VN_RESTORE_LEGACY_MACHINE: NativeVN no longer executes saved forwarding state machines"));
+        return Err(RuntimeError::message(
+            "ROUKAKU_NATIVE_VN_RESTORE_LEGACY_MACHINE: NativeVN no longer executes saved forwarding state machines",
+        ));
     }
     if snapshot.config.seed != expected_seed {
         return Err(RuntimeError::message(

@@ -1,13 +1,13 @@
 use std::{path::Path, process::Command};
 
-use roukaku_platform::{validate_host_profile, PlatformHostProfile};
+use roukaku_platform::{PlatformHostProfile, validate_host_profile};
 use roukaku_target::TargetManifest;
 
 #[test]
 fn generated_stage_commands_compile_with_explicit_replacement_policy() {
     use roukaku_vn_script::{
-        compile_roukaku_project, CompiledCommand, PresentationCommand, PresentationInterruptPolicy,
-        RoukakuSource, StageCommand,
+        CompiledCommand, PresentationCommand, PresentationInterruptPolicy, RoukakuSource,
+        StageCommand, compile_roukaku_project,
     };
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
@@ -39,9 +39,12 @@ print(json.dumps([_render_command(dict(command, command_id='command.test'), {})[
     let commands: Vec<String> = serde_json::from_slice(&generated.stdout).unwrap();
     assert_eq!(commands.len(), 6);
     for command in commands {
-        let source = RoukakuSource::story("converted.roukaku", format!(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n{command}\n"
-        ));
+        let source = RoukakuSource::story(
+            "converted.roukaku",
+            format!(
+                "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n{command}\n"
+            ),
+        );
         let compiled = compile_roukaku_project([source], Default::default()).unwrap();
         let CompiledCommand::Presentation {
             command: PresentationCommand::Stage(stage),

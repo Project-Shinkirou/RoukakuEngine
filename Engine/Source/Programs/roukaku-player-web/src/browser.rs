@@ -18,7 +18,7 @@ use roukaku_ui_core::{
 
 use roukaku_vn_core::VnRunConfig;
 
-use futures_util::future::{select, Either};
+use futures_util::future::{Either, select};
 
 use futures_util::FutureExt;
 
@@ -28,7 +28,7 @@ use std::cell::RefCell;
 
 use wasm_bindgen::prelude::*;
 
-use wasm_bindgen_futures::{spawn_local, JsFuture};
+use wasm_bindgen_futures::{JsFuture, spawn_local};
 
 use web_sys::Response;
 

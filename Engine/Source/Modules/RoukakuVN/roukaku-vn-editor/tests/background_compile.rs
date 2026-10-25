@@ -1,6 +1,6 @@
 use roukaku_vn_editor::*;
 use std::{
-    sync::{mpsc::RecvTimeoutError, Arc},
+    sync::{Arc, mpsc::RecvTimeoutError},
     time::Duration,
 };
 
@@ -82,10 +82,12 @@ fn newest_compilation_response_cannot_contain_an_older_source_result() {
     let restored = compiler
         .submit(documents.compilation_snapshot(), options)
         .unwrap();
-    assert!(restored
-        .recv_timeout(Duration::from_secs(10))
-        .unwrap()
-        .is_ok());
+    assert!(
+        restored
+            .recv_timeout(Duration::from_secs(10))
+            .unwrap()
+            .is_ok()
+    );
     compiler.close().unwrap();
 }
 

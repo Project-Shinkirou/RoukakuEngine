@@ -35,14 +35,18 @@ val externalSigning = providers.gradleProperty("roukakuSigningProperties")
 
 android {
     namespace = "org.shinkirou.roukakuplayer"
-    compileSdk = 36
-    buildToolsVersion = "36.0.0"
-    ndkVersion = "30.0.15729638"
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
+    buildToolsVersion = "37.0.0"
+    ndkVersion = "30.0.16248370"
 
     defaultConfig {
         applicationId = providers.gradleProperty("roukakuApplicationId").orElse("org.shinkirou.roukakuplayer").get()
         minSdk = 28
-        targetSdk = 36
+        targetSdk = 37
         versionCode = providers.gradleProperty("roukakuVersionCode").orElse("1").get().toInt()
         versionName = providers.gradleProperty("roukakuVersionName").orElse("0.1.0").get()
         ndk {
@@ -51,8 +55,14 @@ android {
     }
 
     sourceSets.named("main") {
-        jniLibs.setSrcDirs(listOf(file(rustJniDirectoryPath.get())))
-        assets.setSrcDirs(listOf(layout.buildDirectory.get().dir("generated/roukakuAssets").asFile))
+        jniLibs.directories.apply {
+            clear()
+            add(rustJniDirectoryPath.get())
+        }
+        assets.directories.apply {
+            clear()
+            add(layout.buildDirectory.dir("generated/roukakuAssets").get().asFile.absolutePath)
+        }
     }
 
     androidResources {
@@ -95,7 +105,7 @@ android {
     }
 }
 
-val prepareRoukakuAssets by tasks.registering(Copy::class) {
+val prepareRoukakuAssets = tasks.register<Copy>("prepareRoukakuAssets") {
     bundledPackagePath.orNull?.let { source ->
         from(source)
         into(layout.buildDirectory.dir("generated/roukakuAssets"))
@@ -103,7 +113,7 @@ val prepareRoukakuAssets by tasks.registering(Copy::class) {
     }
 }
 
-val verifyRoukakuAndroidInputs by tasks.registering(VerifyRoukakuAndroidInputs::class) {
+val verifyRoukakuAndroidInputs = tasks.register<VerifyRoukakuAndroidInputs>("verifyRoukakuAndroidInputs") {
     rustJniDir.set(layout.dir(rustJniDirectoryPath.map(::file)))
     bundledPackage.set(layout.file(bundledPackagePath.map(::file)))
 }
@@ -113,7 +123,7 @@ tasks.named("preBuild").configure {
 }
 
 dependencies {
-    implementation("androidx.activity:activity-ktx:1.10.1")
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("androidx.games:games-activity:4.4.0")
+    implementation("androidx.activity:activity-ktx:1.13.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.games:games-activity:4.4.2")
 }

@@ -1,8 +1,8 @@
 use crate::{
-    actions::action_error, ExtensionCommandDescriptor, ExtensionFieldContract, ExtensionValue,
-    LuauPolicy, PolicyActionBinding, PolicyActionContinuation, PolicyActionOutcome,
+    ExtensionCommandDescriptor, ExtensionFieldContract, ExtensionValue, LuauPolicy,
+    POLICY_ACTION_PROVIDER, PolicyActionBinding, PolicyActionContinuation, PolicyActionOutcome,
     PolicyExecutionBudget, PolicyIoContext, PolicyIoStatus, PolicyQueryContext, VnError,
-    VnPolicyState, POLICY_ACTION_PROVIDER,
+    VnPolicyState, actions::action_error,
 };
 use mlua::{Function, Lua, LuaSerdeExt, Table};
 use std::{
@@ -174,7 +174,7 @@ impl LuauPolicy {
                                 _ => {
                                     return Err(mlua::Error::runtime(
                                         "ROUKAKU_VN_POLICY_ACTION_KEY",
-                                    ))
+                                    ));
                                 }
                             };
                             let key = continuation

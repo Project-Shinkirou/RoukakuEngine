@@ -65,20 +65,20 @@ pub(crate) fn headless_shipping_isolation_check(package: &PackageReader) -> Rele
             violation = Some(format!("section id {} is test-only", entry.id));
             break;
         }
-        if entry.encryption.is_none() && entry.decoded_length <= 1024 * 1024 {
-            if let Ok(bytes) = package.container().read_section(&entry.id) {
-                if FORBIDDEN.iter().any(|needle| {
-                    bytes
-                        .windows(needle.len())
-                        .any(|window| window == needle.as_bytes())
-                }) {
-                    violation = Some(format!(
-                        "section {} contains a test-only Headless identity",
-                        entry.id
-                    ));
-                    break;
-                }
-            }
+        if entry.encryption.is_none()
+            && entry.decoded_length <= 1024 * 1024
+            && let Ok(bytes) = package.container().read_section(&entry.id)
+            && FORBIDDEN.iter().any(|needle| {
+                bytes
+                    .windows(needle.len())
+                    .any(|window| window == needle.as_bytes())
+            })
+        {
+            violation = Some(format!(
+                "section {} contains a test-only Headless identity",
+                entry.id
+            ));
+            break;
         }
     }
     let passed = violation.is_none();

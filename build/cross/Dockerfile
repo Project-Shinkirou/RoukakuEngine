@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.28.0
 # SDK input is a BuildKit local named context, never an unofficial download.
-FROM rust:1.98.0-trixie
+FROM rust:1.99.1-trixie
 ARG TARGET
 ARG SDK_VERSION
 ARG OSXCROSS_REV=27d21e4977c9751d01199c7a226a6faf494c3dd9
@@ -36,7 +36,7 @@ RUN case "$TARGET" in \
     esac \
     && git init /opt/apple/vcpkg \
     && git -C /opt/apple/vcpkg remote add origin https://github.com/microsoft/vcpkg.git \
-    && git -C /opt/apple/vcpkg fetch --depth=1 origin 664933b8d385dfc01f4e0cdff4c7c74e71f6a740 \
+    && git -C /opt/apple/vcpkg fetch --depth=1 origin 0c2a9ace1964b818b15f7ae50ba1c42404918a7b \
     && git -C /opt/apple/vcpkg checkout --detach FETCH_HEAD \
     && /opt/apple/vcpkg/bootstrap-vcpkg.sh -disableMetrics \
     && /opt/apple/vcpkg/vcpkg install --x-manifest-root=/opt/apple/deps \

@@ -144,15 +144,17 @@ impl PluginLoader {
 }
 
 unsafe fn root_module(library: &Library) -> Result<RoukakuPluginModuleRef, PluginError> {
-    let header = library
-        .get::<AbiHeaderRef>(ROOT_MODULE_LOADER_NAME_WITH_NUL.as_bytes())
-        .map_err(|err| PluginError::Load(err.to_string()))?;
-    let header = (*header)
-        .upgrade()
-        .map_err(|err| PluginError::Load(err.to_string()))?;
-    header
-        .init_root_module::<RoukakuPluginModuleRef>()
-        .map_err(|err| PluginError::Load(err.to_string()))
+    unsafe {
+        let header = library
+            .get::<AbiHeaderRef>(ROOT_MODULE_LOADER_NAME_WITH_NUL.as_bytes())
+            .map_err(|err| PluginError::Load(err.to_string()))?;
+        let header = (*header)
+            .upgrade()
+            .map_err(|err| PluginError::Load(err.to_string()))?;
+        header
+            .init_root_module::<RoukakuPluginModuleRef>()
+            .map_err(|err| PluginError::Load(err.to_string()))
+    }
 }
 
 pub fn dylib_path(root: &Path, name: &str) -> PathBuf {

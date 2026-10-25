@@ -4,8 +4,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    validate_host_profile, HostLimits, PackageSourcePolicy, PlatformError, PlatformErrorCode,
-    PlatformHostProfile, PlatformId,
+    HostLimits, PackageSourcePolicy, PlatformError, PlatformErrorCode, PlatformHostProfile,
+    PlatformId, validate_host_profile,
 };
 
 pub const HEADLESS_HOST_PROFILE_SCHEMA: &str = "roukaku.headless_host_profile.v3";

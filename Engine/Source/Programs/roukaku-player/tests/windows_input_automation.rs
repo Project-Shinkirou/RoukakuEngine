@@ -1,4 +1,4 @@
-use roukaku_player::{WindowsSendInputHost, WINDOWS_SENDINPUT_KEYBOARD, WINDOWS_SENDINPUT_MOUSE};
+use roukaku_player::{WINDOWS_SENDINPUT_KEYBOARD, WINDOWS_SENDINPUT_MOUSE, WindowsSendInputHost};
 use roukaku_player_core::{
     PlayerAudioMeterEvidence, PlayerAutomationScript, PlayerAutomationStatus, PlayerAutomationStep,
     PlayerInputConsumptionEvidence, PlayerInputEvent, PlayerInputTranscript, PlayerPlatform,
@@ -21,10 +21,12 @@ fn windows_sendinput_transcript_produces_full_playable_report() {
         "player.audio_meter",
         "player.route_coverage",
     ] {
-        assert!(report
-            .checks
-            .iter()
-            .any(|check| check.id == id && check.status == PlayerAutomationStatus::Pass));
+        assert!(
+            report
+                .checks
+                .iter()
+                .any(|check| check.id == id && check.status == PlayerAutomationStatus::Pass)
+        );
     }
 }
 

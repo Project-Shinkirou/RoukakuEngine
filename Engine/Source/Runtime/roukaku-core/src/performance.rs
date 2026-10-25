@@ -4,7 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{is_safe_symbol as safe_symbol, Diagnostic, DiagnosticSeverity, Hash256};
+use crate::{Diagnostic, DiagnosticSeverity, Hash256, is_safe_symbol as safe_symbol};
 
 pub const PERFORMANCE_BUDGET_SCHEMA: &str = "roukaku.performance_budget.v1";
 pub const PERFORMANCE_REPORT_SCHEMA: &str = "roukaku.performance_report.v1";

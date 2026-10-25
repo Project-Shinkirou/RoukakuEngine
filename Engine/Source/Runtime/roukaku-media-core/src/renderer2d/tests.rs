@@ -240,15 +240,19 @@ fn mask_reveal_submission_validates_mode_phase_and_capture_requires_gpu() {
         }
         for phase in [-1.0, maximum + 0.5, f32::NAN, f32::INFINITY] {
             let error = renderer.submit_frame(&[command(mode, phase)]).unwrap_err();
-            assert!(error
-                .to_string()
-                .contains("ROUKAKU_MEDIA_MASK_REVEAL_PHASE"));
+            assert!(
+                error
+                    .to_string()
+                    .contains("ROUKAKU_MEDIA_MASK_REVEAL_PHASE")
+            );
         }
     }
     let error = renderer
         .capture_frame(&[command(MaskRevealMode::Gradient, 512.0)])
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_MEDIA_MASK_REVEAL_GPU_REQUIRED"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_MEDIA_MASK_REVEAL_GPU_REQUIRED")
+    );
 }

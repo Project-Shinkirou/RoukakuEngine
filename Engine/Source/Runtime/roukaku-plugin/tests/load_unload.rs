@@ -1,8 +1,8 @@
 use std::{path::Path, process::Command};
 
 use roukaku_plugin::{
-    dylib_path, provider_binding_context_from_runtime_package, EngineModuleSlot, PluginGate,
-    PluginLoader, PluginRegistrar,
+    EngineModuleSlot, PluginGate, PluginLoader, PluginRegistrar, dylib_path,
+    provider_binding_context_from_runtime_package,
 };
 use semver::Version;
 

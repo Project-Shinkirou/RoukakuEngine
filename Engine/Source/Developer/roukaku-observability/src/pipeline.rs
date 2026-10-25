@@ -3,28 +3,29 @@ use std::{
     fs,
     io::Write,
     sync::{
+        Arc, Mutex,
         atomic::{AtomicU64, Ordering},
         mpsc::{self, Receiver, SyncSender, TrySendError},
-        Arc, Mutex,
     },
     thread::{self, JoinHandle},
 };
 
-use file_rotate::{compression::Compression, suffix::AppendCount, ContentLimit, FileRotate};
+use file_rotate::{ContentLimit, FileRotate, compression::Compression, suffix::AppendCount};
 use serde_json::Value;
 use thiserror::Error;
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
-use tracing::{field::Visit, Event, Id, Subscriber};
+use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+use tracing::{Event, Id, Subscriber, field::Visit};
 use tracing_subscriber::{
+    EnvFilter, Layer,
     layer::{Context, SubscriberExt},
     registry::{LookupSpan, Registry},
-    reload, EnvFilter, Layer,
+    reload,
 };
 
 use crate::{
     config::{ConsoleFormat, HostObservabilityConfig},
-    crash::{write_crash_bundle, CrashBundleManifestV1},
-    record::{sanitize_field, LogEventV1, SpanContextV1, LOG_EVENT_SCHEMA},
+    crash::{CrashBundleManifestV1, write_crash_bundle},
+    record::{LOG_EVENT_SCHEMA, LogEventV1, SpanContextV1, sanitize_field},
     ring::RingBuffer,
 };
 
@@ -116,10 +117,10 @@ impl Drop for ObservabilityGuard {
     fn drop(&mut self) {
         let _ = self.flush();
         let _ = self.writer.send(WriterCommand::Shutdown);
-        if let Ok(slot) = self.writer_thread.get_mut() {
-            if let Some(handle) = slot.take() {
-                let _ = handle.join();
-            }
+        if let Ok(slot) = self.writer_thread.get_mut()
+            && let Some(handle) = slot.take()
+        {
+            let _ = handle.join();
         }
     }
 }
@@ -324,13 +325,12 @@ impl StableJsonLayer {
         if let Ok(mut ring) = self.ring.lock() {
             ring.push(encoded.trim_end().to_string());
         }
-        if matches!(level, tracing::Level::WARN | tracing::Level::ERROR) {
-            if let Some(writer) = &self.critical {
-                if let Ok(mut writer) = writer.lock() {
-                    let _ = writer.write_all(encoded.as_bytes());
-                    let _ = writer.flush();
-                }
-            }
+        if matches!(level, tracing::Level::WARN | tracing::Level::ERROR)
+            && let Some(writer) = &self.critical
+            && let Ok(mut writer) = writer.lock()
+        {
+            let _ = writer.write_all(encoded.as_bytes());
+            let _ = writer.flush();
         }
         match self.writer.try_send(WriterCommand::Record(encoded)) {
             Ok(()) => {}
@@ -377,11 +377,11 @@ impl StableJsonLayer {
         if let Ok(mut ring) = self.ring.lock() {
             ring.push(encoded.trim_end().to_string());
         }
-        if let Some(writer) = &self.critical {
-            if let Ok(mut writer) = writer.lock() {
-                let _ = writer.write_all(encoded.as_bytes());
-                let _ = writer.flush();
-            }
+        if let Some(writer) = &self.critical
+            && let Ok(mut writer) = writer.lock()
+        {
+            let _ = writer.write_all(encoded.as_bytes());
+            let _ = writer.flush();
         }
         if self.console_json {
             let _ = std::io::stderr().write_all(encoded.as_bytes());

@@ -108,8 +108,10 @@ pub(super) fn web_bundle_requires_wasm_bindgen_pair_and_embeds_canonical_host_sc
         .output()
         .unwrap();
     assert!(!invalid_wasm_output.status.success());
-    assert!(String::from_utf8_lossy(&invalid_wasm_output.stderr)
-        .contains("ROUKAKU_WEB_PLAYER_WASM_INVALID"));
+    assert!(
+        String::from_utf8_lossy(&invalid_wasm_output.stderr)
+            .contains("ROUKAKU_WEB_PLAYER_WASM_INVALID")
+    );
     assert!(!invalid_wasm_bundle.exists());
 
     let bypass_glue = case_dir.join("bypass.js");
@@ -368,9 +370,11 @@ targets:
             && binding["context"]["required_capability"] == "vfs.backend.package"
     }));
     assert!(policy.get("runtime_provider").is_none());
-    assert!(!bindings
-        .iter()
-        .any(|binding| binding["slot"] == "game_runtime_provider"));
+    assert!(
+        !bindings
+            .iter()
+            .any(|binding| binding["slot"] == "game_runtime_provider")
+    );
 
     let registry: serde_json::Value = serde_json::from_slice(
         &package
@@ -379,24 +383,28 @@ targets:
             .unwrap(),
     )
     .unwrap();
-    assert!(registry["providers"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|provider| {
-            provider["provider_id"] == "roukaku.renderer.wgpu"
-                && provider["capability"] == "renderer2d.wgpu"
-                && provider["packaged"] == true
-        }));
-    assert!(registry["providers"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|provider| {
-            provider["provider_id"] == "roukaku.vfs.package"
-                && provider["capability"] == "vfs.backend.package"
-                && provider["packaged"] == true
-        }));
+    assert!(
+        registry["providers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|provider| {
+                provider["provider_id"] == "roukaku.renderer.wgpu"
+                    && provider["capability"] == "renderer2d.wgpu"
+                    && provider["packaged"] == true
+            })
+    );
+    assert!(
+        registry["providers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|provider| {
+                provider["provider_id"] == "roukaku.vfs.package"
+                    && provider["capability"] == "vfs.backend.package"
+                    && provider["packaged"] == true
+            })
+    );
 
     let wrong_target_output = Command::new(env!("CARGO_BIN_EXE_roukaku"))
         .args([

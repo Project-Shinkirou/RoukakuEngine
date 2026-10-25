@@ -7,6 +7,7 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
+base16ct.workspace = true
 roukaku-byte-source = { path = "../roukaku-byte-source" }
 roukaku-core = { path = "../roukaku-core" }
 roukaku-package = { path = "../roukaku-package" }

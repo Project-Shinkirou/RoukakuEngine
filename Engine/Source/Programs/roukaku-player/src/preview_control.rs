@@ -3,7 +3,7 @@ use roukaku_platform::{PlatformError, PlatformErrorCode};
 use roukaku_player_core::{PlatformCommandSink, PlayerHostCommandExecutor};
 use roukaku_player_vn::{NativeVnHostCommandSource, NativeVnPreview, NativeVnProductMediaHost};
 use roukaku_vn_core::{
-    PreviewCommand, PreviewRejectCode as Reject, PreviewRequest, PreviewResponse, PREVIEW_PROTOCOL,
+    PREVIEW_PROTOCOL, PreviewCommand, PreviewRejectCode as Reject, PreviewRequest, PreviewResponse,
 };
 
 pub(crate) struct PreviewControl {

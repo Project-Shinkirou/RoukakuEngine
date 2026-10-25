@@ -50,7 +50,7 @@ impl CompileBuilder {
                     return Err(VnError::diagnostic(
                         "ROUKAKU_VN_SYSTEM_ACTION_MUTATION_OP",
                         "mutation op must be set, add or sub",
-                    ))
+                    ));
                 }
             };
             let value = fields[3].parse::<i64>().map_err(|_| {

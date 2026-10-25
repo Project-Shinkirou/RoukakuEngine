@@ -1,6 +1,6 @@
 use roukaku_vn_core::{
-    compile_roukaku_project, PresentationCommand, ReadingMode, RoukakuSource, SkipMode,
-    SystemUnlockKind, VnPlayerCommand, VnRunConfig, VnRuntime,
+    PresentationCommand, ReadingMode, RoukakuSource, SkipMode, SystemUnlockKind, VnPlayerCommand,
+    VnRunConfig, VnRuntime, compile_roukaku_project,
 };
 
 const STORY: &str = r#"
@@ -142,10 +142,12 @@ fn fast_forward_commits_skipped_dialogue_without_emitting_transient_dialogue_fra
         .unwrap();
 
     assert_eq!(runtime.state().backlog.len(), 2);
-    assert!(output
-        .presentation
-        .iter()
-        .all(|command| !matches!(command, PresentationCommand::Dialogue { .. })));
+    assert!(
+        output
+            .presentation
+            .iter()
+            .all(|command| !matches!(command, PresentationCommand::Dialogue { .. }))
+    );
     assert!(matches!(
         output.presentation.last(),
         Some(PresentationCommand::Choice { key, options })
@@ -290,12 +292,14 @@ fn system_controls_persist_auto_skip_config_and_unlocks_through_save_load() {
             value: "instant".to_string(),
         })
         .unwrap();
-    assert!(runtime
-        .apply(VnPlayerCommand::SetConfig {
-            key: "display.language".to_string(),
-            value: "../en".to_string(),
-        })
-        .is_err());
+    assert!(
+        runtime
+            .apply(VnPlayerCommand::SetConfig {
+                key: "display.language".to_string(),
+                value: "../en".to_string(),
+            })
+            .is_err()
+    );
     assert_eq!(runtime.state().locale, "zh-Hans");
     runtime
         .apply(VnPlayerCommand::SetConfig {
@@ -361,11 +365,13 @@ fn product_ui_requests_are_core_validated_and_use_stable_ids() {
         gallery.presentation.as_slice(),
         [PresentationCommand::Marker { id }] if id == "gallery.preview.cg.opening"
     ));
-    assert!(runtime
-        .apply(VnPlayerCommand::PreviewGallery {
-            item_id: "cg.locked".into(),
-        })
-        .is_err());
+    assert!(
+        runtime
+            .apply(VnPlayerCommand::PreviewGallery {
+                item_id: "cg.locked".into(),
+            })
+            .is_err()
+    );
 
     runtime
         .apply(VnPlayerCommand::Launch {
@@ -373,11 +379,13 @@ fn product_ui_requests_are_core_validated_and_use_stable_ids() {
             state_id: "state.route.one".into(),
         })
         .unwrap();
-    assert!(runtime
-        .apply(VnPlayerCommand::JumpRoute {
-            node_id: "state.route.two".into(),
-        })
-        .is_err());
+    assert!(
+        runtime
+            .apply(VnPlayerCommand::JumpRoute {
+                node_id: "state.route.two".into(),
+            })
+            .is_err()
+    );
     runtime
         .apply(VnPlayerCommand::Launch {
             story_id: "story.main".into(),
@@ -436,11 +444,13 @@ fn backlog_jump_rejects_missing_entries_and_restores_compiled_command_location()
             state_id: "state.prologue".into(),
         })
         .unwrap();
-    assert!(runtime
-        .apply(VnPlayerCommand::JumpBacklog {
-            command_id: "line.missing".into(),
-        })
-        .is_err());
+    assert!(
+        runtime
+            .apply(VnPlayerCommand::JumpBacklog {
+                command_id: "line.missing".into(),
+            })
+            .is_err()
+    );
     runtime
         .apply(VnPlayerCommand::JumpBacklog {
             command_id: "line.a".into(),

@@ -3,7 +3,9 @@ use roukaku_vn_core::PreviewDocumentRevision;
 
 fn source() -> NativeVnHostCommandSource {
     let bytes = crate::test_native_package::product_package_with_request(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n", |_| {});
+        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+        |_| {},
+    );
     let package = roukaku_package::PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
         &package,
@@ -30,8 +32,8 @@ fn identity(source: &NativeVnHostCommandSource) -> PreviewIdentity {
         .into(),
     }
 }
-fn executor(
-) -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink> {
+fn executor()
+-> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink> {
     let (client, _, _) = roukaku_platform::host_channel(
         roukaku_platform::PlatformHostProfile::windows_release(
             "nativevn-game",

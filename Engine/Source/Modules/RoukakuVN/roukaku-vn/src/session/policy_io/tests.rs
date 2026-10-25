@@ -4,8 +4,9 @@ use std::{
     future::Future,
     pin::Pin,
     sync::{
+        Mutex,
         atomic::{AtomicUsize, Ordering},
-        mpsc, Mutex,
+        mpsc,
     },
     time::Duration,
 };
@@ -215,15 +216,20 @@ fn restore_interrupts_pending_io_rejects_late_completion_and_preserves_failed_ca
     session.restore(saved).unwrap();
     assert!(old_scope.is_cancelled());
     assert_eq!(host.drops.load(Ordering::SeqCst), 1);
-    assert!(evaluate(&mut session, "local text, status = roukaku.host.read_text('config', 'package:/policy/info.txt'); return text == nil and status == 'interrupted'"));
-    assert!(session
-        .engine
-        .world()
-        .snapshot()
-        .unwrap()
-        .awaits
-        .pending()
-        .is_empty());
+    assert!(evaluate(
+        &mut session,
+        "local text, status = roukaku.host.read_text('config', 'package:/policy/info.txt'); return text == nil and status == 'interrupted'"
+    ));
+    assert!(
+        session
+            .engine
+            .world()
+            .snapshot()
+            .unwrap()
+            .awaits
+            .pending()
+            .is_empty()
+    );
     let saved_again = session.save().unwrap();
     session.restore(saved_again).unwrap();
     assert_eq!(host.calls.load(Ordering::SeqCst), 1);
@@ -232,18 +238,22 @@ fn restore_interrupts_pending_io_rejects_late_completion_and_preserves_failed_ca
 #[test]
 fn capability_denial_and_failed_eval_do_not_dispatch_or_commit_requests() {
     let mut session = session();
-    assert!(session
-        .evaluate_policy(READ, PolicyExecutionBudget::default())
-        .unwrap_err()
-        .to_string()
-        .contains("HOST_IO_DENIED"));
+    assert!(
+        session
+            .evaluate_policy(READ, PolicyExecutionBudget::default())
+            .unwrap_err()
+            .to_string()
+            .contains("HOST_IO_DENIED")
+    );
     let (host, _started, _send) = bind(&mut session);
-    assert!(session
-        .evaluate_policy(
-            "roukaku.host.read_text('config', 'package:/policy/info.txt'); error('abort')",
-            PolicyExecutionBudget::default()
-        )
-        .is_err());
+    assert!(
+        session
+            .evaluate_policy(
+                "roukaku.host.read_text('config', 'package:/policy/info.txt'); error('abort')",
+                PolicyExecutionBudget::default()
+            )
+            .is_err()
+    );
     assert!(session.policy_io_snapshot().unwrap().requests.is_empty());
     assert_eq!(host.calls.load(Ordering::SeqCst), 0);
 }
@@ -261,14 +271,16 @@ fn explicit_cancel_drops_work_and_release_does_not_reuse_request_identity() {
     assert_eq!(host.drops.load(Ordering::SeqCst), 1);
     assert!(session.policy_io_snapshot().unwrap().requests.is_empty());
     assert_eq!(session.policy_io_snapshot().unwrap().next_id, 2);
-    assert!(session
-        .engine
-        .world()
-        .snapshot()
-        .unwrap()
-        .awaits
-        .pending()
-        .is_empty());
+    assert!(
+        session
+            .engine
+            .world()
+            .snapshot()
+            .unwrap()
+            .awaits
+            .pending()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -292,14 +304,19 @@ fn oversized_host_result_is_a_typed_failure_and_is_not_persisted() {
         session.policy_io_snapshot().unwrap().requests["config"].status,
         PolicyIoStatus::Failed(PolicyIoFailure::Limit)
     );
-    assert!(session
-        .policy_snapshot()
-        .unwrap()
-        .snapshot("text")
-        .is_none());
+    assert!(
+        session
+            .policy_snapshot()
+            .unwrap()
+            .snapshot("text")
+            .is_none()
+    );
     let save = session.save().unwrap();
     session.restore(save).unwrap();
-    assert!(evaluate(&mut session, "local text, status = roukaku.host.read_text('config', 'package:/policy/info.txt'); return text == nil and status == 'limit'"));
+    assert!(evaluate(
+        &mut session,
+        "local text, status = roukaku.host.read_text('config', 'package:/policy/info.txt'); return text == nil and status == 'limit'"
+    ));
 }
 
 #[test]
@@ -319,11 +336,13 @@ fn forged_policy_await_binding_does_not_replace_or_cancel_the_live_session() {
     component.payload =
         RuntimeComponentPayload::typed(POLICY_STATE_SCHEMA, SchemaVersion::default(), policy);
     let invalid = roukaku_runtime::write_runtime_save(snapshot, SaveRequest::default()).unwrap();
-    assert!(session
-        .restore(invalid)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_POLICY_RESTORE_AWAIT"));
+    assert!(
+        session
+            .restore(invalid)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_POLICY_RESTORE_AWAIT")
+    );
     assert!(!scope.is_cancelled());
     assert_eq!(host.drops.load(Ordering::SeqCst), 0);
     session.close();

@@ -7,9 +7,9 @@ use std::{
 };
 
 use kira::{
+    AudioManager, AudioManagerSettings, Capacities, Decibels, Panning, Tween,
     effect::panning_control::{PanningControlBuilder, PanningControlHandle},
     track::{MainTrackBuilder, TrackBuilder, TrackHandle},
-    AudioManager, AudioManagerSettings, Capacities, Decibels, Panning, Tween,
 };
 
 use crate::{

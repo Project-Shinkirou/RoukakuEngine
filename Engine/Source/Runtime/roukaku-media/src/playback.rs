@@ -61,25 +61,25 @@ impl MediaPlaybackSession {
                 return Err(playback_error(
                     "ROUKAKU_MEDIA_TRACK_DISABLED",
                     "audio EOS was submitted to a session without audio",
-                ))
+                ));
             }
             MediaTrackKind::Video if !next.config.has_video => {
                 return Err(playback_error(
                     "ROUKAKU_MEDIA_TRACK_DISABLED",
                     "video EOS was submitted to a session without video",
-                ))
+                ));
             }
             MediaTrackKind::Audio if next.audio_eos_us.is_some() => {
                 return Err(playback_error(
                     "ROUKAKU_MEDIA_DUPLICATE_EOS",
                     "audio EOS was submitted more than once",
-                ))
+                ));
             }
             MediaTrackKind::Video if next.video_eos_us.is_some() => {
                 return Err(playback_error(
                     "ROUKAKU_MEDIA_DUPLICATE_EOS",
                     "video EOS was submitted more than once",
-                ))
+                ));
             }
             MediaTrackKind::Audio => next.audio_eos_us = Some(final_pts_us),
             MediaTrackKind::Video => next.video_eos_us = Some(final_pts_us),

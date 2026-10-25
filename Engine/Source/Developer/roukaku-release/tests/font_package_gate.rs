@@ -1,7 +1,7 @@
 use roukaku_asset::VfsUri;
 use roukaku_core::Hash256;
 use roukaku_media::{
-    FontPackageEntry, FontPackageManifest, UnicodeRange, FONT_PACKAGE_MANIFEST_SCHEMA,
+    FONT_PACKAGE_MANIFEST_SCHEMA, FontPackageEntry, FontPackageManifest, UnicodeRange,
 };
 use roukaku_package::{PackageBuildRequest, PackageBuilder, SectionPayload};
 use roukaku_release::{CheckStatus, PackageValidateRequest, ReleaseValidator};

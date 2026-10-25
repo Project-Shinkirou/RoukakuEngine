@@ -316,7 +316,7 @@ impl NativeVnHostCommandSource {
                 unsupported => {
                     return Err(NativeVnHostError::Input(format!(
                         "ROUKAKU_PLAYER_UI_LOCAL_ACTION_UNSUPPORTED: action {unsupported} is not registered"
-                    )))
+                    )));
                 }
             };
             self.ui_controller_sessions
@@ -538,16 +538,16 @@ impl NativeVnHostCommandSource {
                 VnPlayerCommand::ReplayVoice { voice: voice_id }
             }
             VnUiAction::RequestSave { slot_id } => {
-                return self.queue_ui_save_request(slot_id, true)
+                return self.queue_ui_save_request(slot_id, true);
             }
             VnUiAction::RequestSaveConfirmed { slot_id } => {
-                return self.queue_ui_save_request(slot_id, true)
+                return self.queue_ui_save_request(slot_id, true);
             }
             VnUiAction::RequestLoad { slot_id } => {
-                return self.queue_ui_save_request(slot_id, false)
+                return self.queue_ui_save_request(slot_id, false);
             }
             VnUiAction::RequestDeleteSave { slot_id } => {
-                return self.queue_ui_delete_request(slot_id)
+                return self.queue_ui_delete_request(slot_id);
             }
             VnUiAction::StartReplay { replay_id } => VnPlayerCommand::StartReplay { replay_id },
             VnUiAction::PreviewGallery { item_id } => VnPlayerCommand::PreviewGallery { item_id },

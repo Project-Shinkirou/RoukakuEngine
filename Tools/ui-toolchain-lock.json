@@ -1,13 +1,13 @@
 {
   "schema": "roukaku.ui_toolchain_lock.v1",
   "luau": {
-    "version": "0.722",
+    "version": "0.744",
     "license": "MIT",
     "targets": {
       "windows-x86_64": {
-        "url": "https://github.com/luau-lang/luau/releases/download/0.722/luau-windows.zip",
-        "archive_sha256": "sha256:e4959151b92ed4f8d822588dea0f3eb72e4b96d5568b2eea32a0a8452488c82b",
-        "analyzer_sha256": "sha256:ab03367ecb61409ddec2914f6dbc8857af1b79ce0b54af228b3d6b7660e1d778",
+        "url": "https://github.com/luau-lang/luau/releases/download/0.744/luau-windows.zip",
+        "archive_sha256": "sha256:fde3e22c557aac6afe20a34e8050b7d8c290fa42638c04274a307ed5d0ef0db8",
+        "analyzer_sha256": "sha256:3e7a2814a323aaa231a29fad865cca613f1d52899f7d0551434b2f7cbd1ec858",
         "analyzer_path": "luau-analyze.exe"
       }
     }

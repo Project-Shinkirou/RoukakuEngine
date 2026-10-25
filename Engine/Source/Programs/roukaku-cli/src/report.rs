@@ -1,7 +1,7 @@
 use std::{env, fs};
 
 use roukaku_observability::{
-    init_host, ConsoleFormat, CrashReportingMode, HostObservabilityConfig, ObservabilityGuard,
+    ConsoleFormat, CrashReportingMode, HostObservabilityConfig, ObservabilityGuard, init_host,
 };
 use roukaku_platform::{PlatformCapabilityReport, PlatformHostConformanceReport, PlatformId};
 use roukaku_player_core::PlayerAutomationReport;

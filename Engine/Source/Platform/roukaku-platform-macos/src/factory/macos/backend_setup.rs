@@ -16,8 +16,8 @@ pub struct MacosHostRunner {
 
 #[cfg(target_os = "macos")]
 impl MacosHostRunner {
-    pub(in super::super) fn new(
-    ) -> Result<(Self, super::super::MacosPlatformFactory), PlatformError> {
+    pub(in super::super) fn new()
+    -> Result<(Self, super::super::MacosPlatformFactory), PlatformError> {
         let pending = Arc::new(std::sync::Mutex::new(None));
         let event_loop = EventLoop::builder().build().map_err(|_| {
             host_error(

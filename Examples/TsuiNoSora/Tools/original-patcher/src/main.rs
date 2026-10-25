@@ -3,7 +3,7 @@ use std::{path::PathBuf, process::ExitCode};
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 use tsuinosora_original_patcher::{
-    apply, inspect_source, launch_windowed, verify, ApplyOptions, PatchError, WINDOW_LAUNCHER_NAME,
+    ApplyOptions, PatchError, WINDOW_LAUNCHER_NAME, apply, inspect_source, launch_windowed, verify,
 };
 
 #[derive(Debug, Parser)]

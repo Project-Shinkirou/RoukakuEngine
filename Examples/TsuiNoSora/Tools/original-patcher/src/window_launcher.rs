@@ -1,9 +1,9 @@
 use std::{fs, path::Path};
 
 use crate::{
+    WINDOW_LAUNCHER_NAME, WINDOWED_PROJECTOR_NAME,
     error::{PatchError, PatchResult},
     filesystem::{hash_file, join_relative},
-    WINDOWED_PROJECTOR_NAME, WINDOW_LAUNCHER_NAME,
 };
 
 pub fn install(root: &Path) -> PatchResult<()> {
@@ -119,13 +119,13 @@ mod windows {
     use windows_sys::Win32::{
         Foundation::{HWND, LPARAM, RECT},
         Graphics::Gdi::{
-            GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+            GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow,
         },
         UI::WindowsAndMessaging::{
-            EnumWindows, GetClientRect, GetWindowLongPtrW, GetWindowThreadProcessId,
-            IsWindowVisible, SetWindowLongPtrW, SetWindowPos, GWL_STYLE, SET_WINDOW_POS_FLAGS,
-            SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOZORDER, WS_BORDER, WS_CAPTION, WS_MAXIMIZEBOX,
-            WS_MINIMIZEBOX, WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
+            EnumWindows, GWL_STYLE, GetClientRect, GetWindowLongPtrW, GetWindowThreadProcessId,
+            IsWindowVisible, SET_WINDOW_POS_FLAGS, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOZORDER,
+            SetWindowLongPtrW, SetWindowPos, WS_BORDER, WS_CAPTION, WS_MAXIMIZEBOX, WS_MINIMIZEBOX,
+            WS_POPUP, WS_SYSMENU, WS_THICKFRAME,
         },
     };
 
@@ -179,19 +179,21 @@ mod windows {
     }
 
     unsafe extern "system" fn collect_window(hwnd: HWND, parameter: LPARAM) -> i32 {
-        let search = &mut *(parameter as *mut WindowSearch);
-        let mut process_id = 0;
-        GetWindowThreadProcessId(hwnd, &mut process_id);
-        let mut client = RECT::default();
-        if process_id == search.process_id
-            && IsWindowVisible(hwnd) != 0
-            && GetClientRect(hwnd, &mut client) != 0
-            && client.right - client.left == STAGE_WIDTH
-            && client.bottom - client.top == STAGE_HEIGHT
-        {
-            search.windows.push(hwnd);
+        unsafe {
+            let search = &mut *(parameter as *mut WindowSearch);
+            let mut process_id = 0;
+            GetWindowThreadProcessId(hwnd, &mut process_id);
+            let mut client = RECT::default();
+            if process_id == search.process_id
+                && IsWindowVisible(hwnd) != 0
+                && GetClientRect(hwnd, &mut client) != 0
+                && client.right - client.left == STAGE_WIDTH
+                && client.bottom - client.top == STAGE_HEIGHT
+            {
+                search.windows.push(hwnd);
+            }
+            1
         }
-        1
     }
 
     fn find_stage_windows(process_id: u32) -> Vec<HWND> {

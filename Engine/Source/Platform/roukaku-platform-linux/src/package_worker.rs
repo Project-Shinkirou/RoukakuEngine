@@ -70,8 +70,9 @@ fn cancelled_error() -> PlatformError {
 mod tests {
     use super::*;
     use std::sync::{
+        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
+        mpsc,
     };
     use std::time::Duration;
 

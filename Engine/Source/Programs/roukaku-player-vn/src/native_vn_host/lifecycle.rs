@@ -14,11 +14,11 @@ impl NativeVnHostCommandSource {
         let completions = self.image_prefetcher.shutdown()?;
         self.image_prefetch_inflight.clear();
         for completion in completions {
-            if self.image_prefetcher.is_current(&completion.scope) {
-                if let Err(error) = completion.result {
-                    self.image_prefetch_failure =
-                        Some(format!("ROUKAKU_PLAYER_IMAGE_PREFETCH_FAILED: {error}"));
-                }
+            if self.image_prefetcher.is_current(&completion.scope)
+                && let Err(error) = completion.result
+            {
+                self.image_prefetch_failure =
+                    Some(format!("ROUKAKU_PLAYER_IMAGE_PREFETCH_FAILED: {error}"));
             }
         }
         self.ui_text_measurer.begin_frame()?;

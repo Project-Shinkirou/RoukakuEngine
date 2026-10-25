@@ -1,20 +1,20 @@
 use roukaku_asset::VfsUri;
 use roukaku_core::Hash256;
 use roukaku_media::{
-    FontPackageEntry, FontPackageManifest, UnicodeRange, FONT_PACKAGE_MANIFEST_SCHEMA,
+    FONT_PACKAGE_MANIFEST_SCHEMA, FontPackageEntry, FontPackageManifest, UnicodeRange,
 };
 use roukaku_package::{PackageBuildRequest, PackageBuilder, PackageReader, SectionPayload};
 use roukaku_player_core::PlayerHostResourceId;
 use roukaku_player_vn::NativeVnHostCommandSource;
 use roukaku_plugin_abi::{
-    LoadPhase, PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
-    ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
-    PROVIDER_POLICY_SCHEMA,
+    LoadPhase, PLUGIN_EXTENSION_REGISTRY_SCHEMA, PROVIDER_POLICY_SCHEMA,
+    PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
+    ProviderExtensionRecord, ProviderPolicy,
 };
 use roukaku_vn_core::{
-    compile_roukaku_project, CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig,
+    CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig, compile_roukaku_project,
 };
-use roukaku_vn_package::{package_sections_for_project, PLAYER_LOCALE_CONFIG_SCHEMA};
+use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
 
 const TEST_UI: &str = r#"
 ui_policy profile:classic save_slots:"slot.quick,slot.01" quick_slot:slot.quick allowed_pages:"quick_panel,title,save,load,config,backlog,gallery,replay,voice_replay,route_chart,localization_preview" reading_modes:"manual" audio_toggle:true save_completion:stay custom_actions:"" #@id ui.policy.test.classic

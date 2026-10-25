@@ -1,4 +1,4 @@
-use roukaku_player::{MacosCgEventHost, MACOS_CGEVENT_MOUSE};
+use roukaku_player::{MACOS_CGEVENT_MOUSE, MacosCgEventHost};
 use roukaku_player_core::{
     PlayerAudioMeterEvidence, PlayerAutomationScript, PlayerAutomationStatus, PlayerAutomationStep,
     PlayerInputConsumptionEvidence, PlayerInputEvent, PlayerInputTranscript, PlayerPlatform,

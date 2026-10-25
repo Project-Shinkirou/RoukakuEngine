@@ -3,8 +3,8 @@ use std::{
     fmt,
     future::Future,
     sync::{
-        atomic::{AtomicU8, Ordering},
         Arc,
+        atomic::{AtomicU8, Ordering},
     },
 };
 
@@ -189,7 +189,9 @@ impl TaskRuntime {
         scope: &TaskScope,
     ) -> Result<AwaitCompletionHandle, crate::RuntimeError> {
         if !scope.belongs_to(&self.root) || scope.is_cancelled() {
-            return Err(crate::RuntimeError::message("ROUKAKU_TASK_SCOPE_INVALID: scope is cancelled or belongs to another World generation"));
+            return Err(crate::RuntimeError::message(
+                "ROUKAKU_TASK_SCOPE_INVALID: scope is cancelled or belongs to another World generation",
+            ));
         }
         if let Some(handle) = self.pending.get(&token) {
             if handle.scope != *scope {

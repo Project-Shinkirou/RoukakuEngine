@@ -1,9 +1,9 @@
 use super::{
+    ATLAS_PADDING, ATLAS_SIDE, AtlasAllocatorState, AtlasResource, AtlasResourceView,
+    MAX_ATLAS_UPLOAD_BYTES, MAX_ATLAS_WIDTH, ResourceMutationJournal, RetainedTexture,
     allocate_pending_atlas_slot, pack_atlas, pack_atlas_at_extent, prepare_upload_pixels,
     release_pending_atlas_slot, updated_retained_texture, vertex_upload_required,
-    write_padded_resource, AtlasAllocatorState, AtlasResource, AtlasResourceView,
-    ResourceMutationJournal, RetainedTexture, ATLAS_PADDING, ATLAS_SIDE, MAX_ATLAS_UPLOAD_BYTES,
-    MAX_ATLAS_WIDTH,
+    write_padded_resource,
 };
 use roukaku_media_core::TextureFrame;
 use roukaku_platform::PlatformErrorCode;
@@ -51,9 +51,11 @@ fn rectangular_growth_packs_wide_stage_resources_without_raising_resource_budget
     let mutations = ResourceMutationJournal::new();
     let view = AtlasResourceView::new(&resources, &mutations);
 
-    assert!(pack_atlas_at_extent(&view, ATLAS_SIDE, ATLAS_SIDE)
-        .expect("square packing must be evaluated")
-        .is_none());
+    assert!(
+        pack_atlas_at_extent(&view, ATLAS_SIDE, ATLAS_SIDE)
+            .expect("square packing must be evaluated")
+            .is_none()
+    );
     let packed = pack_atlas_at_extent(&view, MAX_ATLAS_WIDTH, ATLAS_SIDE)
         .expect("rectangular packing must be evaluated")
         .expect("wide stage resources must fit the bounded rectangular atlas");

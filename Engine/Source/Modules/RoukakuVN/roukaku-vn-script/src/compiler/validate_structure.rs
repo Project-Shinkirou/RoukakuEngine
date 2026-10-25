@@ -124,10 +124,10 @@ impl CompileBuilder {
                 story_id: story_id.clone(),
                 scenes: Vec::new(),
             });
-            if let Some(story) = self.stories.iter_mut().find(|story| story.id == story_id) {
-                if !story.states.contains(&id) {
-                    story.states.push(id.clone());
-                }
+            if let Some(story) = self.stories.iter_mut().find(|story| story.id == story_id)
+                && !story.states.contains(&id)
+            {
+                story.states.push(id.clone());
             }
             self.current_state = Some(id);
         }

@@ -6,8 +6,8 @@ use std::{
     path::{Component, Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     thread::{self, JoinHandle},
     time::{Duration, Instant},
@@ -15,14 +15,14 @@ use std::{
 
 use base64::Engine;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
-use tungstenite::{stream::MaybeTlsStream, Message, WebSocket};
+use tungstenite::{Message, WebSocket, stream::MaybeTlsStream};
 
 use crate::{
-    sha256_bytes, BundleContext, LiveInputRun, PlayerAutomationError,
-    PlayerInputConsumptionEvidence, PlayerInputEvent, PlayerRuntimeRouteEvidence,
-    PlayerVisualRegionEvidence, ScenarioInputAction, WEB_CDP_KEYBOARD,
+    BundleContext, LiveInputRun, PlayerAutomationError, PlayerInputConsumptionEvidence,
+    PlayerInputEvent, PlayerRuntimeRouteEvidence, PlayerVisualRegionEvidence, ScenarioInputAction,
+    WEB_CDP_KEYBOARD, sha256_bytes,
 };
 
 pub use roukaku_player_core::WEB_PLAYER_LIVE_EVIDENCE_SCHEMA;
@@ -31,12 +31,12 @@ pub use roukaku_player_core::WEB_PLAYER_LIVE_EVIDENCE_SCHEMA;
 mod tests;
 
 mod browser_contract;
+pub use browser_contract::WEB_PLAYER_EVIDENCE_PREFIX;
 pub use browser_contract::WebBrowserSession;
 pub use browser_contract::WebBrowserSessionRequest;
 pub use browser_contract::WebCdpRuntimeEvidence;
 pub(crate) use browser_contract::WebLiveInputRun;
-pub use browser_contract::WEB_PLAYER_EVIDENCE_PREFIX;
 mod run_web_live_input;
-pub(crate) use run_web_live_input::run_web_live_input;
 pub use run_web_live_input::WebCdpSession;
+pub(crate) use run_web_live_input::run_web_live_input;
 mod web_cdp_session;

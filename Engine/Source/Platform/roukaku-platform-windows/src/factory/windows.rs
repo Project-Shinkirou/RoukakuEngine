@@ -1,8 +1,9 @@
 use std::{
     collections::BTreeMap,
     sync::{
+        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc as std_mpsc, Arc,
+        mpsc as std_mpsc,
     },
     thread,
     time::{Duration, Instant},
@@ -13,13 +14,12 @@ use crate::accessibility::WindowsAccessibilityBridge;
 use roukaku_media::{DecodeOutput as MediaDecodeOutput, DecodeProvider};
 
 use roukaku_platform::{
-    host_channel_with_command_wake, AudioDeviceFormat, AudioOutputHandle, AudioOutputRequest,
-    AudioWakeRegistration, CapturedFrame, DecodeKind, DecodeOutput, DecodeSessionHandle,
-    HostCommand, HostLaunchProfile, InputState, OpenedAudioOutput, PackageSourceHandle,
-    PackageSourceRequest, PlatformBackendChannels, PlatformCommandWakeRegistration,
-    PlatformDecodeRequest, PlatformError, PlatformErrorCode, PlatformEvent, PlatformEventKind,
-    PlatformHostProfile, PlatformHostSession, PointerButton, SaveTransactionHandle, SurfaceHandle,
-    TouchPhase, WindowHandle,
+    AudioDeviceFormat, AudioOutputHandle, AudioOutputRequest, AudioWakeRegistration, CapturedFrame,
+    DecodeKind, DecodeOutput, DecodeSessionHandle, HostCommand, HostLaunchProfile, InputState,
+    OpenedAudioOutput, PackageSourceHandle, PackageSourceRequest, PlatformBackendChannels,
+    PlatformCommandWakeRegistration, PlatformDecodeRequest, PlatformError, PlatformErrorCode,
+    PlatformEvent, PlatformEventKind, PlatformHostProfile, PlatformHostSession, PointerButton,
+    SaveTransactionHandle, SurfaceHandle, TouchPhase, WindowHandle, host_channel_with_command_wake,
 };
 
 use roukaku_platform_common::{
@@ -43,22 +43,22 @@ use winit::{
 };
 
 mod start;
-pub use start::start;
-pub use start::start_services;
 use start::PackageHostConfig;
 use start::WindowsHostApp;
+pub use start::start;
+pub use start::start_services;
 mod new;
 
 mod process_commands;
 
 mod start_https_package_open;
-use start_https_package_open::capture_surface;
-use start_https_package_open::create_surface;
-use start_https_package_open::windows_gamepad_worker;
 use start_https_package_open::AudioCompletion;
 use start_https_package_open::PackageCompletion;
 use start_https_package_open::PackageSourceResource;
 use start_https_package_open::SurfaceResource;
+use start_https_package_open::capture_surface;
+use start_https_package_open::create_surface;
+use start_https_package_open::windows_gamepad_worker;
 mod audio_stream;
 use audio_stream::AudioResource;
 use audio_stream::DecodeResource;

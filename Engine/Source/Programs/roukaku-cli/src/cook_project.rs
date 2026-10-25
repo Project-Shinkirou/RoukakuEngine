@@ -6,7 +6,7 @@ use std::{
 use roukaku_cook::CookCancellationToken;
 use roukaku_core::Hash256;
 use roukaku_package::{CookSummaryManifest, SectionCodec};
-use roukaku_target::{validate_manifest, TargetManifest};
+use roukaku_target::{TargetManifest, validate_manifest};
 
 use super::*;
 

@@ -94,9 +94,11 @@ fn audio_wake_waits_for_an_edge_without_periodic_polling() {
 fn audio_wake_timeout_uses_an_absolute_deadline() {
     let registration = AudioWakeRegistration::default();
     let start = std::time::Instant::now();
-    assert!(registration
-        .wait_timeout(0, Duration::from_millis(10))
-        .is_none());
+    assert!(
+        registration
+            .wait_timeout(0, Duration::from_millis(10))
+            .is_none()
+    );
     assert!(start.elapsed() < Duration::from_millis(250));
 
     let registration = Arc::new(registration);

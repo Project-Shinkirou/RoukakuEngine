@@ -4,18 +4,19 @@ use std::{
     collections::BTreeMap,
     mem::ManuallyDrop,
     sync::{
+        Arc, Mutex,
         atomic::{AtomicU64, Ordering},
-        mpsc, Arc, Mutex,
+        mpsc,
     },
 };
 
 use accesskit::{
     Action, ActionData, ActionHandler, ActionRequest, ActivationHandler, Node, NodeId, Rect, Role,
-    Toggled, Tree, TreeId, TreeUpdate,
+    Toggled, TreeId, TreeInfo, TreeUpdate,
 };
 use accesskit_android::{
-    jni::{objects::JObject, JavaVM},
     InjectingAdapter,
+    jni::{JavaVM, objects::JObject},
 };
 use android_activity::AndroidApp;
 use roukaku_platform::{PlatformError, PlatformErrorCode, WindowHandle};
@@ -249,7 +250,7 @@ fn tree_update(
         }
         nodes.push((id, node));
     }
-    let mut tree = Tree::new(root);
+    let mut tree = TreeInfo::new(root);
     tree.toolkit_name = Some("Roukaku UI".to_string());
     tree.toolkit_version = Some("1".to_string());
     Ok((

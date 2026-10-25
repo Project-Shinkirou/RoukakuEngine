@@ -97,13 +97,16 @@ impl Renderer2D for HeadlessRenderer {
                     ..
                 } => {
                     for instance in glyphs.iter() {
-                        let glyph =
-                            capture_glyph(&self.glyphs, &glyph_changes, &instance.resource_id)
-                                .ok_or_else(|| {
-                                    MediaError::message(
+                        let glyph = capture_glyph(
+                            &self.glyphs,
+                            &glyph_changes,
+                            &instance.resource_id,
+                        )
+                        .ok_or_else(|| {
+                            MediaError::message(
                                 "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: glyph resource is not uploaded",
                             )
-                                })?;
+                        })?;
                         draw_glyph(
                             &mut bytes,
                             width,
@@ -295,7 +298,9 @@ impl Renderer2D for HeadlessRenderer {
                     )?;
                 }
                 DrawCommand::PushPixelMask { .. } | DrawCommand::PopPixelMask => {
-                    return Err(MediaError::message("ROUKAKU_MEDIA_PIXEL_MASK_GPU_REQUIRED: CPU renderer does not support pixel masks"));
+                    return Err(MediaError::message(
+                        "ROUKAKU_MEDIA_PIXEL_MASK_GPU_REQUIRED: CPU renderer does not support pixel masks",
+                    ));
                 }
                 DrawCommand::MaskReveal { .. } => {
                     return Err(MediaError::message(

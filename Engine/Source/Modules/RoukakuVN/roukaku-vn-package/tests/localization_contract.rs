@@ -1,7 +1,7 @@
 use roukaku_package::{PackageBuildRequest, PackageBuilder, PackageReader, SectionPayload};
 use roukaku_vn_package::{
-    load_localization, load_player_locale_config, PLAYER_LOCALE_CONFIG_SCHEMA,
-    VN_LOCALIZATION_TABLE_SCHEMA,
+    PLAYER_LOCALE_CONFIG_SCHEMA, VN_LOCALIZATION_TABLE_SCHEMA, load_localization,
+    load_player_locale_config,
 };
 
 fn package(localization: Vec<u8>, config: Vec<u8>) -> Vec<u8> {
@@ -53,18 +53,22 @@ fn localization_duplicate_keys_and_locale_order_are_blocking() {
         br#"{"schema":"roukaku.player_locale_config.v1","default_locale":"en","available_locales":["en"]}"#.to_vec(),
     );
     let reader = PackageReader::open(&duplicate).unwrap();
-    assert!(load_player_locale_config(&reader)
-        .unwrap_err()
-        .to_string()
-        .contains("duplicate localization key"));
+    assert!(
+        load_player_locale_config(&reader)
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate localization key")
+    );
 
     let unordered = package(
         br#"{"schema":"roukaku.vn.localization_table.v1","locale":"en","strings":{"line.one":"A"}}"#.to_vec(),
         br#"{"schema":"roukaku.player_locale_config.v1","default_locale":"en","available_locales":["zh-Hans","en"]}"#.to_vec(),
     );
     let reader = PackageReader::open(&unordered).unwrap();
-    assert!(load_player_locale_config(&reader)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_LOCALE_ORDER"));
+    assert!(
+        load_player_locale_config(&reader)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_LOCALE_ORDER")
+    );
 }

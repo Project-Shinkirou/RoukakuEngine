@@ -212,10 +212,12 @@ pub(super) fn release_report_covers_pass_warning_and_blocked_checks() {
         .find(|check| check.id == "package.cook_graph")
         .unwrap();
     assert_eq!(cook_graph.status, CheckStatus::Pass);
-    assert!(cook_graph
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "artifact_count" && entry.value == "1"));
+    assert!(
+        cook_graph
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "artifact_count" && entry.value == "1")
+    );
     assert!(report.checks.iter().any(|check| {
         check.domain == ReleaseDomain::Media && check.status == CheckStatus::Warning
     }));
@@ -228,14 +230,18 @@ pub(super) fn release_report_covers_pass_warning_and_blocked_checks() {
     assert!(report.checks.iter().any(|check| {
         check.id == "plugin.dependency_graph" && check.status == CheckStatus::Pass
     }));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| { check.id == "package.binding" && check.status == CheckStatus::Pass }));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| { check.id == "vn.runtime" && check.status == CheckStatus::Blocked }));
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| { check.id == "package.binding" && check.status == CheckStatus::Pass })
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| { check.id == "vn.runtime" && check.status == CheckStatus::Blocked })
+    );
 
     let blocked = ReleaseValidator
         .validate_package(PackageValidateRequest {
@@ -248,10 +254,12 @@ pub(super) fn release_report_covers_pass_warning_and_blocked_checks() {
         })
         .unwrap();
     assert_eq!(blocked.status, CheckStatus::Blocked);
-    assert!(blocked
-        .checks
-        .iter()
-        .any(|check| check.id == "package.integrity" && check.status == CheckStatus::Blocked));
+    assert!(
+        blocked
+            .checks
+            .iter()
+            .any(|check| check.id == "package.integrity" && check.status == CheckStatus::Blocked)
+    );
 }
 
 pub(super) fn required_ffmpeg_check() -> roukaku_release::ReleaseCheckRecord {
@@ -297,10 +305,12 @@ pub(super) fn required_ffmpeg_gate_blocks_when_feature_is_absent() {
 pub(super) fn required_ffmpeg_gate_passes_only_after_native_probe() {
     let check = required_ffmpeg_check();
     assert_eq!(check.status, CheckStatus::Pass);
-    assert!(check
-        .evidence
-        .iter()
-        .any(|item| item.key == "provider_id" && item.value == "roukaku.decode.ffmpeg"));
+    assert!(
+        check
+            .evidence
+            .iter()
+            .any(|item| item.key == "provider_id" && item.value == "roukaku.decode.ffmpeg")
+    );
 }
 
 #[test]
@@ -324,10 +334,12 @@ pub(super) fn release_gate_accepts_player_full_playable_only_with_matching_live_
     let base = ReleaseValidator
         .validate_package(package_request(package_bytes.clone()))
         .unwrap();
-    assert!(!base
-        .checks
-        .iter()
-        .any(|check| check.id == "player.full_playable"));
+    assert!(
+        !base
+            .checks
+            .iter()
+            .any(|check| check.id == "player.full_playable")
+    );
 
     let report = ReleaseValidator
         .validate_package_with_player_report(

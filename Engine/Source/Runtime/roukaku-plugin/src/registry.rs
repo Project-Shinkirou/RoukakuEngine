@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 use tracing::debug;
 
 use roukaku_plugin_abi::{
-    ExtensionConflict, LoadPhase, PluginDependency, PluginDependencyGraphSnapshot,
-    PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
-    ProviderExtensionRecord, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
+    ExtensionConflict, LoadPhase, PLUGIN_EXTENSION_REGISTRY_SCHEMA, PluginDependency,
+    PluginDependencyGraphSnapshot, PluginExtensionRegistrySnapshot, ProviderBinding,
+    ProviderBindingContext, ProviderExtensionRecord,
 };
 
 #[derive(

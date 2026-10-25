@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::{PatchError, PatchResult},
-    filesystem::{hash_file, join_relative, FileDigest},
+    filesystem::{FileDigest, hash_file, join_relative},
 };
 
 pub const EDITION_ID: &str = "tsuinosora.windows.1999.verified.v1";

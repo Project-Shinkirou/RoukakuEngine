@@ -2,12 +2,12 @@ use std::{env, path::PathBuf, thread, time::Duration};
 
 #[cfg(target_os = "windows")]
 use roukaku_core::Hash256;
-use roukaku_observability::{init_host, ConsoleFormat, HostObservabilityConfig, HostRole};
 #[cfg(target_os = "windows")]
 use roukaku_observability::{
-    install_windows_crash_reporter, CrashArtifactRef, CrashBundleManifestV1, CrashReportingMode,
-    WindowsCrashReporterConfig, CRASH_BUNDLE_SCHEMA,
+    CRASH_BUNDLE_SCHEMA, CrashArtifactRef, CrashBundleManifestV1, CrashReportingMode,
+    WindowsCrashReporterConfig, install_windows_crash_reporter,
 };
+use roukaku_observability::{ConsoleFormat, HostObservabilityConfig, HostRole, init_host};
 #[cfg(target_os = "windows")]
 use std::fs;
 
@@ -215,9 +215,9 @@ fn write_dump_and_manifest(
         Foundation::{CloseHandle, HANDLE},
         System::{
             Diagnostics::Debug::{
-                MiniDumpFilterMemory, MiniDumpFilterModulePaths, MiniDumpNormal,
-                MiniDumpWithThreadInfo, MiniDumpWithUnloadedModules, MiniDumpWithoutOptionalData,
-                MiniDumpWriteDump, MINIDUMP_EXCEPTION_INFORMATION,
+                MINIDUMP_EXCEPTION_INFORMATION, MiniDumpFilterMemory, MiniDumpFilterModulePaths,
+                MiniDumpNormal, MiniDumpWithThreadInfo, MiniDumpWithUnloadedModules,
+                MiniDumpWithoutOptionalData, MiniDumpWriteDump,
             },
             Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
         },
@@ -334,18 +334,18 @@ fn read_log_tail(log_file: Option<&std::path::Path>) -> Result<Vec<u8>, std::io:
 fn watch_process(config: WatchConfig) -> Result<(), ReporterError> {
     use std::{mem::size_of, ptr};
     use windows::{
-        core::HSTRING,
         Win32::{
             Foundation::WAIT_OBJECT_0,
             System::{
                 Diagnostics::Debug::EXCEPTION_POINTERS,
-                Memory::{MapViewOfFile, OpenFileMappingW, FILE_MAP_ALL_ACCESS},
+                Memory::{FILE_MAP_ALL_ACCESS, MapViewOfFile, OpenFileMappingW},
                 Threading::{
-                    OpenEventW, SetEvent, WaitForSingleObject, INFINITE,
-                    SYNCHRONIZATION_ACCESS_RIGHTS,
+                    INFINITE, OpenEventW, SYNCHRONIZATION_ACCESS_RIGHTS, SetEvent,
+                    WaitForSingleObject,
                 },
             },
         },
+        core::HSTRING,
     };
 
     #[repr(C)]

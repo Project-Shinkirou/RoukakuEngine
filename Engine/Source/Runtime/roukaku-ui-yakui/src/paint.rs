@@ -8,8 +8,8 @@ use roukaku_ui_core::{
     UiTextureFormat, UiTextureId, UiTextureRelease, UiTextureUpload, UiValidationError, UiVertex,
     UiViewport, ValidateUi,
 };
-use yakui_core::paint::{PaintDom, Pipeline, TextureChange, TextureFormat};
 use yakui_core::TextureId as YakuiTextureId;
+use yakui_core::paint::{PaintDom, Pipeline, TextureChange, TextureFormat};
 
 #[derive(Debug, Clone, Copy)]
 struct ManagedTextureBinding {

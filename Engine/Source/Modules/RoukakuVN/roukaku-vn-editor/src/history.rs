@@ -1,4 +1,4 @@
-use crate::{document::MAX_DOCUMENT_BYTES, EditError, TextEdit};
+use crate::{EditError, TextEdit, document::MAX_DOCUMENT_BYTES};
 use std::borrow::Cow;
 
 pub(crate) struct PreparedEdit {

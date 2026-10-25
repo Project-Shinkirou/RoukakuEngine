@@ -1,5 +1,5 @@
 use roukaku_core::{Hash256, PerformanceBudget};
-use roukaku_platform::{validate_headless_performance_profile, HeadlessHostProfile};
+use roukaku_platform::{HeadlessHostProfile, validate_headless_performance_profile};
 use roukaku_platform_common::WgpuOffscreenRenderer;
 
 use super::*;
@@ -94,14 +94,18 @@ fn product_budget_uses_product_frame_metrics_without_synthetic_overhead_samples(
     )
     .unwrap();
     let budget: PerformanceBudget = read_json(&budget_path, "BUDGET").unwrap();
-    assert!(budget
-        .metrics
-        .iter()
-        .all(|metric| !metric.id.starts_with("profiler.")));
-    assert!(budget
-        .metrics
-        .iter()
-        .all(|metric| metric.min_samples == 445));
+    assert!(
+        budget
+            .metrics
+            .iter()
+            .all(|metric| !metric.id.starts_with("profiler."))
+    );
+    assert!(
+        budget
+            .metrics
+            .iter()
+            .all(|metric| metric.min_samples == 445)
+    );
 }
 
 #[test]

@@ -40,7 +40,7 @@ pub(super) fn compile_timeline(line: &ParsedLine) -> Result<StageCommand, VnErro
                         "join",
                         value,
                         "fire_and_forget,block,replace_target",
-                    ))
+                    ));
                 }
             };
             let fence = optional_symbol(line, "fence")?;
@@ -63,7 +63,7 @@ pub(super) fn compile_timeline(line: &ParsedLine) -> Result<StageCommand, VnErro
                                     "easing",
                                     value,
                                     "linear,ease_in,ease_out,ease_in_out",
-                                ))
+                                ));
                             }
                         },
                         target: symbol(line, "target")?,

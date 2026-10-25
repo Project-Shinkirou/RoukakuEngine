@@ -1,11 +1,11 @@
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc,
+    atomic::{AtomicBool, Ordering},
 };
 
 use roukaku_platform::{
-    host_channel, AudioDeviceFormat, AudioOutputHandle, AudioOutputLane, HostCommand,
-    OpenedAudioOutput, PlatformError, PlatformErrorCode, PlatformHostProfile,
+    AudioDeviceFormat, AudioOutputHandle, AudioOutputLane, HostCommand, OpenedAudioOutput,
+    PlatformError, PlatformErrorCode, PlatformHostProfile, host_channel,
 };
 use roukaku_player_core::{PlatformCommandSink, PlayerHostCommandExecutor};
 use roukaku_player_vn::NativeVnProductAudioHost;
@@ -129,12 +129,14 @@ async fn resuming_open_uses_original_response_and_failed_close_remains_retryable
         .unwrap_err();
     assert!(error.to_string().contains("FORMAT_DRIFT"));
     assert!(dropped.load(Ordering::Acquire));
-    assert!(audio
-        .ensure_open(&mut source, &mut executor)
-        .await
-        .unwrap_err()
-        .to_string()
-        .contains("REQUIRES_CLEANUP"));
+    assert!(
+        audio
+            .ensure_open(&mut source, &mut executor)
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("REQUIRES_CLEANUP")
+    );
     for attempt in 0..2 {
         let shutdown = audio.shutdown(&mut source, &mut executor);
         tokio::pin!(shutdown);

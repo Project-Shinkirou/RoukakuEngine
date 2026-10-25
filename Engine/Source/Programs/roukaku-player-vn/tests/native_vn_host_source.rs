@@ -12,15 +12,15 @@ use roukaku_package::PackageReader;
 use roukaku_player_core::{PlayerHostCommand, PlayerHostResourceId};
 
 use roukaku_player_vn::{
-    NativeVnAudioOutput, NativeVnHostCommandSource, NativeVnRuntimeExecution,
-    DEFAULT_NATIVE_VN_GPU_TEXTURE_CACHE_BYTES,
+    DEFAULT_NATIVE_VN_GPU_TEXTURE_CACHE_BYTES, NativeVnAudioOutput, NativeVnHostCommandSource,
+    NativeVnRuntimeExecution,
 };
 
 use roukaku_ui_core::{
     UiButtonState, UiInputEventKind, UiInsets, UiPoint, UiPointerButton, UiViewport, ValidateUi,
 };
 
-use roukaku_vn_core::{compile_roukaku_project, RoukakuSource, VnRunConfig};
+use roukaku_vn_core::{RoukakuSource, VnRunConfig, compile_roukaku_project};
 
 use roukaku_vn_package::package_sections_for_project;
 
@@ -32,12 +32,12 @@ mod policy_loading;
 
 #[path = "native_vn_host_source/fixtures.rs"]
 mod fixtures;
+use fixtures::STORY;
 use fixtures::advance;
 use fixtures::prepare_test_save_metadata;
 use fixtures::product_package;
 use fixtures::product_package_for;
 use fixtures::source_for;
-use fixtures::STORY;
 #[path = "native_vn_host_source/launch_contract.rs"]
 mod launch_contract;
 #[cfg(all(target_os = "windows", feature = "platform-test-driver"))]

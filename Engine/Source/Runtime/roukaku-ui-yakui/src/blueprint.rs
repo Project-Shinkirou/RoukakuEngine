@@ -7,10 +7,10 @@ use unicode_segmentation::UnicodeSegmentation;
 use roukaku_media_core::TextureFrame;
 
 use roukaku_ui_core::{
-    UiActionEnvelope, UiBindingRoot, UiBlueprintBundle, UiBlueprintFrameModel, UiEventBinding,
-    UiFrameRequest, UiInputEventKind, UiPoint, UiRect, UiSemanticAction, UiSemanticNode,
-    UiSemanticRole, UiSemanticSnapshot, UiThemeValue, UiValidationError, UiValue, UiValueExpr,
-    UiViewBlueprint, ValidateUi, MAX_TEXTURE_BYTES,
+    MAX_TEXTURE_BYTES, UiActionEnvelope, UiBindingRoot, UiBlueprintBundle, UiBlueprintFrameModel,
+    UiEventBinding, UiFrameRequest, UiInputEventKind, UiPoint, UiRect, UiSemanticAction,
+    UiSemanticNode, UiSemanticRole, UiSemanticSnapshot, UiThemeValue, UiValidationError, UiValue,
+    UiValueExpr, UiViewBlueprint, ValidateUi,
 };
 
 use yakui_core::geometry::{Color, UVec2, Vec2};
@@ -31,9 +31,9 @@ use crate::{
 
 mod image_cache;
 pub use image_cache::BlueprintYakuiRenderer;
+use image_cache::MAX_MANAGED_IMAGE_TEXTURES;
 use image_cache::PendingSemantic;
 pub use image_cache::UiImageResourceProvider;
-use image_cache::MAX_MANAGED_IMAGE_TEXTURES;
 mod render_node;
 
 mod render_children;

@@ -1,6 +1,6 @@
 use roukaku_media_core::{BlendMode, GlyphBitmap, GlyphBitmapFormat, SceneCommand};
 use roukaku_platform::{
-    host_channel, HostCommand, PlatformHostProfile, SaveTransactionHandle, SurfaceHandle,
+    HostCommand, PlatformHostProfile, SaveTransactionHandle, SurfaceHandle, host_channel,
 };
 use roukaku_player_core::{
     PlatformCommandSink, PlayerHostCommand, PlayerHostCommandBatch, PlayerHostCommandExecutor,

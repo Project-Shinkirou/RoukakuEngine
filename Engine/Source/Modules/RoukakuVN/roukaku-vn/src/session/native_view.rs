@@ -153,10 +153,12 @@ mod tests {
         assert_eq!(routes.state().route_flags, state.route_flags);
         assert!(routes.state().voice_replay.is_empty());
         state.system_stack.clear();
-        assert!(NativeVnStateView::project(&state)
-            .state()
-            .route_flags
-            .is_empty());
+        assert!(
+            NativeVnStateView::project(&state)
+                .state()
+                .route_flags
+                .is_empty()
+        );
         state.cursor = None;
         let terminal = NativeVnStateView::project(&state).into_display_state();
         assert_eq!(terminal.route_coverage, state.route_coverage);

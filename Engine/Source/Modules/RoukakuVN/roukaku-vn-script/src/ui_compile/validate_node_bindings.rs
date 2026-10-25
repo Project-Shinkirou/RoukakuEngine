@@ -332,10 +332,10 @@ pub(super) fn binding_key(
             found.push((kind, value.to_string()));
         }
     }
-    if found.is_empty() {
-        if let Some(profile) = line.attr("profile") {
-            return Ok(("profile", profile.to_string(), None));
-        }
+    if found.is_empty()
+        && let Some(profile) = line.attr("profile")
+    {
+        return Ok(("profile", profile.to_string(), None));
     }
     if found.len() != 1 {
         return Err(diagnostic(

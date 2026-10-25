@@ -29,10 +29,12 @@ pub(super) fn release_gate_requires_nativevn_sections_for_classic_profile() {
         })
         .unwrap();
 
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.compiled_project" && check.status == CheckStatus::Blocked));
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.compiled_project" && check.status == CheckStatus::Blocked)
+    );
 }
 
 #[test]
@@ -84,38 +86,53 @@ pub(super) fn release_gate_accepts_nativevn_sections_for_classic_profile() {
         })
         .unwrap();
 
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.compiled_project" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.profile_manifest" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "player.locale_config" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.policy_bundle" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.extension_bindings" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.standard_commands" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.presentation_provider" && check.status == CheckStatus::Pass));
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "vn.commercial_baseline" && check.status == CheckStatus::Pass));
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.compiled_project" && check.status == CheckStatus::Pass)
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.profile_manifest" && check.status == CheckStatus::Pass)
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "player.locale_config" && check.status == CheckStatus::Pass)
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.policy_bundle" && check.status == CheckStatus::Pass)
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.extension_bindings" && check.status == CheckStatus::Pass)
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.standard_commands" && check.status == CheckStatus::Pass)
+    );
+    assert!(
+        report.checks.iter().any(
+            |check| check.id == "vn.presentation_provider" && check.status == CheckStatus::Pass
+        )
+    );
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "vn.commercial_baseline" && check.status == CheckStatus::Pass)
+    );
     assert!(report.checks.iter().any(|check| {
         check.id == "vn.runtime"
             && check.status == CheckStatus::Pass
@@ -160,12 +177,14 @@ pub(super) fn release_gate_blocks_missing_or_duplicate_nativevn_localization() {
         .find(|check| check.id == "player.locale_config")
         .unwrap();
     assert_eq!(check.status, CheckStatus::Blocked);
-    assert!(check
-        .diagnostic
-        .as_ref()
-        .unwrap()
-        .message
-        .contains("ROUKAKU_PLAYER_LOCALE_CONFIG_MISSING"));
+    assert!(
+        check
+            .diagnostic
+            .as_ref()
+            .unwrap()
+            .message
+            .contains("ROUKAKU_PLAYER_LOCALE_CONFIG_MISSING")
+    );
 
     let mut duplicate = sections;
     duplicate.push(SectionPayload::raw(
@@ -195,12 +214,14 @@ pub(super) fn release_gate_blocks_missing_or_duplicate_nativevn_localization() {
         .find(|check| check.id == "player.locale_config")
         .unwrap();
     assert_eq!(check.status, CheckStatus::Blocked);
-    assert!(check
-        .diagnostic
-        .as_ref()
-        .unwrap()
-        .message
-        .contains("duplicate localization key"));
+    assert!(
+        check
+            .diagnostic
+            .as_ref()
+            .unwrap()
+            .message
+            .contains("duplicate localization key")
+    );
 }
 
 #[test]

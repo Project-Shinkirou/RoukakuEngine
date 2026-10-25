@@ -102,11 +102,12 @@ fn ambiguous_member_identity_is_rejected_before_batch_commit() {
     let mut duplicate = first.clone();
     duplicate.sequence = 2;
     let before = c.clone();
-    assert!(c
-        .apply_batch(&[first.clone(), duplicate.clone()], 1)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_VN_PRESENTATION_FENCE_MEMBER_CONFLICT"));
+    assert!(
+        c.apply_batch(&[first.clone(), duplicate.clone()], 1)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_VN_PRESENTATION_FENCE_MEMBER_CONFLICT")
+    );
     assert_eq!(c, before);
     c.apply_batch(&[first], 1).unwrap();
     let before = c.clone();

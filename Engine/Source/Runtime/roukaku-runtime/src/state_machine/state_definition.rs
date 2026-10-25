@@ -291,11 +291,12 @@ impl StateMachineStore {
         let mut output = StateMachineTickOutput::default();
         self.refresh_access_plans(actions);
         let waves = build_conflict_waves(&self.machines, &self.access_plans);
-        if worker_count > 1 && waves.iter().any(|wave| wave.len() > 1) {
-            if let Err(diagnostic) = self.ensure_worker_pool(worker_count) {
-                output.diagnostics.push(diagnostic);
-                return output;
-            }
+        if worker_count > 1
+            && waves.iter().any(|wave| wave.len() > 1)
+            && let Err(diagnostic) = self.ensure_worker_pool(worker_count)
+        {
+            output.diagnostics.push(diagnostic);
+            return output;
         }
         for wave in waves {
             let base_id_source = id_source.clone();

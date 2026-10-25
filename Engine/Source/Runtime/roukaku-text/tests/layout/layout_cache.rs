@@ -19,26 +19,32 @@ fn shaped_clusters_fonts_ruby_voice_and_glyph_bitmaps_reach_renderer() {
     assert!(!layout.glyph_resources.is_empty());
     assert_eq!(layout.ruby_boxes.len(), 1);
     assert_eq!(layout.voice_refs.len(), 1);
-    assert!(layout
-        .shaped_runs
-        .iter()
-        .any(|run| run.role == GlyphRole::Base));
-    assert!(layout
-        .shaped_runs
-        .iter()
-        .any(|run| { run.role == GlyphRole::Ruby { span_index: 0 } }));
-    assert!(layout
-        .shaped_runs
-        .iter()
-        .flat_map(|run| &run.glyphs)
-        .all(|glyph| {
-            glyph.font_family == "Poppins"
-                && glyph.font_hash
-                    == Hash256::from_sha256(include_bytes!(
-                        "../../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf"
-                    ))
-                && glyph.source.start <= glyph.source.end
-        }));
+    assert!(
+        layout
+            .shaped_runs
+            .iter()
+            .any(|run| run.role == GlyphRole::Base)
+    );
+    assert!(
+        layout
+            .shaped_runs
+            .iter()
+            .any(|run| { run.role == GlyphRole::Ruby { span_index: 0 } })
+    );
+    assert!(
+        layout
+            .shaped_runs
+            .iter()
+            .flat_map(|run| &run.glyphs)
+            .all(|glyph| {
+                glyph.font_family == "Poppins"
+                    && glyph.font_hash
+                        == Hash256::from_sha256(include_bytes!(
+                            "../../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf"
+                        ))
+                    && glyph.source.start <= glyph.source.end
+            })
+    );
     assert!(layout.diagnostics.is_empty());
 
     let mut renderer = CpuRendererProvider
@@ -57,12 +63,14 @@ fn shaped_clusters_fonts_ruby_voice_and_glyph_bitmaps_reach_renderer() {
             .unwrap(),
     );
     let frame = renderer.capture_frame(&commands).unwrap();
-    assert!(frame
-        .bytes
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .any(|pixel| *pixel != [8, 8, 8, 255]));
+    assert!(
+        frame
+            .bytes
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .any(|pixel| *pixel != [8, 8, 8, 255])
+    );
     let redraw = resource_owner
         .update_layout("line.production", &layout, [255, 255, 255, 255])
         .unwrap();
@@ -72,11 +80,13 @@ fn shaped_clusters_fonts_ruby_voice_and_glyph_bitmaps_reach_renderer() {
     let mut conflicting_pixels = conflicting.glyph_resources[0].bitmap.pixels.to_vec();
     conflicting_pixels[0] ^= 0xff;
     conflicting.glyph_resources[0].bitmap.pixels = conflicting_pixels.into();
-    assert!(resource_owner
-        .update_layout("line.production", &conflicting, [255; 4])
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_TEXT_RENDER_RESOURCE_CONFLICT"));
+    assert!(
+        resource_owner
+            .update_layout("line.production", &conflicting, [255; 4])
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_TEXT_RENDER_RESOURCE_CONFLICT")
+    );
     assert_eq!(
         resource_owner
             .update_layout("line.production", &layout, [255; 4])

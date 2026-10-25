@@ -372,10 +372,10 @@ pub(in super::super) fn state_prefetch_successors(
             _ => {}
         }
     }
-    if !replaces_fallthrough || preserves_fallthrough {
-        if let Some(successor) = authored_successors.get(&state.id) {
-            successors.push(successor.clone());
-        }
+    if (!replaces_fallthrough || preserves_fallthrough)
+        && let Some(successor) = authored_successors.get(&state.id)
+    {
+        successors.push(successor.clone());
     }
     let mut seen = BTreeSet::new();
     successors.retain(|successor| seen.insert(successor.clone()));

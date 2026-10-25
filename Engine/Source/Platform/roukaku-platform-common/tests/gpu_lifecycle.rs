@@ -1,6 +1,6 @@
 use roukaku_media_core::SceneCommand;
 use roukaku_platform::{GpuAdapterPolicy, GpuDeviceTypePolicy, SceneFrame};
-use roukaku_platform_common::{native_wgpu_instance, WgpuOffscreenRenderer};
+use roukaku_platform_common::{WgpuOffscreenRenderer, native_wgpu_instance};
 
 #[tokio::test]
 #[ignore = "requires a native hardware GPU runner"]

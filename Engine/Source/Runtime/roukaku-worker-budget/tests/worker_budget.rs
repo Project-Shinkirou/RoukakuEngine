@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, Barrier},
+    sync::{Arc, Barrier, mpsc},
     time::{Duration, Instant},
 };
 

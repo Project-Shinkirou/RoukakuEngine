@@ -66,9 +66,9 @@ impl PlayerDecodedAudio {
         max_output_samples: usize,
     ) -> Result<Self, PlayerAudioContractError> {
         use rubato::{
-            audioadapter::Adapter, audioadapter_buffers::direct::SequentialSliceOfVecs, Async,
-            FixedAsync, PolynomialDegree, Resampler, SincInterpolationParameters,
-            SincInterpolationType, WindowFunction,
+            Async, FixedAsync, PolynomialDegree, Resampler, SincInterpolationParameters,
+            SincInterpolationType, WindowFunction, audioadapter::Adapter,
+            audioadapter_buffers::direct::SequentialSliceOfVecs,
         };
 
         if !is_supported_pcm_rate(sample_rate) || !is_supported_pcm_channel_count(channels) {
@@ -269,9 +269,11 @@ fn map_channels(
             let mono = audio.samples.clone();
             Ok(vec![mono.clone(), mono])
         }
-        (2, 1) => Ok(vec![(0..frames)
-            .map(|frame| (audio.samples[frame * 2] + audio.samples[frame * 2 + 1]) * 0.5)
-            .collect()]),
+        (2, 1) => Ok(vec![
+            (0..frames)
+                .map(|frame| (audio.samples[frame * 2] + audio.samples[frame * 2 + 1]) * 0.5)
+                .collect(),
+        ]),
         _ => Err(PlayerAudioContractError::new(
             "ROUKAKU_PLAYER_AUDIO_CHANNEL_LAYOUT_UNSUPPORTED",
             format!(

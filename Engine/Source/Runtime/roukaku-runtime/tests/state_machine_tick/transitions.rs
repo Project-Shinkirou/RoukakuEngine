@@ -309,15 +309,19 @@ pub(super) fn action_failure_preserves_committed_work_but_stops_the_world() {
     assert!(world.is_failed());
     let debug = world.debug_session();
     let machines = debug.state_machines(actor);
-    assert!(machines
-        .iter()
-        .any(|machine| machine.id == StableId::deterministic_v7(4, 5, 11)
-            && machine.current_state == failed_start));
-    assert!(machines
-        .iter()
-        .any(|machine| machine.id == StableId::deterministic_v7(4, 6, 11)
-            && machine.current_state == other_done
-            && machine.completed));
+    assert!(
+        machines
+            .iter()
+            .any(|machine| machine.id == StableId::deterministic_v7(4, 5, 11)
+                && machine.current_state == failed_start)
+    );
+    assert!(
+        machines
+            .iter()
+            .any(|machine| machine.id == StableId::deterministic_v7(4, 6, 11)
+                && machine.current_state == other_done
+                && machine.completed)
+    );
     assert_eq!(
         world.debug_session().blackboard().get("other_machine"),
         Some(&BlackboardValue::from("continued"))
@@ -325,31 +329,37 @@ pub(super) fn action_failure_preserves_committed_work_but_stops_the_world() {
     assert!(world.snapshot().is_err());
     assert!(world.save(roukaku_runtime::SaveRequest::default()).is_err());
     assert!(world.create_actor("must-not-exist", vec![]).is_err());
-    assert!(world
-        .emit_event(EventSource::Scenario, EventPayload::new("blocked"))
-        .is_err());
-    assert!(world
-        .tick(roukaku_runtime::TickRequest::live(
-            TickInput {
-                fixed_step: 2,
-                delta_ns: 16_666_667,
-                seed: 11,
-            },
-            vec![]
-        ))
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_SESSION_FAILED"));
+    assert!(
+        world
+            .emit_event(EventSource::Scenario, EventPayload::new("blocked"))
+            .is_err()
+    );
+    assert!(
+        world
+            .tick(roukaku_runtime::TickRequest::live(
+                TickInput {
+                    fixed_step: 2,
+                    delta_ns: 16_666_667,
+                    seed: 11,
+                },
+                vec![]
+            ))
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_SESSION_FAILED")
+    );
     assert!(world.load(roukaku_runtime::SaveBlob(vec![])).is_err());
     assert!(world.is_failed());
     world.load(saved).unwrap();
     assert!(!world.is_failed());
-    assert!(world
-        .snapshot()
-        .unwrap()
-        .blackboard
-        .get("other_machine")
-        .is_none());
+    assert!(
+        world
+            .snapshot()
+            .unwrap()
+            .blackboard
+            .get("other_machine")
+            .is_none()
+    );
     world
         .tick(roukaku_runtime::TickRequest::restore_continuation(
             TickInput {
@@ -414,12 +424,16 @@ pub(super) fn validates_state_machine_shape_and_conflicts() {
         report,
         StateMachineValidationReport { valid: false, .. }
     ));
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_RUNTIME_STATE_UNKNOWN"));
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_RUNTIME_TRANSITION_CONFLICT"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_RUNTIME_STATE_UNKNOWN")
+    );
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_RUNTIME_TRANSITION_CONFLICT")
+    );
 }

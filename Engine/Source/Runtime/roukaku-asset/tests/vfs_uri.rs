@@ -172,9 +172,11 @@ fn vfs_local_reader_uses_host_capability_without_serializing_root() {
         .read_bounded(&uri, 4, Some(Hash256::from_sha256(b"ok")))
         .unwrap();
     assert_eq!(bytes, b"ok");
-    assert!(roots
-        .read_bounded(&uri, 1, Some(Hash256::from_sha256(b"ok")))
-        .is_err());
+    assert!(
+        roots
+            .read_bounded(&uri, 1, Some(Hash256::from_sha256(b"ok")))
+            .is_err()
+    );
 
     let encoded = serde_json::to_string(&AssetCatalog {
         schema: "roukaku.asset_catalog.v1".to_string(),
@@ -199,28 +201,34 @@ fn vfs_manifest_blocks_duplicate_graph_nodes_and_context_bypass() {
     duplicate_prefix
         .prefixes
         .push(duplicate_prefix.prefixes[0].clone());
-    assert!(duplicate_prefix
-        .validate()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_PREFIX_DUPLICATE"));
+    assert!(
+        duplicate_prefix
+            .validate()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_PREFIX_DUPLICATE")
+    );
 
     let mut duplicate_layer = package_manifest_fixture();
     duplicate_layer
         .layers
         .push(duplicate_layer.layers[0].clone());
-    assert!(duplicate_layer
-        .validate()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_LAYER_DUPLICATE"));
+    assert!(
+        duplicate_layer
+            .validate()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_LAYER_DUPLICATE")
+    );
 
     let mut duplicate_entry = package_manifest_fixture();
     duplicate_entry
         .entries
         .push(duplicate_entry.entries[0].clone());
-    assert!(duplicate_entry
-        .validate()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_ENTRY_DUPLICATE"));
+    assert!(
+        duplicate_entry
+            .validate()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_ENTRY_DUPLICATE")
+    );
 
     let manifest = package_manifest_fixture();
     let uri = VfsUri::parse("package:/asset.bin").unwrap();
@@ -274,9 +282,11 @@ fn vfs_resolve_rejects_equal_priority_authority_conflict() {
             },
         )
         .unwrap_err();
-    assert!(error
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_RESOLVE_AMBIGUOUS"));
+    assert!(
+        error
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VFS_RESOLVE_AMBIGUOUS")
+    );
 }
 
 fn package_manifest_fixture() -> VfsManifest {

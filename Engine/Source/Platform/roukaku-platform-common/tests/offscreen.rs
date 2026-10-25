@@ -38,12 +38,14 @@ async fn large_scene_preserves_draw_order_and_rejects_duplicate_ids() {
         semantics: None,
     };
     let capture = renderer.render(&frame).unwrap();
-    assert!(capture
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|p| *p == [0, 255, 0, 255]));
+    assert!(
+        capture
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|p| *p == [0, 255, 0, 255])
+    );
     frame.sequence = 2;
     frame.commands.push(frame.commands[0].clone());
     assert!(renderer.render(&frame).is_err());
@@ -127,12 +129,14 @@ async fn transient_texture_ids_reallocate_released_slots_across_frames() {
                 semantics: None,
             })
             .unwrap();
-        assert!(capture
-            .rgba8
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .all(|pixel| *pixel == color));
+        assert!(
+            capture
+                .rgba8
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .all(|pixel| *pixel == color)
+        );
     }
 }
 

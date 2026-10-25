@@ -1,6 +1,6 @@
 use roukaku_plugin::{
-    provider_binding_context_from_runtime_package, EngineModuleSlot, LoadPhase, PluginRegistrar,
-    ProviderBindingContext, RegisteredProvider,
+    EngineModuleSlot, LoadPhase, PluginRegistrar, ProviderBindingContext, RegisteredProvider,
+    provider_binding_context_from_runtime_package,
 };
 
 fn vfs_provider(provider_id: &str, capability: &str) -> RegisteredProvider {
@@ -42,10 +42,12 @@ fn vfs_provider_registry_allows_multiple_providers_on_single_slot() {
 
     let snapshot = registrar.extension_registry_snapshot().unwrap();
     assert_eq!(snapshot.providers.len(), 3);
-    assert!(snapshot
-        .providers
-        .iter()
-        .all(|provider| provider.slot == "vfs_provider"));
+    assert!(
+        snapshot
+            .providers
+            .iter()
+            .all(|provider| provider.slot == "vfs_provider")
+    );
     assert!(snapshot.bindings.is_empty());
     assert!(snapshot.conflicts.is_empty());
 }
@@ -83,14 +85,16 @@ fn renderer_registry_keeps_explicit_single_binding_conflicts() {
             abi_fingerprint: "roukaku-plugin-abi-v3".to_string(),
         })
         .unwrap();
-    assert!(registrar
-        .bind_provider(
-            &slot,
-            "roukaku.runtime.shinki_emu",
-            context("runtime.shinki_emu"),
-        )
-        .unwrap_err()
-        .contains("ROUKAKU_PLUGIN_BINDING_CONFLICT"));
+    assert!(
+        registrar
+            .bind_provider(
+                &slot,
+                "roukaku.runtime.shinki_emu",
+                context("runtime.shinki_emu"),
+            )
+            .unwrap_err()
+            .contains("ROUKAKU_PLUGIN_BINDING_CONFLICT")
+    );
 
     let snapshot = registrar.extension_registry_snapshot().unwrap();
     assert_eq!(snapshot.conflicts.len(), 1);

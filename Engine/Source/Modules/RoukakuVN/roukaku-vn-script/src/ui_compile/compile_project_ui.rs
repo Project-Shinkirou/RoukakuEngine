@@ -121,7 +121,7 @@ pub(crate) fn compile_project_ui(
                     line,
                     "ROUKAKU_UI_TOP_LEVEL_UNKNOWN",
                     "unknown top-level UI declaration",
-                ))
+                ));
             }
         }
     }
@@ -301,7 +301,7 @@ pub(super) fn parse_system_ui_policy(line: &ParsedLine) -> Result<SystemUiProfil
                 line,
                 "ROUKAKU_UI_AUDIO_TOGGLE",
                 "audio_toggle must be true or false",
-            ))
+            ));
         }
     };
     let save_completion = match required_attr(line, "save_completion")? {
@@ -312,7 +312,7 @@ pub(super) fn parse_system_ui_policy(line: &ParsedLine) -> Result<SystemUiProfil
                 line,
                 "ROUKAKU_UI_SAVE_COMPLETION",
                 "save_completion must be stay or return_system",
-            ))
+            ));
         }
     };
     let custom_action_ids = line

@@ -390,8 +390,10 @@ pub(super) fn malformed_file_and_broken_stdio_fail_with_committed_blocked_report
     };
     let output = run_stdio(&fixture.build_identity, &[open]);
     assert_eq!(output.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&output.stderr)
-        .contains("ROUKAKU_HEADLESS_STDIO_CLOSED_WITH_LIVE_SESSIONS"));
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("ROUKAKU_HEADLESS_STDIO_CLOSED_WITH_LIVE_SESSIONS")
+    );
     let report: RunReport = serde_json::from_slice(
         &fs::read(
             stream_root

@@ -332,7 +332,9 @@ pub(in super::super) fn validate_story_presentation(
                             )));
                         }
                     }
-                    StageCommand::Background { asset: asset_id, .. }
+                    StageCommand::Background {
+                        asset: asset_id, ..
+                    }
                     | StageCommand::Show {
                         asset: asset_id, ..
                     } => {
@@ -359,10 +361,10 @@ pub(in super::super) fn validate_story_presentation(
                     }
                     StageCommand::Camera { .. } => {}
                     StageCommand::Movie { fallback, .. } => {
-                        if let Some(fallback) = fallback {
-                            if !assets.contains_image(fallback) {
-                                return Err(missing_texture(fallback));
-                            }
+                        if let Some(fallback) = fallback
+                            && !assets.contains_image(fallback)
+                        {
+                            return Err(missing_texture(fallback));
                         }
                     }
                     StageCommand::Effect { filter, .. }
@@ -374,7 +376,7 @@ pub(in super::super) fn validate_story_presentation(
                         return Err(NativeVnHostError::Asset(format!(
                             "ROUKAKU_PLAYER_PRESENTATION_UNSUPPORTED: typed stage command {} has no product renderer binding",
                             unsupported.kind()
-                        )))
+                        )));
                     }
                 }
             }
@@ -384,7 +386,7 @@ pub(in super::super) fn validate_story_presentation(
                 return Err(NativeVnHostError::Asset(format!(
                     "ROUKAKU_PLAYER_EXTENSION_PROVIDER_UNWIRED: command {} requires provider {}",
                     extension.command, extension.provider_id
-                )))
+                )));
             }
             PresentationCommand::Extension(_) => {}
             _ => {}

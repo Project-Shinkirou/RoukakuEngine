@@ -24,12 +24,12 @@ mod preview_control;
 ))]
 mod preview_transport;
 
-use roukaku_observability::{init_host, ConsoleFormat, HostObservabilityConfig, HostRole};
+use roukaku_observability::{ConsoleFormat, HostObservabilityConfig, HostRole, init_host};
 
 use roukaku_player::{
-    bundled_player_resource_root, load_bundled_observability, AndroidInputHost, LinuxUinputHost,
-    MacosCgEventHost, PlayerObservabilityOverrides, WebCdpInputHost, WebLiveAutomationRequest,
-    WindowsLiveAutomationRequest, WindowsSendInputHost,
+    AndroidInputHost, LinuxUinputHost, MacosCgEventHost, PlayerObservabilityOverrides,
+    WebCdpInputHost, WebLiveAutomationRequest, WindowsLiveAutomationRequest, WindowsSendInputHost,
+    bundled_player_resource_root, load_bundled_observability,
 };
 
 use roukaku_player_core::{
@@ -39,8 +39,8 @@ use roukaku_player_core::{
 use std::{env, fs, path::PathBuf};
 
 mod player_cli_error;
-use player_cli_error::main;
 use player_cli_error::PlayerCliError;
+use player_cli_error::main;
 mod run_bundled_game;
 #[cfg(any(
     target_os = "windows",

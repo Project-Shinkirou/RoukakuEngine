@@ -155,21 +155,27 @@ pub(super) fn requested_focus_activates_a_button_without_prior_navigation() {
             }],
         ))
         .expect("navigation frame");
-    assert!(navigated
-        .semantics
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/alternate" && node.focused));
-    assert!(navigated
-        .semantics
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/confirm" && node.selected && !node.focused));
-    assert!(navigated
-        .semantics
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/alternate" && !node.selected));
+    assert!(
+        navigated
+            .semantics
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/alternate" && node.focused)
+    );
+    assert!(
+        navigated
+            .semantics
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/confirm" && node.selected && !node.focused)
+    );
+    assert!(
+        navigated
+            .semantics
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/alternate" && !node.selected)
+    );
     backend
         .render_frame(request(
             None,

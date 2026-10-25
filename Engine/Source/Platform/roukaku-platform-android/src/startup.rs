@@ -1,8 +1,9 @@
 use std::{
     io::Read,
     sync::{
+        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
+        mpsc,
     },
 };
 
@@ -17,8 +18,8 @@ use winit::{
 };
 
 use super::{
-    host::{create_host, AndroidHostApp},
     AndroidPreparedPlayer,
+    host::{AndroidHostApp, create_host},
 };
 
 type Prepared = Result<AndroidPreparedPlayer, PlatformError>;

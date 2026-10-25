@@ -1,9 +1,9 @@
-/* The official 0.17.4 headers own va_list and ASS_Track ABI details. */
+/* The official 0.17.5 headers own va_list and ASS_Track ABI details. */
 #include <ass/ass.h>
 #include <string.h>
 
-#if LIBASS_VERSION != 0x01704000
-#error roukaku-subtitle requires libass 0.17.4 headers
+#if LIBASS_VERSION != 0x01705000
+#error roukaku-subtitle requires libass 0.17.5 headers
 #endif
 
 /* Sticky status: 1 native diagnostic, 2 missing font, 3 missing glyph.

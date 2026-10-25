@@ -174,13 +174,13 @@ pub fn validate_manifest(
         }
     }
 
-    if let Some(selected) = selected {
-        if manifest.find(selected).is_none() {
-            diagnostics.push(
-                Diagnostic::blocking("ROUKAKU_TARGET_NOT_FOUND", "selected target is not defined")
-                    .with_field("target", selected),
-            );
-        }
+    if let Some(selected) = selected
+        && manifest.find(selected).is_none()
+    {
+        diagnostics.push(
+            Diagnostic::blocking("ROUKAKU_TARGET_NOT_FOUND", "selected target is not defined")
+                .with_field("target", selected),
+        );
     }
 
     let status = if diagnostics.iter().any(|diag| {
@@ -350,10 +350,12 @@ targets:
         let report = validate_manifest(&manifest, Some("nativevn-game"));
         assert_eq!(report.status, TargetValidationStatus::Warning);
         assert_eq!(report.target_count, 2);
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|diag| diag.code == "ROUKAKU_TARGET_KIND_RESERVED"));
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .any(|diag| diag.code == "ROUKAKU_TARGET_KIND_RESERVED")
+        );
     }
 
     #[test]
@@ -369,14 +371,18 @@ targets:
         }]);
         let report = validate_manifest(&manifest, Some("missing"));
         assert_eq!(report.status, TargetValidationStatus::Blocked);
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|diag| diag.code == "ROUKAKU_TARGET_NOT_FOUND"));
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|diag| diag.code == "ROUKAKU_TARGET_GAME_PACKAGE"));
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .any(|diag| diag.code == "ROUKAKU_TARGET_NOT_FOUND")
+        );
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .any(|diag| diag.code == "ROUKAKU_TARGET_GAME_PACKAGE")
+        );
     }
 
     #[test]
@@ -413,9 +419,11 @@ targets:
         .unwrap();
         let report = validate_manifest(&manifest, Some("nativevn-game"));
         assert_eq!(report.status, TargetValidationStatus::Blocked);
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|diag| diag.code == "ROUKAKU_TARGET_LEGACY_RUNTIME_FIELD"));
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .any(|diag| diag.code == "ROUKAKU_TARGET_LEGACY_RUNTIME_FIELD")
+        );
     }
 }

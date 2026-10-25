@@ -418,8 +418,10 @@ pub(super) async fn package_save_and_handle_boundaries_fail_closed_and_reopen_tr
         hash(b"build"),
         hash(package),
     );
-    assert!(HeadlessPlatformFactory::new(occupied_root, temp.path())
-        .start(profile.into())
-        .await
-        .is_err());
+    assert!(
+        HeadlessPlatformFactory::new(occupied_root, temp.path())
+            .start(profile.into())
+            .await
+            .is_err()
+    );
 }

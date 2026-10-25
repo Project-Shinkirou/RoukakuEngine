@@ -258,8 +258,8 @@ owned_pcm_buffer!(
 #[cfg(all(test, feature = "ffi"))]
 mod tests {
     use std::sync::{
-        atomic::{AtomicUsize, Ordering},
         Arc,
+        atomic::{AtomicUsize, Ordering},
     };
 
     use super::{OwnedF32Buffer, OwnedI16Buffer};

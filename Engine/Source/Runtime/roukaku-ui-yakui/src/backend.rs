@@ -137,46 +137,46 @@ impl<R: YakuiViewRenderer> UiBackend for RoukakuYakuiBackend<R> {
             .as_nanos()
             .min(u64::MAX as u128) as u64;
         let mut request = request;
-        if let Some(semantics) = self.last_semantics.as_ref() {
-            if let Some(focused) = semantics.nodes.iter().find(|node| node.focused) {
-                for event in &mut request.input.events {
-                    let action = match &event.kind {
-                        UiInputEventKind::Keyboard {
-                            physical_key,
-                            state: UiButtonState::Pressed,
-                            repeat: false,
-                            ..
-                        } if focused.role == roukaku_ui_core::UiSemanticRole::Slider => {
-                            match physical_key.as_str() {
-                                "ArrowLeft" | "ArrowDown" => Some("decrement"),
-                                "ArrowRight" | "ArrowUp" => Some("increment"),
-                                _ => None,
-                            }
+        if let Some(semantics) = self.last_semantics.as_ref()
+            && let Some(focused) = semantics.nodes.iter().find(|node| node.focused)
+        {
+            for event in &mut request.input.events {
+                let action = match &event.kind {
+                    UiInputEventKind::Keyboard {
+                        physical_key,
+                        state: UiButtonState::Pressed,
+                        repeat: false,
+                        ..
+                    } if focused.role == roukaku_ui_core::UiSemanticRole::Slider => {
+                        match physical_key.as_str() {
+                            "ArrowLeft" | "ArrowDown" => Some("decrement"),
+                            "ArrowRight" | "ArrowUp" => Some("increment"),
+                            _ => None,
                         }
-                        UiInputEventKind::Keyboard {
-                            physical_key,
-                            state: UiButtonState::Pressed,
-                            repeat: false,
-                            ..
-                        } if focused.role == roukaku_ui_core::UiSemanticRole::Toggle
-                            && matches!(physical_key.as_str(), "Enter" | "Space") =>
-                        {
-                            Some("activate")
-                        }
-                        UiInputEventKind::Navigation {
-                            action: UiNavigationAction::Activate,
-                        } if focused.role == roukaku_ui_core::UiSemanticRole::Toggle => {
-                            Some("activate")
-                        }
-                        _ => None,
-                    };
-                    if let Some(action) = action {
-                        event.kind = UiInputEventKind::AccessibilityAction {
-                            semantic_id: focused.id.clone(),
-                            action: action.to_string(),
-                            value: None,
-                        };
                     }
+                    UiInputEventKind::Keyboard {
+                        physical_key,
+                        state: UiButtonState::Pressed,
+                        repeat: false,
+                        ..
+                    } if focused.role == roukaku_ui_core::UiSemanticRole::Toggle
+                        && matches!(physical_key.as_str(), "Enter" | "Space") =>
+                    {
+                        Some("activate")
+                    }
+                    UiInputEventKind::Navigation {
+                        action: UiNavigationAction::Activate,
+                    } if focused.role == roukaku_ui_core::UiSemanticRole::Toggle => {
+                        Some("activate")
+                    }
+                    _ => None,
+                };
+                if let Some(action) = action {
+                    event.kind = UiInputEventKind::AccessibilityAction {
+                        semantic_id: focused.id.clone(),
+                        action: action.to_string(),
+                        value: None,
+                    };
                 }
             }
         }

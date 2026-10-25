@@ -49,11 +49,13 @@ fn mapper_rejects_invalid_axis_values() {
     mapper
         .apply_checked(RawGamepadEvent::Connected { raw_device_id: 7 })
         .unwrap();
-    assert!(mapper
-        .apply_checked(RawGamepadEvent::Axis {
-            raw_device_id: 7,
-            control: GamepadControl::LeftTrigger,
-            value: f32::NAN,
-        })
-        .is_err());
+    assert!(
+        mapper
+            .apply_checked(RawGamepadEvent::Axis {
+                raw_device_id: 7,
+                control: GamepadControl::LeftTrigger,
+                value: f32::NAN,
+            })
+            .is_err()
+    );
 }

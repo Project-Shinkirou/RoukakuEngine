@@ -1,4 +1,4 @@
-use roukaku_vn_script::{compile_roukaku_project, RoukakuSource, VnStandardCommandManifest};
+use roukaku_vn_script::{RoukakuSource, VnStandardCommandManifest, compile_roukaku_project};
 
 #[test]
 fn standard_command_manifest_validates_compiled_presentation_usage() {

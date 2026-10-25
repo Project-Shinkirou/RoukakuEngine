@@ -1,6 +1,6 @@
 use roukaku_platform::{
-    required_conformance_checks, validate_host_profile, PackageSourcePolicy, PlatformHostProfile,
-    PlatformId,
+    PackageSourcePolicy, PlatformHostProfile, PlatformId, required_conformance_checks,
+    validate_host_profile,
 };
 
 #[test]

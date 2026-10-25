@@ -1,6 +1,6 @@
 use roukaku_vn::{
-    compile_roukaku_project, RoukakuSource, StageModel, SystemStoryManifest, VnPlayerCommand,
-    VnRunConfig, VnRuntime,
+    RoukakuSource, StageModel, SystemStoryManifest, VnPlayerCommand, VnRunConfig, VnRuntime,
+    compile_roukaku_project,
 };
 
 #[test]

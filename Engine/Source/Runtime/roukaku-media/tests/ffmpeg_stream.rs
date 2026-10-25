@@ -268,12 +268,14 @@ fn ffmpeg_stream_resamples_to_explicit_native_audio_format() {
     assert_eq!(packet.sample_rate, 48_000);
     assert_eq!(packet.channels, 1);
     assert_eq!(samples.len(), packet.frame_count as usize);
-    assert!(decoder
-        .configure_audio_output(FfmpegAudioOutputFormat {
-            sample_rate: 44_100,
-            channels: 2,
-        })
-        .is_err());
+    assert!(
+        decoder
+            .configure_audio_output(FfmpegAudioOutputFormat {
+                sample_rate: 44_100,
+                channels: 2,
+            })
+            .is_err()
+    );
 }
 
 #[test]
@@ -292,18 +294,22 @@ fn media_pipeline_payload_budget_blocks_without_partial_state() {
         },
     )
     .unwrap();
-    assert!(pipeline
-        .queue_decoded(decoder.read_next().unwrap().unwrap())
-        .is_err());
+    assert!(
+        pipeline
+            .queue_decoded(decoder.read_next().unwrap().unwrap())
+            .is_err()
+    );
     assert!(pipeline.scheduler().audio_queue.is_empty());
-    assert!(MediaPlaybackPipeline::new(
-        decoder.playback_config(),
-        MediaPipelineLimits {
-            max_live_audio_bytes: 0,
-            max_live_video_bytes: 1,
-        },
-    )
-    .is_err());
+    assert!(
+        MediaPlaybackPipeline::new(
+            decoder.playback_config(),
+            MediaPipelineLimits {
+                max_live_audio_bytes: 0,
+                max_live_video_bytes: 1,
+            },
+        )
+        .is_err()
+    );
 }
 
 #[test]

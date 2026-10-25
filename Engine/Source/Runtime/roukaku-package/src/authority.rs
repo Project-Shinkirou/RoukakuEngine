@@ -1,6 +1,6 @@
 use roukaku_asset::{ResolveContext, VfsManifest};
 use roukaku_plugin_abi::{PluginExtensionRegistrySnapshot, ProviderPolicy};
-use roukaku_target::{validate_manifest, TargetKind, TargetManifest, TargetValidationStatus};
+use roukaku_target::{TargetKind, TargetManifest, TargetValidationStatus, validate_manifest};
 use std::collections::BTreeSet;
 
 use crate::ContainerError;

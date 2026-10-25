@@ -149,11 +149,13 @@ end)
     )
     .unwrap();
     denied.launch().unwrap();
-    assert!(denied
-        .tick_policy()
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_POLICY_HOST_IO_DENIED"));
+    assert!(
+        denied
+            .tick_policy()
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_POLICY_HOST_IO_DENIED")
+    );
     denied.release_resources().unwrap();
     denied.shutdown().unwrap();
 

@@ -1,5 +1,5 @@
 use roukaku_package::{ContainerError, PackageReader, SectionPayload};
-use roukaku_vn_policy::{PolicyActionBinding, POLICY_ACTION_SECTION};
+use roukaku_vn_policy::{POLICY_ACTION_SECTION, PolicyActionBinding};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const POLICY_ACTIONS_SCHEMA: &str = "roukaku.vn.policy_actions.v1";

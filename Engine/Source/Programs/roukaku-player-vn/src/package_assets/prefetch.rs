@@ -1,8 +1,8 @@
 use std::{
     sync::{
+        Arc, Mutex,
         atomic::{AtomicBool, Ordering},
         mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError},
-        Arc, Mutex,
     },
     thread::{self, JoinHandle},
 };
@@ -65,33 +65,35 @@ impl PackageImagePrefetcher {
             let worker_budget = roukaku_plugin::WorkerBudgetBroker::global().clone();
             let worker = thread::Builder::new()
                 .name(format!("roukaku-image-prefetch-{worker_index}"))
-                .spawn(move || loop {
-                    let request = commands.lock().expect("image queue poisoned").recv();
-                    let Ok(request) = request else { break };
-                    if stopped.load(Ordering::Acquire) {
-                        break;
-                    }
-                    if request.scope.is_cancelled() {
-                        continue;
-                    }
-                    let result = worker_budget
-                        .run_scoped(|| {
-                            if stopped.load(Ordering::Acquire) || request.scope.is_cancelled() {
-                                return Ok(());
-                            }
-                            load(&request.asset_id)
-                        })
-                        .map_err(|error| error.to_string())
-                        .and_then(|result| result);
-                    if completions
-                        .send(ImagePrefetchResult {
-                            scope: request.scope,
-                            asset_id: request.asset_id,
-                            result,
-                        })
-                        .is_err()
-                    {
-                        break;
+                .spawn(move || {
+                    loop {
+                        let request = commands.lock().expect("image queue poisoned").recv();
+                        let Ok(request) = request else { break };
+                        if stopped.load(Ordering::Acquire) {
+                            break;
+                        }
+                        if request.scope.is_cancelled() {
+                            continue;
+                        }
+                        let result = worker_budget
+                            .run_scoped(|| {
+                                if stopped.load(Ordering::Acquire) || request.scope.is_cancelled() {
+                                    return Ok(());
+                                }
+                                load(&request.asset_id)
+                            })
+                            .map_err(|error| error.to_string())
+                            .and_then(|result| result);
+                        if completions
+                            .send(ImagePrefetchResult {
+                                scope: request.scope,
+                                asset_id: request.asset_id,
+                                result,
+                            })
+                            .is_err()
+                        {
+                            break;
+                        }
                     }
                 })
                 .map_err(|error| {

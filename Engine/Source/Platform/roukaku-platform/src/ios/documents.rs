@@ -1,10 +1,10 @@
 use crate::{PlatformError, PlatformErrorCode};
 use objc2::{
-    define_class, msg_send, rc::Retained, runtime::ProtocolObject, DefinedClass, MainThreadOnly,
+    DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, runtime::ProtocolObject,
 };
 use objc2_foundation::{
-    MainThreadMarker, NSArray, NSData, NSObject, NSObjectProtocol, NSString,
-    NSURLBookmarkCreationOptions, NSURLBookmarkResolutionOptions, NSURL,
+    MainThreadMarker, NSArray, NSData, NSObject, NSObjectProtocol, NSString, NSURL,
+    NSURLBookmarkCreationOptions, NSURLBookmarkResolutionOptions,
 };
 use objc2_ui_kit::{
     UIApplication, UIDocumentInteractionController, UIDocumentPickerDelegate,

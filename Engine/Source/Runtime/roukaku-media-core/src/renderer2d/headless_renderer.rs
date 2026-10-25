@@ -129,13 +129,16 @@ impl HeadlessRenderer {
                     ..
                 } => {
                     validate_opacity(*opacity)?;
-                    let dimensions =
-                        retained_texture_dimensions(&self.textures, &resource_overlay, texture_id)
-                            .ok_or_else(|| {
-                                MediaError::message(
+                    let dimensions = retained_texture_dimensions(
+                        &self.textures,
+                        &resource_overlay,
+                        texture_id,
+                    )
+                    .ok_or_else(|| {
+                        MediaError::message(
                             "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: sprite texture is not uploaded",
                         )
-                            })?;
+                    })?;
                     if let Some(source) = source {
                         validate_source_rect_dimensions(dimensions, *source)?;
                     }
@@ -211,7 +214,7 @@ impl HeadlessRenderer {
                         _ => {
                             return Err(MediaError::message(
                                 "ROUKAKU_MEDIA_MESH_MATERIAL: mesh material and texture mismatch",
-                            ))
+                            ));
                         }
                     }
                 }

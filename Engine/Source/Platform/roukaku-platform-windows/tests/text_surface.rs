@@ -185,10 +185,12 @@ async fn windows_wgpu_renders_multiscript_layout_through_live_glyph_atlas() {
 
     let layout = provider().layout(&request()).unwrap();
     assert!(layout.shaped_runs.len() >= 3);
-    assert!(roukaku_media::text_layout_evidence_hash(&layout)
-        .unwrap()
-        .to_string()
-        .starts_with("sha256:"));
+    assert!(
+        roukaku_media::text_layout_evidence_hash(&layout)
+            .unwrap()
+            .to_string()
+            .starts_with("sha256:")
+    );
     let mut resources = TextRenderResourceOwner::default();
     let commands = resources
         .update_layout("golden.multiscript", &layout, [238, 242, 255, 255])
@@ -321,12 +323,14 @@ async fn windows_wgpu_renders_multiscript_layout_through_live_glyph_atlas() {
         .await
         .unwrap();
     let cleared = host.client.capture_surface(surface).await.unwrap();
-    assert!(cleared
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|pixel| *pixel == BACKGROUND));
+    assert!(
+        cleared
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == BACKGROUND)
+    );
 
     exercise_scene_atlas(&host.client, surface).await;
 
@@ -427,10 +431,12 @@ async fn exercise_scene_atlas(client: &PlatformHostClient, surface: SurfaceHandl
         .await
         .unwrap();
     let cleared = client.capture_surface(surface).await.unwrap();
-    assert!(cleared
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|pixel| *pixel == [0, 0, 0, 255]));
+    assert!(
+        cleared
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == [0, 0, 0, 255])
+    );
 }

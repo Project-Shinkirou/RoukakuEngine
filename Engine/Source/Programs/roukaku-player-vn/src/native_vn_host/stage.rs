@@ -7,8 +7,8 @@ mod director_transition_tests {
     use super::{super::DirectorTransitionSnapshot, compose_director_transition_scene};
     use roukaku_media_core::SceneCommand;
     use roukaku_vn_package::{
-        AspectRatio, FixedScalar, ProductStageCamera, ProductStageState, StageViewport,
-        PRODUCT_STAGE_STATE_SCHEMA,
+        AspectRatio, FixedScalar, PRODUCT_STAGE_STATE_SCHEMA, ProductStageCamera,
+        ProductStageState, StageViewport,
     };
     use std::collections::{BTreeMap, BTreeSet};
 

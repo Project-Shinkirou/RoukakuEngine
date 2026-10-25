@@ -3,7 +3,7 @@ use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::input::{KeyCode, MouseButton};
 use yakui_core::paint::PaintRect;
-use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
+use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, WidgetId};
 
 #[derive(Debug, Clone)]
@@ -137,23 +137,30 @@ impl Widget for RoukakuNodeWidget {
         }
     }
 
+    fn focus_policy(&self) -> FocusPolicy {
+        if self.props.interactive {
+            FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
+        } else {
+            FocusPolicy::empty()
+        }
+    }
+
     fn event_interest(&self) -> EventInterest {
         if self.props.interactive {
             EventInterest::MOUSE_INSIDE
                 | EventInterest::MOUSE_OUTSIDE
-                | EventInterest::FOCUS
                 | EventInterest::FOCUSED_KEYBOARD
         } else {
             EventInterest::empty()
         }
     }
 
-    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         if !self.props.interactive {
             return EventResponse::Bubble;
         }
         match event {
-            WidgetEvent::FocusChanged(focused) => {
+            WidgetEvent::FocusChanged { focused, .. } => {
                 self.focused = *focused;
                 EventResponse::Sink
             }
@@ -165,7 +172,6 @@ impl Widget for RoukakuNodeWidget {
             } => {
                 if *down && *inside {
                     self.pressed = true;
-                    ctx.input.set_selection(Some(ctx.dom.current()));
                     EventResponse::Sink
                 } else if !down && self.pressed {
                     self.pressed = false;

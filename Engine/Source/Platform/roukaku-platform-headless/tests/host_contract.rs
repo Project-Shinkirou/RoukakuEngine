@@ -1,6 +1,6 @@
 use std::fs;
 
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::{Arc, atomic::AtomicBool};
 
 use roukaku_headless_protocol::ArtifactManifest;
 
@@ -21,7 +21,7 @@ use roukaku_platform::{
 
 use roukaku_platform_headless::HeadlessPlatformFactory;
 
-use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
+use image::{ExtendedColorType, ImageEncoder, codecs::png::PngEncoder};
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 

@@ -1,7 +1,7 @@
 use roukaku_package::{PackageBuildRequest, PackageBuilder, SectionPayload};
 use roukaku_platform::PlatformHostProfile;
 use roukaku_player_web::{
-    validate_package, WebPlayerConfig, WebPlayerLiveEvidence, WEB_PLAYER_LIVE_EVIDENCE_SCHEMA,
+    WEB_PLAYER_LIVE_EVIDENCE_SCHEMA, WebPlayerConfig, WebPlayerLiveEvidence, validate_package,
 };
 
 #[test]

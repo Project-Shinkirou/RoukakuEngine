@@ -141,10 +141,10 @@ impl NativeVnHostCommandSource {
                     StageCommand::Movie { fallback, .. } => fallback.as_ref(),
                     _ => None,
                 };
-                if let Some(asset_id) = asset_id.filter(|id| self.asset_store.contains_image(id)) {
-                    if seen.insert(asset_id.clone()) {
-                        asset_ids.push(asset_id.clone());
-                    }
+                if let Some(asset_id) = asset_id.filter(|id| self.asset_store.contains_image(id))
+                    && seen.insert(asset_id.clone())
+                {
+                    asset_ids.push(asset_id.clone());
                 }
             }
         }

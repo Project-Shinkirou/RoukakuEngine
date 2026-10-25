@@ -13,7 +13,7 @@ pub const ANDROID_PLAYER_LIBRARY_NAME: &str = "roukaku_player_android";
 mod android {
     use crate::package_source::CancellableSource;
     use roukaku_byte_source::MemoryByteSource;
-    use std::sync::{atomic::AtomicBool, Arc, OnceLock};
+    use std::sync::{Arc, OnceLock, atomic::AtomicBool};
 
     use android_activity::AndroidApp;
     use roukaku_package::{PackageManifest, PackageReader, RoukakuContainerReader};

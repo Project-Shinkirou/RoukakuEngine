@@ -1,4 +1,4 @@
-use super::{bundle_file, CliError, StandaloneBundleFile};
+use super::{CliError, StandaloneBundleFile, bundle_file};
 use object::{Architecture, BinaryFormat, Object, ObjectKind};
 use std::{fs, path::Path};
 
@@ -66,10 +66,12 @@ mod tests {
     fn runtime_files_are_included_in_the_manifest_and_missing_or_corrupt_inputs_fail() {
         let source = tempfile::tempdir().unwrap();
         let output = tempfile::tempdir().unwrap();
-        assert!(bundle(source.path(), output.path())
-            .unwrap_err()
-            .to_string()
-            .contains("MISSING"));
+        assert!(
+            bundle(source.path(), output.path())
+                .unwrap_err()
+                .to_string()
+                .contains("MISSING")
+        );
         for name in REQUIRED {
             fs::write(source.path().join(name), dll_header(0x8664, true)).unwrap();
         }
@@ -87,10 +89,12 @@ mod tests {
         }
         assert!(!output.path().join("license.txt").exists());
         fs::write(source.path().join(REQUIRED[0]), b"invalid").unwrap();
-        assert!(bundle(source.path(), output.path())
-            .unwrap_err()
-            .to_string()
-            .contains("INVALID"));
+        assert!(
+            bundle(source.path(), output.path())
+                .unwrap_err()
+                .to_string()
+                .contains("INVALID")
+        );
     }
 
     #[test]

@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use cosmic_text::{fontdb, FontFeatures};
+use cosmic_text::{FontFeatures, fontdb};
 use roukaku_core::Hash256;
 
 use crate::MediaError;
@@ -287,15 +287,14 @@ pub(super) fn validate_request(
                 "ROUKAKU_TEXT_LANGUAGE: language or script declaration is invalid",
             ));
         }
-        if let Some(voice) = &run.voice {
-            if !voice.asset.starts_with("asset:/")
+        if let Some(voice) = &run.voice
+            && (!voice.asset.starts_with("asset:/")
                 || voice.asset.contains("..")
-                || voice.cue.trim().is_empty()
-            {
-                return Err(MediaError::message(
-                    "ROUKAKU_TEXT_VOICE_REF: voice replay reference is invalid",
-                ));
-            }
+                || voice.cue.trim().is_empty())
+        {
+            return Err(MediaError::message(
+                "ROUKAKU_TEXT_VOICE_REF: voice replay reference is invalid",
+            ));
         }
         for ruby in &run.ruby {
             validate_ruby(run, ruby)?;

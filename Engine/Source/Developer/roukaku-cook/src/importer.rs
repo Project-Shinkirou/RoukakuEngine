@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use roukaku_asset::{
-    normalize_source_path, AssetError, AssetId, AssetSidecar, CookSettings, FontAssetMetadata,
-    ReviewStatus,
+    AssetError, AssetId, AssetSidecar, CookSettings, FontAssetMetadata, ReviewStatus,
+    normalize_source_path,
 };
 use roukaku_core::{Diagnostic, Hash256};
 use schemars::JsonSchema;

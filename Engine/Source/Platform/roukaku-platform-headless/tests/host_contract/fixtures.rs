@@ -432,12 +432,14 @@ pub(super) async fn gpu_sparse_frames_defer_retained_resource_mutations_until_ma
         .await
         .unwrap();
     let captured = client.capture_surface(surface).await.unwrap();
-    assert!(captured
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|pixel| *pixel == [255, 0, 0, 255]));
+    assert!(
+        captured
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == [255, 0, 0, 255])
+    );
     client.destroy_surface(surface).await.unwrap();
     client.destroy_window(window).await.unwrap();
     client.shutdown().await.unwrap();

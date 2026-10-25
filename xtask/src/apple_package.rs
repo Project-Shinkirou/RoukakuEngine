@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Args;
 use std::{
     fs,
@@ -206,7 +206,10 @@ pub fn native_share(root: &Path, target: &str) -> Result<PathBuf> {
             .join("share")
     };
     if !share.join("libass/copyright").is_file() {
-        bail!("Apple subtitle dependency licenses missing at {}; prepare native deps or apple-image first", share.display());
+        bail!(
+            "Apple subtitle dependency licenses missing at {}; prepare native deps or apple-image first",
+            share.display()
+        );
     }
     Ok(share)
 }
@@ -222,12 +225,14 @@ mod tests {
         let binary = temp.path().join("player");
         fs::write(&binary, b"source").unwrap();
         let output = resources.join("nested/package");
-        assert!(reject_overlap(
-            &resources.canonicalize().unwrap(),
-            &binary.canonicalize().unwrap(),
-            &output
-        )
-        .is_err());
+        assert!(
+            reject_overlap(
+                &resources.canonicalize().unwrap(),
+                &binary.canonicalize().unwrap(),
+                &output
+            )
+            .is_err()
+        );
         assert!(!resources.join("nested").exists());
         assert_eq!(fs::read(binary).unwrap(), b"source");
     }

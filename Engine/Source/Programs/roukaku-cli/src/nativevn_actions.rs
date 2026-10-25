@@ -1,6 +1,6 @@
 use super::*;
 use roukaku_vn_policy::{
-    LuauPolicy, PolicyActionBinding, PolicyExecutionBudget, POLICY_IO_MAX_BYTES,
+    LuauPolicy, POLICY_IO_MAX_BYTES, PolicyActionBinding, PolicyExecutionBudget,
 };
 
 #[derive(Deserialize)]
@@ -103,7 +103,7 @@ pub(super) fn validate_commands(
     project: &roukaku_vn_script::CompiledVnProject,
     bindings: &[PolicyActionBinding],
 ) -> Result<(), CliError> {
-    use roukaku_vn_script::{CompiledCommand, PresentationCommand, POLICY_ACTION_PROVIDER};
+    use roukaku_vn_script::{CompiledCommand, POLICY_ACTION_PROVIDER, PresentationCommand};
     for command in project
         .story
         .states
@@ -115,14 +115,13 @@ pub(super) fn validate_commands(
             command: PresentationCommand::Extension(extension),
             ..
         } = command
+            && extension.provider_id == POLICY_ACTION_PROVIDER
         {
-            if extension.provider_id == POLICY_ACTION_PROVIDER {
-                bindings
-                    .iter()
-                    .find(|b| b.descriptor.command == extension.command)
-                    .ok_or("ROUKAKU_VN_POLICY_ACTION_BINDING_MISSING")?
-                    .validate_command(extension)?;
-            }
+            bindings
+                .iter()
+                .find(|b| b.descriptor.command == extension.command)
+                .ok_or("ROUKAKU_VN_POLICY_ACTION_BINDING_MISSING")?
+                .validate_command(extension)?;
         }
     }
     Ok(())

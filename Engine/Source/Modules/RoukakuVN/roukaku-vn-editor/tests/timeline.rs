@@ -2,7 +2,7 @@ use roukaku_vn_editor::{timeline::*, *};
 
 #[test]
 fn easing_and_keys_share_source_spans_versions_and_one_undo() {
-    let source="# author note\nstory main #@id story\nstate start #@id start\n  scene room #@id room\n    timeline id:pan target:hero property:x keyframes:0=0,1000=1 budget_ms:2000 #@id pan\n# tail\n";
+    let source = "# author note\nstory main #@id story\nstate start #@id start\n  scene room #@id room\n    timeline id:pan target:hero property:x keyframes:0=0,1000=1 budget_ms:2000 #@id pan\n# tail\n";
     let mut workspace = AuthoringWorkspace::default();
     workspace
         .open(RoukakuSource::story("main.roukaku", source))
@@ -48,14 +48,16 @@ fn easing_and_keys_share_source_spans_versions_and_one_undo() {
             .line,
         5
     );
-    assert!(easing_edit(
-        &workspace,
-        "main.roukaku",
-        1,
-        "pan",
-        VnPresentationEasing::Linear
-    )
-    .is_err());
+    assert!(
+        easing_edit(
+            &workspace,
+            "main.roukaku",
+            1,
+            "pan",
+            VnPresentationEasing::Linear
+        )
+        .is_err()
+    );
     workspace.undo().unwrap();
     assert_eq!(workspace.document("main.roukaku").unwrap().text, source);
     assert!(workspace.undo().is_err());
@@ -88,20 +90,22 @@ fn projection_and_edits_use_cook_scalar_and_easing_validation() {
         .open(RoukakuSource::story("main.roukaku", source))
         .unwrap();
     for value in ["NaN", "1.0000001", "bad"] {
-        assert!(edit(
-            &workspace,
-            "main.roukaku",
-            1,
-            "pan",
-            KeyframeEdit::Set {
-                index: 1,
-                frame: Keyframe {
-                    time_ms: 1000,
-                    value: value.into()
+        assert!(
+            edit(
+                &workspace,
+                "main.roukaku",
+                1,
+                "pan",
+                KeyframeEdit::Set {
+                    index: 1,
+                    frame: Keyframe {
+                        time_ms: 1000,
+                        value: value.into()
+                    }
                 }
-            }
-        )
-        .is_err());
+            )
+            .is_err()
+        );
     }
     let invalid = DocumentSnapshot {
         path: "main.roukaku".into(),
@@ -119,7 +123,7 @@ fn projection_and_edits_use_cook_scalar_and_easing_validation() {
 
 #[test]
 fn extension_source_allows_repeated_timeline_edits_without_authorizing_execution() {
-    let source="story main #@id main\nstate start #@id start\n  scene room #@id room\n    studio_fx intensity:2 #@id fx\n    timeline id:pan target:hero property:x keyframes:0=0,1000=1 budget_ms:1 #@id pan\n# retained note\n";
+    let source = "story main #@id main\nstate start #@id start\n  scene room #@id room\n    studio_fx intensity:2 #@id fx\n    timeline id:pan target:hero property:x keyframes:0=0,1000=1 budget_ms:1 #@id pan\n# retained note\n";
     let mut workspace = AuthoringWorkspace::default();
     workspace
         .open(RoukakuSource::story("main.roukaku", source))
@@ -204,15 +208,19 @@ fn extension_source_allows_repeated_timeline_edits_without_authorizing_execution
             source.replace("property:x", "property:x property:y"),
         ))
         .unwrap();
-    assert!(easing_edit(
-        &invalid,
-        "main.roukaku",
-        1,
-        "pan",
-        VnPresentationEasing::EaseIn
-    )
-    .is_err());
-    assert!(invalid
-        .attribute_edit("main.roukaku", "pan", "keyframes", "0=0,1000=2")
-        .is_err());
+    assert!(
+        easing_edit(
+            &invalid,
+            "main.roukaku",
+            1,
+            "pan",
+            VnPresentationEasing::EaseIn
+        )
+        .is_err()
+    );
+    assert!(
+        invalid
+            .attribute_edit("main.roukaku", "pan", "keyframes", "0=0,1000=2")
+            .is_err()
+    );
 }

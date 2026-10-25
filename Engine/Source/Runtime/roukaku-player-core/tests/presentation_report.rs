@@ -2,8 +2,8 @@ use roukaku_core::Hash256;
 use roukaku_media_core::{BlendMode, GlyphBitmap, GlyphBitmapFormat, GlyphInstance, SceneCommand};
 use roukaku_platform::CapturedFrame;
 use roukaku_player_core::{
-    PlayerPlatform, PlayerPresentationReport, PlayerPresentationRunIdentity,
-    PLAYER_PRESENTATION_REPORT_SCHEMA,
+    PLAYER_PRESENTATION_REPORT_SCHEMA, PlayerPlatform, PlayerPresentationReport,
+    PlayerPresentationRunIdentity,
 };
 
 fn identity() -> PlayerPresentationRunIdentity {
@@ -85,29 +85,33 @@ fn live_presentation_report_binds_command_and_capture_identity() {
 fn presentation_report_rejects_headless_identity_and_empty_visual_output() {
     let mut headless = identity();
     headless.renderer_provider = "roukaku.renderer.headless".into();
-    assert!(PlayerPresentationReport::from_live_capture(
-        headless,
-        Hash256::from_sha256(b"layout"),
-        &present(),
-        &CapturedFrame {
-            width: 2,
-            height: 2,
-            rgba8: vec![255; 16].into(),
-        },
-        [0; 4],
-    )
-    .is_err());
+    assert!(
+        PlayerPresentationReport::from_live_capture(
+            headless,
+            Hash256::from_sha256(b"layout"),
+            &present(),
+            &CapturedFrame {
+                width: 2,
+                height: 2,
+                rgba8: vec![255; 16].into(),
+            },
+            [0; 4],
+        )
+        .is_err()
+    );
 
-    assert!(PlayerPresentationReport::from_live_capture(
-        identity(),
-        Hash256::from_sha256(b"layout"),
-        &present(),
-        &CapturedFrame {
-            width: 2,
-            height: 2,
-            rgba8: vec![0; 16].into(),
-        },
-        [0; 4],
-    )
-    .is_err());
+    assert!(
+        PlayerPresentationReport::from_live_capture(
+            identity(),
+            Hash256::from_sha256(b"layout"),
+            &present(),
+            &CapturedFrame {
+                width: 2,
+                height: 2,
+                rgba8: vec![0; 16].into(),
+            },
+            [0; 4],
+        )
+        .is_err()
+    );
 }

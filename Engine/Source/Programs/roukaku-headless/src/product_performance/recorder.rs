@@ -2,8 +2,8 @@ use std::{
     collections::BTreeMap,
     path::Path,
     sync::{
-        atomic::{AtomicU64, Ordering},
         Mutex,
+        atomic::{AtomicU64, Ordering},
     },
     time::Instant,
 };
@@ -11,7 +11,7 @@ use std::{
 use roukaku_core::{PerformanceBudget, PerformanceRecorder};
 use roukaku_headless_protocol::ProductPerformanceSample;
 use roukaku_observability::{
-    sample_process_memory, PerfettoFlowPhase, PerfettoTraceConfig, PerfettoTraceWriter,
+    PerfettoFlowPhase, PerfettoTraceConfig, PerfettoTraceWriter, sample_process_memory,
 };
 
 use super::*;

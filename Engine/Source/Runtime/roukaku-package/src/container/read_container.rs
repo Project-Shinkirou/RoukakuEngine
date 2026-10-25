@@ -313,13 +313,13 @@ pub(super) fn read_container_source(
                 entry.id
             )));
         }
-        if let Some(descriptor) = &entry.encryption {
-            if descriptor.aad_hash != section_aad_hash_from_entry(kind, entry)? {
-                return Err(ContainerError::Crypto(format!(
-                    "section {} encryption AAD hash mismatch",
-                    entry.id
-                )));
-            }
+        if let Some(descriptor) = &entry.encryption
+            && descriptor.aad_hash != section_aad_hash_from_entry(kind, entry)?
+        {
+            return Err(ContainerError::Crypto(format!(
+                "section {} encryption AAD hash mismatch",
+                entry.id
+            )));
         }
         ranges.push((entry.offset, end, entry.id.as_str()));
     }

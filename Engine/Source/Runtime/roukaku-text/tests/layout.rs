@@ -210,8 +210,10 @@ fn font_coverage_reads_real_character_map_and_rejects_missing_face() {
         assert!(contains(character), "{character:?}");
     }
     assert!(!contains('\u{10ffff}'));
-    assert!(ranges
-        .windows(2)
-        .all(|pair| pair[0].end + 1 < pair[1].start));
+    assert!(
+        ranges
+            .windows(2)
+            .all(|pair| pair[0].end + 1 < pair[1].start)
+    );
     assert!(roukaku_text::font_unicode_coverage(bytes, 100).is_err());
 }

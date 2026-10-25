@@ -1,6 +1,6 @@
 use roukaku_plugin::{
-    provider_binding_context_from_runtime_package, EngineModuleSlot, ExtensionConflict, LoadPhase,
-    PluginDependency, PluginRegistrar, ProviderBindingContext, RegisteredProvider,
+    EngineModuleSlot, ExtensionConflict, LoadPhase, PluginDependency, PluginRegistrar,
+    ProviderBindingContext, RegisteredProvider, provider_binding_context_from_runtime_package,
 };
 
 fn provider(id: &str) -> RegisteredProvider {
@@ -90,9 +90,11 @@ fn extension_registry_preserves_explicit_binding_and_reports_conflicts() {
         .unwrap()
         .clone();
     registrar.unregister_provider(&selected_provider);
-    assert!(registrar
-        .selected_provider(&EngineModuleSlot("presentation".to_string()))
-        .is_none());
+    assert!(
+        registrar
+            .selected_provider(&EngineModuleSlot("presentation".to_string()))
+            .is_none()
+    );
 }
 
 #[test]
@@ -107,14 +109,16 @@ fn explicit_binding_is_order_independent_and_only_blocks_abi_drift() {
         }
         let mut drifted = context();
         drifted.abi_fingerprint = "wrong-abi".to_string();
-        assert!(registrar
-            .bind_provider(
-                &EngineModuleSlot("presentation".to_string()),
-                "roukaku.provider.second",
-                drifted,
-            )
-            .unwrap_err()
-            .contains("ROUKAKU_PLUGIN_BINDING_FINGERPRINT_MISMATCH"));
+        assert!(
+            registrar
+                .bind_provider(
+                    &EngineModuleSlot("presentation".to_string()),
+                    "roukaku.provider.second",
+                    drifted,
+                )
+                .unwrap_err()
+                .contains("ROUKAKU_PLUGIN_BINDING_FINGERPRINT_MISMATCH")
+        );
         assert!(registrar.services.get("presentation").is_none());
 
         let mut warning_only = context();

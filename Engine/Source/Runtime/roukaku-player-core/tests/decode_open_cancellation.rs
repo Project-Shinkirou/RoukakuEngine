@@ -1,6 +1,6 @@
 use roukaku_platform::{
-    host_channel, DecodeSessionHandle, HostCommand, PlatformBackendChannels, PlatformError,
-    PlatformErrorCode, PlatformHostProfile,
+    DecodeSessionHandle, HostCommand, PlatformBackendChannels, PlatformError, PlatformErrorCode,
+    PlatformHostProfile, host_channel,
 };
 use roukaku_player_core::{
     PlatformCommandSink, PlayerDecodeKind, PlayerHostCommand, PlayerHostCommandBatch,
@@ -127,18 +127,22 @@ async fn pending_open_budget_and_logical_identity_are_checked_before_dispatch() 
     for logical in 0..64 {
         replies.push(abandon_open(&mut executor, &mut backend, logical).await);
     }
-    assert!(executor
-        .execute_batch(open(0))
-        .await
-        .unwrap_err()
-        .to_string()
-        .contains("already exists"));
-    assert!(executor
-        .execute_batch(open(64))
-        .await
-        .unwrap_err()
-        .to_string()
-        .contains("budget exceeded"));
+    assert!(
+        executor
+            .execute_batch(open(0))
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("already exists")
+    );
+    assert!(
+        executor
+            .execute_batch(open(64))
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("budget exceeded")
+    );
     for reply in replies {
         reply
             .send(Err(PlatformError::new(
@@ -147,11 +151,13 @@ async fn pending_open_budget_and_logical_identity_are_checked_before_dispatch() 
                 "test open failure",
             )))
             .unwrap();
-        assert!(executor
-            .sink_mut()
-            .cleanup_pending_decode_opens()
-            .await
-            .is_err());
+        assert!(
+            executor
+                .sink_mut()
+                .cleanup_pending_decode_opens()
+                .await
+                .is_err()
+        );
     }
     assert!(!executor.sink().has_live_resources());
 }

@@ -1,7 +1,7 @@
 use roukaku_vn_script::{
-    compile_roukaku_project, ReadingMode, RoukakuSource, SaveCompletionPolicy, SystemPageKind,
-    SystemStoryManifest, SystemStoryValidationStatus, SystemUiProfilePolicy,
-    VnSystemUiProfileManifest,
+    ReadingMode, RoukakuSource, SaveCompletionPolicy, SystemPageKind, SystemStoryManifest,
+    SystemStoryValidationStatus, SystemUiProfilePolicy, VnSystemUiProfileManifest,
+    compile_roukaku_project,
 };
 use std::collections::BTreeSet;
 
@@ -71,10 +71,12 @@ fn system_story_manifest_validates_required_entries_and_sources() {
     missing.entries.remove(&SystemPageKind::Gallery);
     let report = missing.validate_required(&required);
     assert_eq!(report.status, SystemStoryValidationStatus::Blocked);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_SYSTEM_ENTRY_MISSING"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_SYSTEM_ENTRY_MISSING")
+    );
 }
 
 #[test]
@@ -117,11 +119,13 @@ fn system_ui_profile_manifest_validates_migration_unlock_and_localization() {
 
     let mut missing_unlock = manifest.clone();
     missing_unlock.unlock_sources.clear();
-    assert!(missing_unlock
-        .validate()
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNLOCK_SOURCE_POLICY"));
+    assert!(
+        missing_unlock
+            .validate()
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNLOCK_SOURCE_POLICY")
+    );
 
     let mut missing_localization = manifest;
     missing_localization.localization.locales.clear();

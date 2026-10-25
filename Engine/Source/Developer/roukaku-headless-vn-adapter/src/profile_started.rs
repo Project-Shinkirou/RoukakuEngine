@@ -181,12 +181,10 @@ impl NativeVnHeadlessSession {
             .execute_batch(batch)
             .await
             .map_err(|error| ProductHostError::Input(error.to_string()));
-        if binds_presentation {
-            if let Some(observer) = &self.performance_observer {
-                observer
-                    .finish_presentation_sample()
-                    .map_err(ProductHostError::Output)?;
-            }
+        if binds_presentation && let Some(observer) = &self.performance_observer {
+            observer
+                .finish_presentation_sample()
+                .map_err(ProductHostError::Output)?;
         }
         for result in execution? {
             if let PlayerHostCommandResult::Captured {
@@ -303,12 +301,10 @@ impl NativeVnHeadlessSession {
                         .execute_batch(present)
                         .await
                         .map_err(|error| ProductHostError::Output(error.to_string()));
-                    if binds_presentation {
-                        if let Some(observer) = &self.performance_observer {
-                            observer
-                                .finish_presentation_sample()
-                                .map_err(ProductHostError::Output)?;
-                        }
+                    if binds_presentation && let Some(observer) = &self.performance_observer {
+                        observer
+                            .finish_presentation_sample()
+                            .map_err(ProductHostError::Output)?;
                     }
                     execution?;
                 }
@@ -447,12 +443,14 @@ impl NativeVnHeadlessSession {
             .await
             .map_err(|error| ProductHostError::Output(error.to_string()))?;
         let (width, height, rgba8) = match results.as_slice() {
-            [PlayerHostCommandResult::Captured {
-                width,
-                height,
-                rgba8,
-                ..
-            }] => (*width, *height, rgba8.clone()),
+            [
+                PlayerHostCommandResult::Captured {
+                    width,
+                    height,
+                    rgba8,
+                    ..
+                },
+            ] => (*width, *height, rgba8.clone()),
             _ => {
                 return Err(ProductHostError::Output(
                     "captured gameplay surface result is invalid".into(),

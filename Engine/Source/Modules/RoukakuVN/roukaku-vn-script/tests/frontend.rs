@@ -1,9 +1,8 @@
 use roukaku_ui_core::{UiThemeManifest, UiThemeValue};
 use roukaku_vn_script::{
-    compile_roukaku_project, format_roukaku_source, parse_roukaku_source,
     CompileRoukakuProjectOptions, ExtensionCommandDescriptor, ExtensionFieldContract,
-    ExtensionFieldKind, FormatOptions, RoukakuSource, ScriptLanguageService, SemanticPass,
-    SyntaxKind, SEMANTIC_PASS_ORDER,
+    ExtensionFieldKind, FormatOptions, RoukakuSource, SEMANTIC_PASS_ORDER, ScriptLanguageService,
+    SemanticPass, SyntaxKind, compile_roukaku_project, format_roukaku_source, parse_roukaku_source,
 };
 use std::collections::BTreeMap;
 
@@ -53,10 +52,12 @@ fn semantic_pass_order_is_stable_and_language_service_exposes_navigation() {
     let service = ScriptLanguageService::new("service.roukaku", source);
     assert!(service.definition("state.start").is_some());
     assert_eq!(service.references("state.start").len(), 1);
-    assert!(service
-        .semantic_tokens()
-        .iter()
-        .any(|token| token.kind == "attribute"));
+    assert!(
+        service
+            .semantic_tokens()
+            .iter()
+            .any(|token| token.kind == "attribute")
+    );
 }
 
 #[test]
@@ -276,10 +277,12 @@ state z12 #@id director.z.0126
     .expect("the checked-in TsuiNoSora UI template must compile");
 
     assert_eq!(compiled.ui_blueprints.views.len(), 21);
-    assert!(compiled
-        .ui_blueprints
-        .views
-        .contains_key("ui.tsui.modern.quick_panel"));
+    assert!(
+        compiled
+            .ui_blueprints
+            .views
+            .contains_key("ui.tsui.modern.quick_panel")
+    );
     for view_id in ["ui.tsui.classic.monologue", "ui.tsui.modern.monologue"] {
         let view = compiled
             .ui_blueprints
@@ -289,12 +292,14 @@ state z12 #@id director.z.0126
         assert_eq!(view.model_schema, "roukaku.vn.ui_model.message.v2");
     }
     for profile in ["classic", "modern"] {
-        assert!(compiled
-            .ui_bindings
-            .profile_scoped_bindings
-            .get(profile)
-            .and_then(|bindings| bindings.surface_bindings.get("tsui.surface.monologue"))
-            .is_some());
+        assert!(
+            compiled
+                .ui_bindings
+                .profile_scoped_bindings
+                .get(profile)
+                .and_then(|bindings| bindings.surface_bindings.get("tsui.surface.monologue"))
+                .is_some()
+        );
     }
     let classic = compiled
         .system_ui_profiles
@@ -365,10 +370,12 @@ roukaku.ui.controller.register("config", {
 fn unknown_command_is_editable_but_requires_explicit_compile_binding() {
     let source = "story main\nstate start\n  scene room\n    studio_fx intensity:2 #@id fx.1\n";
     let parsed = parse_roukaku_source("unknown.roukaku", source);
-    assert!(parsed
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNKNOWN_COMMAND"));
+    assert!(
+        parsed
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNKNOWN_COMMAND")
+    );
 
     let error = compile_roukaku_project(
         [roukaku_vn_script::RoukakuSource::story(
@@ -406,10 +413,12 @@ fn unknown_command_is_editable_but_requires_explicit_compile_binding() {
 fn standard_audio_control_is_bound_without_an_extension_bypass() {
     let source = "story main\nstate start\n  scene room\n    audio action:pause target:bgm.main #@id audio.pause\n";
     let parsed = parse_roukaku_source("audio.roukaku", source);
-    assert!(!parsed
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNKNOWN_COMMAND"));
+    assert!(
+        !parsed
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_UNKNOWN_COMMAND")
+    );
 
     let compiled = compile_roukaku_project(
         [roukaku_vn_script::RoukakuSource::story(
@@ -440,13 +449,17 @@ fn formatter_is_idempotent_and_preserves_semantics() {
         formatted
     );
     let service = ScriptLanguageService::new("story.roukaku", &formatted);
-    assert!(service
-        .symbols()
-        .iter()
-        .any(|symbol| symbol.id == "line.hello"));
-    assert!(service
-        .hover(formatted.find("text").unwrap() as u32 + 1)
-        .is_some());
+    assert!(
+        service
+            .symbols()
+            .iter()
+            .any(|symbol| symbol.id == "line.hello")
+    );
+    assert!(
+        service
+            .hover(formatted.find("text").unwrap() as u32 + 1)
+            .is_some()
+    );
 }
 
 #[test]
@@ -456,9 +469,15 @@ fn dynamic_ui_component_authoring_is_rejected() {
         "ui_view ui.test model:roukaku.vn.ui_model.config.v1 theme:theme.classic #@id ui.test\n  component_slot id:root component:obsolete.widget\n",
         "ui_view ui.test model:roukaku.vn.ui_model.config.v1 theme:theme.classic #@id ui.test\n  screen id:root component:obsolete.widget\n",
     ] {
-        assert!(compile_roukaku_project(
-            [RoukakuSource::story("story.roukaku", SOURCE), RoukakuSource::ui("ui.roukaku", ui)],
-            CompileRoukakuProjectOptions::default().with_ui_theme(test_theme()),
-        ).is_err());
+        assert!(
+            compile_roukaku_project(
+                [
+                    RoukakuSource::story("story.roukaku", SOURCE),
+                    RoukakuSource::ui("ui.roukaku", ui)
+                ],
+                CompileRoukakuProjectOptions::default().with_ui_theme(test_theme()),
+            )
+            .is_err()
+        );
     }
 }

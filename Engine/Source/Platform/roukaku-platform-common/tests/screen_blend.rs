@@ -107,7 +107,9 @@ async fn screen_texture_respects_color_space_and_preserves_transparent_pixels() 
             .unwrap();
         assert_eq!(
             captured.rgba8.as_ref(),
-            [255, 128, 192, 255, middle_red, 128, 192, 255, 64, 128, 192, 255]
+            [
+                255, 128, 192, 255, middle_red, 128, 192, 255, 64, 128, 192, 255
+            ]
         );
     }
 }

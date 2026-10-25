@@ -7,8 +7,8 @@ use roukaku_player_vn::PreparedPolicyActions;
 use roukaku_runtime::TaskScope;
 use roukaku_vn_policy::{LuauPolicy, PolicyActionBinding, PolicyIoHost, PolicyReadText};
 use std::sync::{
-    atomic::{AtomicBool, AtomicUsize, Ordering},
     Arc,
+    atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 const SOURCE: &str = r#"roukaku.command.register("note", {schema="note.v1",fields={}}, function() return roukaku.action.complete() end)"#;
 fn package() -> Vec<u8> {
@@ -117,11 +117,13 @@ fn policy_preload_rejects_budget_and_runtime_never_reads_an_ungranted_id() {
             .unwrap(),
         "hello"
     );
-    assert!(runtime
-        .block_on(prepared.read_text(PolicyReadText {
-            id: 2,
-            resource: "asset:/text/denied".parse().unwrap(),
-            max_bytes: 64
-        }))
-        .is_err());
+    assert!(
+        runtime
+            .block_on(prepared.read_text(PolicyReadText {
+                id: 2,
+                resource: "asset:/text/denied".parse().unwrap(),
+                max_bytes: 64
+            }))
+            .is_err()
+    );
 }

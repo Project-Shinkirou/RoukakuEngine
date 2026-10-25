@@ -1,9 +1,9 @@
 use std::{path::Path, sync::atomic::Ordering, time::Instant};
 
 use roukaku_core::{
-    PerformanceRunIdentity, PerformanceTraceManifest, PERFORMANCE_TRACE_MANIFEST_SCHEMA,
+    PERFORMANCE_TRACE_MANIFEST_SCHEMA, PerformanceRunIdentity, PerformanceTraceManifest,
 };
-use roukaku_observability::{sample_process_memory, PerfettoFlowPhase};
+use roukaku_observability::{PerfettoFlowPhase, sample_process_memory};
 use roukaku_platform::PlatformError;
 use roukaku_platform_headless::HeadlessGpuFrameSample;
 

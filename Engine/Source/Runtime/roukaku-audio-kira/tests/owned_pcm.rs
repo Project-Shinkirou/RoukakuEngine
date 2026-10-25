@@ -191,9 +191,11 @@ fn active_pcm_is_pinned_when_cache_budget_is_exhausted() {
         .expect("play loop");
     let mut other = asset();
     other.uri = "asset://voice/other".into();
-    assert!(session
-        .prepare_pcm(other, 48_000, 2, vec![0.0; 128])
-        .is_err());
+    assert!(
+        session
+            .prepare_pcm(other, 48_000, 2, vec![0.0; 128])
+            .is_err()
+    );
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use crate::{LayoutClip, MediaError, TextLayoutResult, TEXT_LAYOUT_SCHEMA};
+use crate::{LayoutClip, MediaError, TEXT_LAYOUT_SCHEMA, TextLayoutResult};
 use roukaku_media_core::{BlendMode, GlyphBitmap, GlyphInstance, RectI, SceneCommand};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -146,38 +146,36 @@ impl TextRenderResourceOwner {
                     "ROUKAKU_TEXT_RENDER_LAYOUT_DUPLICATE: frame updates a layout more than once",
                 ));
             }
-            if let Some(shared_layout) = update.shared_layout {
-                if !std::ptr::eq(shared_layout.as_ref(), update.layout) {
-                    return Err(MediaError::message(
-                        "ROUKAKU_TEXT_RENDER_SHARED_LAYOUT_IDENTITY: shared layout does not own the borrowed layout",
-                    ));
-                }
+            if let Some(shared_layout) = update.shared_layout
+                && !std::ptr::eq(shared_layout.as_ref(), update.layout)
+            {
+                return Err(MediaError::message(
+                    "ROUKAKU_TEXT_RENDER_SHARED_LAYOUT_IDENTITY: shared layout does not own the borrowed layout",
+                ));
             }
             if let (Some(previous), Some(shared_layout)) =
                 (self.layouts.get(update.layout_id), update.shared_layout)
+                && previous.layout_revision == update.layout.revision
+                && previous.rgba == update.rgba
+                && previous.translation == update.translation
+                && previous
+                    .shared_layout
+                    .as_ref()
+                    .is_some_and(|owned| Arc::ptr_eq(owned, shared_layout))
             {
-                if previous.layout_revision == update.layout.revision
-                    && previous.rgba == update.rgba
-                    && previous.translation == update.translation
-                    && previous
-                        .shared_layout
-                        .as_ref()
-                        .is_some_and(|owned| Arc::ptr_eq(owned, shared_layout))
-                {
-                    self.validate_layout_resources(&previous.resource_ids)?;
-                    prepared.push(PreparedTextLayout {
-                        layout_id: update.layout_id.to_string(),
-                        next_ids: previous.resource_ids.clone(),
-                        glyphs: Vec::new(),
-                        clip: None,
-                        rgba: update.rgba,
-                        translation: update.translation,
-                        layout_revision: update.layout.revision,
-                        cached_commands: Some(previous.commands.clone()),
-                        shared_layout: update.shared_layout.cloned(),
-                    });
-                    continue;
-                }
+                self.validate_layout_resources(&previous.resource_ids)?;
+                prepared.push(PreparedTextLayout {
+                    layout_id: update.layout_id.to_string(),
+                    next_ids: previous.resource_ids.clone(),
+                    glyphs: Vec::new(),
+                    clip: None,
+                    rgba: update.rgba,
+                    translation: update.translation,
+                    layout_revision: update.layout.revision,
+                    cached_commands: Some(previous.commands.clone()),
+                    shared_layout: update.shared_layout.cloned(),
+                });
+                continue;
             }
             let declared = update
                 .layout

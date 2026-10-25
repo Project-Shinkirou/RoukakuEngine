@@ -76,7 +76,7 @@ impl SceneFilters {
                 _ if saw_filter => {
                     return Err(invalid(
                         "draw commands after a filter graph are not supported",
-                    ))
+                    ));
                 }
                 _ => {}
             }

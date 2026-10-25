@@ -1,18 +1,20 @@
 use roukaku_media::{
-    open_symphonia_audio_stream, DecodeBindingContext, DecodeKind, DecodeOutput, DecodeProvider,
-    DecodeProviderRegistry, DecodeRequest, ImageDecodeProvider, SymphoniaAudioDecodeProvider,
-    SyntheticPlatformDecodeProvider,
+    DecodeBindingContext, DecodeKind, DecodeOutput, DecodeProvider, DecodeProviderRegistry,
+    DecodeRequest, ImageDecodeProvider, SymphoniaAudioDecodeProvider,
+    SyntheticPlatformDecodeProvider, open_symphonia_audio_stream,
 };
 use serde_json::Value;
 
 #[test]
 fn decode_provider_selection_is_profile_bound_not_load_order() {
     let mut registry = DecodeProviderRegistry::default();
-    assert!(ImageDecodeProvider
-        .capability()
-        .codecs
-        .iter()
-        .any(|codec| codec == "bmp"));
+    assert!(
+        ImageDecodeProvider
+            .capability()
+            .codecs
+            .iter()
+            .any(|codec| codec == "bmp")
+    );
     registry.register(Box::new(ImageDecodeProvider)).unwrap();
     registry
         .register(Box::new(SyntheticPlatformDecodeProvider::new(
@@ -40,12 +42,18 @@ fn decode_provider_selection_is_profile_bound_not_load_order() {
     let selected = registry.select(&request, &image).unwrap();
     assert_eq!(selected.provider_id, "roukaku.decode.image");
 
-    assert!(registry
-        .select(
-            &request,
-            &DecodeBindingContext::shipping("missing.provider", "native-game", "desktop-release",)
-        )
-        .is_err());
+    assert!(
+        registry
+            .select(
+                &request,
+                &DecodeBindingContext::shipping(
+                    "missing.provider",
+                    "native-game",
+                    "desktop-release",
+                )
+            )
+            .is_err()
+    );
 
     assert!(registry.register(Box::new(ImageDecodeProvider)).is_err());
 
@@ -53,9 +61,11 @@ fn decode_provider_selection_is_profile_bound_not_load_order() {
         profile: "classic".into(),
         ..request
     };
-    assert!(registry
-        .select(&mismatched_profile, &reference_platform)
-        .is_err());
+    assert!(
+        registry
+            .select(&mismatched_profile, &reference_platform)
+            .is_err()
+    );
 }
 
 #[test]
@@ -131,9 +141,11 @@ fn symphonia_stream_rejects_truncated_pcm_instead_of_reporting_completion() {
     assert_eq!(decoder.next_chunk().unwrap().unwrap().samples.len(), 3);
     let error = decoder.next_chunk().unwrap_err();
     match error {
-        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_AUDIO_STREAM_TRUNCATED_INPUT")),
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_AUDIO_STREAM_TRUNCATED_INPUT")
+        ),
         error => panic!("expected a structured truncation diagnostic, got {error}"),
     }
 }
@@ -165,14 +177,18 @@ fn public_domain_media_manifest_matches_checked_in_assets() {
                 asset["derived_from"],
                 serde_json::json!(["flower_mp4", "trex_roar_mp3"])
             );
-            assert!(asset["derivation"]
-                .as_str()
-                .is_some_and(|value| { value.contains("H.264") && value.contains("AAC") }));
+            assert!(
+                asset["derivation"]
+                    .as_str()
+                    .is_some_and(|value| { value.contains("H.264") && value.contains("AAC") })
+            );
         } else {
-            assert!(asset["source_url"]
-                .as_str()
-                .unwrap()
-                .starts_with("https://"));
+            assert!(
+                asset["source_url"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("https://")
+            );
         }
     }
 }
@@ -182,9 +198,11 @@ fn public_domain_media_manifest_matches_checked_in_assets() {
 fn ffmpeg_probe_is_a_structured_blocker_when_feature_is_absent() {
     assert!(!roukaku_media::ffmpeg_compiled());
     match roukaku_media::probe_ffmpeg_provider().unwrap_err() {
-        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_FFMPEG_FEATURE_DISABLED")),
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_FFMPEG_FEATURE_DISABLED")
+        ),
         other => panic!("expected structured FFmpeg diagnostic, got {other:?}"),
     }
 }
@@ -281,9 +299,11 @@ fn windows_wmf_full_stream_decoder_enforces_frame_and_byte_budgets() {
 #[cfg(windows)]
 fn assert_wmf_diagnostic(error: roukaku_media::MediaError) {
     match error {
-        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")),
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")
+        ),
         other => panic!("expected WMF diagnostic, got {other:?}"),
     }
 }
@@ -306,9 +326,11 @@ fn windows_wmf_incremental_stream_releases_frames_and_enforces_running_budget() 
     assert!(limited.next_frame().unwrap().is_some());
     let error = limited.next_frame().unwrap_err();
     match error {
-        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")),
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")
+        ),
         other => panic!("expected WMF diagnostic, got {other:?}"),
     }
 }
@@ -329,9 +351,11 @@ fn windows_wmf_incremental_audio_releases_ordered_bounded_pcm_chunks() {
     let mut limited = roukaku_media::open_windows_audio_stream(&bytes, 1).unwrap();
     let error = limited.next_chunk().unwrap_err();
     match error {
-        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")),
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_WMF_DECODE")
+        ),
         other => panic!("expected WMF diagnostic, got {other:?}"),
     }
 }
@@ -351,9 +375,11 @@ fn windows_wmf_decode_provider_video_without_transform_reports_blocking_diagnost
 
     match err {
         roukaku_media::MediaError::Diagnostics(diagnostics) => {
-            assert!(diagnostics
-                .iter()
-                .any(|diag| diag.code == "ROUKAKU_WMF_DECODE"));
+            assert!(
+                diagnostics
+                    .iter()
+                    .any(|diag| diag.code == "ROUKAKU_WMF_DECODE")
+            );
         }
         other => panic!("expected WMF diagnostic, got {other:?}"),
     }
@@ -477,9 +503,11 @@ fn ffmpeg_decode_provider_decodes_real_audio_and_video() {
         })
         .unwrap_err();
     match corrupt {
-        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_FFMPEG_DEMUX")),
+        roukaku_media::MediaError::Diagnostics(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_FFMPEG_DEMUX")
+        ),
         other => panic!("expected structured FFmpeg diagnostic, got {other:?}"),
     }
 }

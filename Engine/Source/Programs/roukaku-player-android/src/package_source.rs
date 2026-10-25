@@ -3,8 +3,8 @@ use roukaku_byte_source::{
     RangeReadResult, SourceRevision,
 };
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc,
+    atomic::{AtomicBool, Ordering},
 };
 
 pub(crate) struct CancellableSource {

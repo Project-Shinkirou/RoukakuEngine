@@ -59,7 +59,8 @@ fn host_owned_outputs_are_bounded_before_copy_and_failure_does_not_commit() {
         PolicyIoCapabilities, PolicyIoContext, PolicyIoState, PolicyQueryContext, VnPolicyState,
     };
     let budget = roukaku_vn_policy::PolicyExecutionBudget {
-        memory_bytes: 512 * 1024,
+        // Keep the host ledger, not Luau 744's larger VM heap, as the first exhausted budget.
+        memory_bytes: 1024 * 1024,
         output_limit: 128,
         ..Default::default()
     };
@@ -68,7 +69,9 @@ fn host_owned_outputs_are_bounded_before_copy_and_failure_does_not_commit() {
         "roukaku.trace.event('item', payload)",
         "roukaku.command.emit('item', payload)",
     ] {
-        let source = format!("roukaku.mutate.set_var('project','count',1); roukaku.host.read_text('note','asset:/text/note'); local payload = string.rep('x', 16384); for i=1,100 do {operation} end; return true");
+        let source = format!(
+            "roukaku.mutate.set_var('project','count',1); roukaku.host.read_text('note','asset:/text/note'); local payload = string.rep('x', 16384); for i=1,100 do {operation} end; return true"
+        );
         let mut state = VnPolicyState::default();
         let mut io = PolicyIoState::default();
         let capabilities =

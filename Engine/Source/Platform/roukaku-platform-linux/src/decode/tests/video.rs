@@ -1,5 +1,5 @@
 use super::*;
-use gstreamer::{prelude::*, ClockTime};
+use gstreamer::{ClockTime, prelude::*};
 
 pub(super) const PTS: [u64; 4] = [0, 100_000, 350_000, 450_000];
 

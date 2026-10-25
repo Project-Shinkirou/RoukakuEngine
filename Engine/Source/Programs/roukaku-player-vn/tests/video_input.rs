@@ -51,9 +51,11 @@ fn physical_advance_cancels_only_an_allowed_movie_wait_and_rejects_late_frames()
                     true,
                 )
                 .unwrap_err();
-            assert!(error
-                .to_string()
-                .contains("ROUKAKU_PLAYER_VIDEO_REQUEST_STALE"));
+            assert!(
+                error
+                    .to_string()
+                    .contains("ROUKAKU_PLAYER_VIDEO_REQUEST_STALE")
+            );
             source.complete_wait(completions[0].clone()).unwrap();
             assert_ne!(
                 source.pending_wait().map(|wait| wait.fence.as_str()),

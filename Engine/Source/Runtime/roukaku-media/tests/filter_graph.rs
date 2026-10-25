@@ -21,10 +21,12 @@ fn filter_graph_validates_typed_nodes_and_fallback_diagnostics() {
     };
     let report = FilterValidator.validate(&graph);
     assert!(report.blocking_diagnostics().is_empty());
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_FILTER_CPU_FALLBACK"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_FILTER_CPU_FALLBACK")
+    );
 
     let mut invalid = graph;
     invalid.nodes[0].params.insert(
@@ -32,10 +34,12 @@ fn filter_graph_validates_typed_nodes_and_fallback_diagnostics() {
         FilterParam::Text("bad".to_string()),
     );
     let report = FilterValidator.validate(&invalid);
-    assert!(report
-        .blocking_diagnostics()
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_FILTER_PARAM_TYPE"));
+    assert!(
+        report
+            .blocking_diagnostics()
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_FILTER_PARAM_TYPE")
+    );
 
     let unknown = FilterGraph {
         schema: "roukaku.filter_graph.v1".into(),
@@ -49,11 +53,13 @@ fn filter_graph_validates_typed_nodes_and_fallback_diagnostics() {
             allow_cpu_fallback: true,
         }],
     };
-    assert!(FilterValidator
-        .validate(&unknown)
-        .blocking_diagnostics()
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_FILTER_UNSUPPORTED"));
+    assert!(
+        FilterValidator
+            .validate(&unknown)
+            .blocking_diagnostics()
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_FILTER_UNSUPPORTED")
+    );
 }
 
 #[test]

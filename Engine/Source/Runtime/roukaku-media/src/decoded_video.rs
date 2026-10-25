@@ -1,4 +1,4 @@
-use crate::{playback::playback_error, MediaError};
+use crate::{MediaError, playback::playback_error};
 
 pub const DECODED_VIDEO_STREAM_SCHEMA: &str = "roukaku.decoded_video_stream.v1";
 

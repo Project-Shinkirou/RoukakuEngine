@@ -4,8 +4,8 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    compile_roukaku_project, CompileRoukakuProjectOptions, CompiledVnProject, EditBatch, EditError,
-    RoukakuSource, RoukakuSourceRole, VnError,
+    CompileRoukakuProjectOptions, CompiledVnProject, EditBatch, EditError, RoukakuSource,
+    RoukakuSourceRole, VnError, compile_roukaku_project,
 };
 
 const MAX_HISTORY: usize = 100;

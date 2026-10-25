@@ -1,5 +1,5 @@
 use evdev::{
-    uinput::VirtualDevice, AttributeSet, EventType, InputEvent, KeyCode, RelativeAxisCode,
+    AttributeSet, EventType, InputEvent, KeyCode, RelativeAxisCode, uinput::VirtualDevice,
 };
 use roukaku_platform::{PlatformError, PlatformErrorCode};
 

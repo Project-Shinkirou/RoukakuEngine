@@ -6,7 +6,7 @@ use roukaku_package::{
     SourceVerificationManifest,
 };
 use roukaku_platform::PlatformId;
-use roukaku_target::{validate_manifest, TargetManifest, TargetValidationStatus};
+use roukaku_target::{TargetManifest, TargetValidationStatus, validate_manifest};
 
 use super::*;
 

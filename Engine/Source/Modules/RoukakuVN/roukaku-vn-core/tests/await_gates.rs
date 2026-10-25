@@ -1,5 +1,5 @@
 use roukaku_vn_core::{
-    compile_roukaku_project, RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind,
+    RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind, compile_roukaku_project,
 };
 
 const MOVIE_WAIT_STORY: &str = r#"

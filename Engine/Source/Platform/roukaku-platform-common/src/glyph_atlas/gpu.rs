@@ -253,40 +253,40 @@ pub(crate) fn repack_gpu_atlas(
         let copy_bytes = u64::from(resource.width() + ATLAS_PADDING * 2)
             * u64::from(resource.height() + ATLAS_PADDING * 2)
             * 4;
-        if old_resources.get(resource_id) == Some(resource) {
-            if let Some(old_placement) = current.packed.placements.get(resource_id) {
-                encoder.copy_texture_to_texture(
-                    wgpu::TexelCopyTextureInfo {
-                        texture: &current.texture,
-                        mip_level: 0,
-                        origin: wgpu::Origin3d {
-                            x: old_placement.x - ATLAS_PADDING,
-                            y: old_placement.y - ATLAS_PADDING,
-                            z: 0,
-                        },
-                        aspect: wgpu::TextureAspect::All,
+        if old_resources.get(resource_id) == Some(resource)
+            && let Some(old_placement) = current.packed.placements.get(resource_id)
+        {
+            encoder.copy_texture_to_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &current.texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d {
+                        x: old_placement.x - ATLAS_PADDING,
+                        y: old_placement.y - ATLAS_PADDING,
+                        z: 0,
                     },
-                    wgpu::TexelCopyTextureInfo {
-                        texture: &atlas.texture,
-                        mip_level: 0,
-                        origin: wgpu::Origin3d {
-                            x: placement.x - ATLAS_PADDING,
-                            y: placement.y - ATLAS_PADDING,
-                            z: 0,
-                        },
-                        aspect: wgpu::TextureAspect::All,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                wgpu::TexelCopyTextureInfo {
+                    texture: &atlas.texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d {
+                        x: placement.x - ATLAS_PADDING,
+                        y: placement.y - ATLAS_PADDING,
+                        z: 0,
                     },
-                    wgpu::Extent3d {
-                        width: resource.width() + ATLAS_PADDING * 2,
-                        height: resource.height() + ATLAS_PADDING * 2,
-                        depth_or_array_layers: 1,
-                    },
-                );
-                upload_bytes = upload_bytes
-                    .checked_add(copy_bytes)
-                    .ok_or_else(|| invalid("glyph atlas repack byte count overflowed"))?;
-                continue;
-            }
+                    aspect: wgpu::TextureAspect::All,
+                },
+                wgpu::Extent3d {
+                    width: resource.width() + ATLAS_PADDING * 2,
+                    height: resource.height() + ATLAS_PADDING * 2,
+                    depth_or_array_layers: 1,
+                },
+            );
+            upload_bytes = upload_bytes
+                .checked_add(copy_bytes)
+                .ok_or_else(|| invalid("glyph atlas repack byte count overflowed"))?;
+            continue;
         }
         upload_resource_rect(
             context.queue,

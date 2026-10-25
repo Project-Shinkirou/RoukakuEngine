@@ -11,9 +11,11 @@ fn standard_policy_bundle_carries_source_cache_and_executes() {
 
     let mut policy = LuauPolicy::new().unwrap();
     let mut state = VnPolicyState::default();
-    assert!(policy
-        .eval_bool(VnPolicyBundleSourceCache::standard_source(), &mut state)
-        .unwrap());
+    assert!(
+        policy
+            .eval_bool(VnPolicyBundleSourceCache::standard_source(), &mut state)
+            .unwrap()
+    );
 
     assert!(state.command_trace.iter().any(|entry| {
         entry.api == "roukaku.command.register" && entry.name == "roukaku.vn.message.show"
@@ -22,10 +24,12 @@ fn standard_policy_bundle_carries_source_cache_and_executes() {
         entry.api == "roukaku.command.register" && entry.name == "roukaku.vn.system.open"
     }));
     assert!(state.snapshot("roukaku.policy.standard").is_some());
-    assert!(state
-        .trace_events
-        .iter()
-        .any(|entry| entry.kind == "policy.loaded"));
+    assert!(
+        state
+            .trace_events
+            .iter()
+            .any(|entry| entry.kind == "policy.loaded")
+    );
 }
 
 #[test]
@@ -36,8 +40,10 @@ fn standard_policy_bundle_blocks_source_cache_hash_mismatch() {
 
     let report = manifest.validate_standard_with_cache(&cache);
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_POLICY_CACHE_HASH"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_POLICY_CACHE_HASH")
+    );
 }

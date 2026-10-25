@@ -358,14 +358,16 @@ mod tests {
             Layer2DDamage::Rects(Vec::new()),
             Layer2DDamage::Rects(vec![RectI::new(3, 3, 2, 2)]),
         ] {
-            assert!(retained
-                .apply(&Layer2DTransaction {
-                    sequence: 1,
-                    viewport_width: 4,
-                    viewport_height: 4,
-                    operations: vec![Layer2DOperation::Create(layer(1, damage))],
-                })
-                .is_err());
+            assert!(
+                retained
+                    .apply(&Layer2DTransaction {
+                        sequence: 1,
+                        viewport_width: 4,
+                        viewport_height: 4,
+                        operations: vec![Layer2DOperation::Create(layer(1, damage))],
+                    })
+                    .is_err()
+            );
         }
     }
 
@@ -396,13 +398,15 @@ mod tests {
             })
             .unwrap();
         assert_eq!(ordered[0].id, Layer2DId("alpha".into()));
-        assert!(retained
-            .apply(&Layer2DTransaction {
-                sequence: 4,
-                viewport_width: 4,
-                viewport_height: 4,
-                operations: Vec::new(),
-            })
-            .is_err());
+        assert!(
+            retained
+                .apply(&Layer2DTransaction {
+                    sequence: 4,
+                    viewport_width: 4,
+                    viewport_height: 4,
+                    operations: Vec::new(),
+                })
+                .is_err()
+        );
     }
 }

@@ -45,11 +45,11 @@ pub(super) fn stage_texture_requirements(
         .collect::<BTreeSet<_>>();
     let mut cpu_required = BTreeSet::new();
     for movie in state.movies.values() {
-        if !textures.contains_key(&movie.asset) {
-            if let Some(fallback) = &movie.fallback {
-                required.insert(fallback.clone());
-                cpu_required.insert(fallback.clone());
-            }
+        if !textures.contains_key(&movie.asset)
+            && let Some(fallback) = &movie.fallback
+        {
+            required.insert(fallback.clone());
+            cpu_required.insert(fallback.clone());
         }
     }
     (required, cpu_required)

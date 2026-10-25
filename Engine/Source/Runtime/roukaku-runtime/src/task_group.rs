@@ -140,10 +140,9 @@ impl TaskGroupState {
                 if let TaskMemberState::Terminal(
                     result @ (TaskTerminal::Completed | TaskTerminal::Failed),
                 ) = member
+                    && reconstructed.terminal.is_none()
                 {
-                    if reconstructed.terminal.is_none() {
-                        reconstructed.complete(i, *result)?;
-                    }
+                    reconstructed.complete(i, *result)?;
                 }
             }
             reconstructed.cancel();
@@ -156,10 +155,10 @@ impl TaskGroupState {
             }
         } else {
             for (i, member) in self.members.iter().enumerate() {
-                if let TaskMemberState::Terminal(result) = member {
-                    if reconstructed.terminal.is_none() {
-                        reconstructed.complete(i, *result)?;
-                    }
+                if let TaskMemberState::Terminal(result) = member
+                    && reconstructed.terminal.is_none()
+                {
+                    reconstructed.complete(i, *result)?;
                 }
             }
         }

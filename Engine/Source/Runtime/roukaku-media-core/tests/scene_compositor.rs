@@ -143,9 +143,11 @@ fn scene_resources_are_uploaded_reused_cropped_and_released_explicitly() {
             blend: BlendMode::Alpha,
         }])
         .unwrap_err();
-    assert!(missing
-        .to_string()
-        .contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN"));
+    assert!(
+        missing
+            .to_string()
+            .contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN")
+    );
 }
 
 #[test]
@@ -225,22 +227,26 @@ fn compositor_blocks_invalid_texture_dimensions_and_unbalanced_state() {
         height: 1,
         rgba8: vec![1, 2, 3].into(),
     };
-    assert!(renderer
-        .capture_frame(&[DrawCommand::Texture {
-            id: "corrupt".into(),
-            frame: corrupt,
-            destination: RectI::new(0, 0, 1, 1),
-            opacity: 1.0,
-            blend: BlendMode::Alpha,
-        }])
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_MEDIA_TEXTURE_SIZE"));
-    assert!(renderer
-        .capture_frame(&[DrawCommand::PopClip])
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_MEDIA_CLIP_STACK"));
+    assert!(
+        renderer
+            .capture_frame(&[DrawCommand::Texture {
+                id: "corrupt".into(),
+                frame: corrupt,
+                destination: RectI::new(0, 0, 1, 1),
+                opacity: 1.0,
+                blend: BlendMode::Alpha,
+            }])
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_MEDIA_TEXTURE_SIZE")
+    );
+    assert!(
+        renderer
+            .capture_frame(&[DrawCommand::PopClip])
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_MEDIA_CLIP_STACK")
+    );
 }
 
 #[test]
@@ -285,9 +291,11 @@ fn resource_updates_are_transactional_and_color_glyphs_preserve_rgba() {
             blend: BlendMode::Alpha,
         }])
         .unwrap_err();
-    assert!(missing
-        .to_string()
-        .contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN"));
+    assert!(
+        missing
+            .to_string()
+            .contains("ROUKAKU_MEDIA_RESOURCE_UNKNOWN")
+    );
 
     let frame = renderer
         .capture_frame(&[

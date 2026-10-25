@@ -67,7 +67,8 @@ mod tests {
     #[test]
     fn package_open_rejects_invalid_worker_counts() {
         let bytes = crate::test_native_package::product_package_with_request(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:hello speaker:hero #@id hello\n", |_| {},
+            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:hello speaker:hero #@id hello\n",
+            |_| {},
         );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();
         for worker_count in [0, WorkerBudgetBroker::DEFAULT_LIMIT + 1, usize::MAX] {
@@ -85,9 +86,11 @@ mod tests {
             let Err(error) = result else {
                 panic!("invalid workers opened a session")
             };
-            assert!(error
-                .to_string()
-                .contains("ROUKAKU_RUNTIME_EXECUTOR_CONFIG"));
+            assert!(
+                error
+                    .to_string()
+                    .contains("ROUKAKU_RUNTIME_EXECUTOR_CONFIG")
+            );
         }
     }
 }

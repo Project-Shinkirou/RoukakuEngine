@@ -1,7 +1,7 @@
 use std::{
     collections::BTreeMap,
     fmt,
-    sync::{atomic::AtomicU64, Mutex},
+    sync::{Mutex, atomic::AtomicU64},
     time::Instant,
 };
 

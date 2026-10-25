@@ -1,4 +1,4 @@
-use crate::{parse_roukaku_source, VnError};
+use crate::{VnError, parse_roukaku_source};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct FormatOptions {

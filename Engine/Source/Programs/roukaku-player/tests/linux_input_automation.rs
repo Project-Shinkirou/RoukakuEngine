@@ -1,4 +1,4 @@
-use roukaku_player::{LinuxUinputHost, LINUX_UINPUT_MOUSE};
+use roukaku_player::{LINUX_UINPUT_MOUSE, LinuxUinputHost};
 use roukaku_player_core::{
     PlayerAudioMeterEvidence, PlayerAutomationScript, PlayerAutomationStatus, PlayerAutomationStep,
     PlayerInputConsumptionEvidence, PlayerInputEvent, PlayerInputTranscript, PlayerPlatform,

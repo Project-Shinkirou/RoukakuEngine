@@ -22,8 +22,8 @@ pub fn factory() -> MacosPlatformFactory {
 }
 
 #[cfg(target_os = "macos")]
-pub fn main_thread_host(
-) -> Result<(MacosHostRunner, MacosPlatformFactory), roukaku_platform::PlatformError> {
+pub fn main_thread_host()
+-> Result<(MacosHostRunner, MacosPlatformFactory), roukaku_platform::PlatformError> {
     MacosHostRunner::new()
 }
 

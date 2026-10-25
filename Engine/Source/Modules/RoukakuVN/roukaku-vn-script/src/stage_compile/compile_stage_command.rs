@@ -78,7 +78,7 @@ pub(crate) fn compile_stage_command(line: &ParsedLine) -> Result<StageCommand, V
                     "contain_height" => StageFitMode::ContainHeight,
                     "native" => StageFitMode::Native,
                     value => {
-                        return Err(invalid_value(line, "fit", value, "contain_height,native"))
+                        return Err(invalid_value(line, "fit", value, "contain_height,native"));
                     }
                 },
                 opacity: opacity(line, "opacity")?,
@@ -425,10 +425,10 @@ pub(super) fn compile_audio(line: &ParsedLine, bus: VnAudioBus) -> Result<StageC
         VnAudioBus::Se => "se",
         VnAudioBus::Movie => "movie",
     };
-    if let Some(declared_bus) = line.attr("bus") {
-        if declared_bus != expected_bus {
-            return Err(invalid_value(line, "bus", declared_bus, expected_bus));
-        }
+    if let Some(declared_bus) = line.attr("bus")
+        && declared_bus != expected_bus
+    {
+        return Err(invalid_value(line, "bus", declared_bus, expected_bus));
     }
     let sync = match line.attr("sync").unwrap_or("none") {
         "none" => VnAudioSync::None,

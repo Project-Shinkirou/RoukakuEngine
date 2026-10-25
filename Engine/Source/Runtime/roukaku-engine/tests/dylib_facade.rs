@@ -2,8 +2,8 @@ use roukaku_engine::{
     core::StableId,
     package::{PackageBuildRequest, PackageBuilder},
     plugin::{
-        provider_binding_context_from_runtime_package, EngineModuleSlot, LoadPhase,
-        PluginRegistrar, RegisteredProvider,
+        EngineModuleSlot, LoadPhase, PluginRegistrar, RegisteredProvider,
+        provider_binding_context_from_runtime_package,
     },
     runtime::{PackageHandle, RuntimeConfig, RuntimeWorld},
 };

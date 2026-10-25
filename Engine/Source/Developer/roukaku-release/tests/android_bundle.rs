@@ -1,7 +1,7 @@
 use roukaku_platform_android::{
-    AndroidArtifactIdentity, AndroidBundleManifest, AndroidSigningMode, ANDROID_AGP_VERSION,
-    ANDROID_BUILD_TOOLS, ANDROID_BUNDLE_MANIFEST_SCHEMA, ANDROID_COMPILE_SDK,
+    ANDROID_AGP_VERSION, ANDROID_BUILD_TOOLS, ANDROID_BUNDLE_MANIFEST_SCHEMA, ANDROID_COMPILE_SDK,
     ANDROID_GRADLE_VERSION, ANDROID_MIN_SDK, ANDROID_NDK_VERSION, ANDROID_TARGET_SDK,
+    AndroidArtifactIdentity, AndroidBundleManifest, AndroidSigningMode,
 };
 use roukaku_release::{CheckStatus, ReleaseValidator};
 
@@ -25,8 +25,8 @@ fn android_bundle_without_same_run_e3_is_blocking() {
         ndk_version: ANDROID_NDK_VERSION.to_string(),
         agp_version: ANDROID_AGP_VERSION.to_string(),
         gradle_version: ANDROID_GRADLE_VERSION.to_string(),
-        jdk_major: 17,
-        jdk_version: "17.0.19".to_string(),
+        jdk_major: 27,
+        jdk_version: "27.0.1".to_string(),
         toolchain: [
             "jdk_runtime",
             "android_build_tools",

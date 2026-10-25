@@ -1,14 +1,14 @@
 use std::{
     convert::Infallible,
     sync::{
-        atomic::{AtomicU64, AtomicU8, Ordering},
         Arc,
+        atomic::{AtomicU8, AtomicU64, Ordering},
     },
 };
 
 use kira::{
-    sound::{Sound, SoundData},
     Frame,
+    sound::{Sound, SoundData},
 };
 
 const PLAYING: u8 = 0;

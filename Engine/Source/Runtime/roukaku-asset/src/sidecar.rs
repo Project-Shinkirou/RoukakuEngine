@@ -4,7 +4,7 @@ use roukaku_core::{Diagnostic, Hash256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{normalize_source_path, AssetError, AssetId};
+use crate::{AssetError, AssetId, normalize_source_path};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct AssetSidecar {

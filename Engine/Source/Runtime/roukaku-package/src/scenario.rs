@@ -118,11 +118,13 @@ mod tests {
                 ..valid_reference()
             },
         ] {
-            assert!(package_with_manifest(ScenarioRefsManifest {
-                schema: "roukaku.scenario_refs.v2".to_string(),
-                scenarios: vec![invalid],
-            })
-            .is_err());
+            assert!(
+                package_with_manifest(ScenarioRefsManifest {
+                    schema: "roukaku.scenario_refs.v2".to_string(),
+                    scenarios: vec![invalid],
+                })
+                .is_err()
+            );
         }
     }
 
@@ -137,11 +139,13 @@ mod tests {
             vec![duplicate.clone(), duplicate_path],
             vec![duplicate.clone(), duplicate_section],
         ] {
-            assert!(package_with_manifest(ScenarioRefsManifest {
-                schema: "roukaku.scenario_refs.v2".to_string(),
-                scenarios: refs,
-            })
-            .is_err());
+            assert!(
+                package_with_manifest(ScenarioRefsManifest {
+                    schema: "roukaku.scenario_refs.v2".to_string(),
+                    scenarios: refs,
+                })
+                .is_err()
+            );
         }
     }
 }

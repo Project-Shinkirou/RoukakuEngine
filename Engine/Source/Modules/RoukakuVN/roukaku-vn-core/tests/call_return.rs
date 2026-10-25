@@ -1,5 +1,5 @@
 use roukaku_vn_core::{
-    compile_roukaku_project, RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime,
+    RoukakuSource, VnPlayerCommand, VnRunConfig, VnRuntime, compile_roukaku_project,
 };
 
 const CALL_RETURN: &str = r#"

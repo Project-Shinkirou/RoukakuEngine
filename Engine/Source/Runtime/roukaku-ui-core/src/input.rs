@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{validate_string, UiValidationError, ValidateUi};
+use crate::{UiValidationError, ValidateUi, validate_string};
 
 pub const MAX_UI_VIEWPORT_DIMENSION: u32 = 16_384;
 
@@ -216,13 +216,13 @@ impl ValidateUi for UiInputEvent {
                 cursor_end,
             } => {
                 validate_string("input.ime_preedit", text)?;
-                if let (Some(start), Some(end)) = (cursor_start, cursor_end) {
-                    if start > end || *end as usize > text.len() {
-                        return Err(UiValidationError::invalid(
-                            "ROUKAKU_UI_IME_CURSOR",
-                            "IME cursor range is outside the preedit string",
-                        ));
-                    }
+                if let (Some(start), Some(end)) = (cursor_start, cursor_end)
+                    && (start > end || *end as usize > text.len())
+                {
+                    return Err(UiValidationError::invalid(
+                        "ROUKAKU_UI_IME_CURSOR",
+                        "IME cursor range is outside the preedit string",
+                    ));
                 }
                 Ok(())
             }

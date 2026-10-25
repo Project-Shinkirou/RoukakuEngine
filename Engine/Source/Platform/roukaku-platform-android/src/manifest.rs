@@ -2,16 +2,16 @@ use roukaku_platform::{PlatformError, PlatformErrorCode};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{validate_interpreter_only_features, ANDROID_BUNDLE_IDENTITY_MISMATCH};
+use crate::{ANDROID_BUNDLE_IDENTITY_MISMATCH, validate_interpreter_only_features};
 
 pub const ANDROID_BUNDLE_MANIFEST_SCHEMA: &str = "roukaku.android_bundle_manifest.v1";
 pub const ANDROID_MIN_SDK: u32 = 28;
-pub const ANDROID_TARGET_SDK: u32 = 36;
-pub const ANDROID_COMPILE_SDK: u32 = 36;
-pub const ANDROID_BUILD_TOOLS: &str = "36.0.0";
-pub const ANDROID_NDK_VERSION: &str = "30.0.15729638";
-pub const ANDROID_AGP_VERSION: &str = "9.3.0";
-pub const ANDROID_GRADLE_VERSION: &str = "9.5.0";
+pub const ANDROID_TARGET_SDK: u32 = 37;
+pub const ANDROID_COMPILE_SDK: u32 = 37;
+pub const ANDROID_BUILD_TOOLS: &str = "37.0.0";
+pub const ANDROID_NDK_VERSION: &str = "30.0.16248370";
+pub const ANDROID_AGP_VERSION: &str = "9.4.1";
+pub const ANDROID_GRADLE_VERSION: &str = "9.8.2";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -70,8 +70,8 @@ impl AndroidBundleManifest {
             && self.ndk_version == ANDROID_NDK_VERSION
             && self.agp_version == ANDROID_AGP_VERSION
             && self.gradle_version == ANDROID_GRADLE_VERSION
-            && self.jdk_major == 17
-            && self.jdk_version.starts_with("17.");
+            && self.jdk_major == 27
+            && self.jdk_version.starts_with("27.");
         let identities_complete = !self.target.is_empty()
             && !self.profile.is_empty()
             && !self.package_id.is_empty()

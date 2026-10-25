@@ -90,9 +90,11 @@ fn trace_phase_tracks_are_stable_and_distinct() {
     ];
     let tracks = names.into_iter().map(trace_track).collect::<BTreeSet<_>>();
     assert_eq!(tracks.len(), names.len());
-    assert!(tracks
-        .iter()
-        .all(|track| ![TRACE_TRACK_INPUT_FLOW, TRACE_TRACK_GPU_FLOW].contains(track)));
+    assert!(
+        tracks
+            .iter()
+            .all(|track| ![TRACE_TRACK_INPUT_FLOW, TRACE_TRACK_GPU_FLOW].contains(track))
+    );
 }
 
 #[test]
@@ -133,8 +135,8 @@ mod recorder {
     use std::time::Duration;
 
     use roukaku_core::{
-        Hash256, PerformanceBudget, PerformanceMetricBudget, PerformanceRunIdentity,
-        PerformanceUnit, PERFORMANCE_BUDGET_SCHEMA,
+        Hash256, PERFORMANCE_BUDGET_SCHEMA, PerformanceBudget, PerformanceMetricBudget,
+        PerformanceRunIdentity, PerformanceUnit,
     };
     use roukaku_headless_protocol::ProductPerformanceSample;
     use roukaku_platform_headless::{HeadlessGpuFrameSample, HeadlessPerformanceObserver};

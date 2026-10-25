@@ -78,12 +78,14 @@ fn package_identity_is_explicit_once_and_before_first_tick() {
         .with_package(PackageHandle::default())
         .unwrap();
     assert_eq!(world.package_id(), Some("stage1.headless"));
-    assert!(world
-        .with_package(PackageHandle::default())
-        .err()
-        .unwrap()
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_PACKAGE_LIFECYCLE"));
+    assert!(
+        world
+            .with_package(PackageHandle::default())
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_PACKAGE_LIFECYCLE")
+    );
     let mut world = RuntimeWorld::create(RuntimeConfig::default()).unwrap();
     world
         .tick(TickRequest::live(
@@ -95,12 +97,14 @@ fn package_identity_is_explicit_once_and_before_first_tick() {
             vec![],
         ))
         .unwrap();
-    assert!(world
-        .with_package(PackageHandle::default())
-        .err()
-        .unwrap()
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_PACKAGE_LIFECYCLE"));
+    assert!(
+        world
+            .with_package(PackageHandle::default())
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_PACKAGE_LIFECYCLE")
+    );
 }
 
 #[test]
@@ -126,11 +130,13 @@ fn standalone_world_rejects_packaged_module_mount_without_identity() {
         true,
     )
     .unwrap();
-    assert!(world
-        .mount_module(slot, binding)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_MODULE_PACKAGE_REQUIRED"));
+    assert!(
+        world
+            .mount_module(slot, binding)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_MODULE_PACKAGE_REQUIRED")
+    );
     assert!(world.package_handle().is_none());
 }
 
@@ -212,12 +218,14 @@ fn standalone_session_needs_only_runtime_config_and_cancels_on_close() {
             vec![],
         ))
         .unwrap();
-    assert!(!restored
-        .world()
-        .save(SaveRequest::default())
-        .unwrap()
-        .0
-        .is_empty());
+    assert!(
+        !restored
+            .world()
+            .save(SaveRequest::default())
+            .unwrap()
+            .0
+            .is_empty()
+    );
     let scope = session.world().task_scope();
     session.close();
     assert!(scope.is_cancelled());

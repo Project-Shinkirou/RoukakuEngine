@@ -35,22 +35,29 @@ fn presentation_provider_manifest_blocks_duplicate_and_over_budget_policy() {
     let report = manifest.validate_standard();
 
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_PRESET_ID"));
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| { diagnostic.code == "ROUKAKU_VN_PRESENTATION_PROFILE_PRESET_BUDGET" }));
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_PRESET_COMMAND"));
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_PROFILE_FILTER"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_PRESET_ID")
+    );
+    assert!(
+        report.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "ROUKAKU_VN_PRESENTATION_PROFILE_PRESET_BUDGET"
+        })
+    );
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_PRESET_COMMAND")
+    );
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_PROFILE_FILTER")
+    );
 }
 
 #[test]
@@ -63,8 +70,10 @@ fn presentation_provider_manifest_blocks_missing_movie_await_capability() {
     let report = manifest.validate_standard();
 
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_WAIT_CAPABILITY"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_PRESENTATION_WAIT_CAPABILITY")
+    );
 }

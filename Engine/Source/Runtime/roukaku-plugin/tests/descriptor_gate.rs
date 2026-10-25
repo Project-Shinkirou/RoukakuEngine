@@ -41,12 +41,16 @@ fn descriptor_gate_rejects_mismatch_and_missing_permission() {
     let err = descriptor.validate(&blocked).unwrap_err();
     match err {
         PluginError::GateBlocked(diagnostics) => {
-            assert!(diagnostics
-                .iter()
-                .any(|d| d.code == "ROUKAKU_PLUGIN_ENGINE_VERSION"));
-            assert!(diagnostics
-                .iter()
-                .any(|d| d.code == "ROUKAKU_PLUGIN_PERMISSION_MISSING"));
+            assert!(
+                diagnostics
+                    .iter()
+                    .any(|d| d.code == "ROUKAKU_PLUGIN_ENGINE_VERSION")
+            );
+            assert!(
+                diagnostics
+                    .iter()
+                    .any(|d| d.code == "ROUKAKU_PLUGIN_PERMISSION_MISSING")
+            );
         }
         other => panic!("unexpected error: {other:?}"),
     }
@@ -101,9 +105,11 @@ fn descriptor_gate_rejects_abi_fingerprint_mismatch() {
     };
     let error = descriptor.validate(&gate).unwrap_err();
     match error {
-        PluginError::GateBlocked(diagnostics) => assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "ROUKAKU_PLUGIN_ABI_FINGERPRINT")),
+        PluginError::GateBlocked(diagnostics) => assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "ROUKAKU_PLUGIN_ABI_FINGERPRINT")
+        ),
         other => panic!("unexpected error: {other:?}"),
     }
 }

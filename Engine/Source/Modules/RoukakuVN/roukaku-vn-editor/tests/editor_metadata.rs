@@ -1,6 +1,6 @@
 use roukaku_vn_editor::{
-    compile_roukaku_project, EditorVisualMetadata, GraphNodeMetadata, RoukakuSource,
-    TimelineTrackMetadata,
+    EditorVisualMetadata, GraphNodeMetadata, RoukakuSource, TimelineTrackMetadata,
+    compile_roukaku_project,
 };
 
 const STORY: &str = r#"
@@ -63,8 +63,10 @@ fn graph_timeline_metadata_roundtrips_command_ids_to_source_map() {
         .push("missing.command".to_string());
     let report = broken.validate_against(&compiled);
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_EDITOR_METADATA_SOURCE_MISSING"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_EDITOR_METADATA_SOURCE_MISSING")
+    );
 }

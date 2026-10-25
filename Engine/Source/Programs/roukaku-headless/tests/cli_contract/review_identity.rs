@@ -43,9 +43,10 @@ pub(super) fn artifact_limit_stops_the_run_and_preserves_only_committed_evidence
         manifest.artifacts.len(),
         manifest.artifacts
     );
-    assert!(!walk_files(&artifact_root).iter().any(|path| path
-        .extension()
-        .is_some_and(|extension| extension == "partial")));
+    assert!(!walk_files(&artifact_root).iter().any(|path| {
+        path.extension()
+            .is_some_and(|extension| extension == "partial")
+    }));
 }
 
 #[test]
@@ -194,7 +195,7 @@ pub(super) fn hash_messages(messages: &[InputMessage]) -> String {
         digest.update(serde_json::to_vec(message).unwrap());
         digest.update(b"\n");
     }
-    format!("sha256:{:x}", digest.finalize())
+    format!("sha256:{:x}", base16ct::HexDisplay(&digest.finalize()))
 }
 
 pub(super) fn write_jsonl(path: &Path, messages: &[InputMessage]) {

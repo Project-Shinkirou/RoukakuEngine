@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::PackageProductContext;
 use crate::{
-    ContainerError, ContainerKind, PackageManifest, RoukakuContainerReader, SchemaRegistryManifest,
-    CURRENT_CONTAINER_VERSION,
+    CURRENT_CONTAINER_VERSION, ContainerError, ContainerKind, PackageManifest,
+    RoukakuContainerReader, SchemaRegistryManifest,
 };
 use roukaku_core::Hash256;
 use std::sync::Arc;

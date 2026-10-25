@@ -90,7 +90,7 @@ impl AudioServiceSession {
                 _ => {
                     return Err(AudioServiceError::InvalidCommand(
                         "restored fade state is inconsistent or already complete",
-                    ))
+                    ));
                 }
             }
         }

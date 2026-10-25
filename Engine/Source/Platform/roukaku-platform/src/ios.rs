@@ -1,4 +1,4 @@
-use crate::{build_fingerprint, PlatformCapabilityReport, PlatformHostProfile};
+use crate::{PlatformCapabilityReport, PlatformHostProfile, build_fingerprint};
 
 #[cfg(target_os = "ios")]
 mod documents;

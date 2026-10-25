@@ -99,7 +99,10 @@ pub(super) async fn open_https_range(
         block_hashes.push(Sha256::digest(&bytes).into());
         start = end + 1;
     }
-    let actual = format!("sha256:{:x}", package_hasher.finalize());
+    let actual = format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&package_hasher.finalize())
+    );
     if actual != expected_hash {
         return Err(PlatformError::new(
             PlatformErrorCode::IntegrityMismatch,

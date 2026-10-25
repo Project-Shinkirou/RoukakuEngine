@@ -402,12 +402,14 @@ pub(super) async fn cold_product_restore_prepares_packaged_pcm_and_preserves_sav
         reply.send(Ok(())).unwrap();
     });
     let mut executor = PlayerHostCommandExecutor::new(PlatformCommandSink::new(client));
-    assert!(source
-        .restore_product_session(&foreign_bytes, &mut media, &mut executor)
-        .await
-        .unwrap_err()
-        .to_string()
-        .contains("REVISION_CONFLICT"));
+    assert!(
+        source
+            .restore_product_session(&foreign_bytes, &mut media, &mut executor)
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("REVISION_CONFLICT")
+    );
     assert!(media.snapshot().audio.timeline.voices.is_empty());
     source
         .restore_product_session(&bytes, &mut media, &mut executor)
@@ -417,12 +419,14 @@ pub(super) async fn cold_product_restore_prepares_packaged_pcm_and_preserves_sav
     assert_eq!(actual.timeline.voices, saved.audio.timeline.voices);
     assert_eq!(actual.timeline.buses, saved.audio.timeline.buses);
     let wait = source.pending_wait().cloned();
-    assert!(source
-        .restore_product_session(&wrong_length_bytes, &mut media, &mut executor)
-        .await
-        .unwrap_err()
-        .to_string()
-        .contains("PCM_LENGTH_MISMATCH"));
+    assert!(
+        source
+            .restore_product_session(&wrong_length_bytes, &mut media, &mut executor)
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("PCM_LENGTH_MISMATCH")
+    );
     assert_eq!(source.pending_wait(), wait.as_ref());
     assert_eq!(
         media.snapshot().audio.timeline.voices,
@@ -441,14 +445,18 @@ pub(super) async fn cold_product_restore_prepares_packaged_pcm_and_preserves_sav
         .restore_product_session(&bytes, &mut media, &mut executor)
         .await
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLAYER_MEDIA_RESTORE_FAILED"));
-    assert!(source
-        .tick_presentation(16_666_667)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_PRESENTATION_SESSION_FAILED"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLAYER_MEDIA_RESTORE_FAILED")
+    );
+    assert!(
+        source
+            .tick_presentation(16_666_667)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_PRESENTATION_SESSION_FAILED")
+    );
     media.shutdown(&mut source, &mut executor).await.unwrap();
     source.release_resources().unwrap();
     source.shutdown().unwrap();

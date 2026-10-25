@@ -1,8 +1,8 @@
 use std::{
     future::pending,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
 };
 
@@ -179,13 +179,15 @@ async fn successful_restore_and_world_drop_wake_old_work_but_rejected_restore_do
             .await
     });
     waiting.await.unwrap();
-    assert!(world
-        .load_with_validation(
-            save.clone(),
-            &roukaku_core::SchemaMigrationRegistry::default(),
-            |_| Err::<(), _>(RuntimeError::message("reject candidate")),
-        )
-        .is_err());
+    assert!(
+        world
+            .load_with_validation(
+                save.clone(),
+                &roukaku_core::SchemaMigrationRegistry::default(),
+                |_| Err::<(), _>(RuntimeError::message("reject candidate")),
+            )
+            .is_err()
+    );
     assert!(!old_scope.is_cancelled());
     assert!(!old_work.is_finished());
     world.load(save).unwrap();

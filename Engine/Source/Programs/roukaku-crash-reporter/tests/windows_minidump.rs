@@ -8,7 +8,7 @@ use std::{
 };
 
 use roukaku_observability::{
-    install_windows_crash_reporter, CrashReportingMode, WindowsCrashReporterConfig,
+    CrashReportingMode, WindowsCrashReporterConfig, install_windows_crash_reporter,
 };
 
 #[test]
@@ -54,13 +54,17 @@ fn reporter_writes_real_out_of_process_minidump_and_manifest() {
     assert_eq!(report["schema"], "roukaku.crash_bundle.v1");
     assert_eq!(report["session_id"], "test-session");
     assert_eq!(report["process_role"], "crash_reporter");
-    assert!(report["minidump"]["sha256"]
-        .as_str()
-        .unwrap()
-        .starts_with("sha256:"));
+    assert!(
+        report["minidump"]["sha256"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
     assert_eq!(report["minidump"]["byte_size"], bytes.len() as u64);
-    assert!(!String::from_utf8_lossy(&fs::read(&manifest).unwrap())
-        .contains(output.path().to_str().unwrap()));
+    assert!(
+        !String::from_utf8_lossy(&fs::read(&manifest).unwrap())
+            .contains(output.path().to_str().unwrap())
+    );
 }
 
 #[test]

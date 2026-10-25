@@ -20,18 +20,22 @@ pub(super) fn product_source_persists_resize_scale_and_text_across_repaints() {
             },
         })
         .unwrap();
-    assert!(scene_commands(&resized)
-        .iter()
-        .any(|command| matches!(command, SceneCommand::GlyphRun { .. })));
+    assert!(
+        scene_commands(&resized)
+            .iter()
+            .any(|command| matches!(command, SceneCommand::GlyphRun { .. }))
+    );
 
     let repaint = source
         .dispatch_ui_event(UiInputEventKind::FixedTime {
             time_ns: 33_333_334,
         })
         .unwrap();
-    assert!(scene_commands(&repaint)
-        .iter()
-        .any(|command| matches!(command, SceneCommand::GlyphRun { .. })));
+    assert!(
+        scene_commands(&repaint)
+            .iter()
+            .any(|command| matches!(command, SceneCommand::GlyphRun { .. }))
+    );
 
     let semantics = source.ui_semantics().expect("semantic snapshot");
     semantics.validate().unwrap();
@@ -73,13 +77,17 @@ pub(super) fn packaged_native_vn_source_shapes_localized_text_into_retained_scen
 
     let first = source.launch().unwrap();
     let second = advance(&mut source);
-    assert!(scene_commands(&first)
-        .iter()
-        .any(|command| matches!(command, SceneCommand::UploadGlyph { .. })));
-    for commands in [scene_commands(&first), scene_commands(&second)] {
-        assert!(commands
+    assert!(
+        scene_commands(&first)
             .iter()
-            .any(|command| matches!(command, SceneCommand::GlyphRun { .. })));
+            .any(|command| matches!(command, SceneCommand::UploadGlyph { .. }))
+    );
+    for commands in [scene_commands(&first), scene_commands(&second)] {
+        assert!(
+            commands
+                .iter()
+                .any(|command| matches!(command, SceneCommand::GlyphRun { .. }))
+        );
         assert!(!commands.iter().any(|command| {
             matches!(
                 command,
@@ -91,9 +99,11 @@ pub(super) fn packaged_native_vn_source_shapes_localized_text_into_retained_scen
     }
     assert_ne!(scene_commands(&first), scene_commands(&second));
     let shutdown = source.release_resources().unwrap();
-    assert!(scene_commands(&shutdown)
-        .iter()
-        .any(|command| matches!(command, SceneCommand::ReleaseResource { .. })));
+    assert!(
+        scene_commands(&shutdown)
+            .iter()
+            .any(|command| matches!(command, SceneCommand::ReleaseResource { .. }))
+    );
     source.shutdown().unwrap();
 }
 
@@ -136,13 +146,17 @@ state start #@id state.start
                 && destination.width == 640
                 && destination.height == 360
     )));
-    assert!(commands
-        .iter()
-        .any(|command| matches!(command, SceneCommand::PushClip { .. })));
+    assert!(
+        commands
+            .iter()
+            .any(|command| matches!(command, SceneCommand::PushClip { .. }))
+    );
     let stable = advance(&mut source);
-    assert!(!source
-        .decoded_image_cached("asset:/background/apartment-night")
-        .unwrap());
+    assert!(
+        !source
+            .decoded_image_cached("asset:/background/apartment-night")
+            .unwrap()
+    );
     assert!(!scene_commands(&stable).iter().any(|command| matches!(
         command,
         SceneCommand::UploadTexture { resource_id, .. }
@@ -170,9 +184,11 @@ state start #@id state.start
         SceneCommand::UploadTexture { resource_id, .. }
             if resource_id == "asset:/background/apartment-night"
     )));
-    assert!(scene_commands(&rebuilt)
-        .iter()
-        .any(|command| matches!(command, SceneCommand::UploadGlyph { .. })));
+    assert!(
+        scene_commands(&rebuilt)
+            .iter()
+            .any(|command| matches!(command, SceneCommand::UploadGlyph { .. }))
+    );
     source.release_resources().unwrap();
     source.shutdown().unwrap();
 }
@@ -428,24 +444,28 @@ pub(super) async fn packaged_native_vn_scene_reaches_live_windows_wgpu_and_relea
         .await
         .unwrap();
     let first = session.client.capture_surface(surface).await.unwrap();
-    assert!(first
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .any(|pixel| pixel != [8, 10, 16, 255]));
+    assert!(
+        first
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .any(|pixel| pixel != [8, 10, 16, 255])
+    );
 
     executor
         .execute_batch(source.release_resources().unwrap())
         .await
         .unwrap();
     let released = session.client.capture_surface(surface).await.unwrap();
-    assert!(released
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|pixel| pixel == [0, 0, 0, 255]));
+    assert!(
+        released
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| pixel == [0, 0, 0, 255])
+    );
     source.shutdown().unwrap();
     drop(executor);
     session.client.destroy_surface(surface).await.unwrap();

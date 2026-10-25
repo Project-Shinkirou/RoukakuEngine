@@ -4,7 +4,7 @@ use roukaku_core::Hash256;
 use roukaku_package::{PackageReader, ScenarioReference, ScenarioRefsManifest};
 use roukaku_platform::PlatformId;
 use roukaku_target::{TargetKind, TargetManifest};
-use roukaku_vn_package::{load_player_locale_config, PlayerLocaleConfig};
+use roukaku_vn_package::{PlayerLocaleConfig, load_player_locale_config};
 
 use super::*;
 

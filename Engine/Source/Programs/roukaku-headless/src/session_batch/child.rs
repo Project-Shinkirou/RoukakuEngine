@@ -218,7 +218,10 @@ pub(crate) fn read_child_evidence(
         &report.checkpoint_results,
     ))
     .map_err(|error| format!("ROUKAKU_HEADLESS_BATCH_OUTPUT_IDENTITY: {error}"))?;
-    let output_identity_hash = format!("sha256:{:x}", Sha256::digest(output_bytes));
+    let output_identity_hash = format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&Sha256::digest(output_bytes))
+    );
 
     if !expect_performance {
         return Ok((output_identity_hash, None));

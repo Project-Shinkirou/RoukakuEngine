@@ -43,15 +43,14 @@ pub(super) fn validate_batch(
             ));
         }
         prior = Some(command.sequence);
-        if let Some(layer) = command.layer_write() {
-            if let Some(previous) = layer_regions.insert(layer, command.region()) {
-                if previous != command.region() {
-                    return Err(coordinator_error(
-                        "ROUKAKU_VN_PRESENTATION_REGION_WRITE_CONFLICT",
-                        "multiple presentation regions write the same layer in one transaction",
-                    ));
-                }
-            }
+        if let Some(layer) = command.layer_write()
+            && let Some(previous) = layer_regions.insert(layer, command.region())
+            && previous != command.region()
+        {
+            return Err(coordinator_error(
+                "ROUKAKU_VN_PRESENTATION_REGION_WRITE_CONFLICT",
+                "multiple presentation regions write the same layer in one transaction",
+            ));
         }
     }
     Ok(())

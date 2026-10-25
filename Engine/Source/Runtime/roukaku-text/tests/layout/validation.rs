@@ -10,11 +10,13 @@ fn bidi_empty_input_and_clip_policy_are_explicit() {
     let mut bidi = request("\u{200f}ABC");
     bidi.runs[0].direction = TextDirection::RightToLeft;
     let bidi_layout = provider.layout(&bidi).unwrap();
-    assert!(bidi_layout
-        .lines
-        .iter()
-        .filter(|line| line.role == GlyphRole::Base)
-        .all(|line| line.rtl));
+    assert!(
+        bidi_layout
+            .lines
+            .iter()
+            .filter(|line| line.role == GlyphRole::Base)
+            .all(|line| line.rtl)
+    );
 
     let mut clipped = request("this line is wider than the clipping rectangle");
     clipped.constraint.max_width = 48.0;
@@ -27,12 +29,16 @@ fn bidi_empty_input_and_clip_policy_are_explicit() {
     let commands = owner
         .update_layout("clip", &clipped_layout, [255; 4])
         .unwrap();
-    assert!(commands
-        .iter()
-        .any(|command| matches!(command, SceneCommand::PushClip { .. })));
-    assert!(commands
-        .iter()
-        .any(|command| matches!(command, SceneCommand::PopClip)));
+    assert!(
+        commands
+            .iter()
+            .any(|command| matches!(command, SceneCommand::PushClip { .. }))
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| matches!(command, SceneCommand::PopClip))
+    );
 }
 
 #[test]
@@ -53,26 +59,32 @@ fn font_binding_hash_direction_and_fallback_fail_fast() {
     )
     .err()
     .unwrap();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_TEXT_PACKAGED_FONT_HASH"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_TEXT_PACKAGED_FONT_HASH")
+    );
 
     let provider = provider();
     let mut missing = request("text");
     missing.font_families = vec!["Undeclared Family".into()];
-    assert!(provider
-        .layout(&missing)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_TEXT_FONT_CHAIN"));
+    assert!(
+        provider
+            .layout(&missing)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_TEXT_FONT_CHAIN")
+    );
 
     let mut wrong_direction = request("left to right");
     wrong_direction.runs[0].direction = TextDirection::RightToLeft;
-    assert!(provider
-        .layout(&wrong_direction)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_TEXT_DIRECTION"));
+    assert!(
+        provider
+            .layout(&wrong_direction)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_TEXT_DIRECTION")
+    );
 }
 
 #[test]

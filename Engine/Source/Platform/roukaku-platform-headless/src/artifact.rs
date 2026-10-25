@@ -4,9 +4,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
+use image::{ExtendedColorType, ImageEncoder, codecs::png::PngEncoder};
 use roukaku_headless_protocol::{
-    ArtifactEntry, ArtifactManifest, RendererExecutionIdentity, HEADLESS_ARTIFACT_MANIFEST_SCHEMA,
+    ArtifactEntry, ArtifactManifest, HEADLESS_ARTIFACT_MANIFEST_SCHEMA, RendererExecutionIdentity,
 };
 use roukaku_platform::{
     HeadlessArtifactPolicy, HeadlessArtifactRetention, HeadlessHostProfile, PlatformError,
@@ -505,7 +505,10 @@ fn sha256_file(path: &Path) -> Result<String, PlatformError> {
         }
         digest.update(&buffer[..read]);
     }
-    Ok(format!("sha256:{:x}", digest.finalize()))
+    Ok(format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&digest.finalize())
+    ))
 }
 
 fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), PlatformError> {

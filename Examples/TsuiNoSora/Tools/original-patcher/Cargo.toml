@@ -13,6 +13,7 @@ path = "src/main.rs"
 doctest = false
 
 [dependencies]
+base16ct.workspace = true
 binrw.workspace = true
 clap.workspace = true
 configparser.workspace = true

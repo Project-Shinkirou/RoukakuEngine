@@ -1,5 +1,5 @@
 use super::luau::LUAU_MAX_EXACT_INTEGER;
-use super::luau_budget::{entry_bytes, value_bytes, SharedBudget};
+use super::luau_budget::{SharedBudget, entry_bytes, value_bytes};
 use crate::{
     PolicyCommandTraceEntry, PolicyQueryTraceEntry, PolicySnapshotValue, PolicyTraceEvent, VnError,
 };
@@ -121,6 +121,11 @@ fn policy_snapshot_from_lua(
     match value {
         mlua::Value::Nil => Ok(PolicySnapshotValue::Nil),
         mlua::Value::Boolean(value) => Ok(PolicySnapshotValue::Bool(value)),
+        #[cfg(feature = "luau-runtime")]
+        mlua::Value::Integer(value) if value.unsigned_abs() <= LUAU_MAX_EXACT_INTEGER => {
+            Ok(PolicySnapshotValue::Integer(value))
+        }
+        #[cfg(feature = "portable-luau-runtime")]
         mlua::Value::Integer(value) => Ok(PolicySnapshotValue::Integer(i64::from(value))),
         mlua::Value::Number(value)
             if value.is_finite()
@@ -170,10 +175,17 @@ pub(super) fn policy_snapshot_to_lua(
                     "integer snapshot is outside Luau exact integer range",
                 ));
             }
-            Ok(match i32::try_from(*value) {
-                Ok(value) => mlua::Value::Integer(value),
-                Err(_) => mlua::Value::Number(*value as f64),
-            })
+            #[cfg(feature = "luau-runtime")]
+            {
+                Ok(mlua::Value::Integer(*value))
+            }
+            #[cfg(feature = "portable-luau-runtime")]
+            {
+                Ok(match i32::try_from(*value) {
+                    Ok(value) => mlua::Value::Integer(value),
+                    Err(_) => mlua::Value::Number(*value as f64),
+                })
+            }
         }
         PolicySnapshotValue::String(value) => Ok(mlua::Value::String(lua.create_string(value)?)),
         PolicySnapshotValue::Object(values) => {

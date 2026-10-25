@@ -2,9 +2,10 @@
 mod platform {
     use windows_sys::Win32::Foundation::HANDLE;
     use windows_sys::Win32::System::Threading::{
-        AvRevertMmThreadCharacteristics, AvSetMmThreadCharacteristicsW, AvSetMmThreadPriority,
-        GetCurrentProcess, GetCurrentThread, GetPriorityClass, GetThreadPriority, SetPriorityClass,
-        SetThreadPriority, AVRT_PRIORITY_HIGH, HIGH_PRIORITY_CLASS, THREAD_PRIORITY_HIGHEST,
+        AVRT_PRIORITY_HIGH, AvRevertMmThreadCharacteristics, AvSetMmThreadCharacteristicsW,
+        AvSetMmThreadPriority, GetCurrentProcess, GetCurrentThread, GetPriorityClass,
+        GetThreadPriority, HIGH_PRIORITY_CLASS, SetPriorityClass, SetThreadPriority,
+        THREAD_PRIORITY_HIGHEST,
     };
 
     const THREAD_PRIORITY_ERROR_RETURN: i32 = i32::MAX;
@@ -97,10 +98,10 @@ mod platform {
         }
 
         fn restore_inner(&self) -> Result<(), String> {
-            if let Some(handle) = self.mmcss_handle {
-                if unsafe { AvRevertMmThreadCharacteristics(handle) } == 0 {
-                    return Err(last_error("ROUKAKU_PERFORMANCE_MMCSS_RESTORE_FAILED"));
-                }
+            if let Some(handle) = self.mmcss_handle
+                && unsafe { AvRevertMmThreadCharacteristics(handle) } == 0
+            {
+                return Err(last_error("ROUKAKU_PERFORMANCE_MMCSS_RESTORE_FAILED"));
             }
             if unsafe { SetThreadPriority(GetCurrentThread(), self.thread_priority) } == 0 {
                 return Err(last_error(

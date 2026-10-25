@@ -43,7 +43,7 @@ pub(crate) fn plugin_extension_registry_check(package: &PackageReader) -> Releas
                 code,
                 message,
                 vec![evidence("section", "plugin.extension_registry")],
-            )
+            );
         }
     };
     let provider_policy =
@@ -55,7 +55,7 @@ pub(crate) fn plugin_extension_registry_check(package: &PackageReader) -> Releas
                     code,
                     message,
                     vec![evidence("section", "provider.policy")],
-                )
+                );
             }
         };
     let manifest = match package
@@ -69,7 +69,7 @@ pub(crate) fn plugin_extension_registry_check(package: &PackageReader) -> Releas
                 "ROUKAKU_PACKAGE_MANIFEST_INVALID",
                 error.to_string(),
                 vec![evidence("section", "package.manifest")],
-            )
+            );
         }
     };
     if let Err(diagnostic) = registry.validate_embedded_package(
@@ -107,7 +107,7 @@ pub(crate) fn plugin_dependency_graph_check(package: &PackageReader) -> ReleaseC
                 code,
                 message,
                 vec![evidence("section", "plugin.dependency_graph")],
-            )
+            );
         }
     };
     let dependencies = graph
@@ -172,7 +172,7 @@ pub(crate) fn product_context_binding_check(
                     code,
                     message,
                     vec![evidence("section", "provider.policy")],
-                )
+                );
             }
         };
     let registry = match read_typed_json_section::<PluginExtensionRegistrySnapshot>(
@@ -186,7 +186,7 @@ pub(crate) fn product_context_binding_check(
                 code,
                 message,
                 vec![evidence("section", "plugin.extension_registry")],
-            )
+            );
         }
     };
     let target_manifest = match package
@@ -202,7 +202,7 @@ pub(crate) fn product_context_binding_check(
                 "ROUKAKU_RUNTIME_PROVIDER_TARGET_MANIFEST",
                 "runtime provider binding requires a valid target manifest",
                 vec![evidence("section", "target.manifest")],
-            )
+            );
         }
     };
     let Some(target) = select_game_target(&target_manifest, selected_target) else {
@@ -224,7 +224,7 @@ pub(crate) fn product_context_binding_check(
                 "ROUKAKU_PACKAGE_MANIFEST_INVALID",
                 error.to_string(),
                 vec![evidence("section", "package.manifest")],
-            )
+            );
         }
     };
     if let Err(diagnostic) =

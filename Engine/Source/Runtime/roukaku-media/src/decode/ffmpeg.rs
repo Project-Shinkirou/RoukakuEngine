@@ -4,8 +4,8 @@ use ffmpeg_next as ffmpeg;
 use tempfile::Builder;
 
 use super::{
-    decode_error, DecodeKind, DecodeOutput, DecodeRequest, DecodeResult, MediaError,
-    MAX_DECODED_AUDIO_BYTES, MAX_DECODED_VIDEO_FRAME_BYTES,
+    DecodeKind, DecodeOutput, DecodeRequest, DecodeResult, MAX_DECODED_AUDIO_BYTES,
+    MAX_DECODED_VIDEO_FRAME_BYTES, MediaError, decode_error,
 };
 
 pub(super) fn probe() -> Result<(), MediaError> {
@@ -175,7 +175,7 @@ fn drain_audio_frames(
                     "ROUKAKU_FFMPEG_FRAME",
                     "receive audio frame",
                     error,
-                ))
+                ));
             }
         }
     }

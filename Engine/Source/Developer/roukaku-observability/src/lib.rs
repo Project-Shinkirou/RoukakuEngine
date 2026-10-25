@@ -9,25 +9,25 @@ mod ring;
 mod windows_crash;
 
 pub use allocation::{
-    allocation_snapshot, thread_allocation_snapshot, AllocationSnapshot, ThreadAllocationSnapshot,
-    TrackingAllocator,
+    AllocationSnapshot, ThreadAllocationSnapshot, TrackingAllocator, allocation_snapshot,
+    thread_allocation_snapshot,
 };
 pub use config::{
-    ConsoleFormat, CrashReportingMode, HostObservabilityConfig, HostRole, DEFAULT_MAX_ARCHIVES,
-    DEFAULT_MAX_CRASH_BUNDLES, DEFAULT_MAX_FILE_BYTES, DEFAULT_RING_MAX_BYTES,
-    DEFAULT_RING_MAX_RECORDS,
+    ConsoleFormat, CrashReportingMode, DEFAULT_MAX_ARCHIVES, DEFAULT_MAX_CRASH_BUNDLES,
+    DEFAULT_MAX_FILE_BYTES, DEFAULT_RING_MAX_BYTES, DEFAULT_RING_MAX_RECORDS,
+    HostObservabilityConfig, HostRole,
 };
-pub use crash::{CrashArtifactRef, CrashBundleManifestV1, CRASH_BUNDLE_SCHEMA};
+pub use crash::{CRASH_BUNDLE_SCHEMA, CrashArtifactRef, CrashBundleManifestV1};
 pub use perfetto::{
-    PerfettoFlowPhase, PerfettoTraceConfig, PerfettoTraceError, PerfettoTraceSummary,
-    PerfettoTraceWriter, DEFAULT_PERFETTO_MAX_BYTES, DEFAULT_PERFETTO_MAX_EVENTS,
+    DEFAULT_PERFETTO_MAX_BYTES, DEFAULT_PERFETTO_MAX_EVENTS, PerfettoFlowPhase,
+    PerfettoTraceConfig, PerfettoTraceError, PerfettoTraceSummary, PerfettoTraceWriter,
 };
-pub use pipeline::{init_host, ObservabilityError, ObservabilityGuard};
+pub use pipeline::{ObservabilityError, ObservabilityGuard, init_host};
 pub use process_memory::{
-    sample_process_cpu_time_us_by_pid, sample_process_memory, sample_process_memory_by_pid,
-    ProcessMemoryError, ProcessMemorySample,
+    ProcessMemoryError, ProcessMemorySample, sample_process_cpu_time_us_by_pid,
+    sample_process_memory, sample_process_memory_by_pid,
 };
-pub use record::{LogEventV1, SpanContextV1, LOG_EVENT_SCHEMA};
+pub use record::{LOG_EVENT_SCHEMA, LogEventV1, SpanContextV1};
 pub use windows_crash::{
-    install_windows_crash_reporter, WindowsCrashReporterConfig, WindowsCrashReporterGuard,
+    WindowsCrashReporterConfig, WindowsCrashReporterGuard, install_windows_crash_reporter,
 };

@@ -27,7 +27,7 @@ fn main() {
             .cargo_metadata(false)
             .copy_dlls(false)
             .find_package("libass")
-            .expect("install libass 0.17.4#1 in the isolated subtitle vcpkg root");
+            .expect("install libass 0.17.5 in the isolated subtitle vcpkg root");
         assert!(
             lib.is_static,
             "libass must be static; only fribidi may be dynamic"
@@ -43,9 +43,9 @@ fn main() {
         // A real native installation is required on other platforms too. Never
         // provide a no-op renderer for a missing native dependency.
         let lib = pkg_config::Config::new()
-            .exactly_version("0.17.4")
+            .exactly_version("0.17.5")
             .probe("libass")
-            .expect("roukaku-subtitle requires native libass exactly 0.17.4");
+            .expect("roukaku-subtitle requires native libass exactly 0.17.5");
         // Let pkg-config emit its complete platform metadata, including
         // absolute library files, frameworks and private linker arguments.
         (lib.include_paths, Vec::new())
@@ -58,7 +58,7 @@ fn main() {
     if windows {
         bridge.static_crt(false);
     }
-    // bridge.c checks LIBASS_VERSION against 0x01704000 using the actual
+    // bridge.c checks LIBASS_VERSION against 0x01705000 using the actual
     // installed header; it also uses the official track layout and va_list.
     bridge.compile("roukaku_subtitle_bridge");
     for line in metadata {

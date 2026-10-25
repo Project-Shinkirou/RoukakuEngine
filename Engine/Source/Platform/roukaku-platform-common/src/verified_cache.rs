@@ -365,7 +365,7 @@ impl VerifiedPackageStaging<'_> {
     }
 
     pub fn commit(self) -> Result<(), PlatformError> {
-        let actual_hash = format!("sha256:{:x}", self.hasher.finalize());
+        let actual_hash = format!("sha256:{:x}", base16ct::HexDisplay(&self.hasher.finalize()));
         if actual_hash != self.expected_hash {
             return Err(PlatformError::new(
                 PlatformErrorCode::IntegrityMismatch,

@@ -112,7 +112,7 @@ pub(super) fn drive_audio_codec(
                 return Err(media_codec_error("decode.mediacodec.audio_image"));
             }
             Ok(CodecEvent::Error) => {
-                return Err(media_codec_error("decode.mediacodec.callback_error"))
+                return Err(media_codec_error("decode.mediacodec.callback_error"));
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => {

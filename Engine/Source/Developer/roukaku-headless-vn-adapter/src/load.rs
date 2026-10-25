@@ -17,7 +17,7 @@ impl NativeVnHeadlessSession {
             _ => {
                 return Err(ProductHostError::Output(
                     "save read result is invalid".into(),
-                ))
+                ));
             }
         };
         let present = self

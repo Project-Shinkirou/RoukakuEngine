@@ -1,12 +1,12 @@
 use roukaku_byte_source::{
-    audit_source, BoundedByteSource, ByteRange, ByteSourceStat, DEFAULT_MAX_RANGE_BYTES,
+    BoundedByteSource, ByteRange, ByteSourceStat, DEFAULT_MAX_RANGE_BYTES, audit_source,
 };
 
 use roukaku_core::{Hash256, SchemaVersion};
 
 use schemars::JsonSchema;
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use std::{collections::BTreeSet, sync::Arc};
 
@@ -16,21 +16,14 @@ use thiserror::Error;
 mod tests;
 
 mod m_a_g_i_c;
+use m_a_g_i_c::ALIGNMENT;
+pub use m_a_g_i_c::CURRENT_CONTAINER_VERSION;
 pub use m_a_g_i_c::ContainerBlob;
 pub use m_a_g_i_c::ContainerCryptoProvider;
 pub use m_a_g_i_c::ContainerError;
 pub use m_a_g_i_c::ContainerKind;
 pub use m_a_g_i_c::EncryptionDescriptor;
 pub use m_a_g_i_c::ExternalKeyRef;
-pub use m_a_g_i_c::MigrationPolicy;
-pub use m_a_g_i_c::NoCryptoProvider;
-pub use m_a_g_i_c::RoukakuContainerBuilder;
-pub use m_a_g_i_c::RoukakuContainerReader;
-pub use m_a_g_i_c::SectionCodec;
-pub use m_a_g_i_c::SectionEntry;
-pub use m_a_g_i_c::SectionPayload;
-use m_a_g_i_c::ALIGNMENT;
-pub use m_a_g_i_c::CURRENT_CONTAINER_VERSION;
 use m_a_g_i_c::FOOTER_LEN;
 use m_a_g_i_c::FOOTER_MAGIC;
 use m_a_g_i_c::HEADER_LEN;
@@ -38,16 +31,23 @@ use m_a_g_i_c::MAGIC;
 use m_a_g_i_c::MAX_DECODED_SECTION_LEN;
 use m_a_g_i_c::MAX_SECTION_COUNT;
 use m_a_g_i_c::MAX_TABLE_LEN;
+pub use m_a_g_i_c::MigrationPolicy;
+pub use m_a_g_i_c::NoCryptoProvider;
+pub use m_a_g_i_c::RoukakuContainerBuilder;
+pub use m_a_g_i_c::RoukakuContainerReader;
+pub use m_a_g_i_c::SectionCodec;
+pub use m_a_g_i_c::SectionEntry;
+pub use m_a_g_i_c::SectionPayload;
 mod roukaku_container_reader;
 use roukaku_container_reader::write_container;
 mod read_container;
+use read_container::SectionAad;
 use read_container::read_container;
 use read_container::read_container_source;
 use read_container::read_source_range;
 pub use read_container::section_aad_hash;
 use read_container::section_aad_hash_from_section;
 use read_container::section_merkle_root;
-use read_container::SectionAad;
 mod hash_section_aad;
 use hash_section_aad::align;
 use hash_section_aad::decode_payload;

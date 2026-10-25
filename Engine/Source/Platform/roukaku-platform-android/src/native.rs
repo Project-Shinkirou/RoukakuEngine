@@ -114,7 +114,7 @@ fn with_bridge_state(update: impl FnOnce(&mut JniBridgeState)) {
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnInsets(
     _environment: *mut jni::sys::JNIEnv,
     _activity: jni::sys::jobject,
@@ -130,7 +130,7 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnAudioFocus(
     _environment: *mut jni::sys::JNIEnv,
     _activity: jni::sys::jobject,
@@ -143,7 +143,7 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnGamepadDevice(
     _environment: *mut jni::sys::JNIEnv,
     _activity: jni::sys::jobject,
@@ -168,7 +168,7 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnGamepadInput(
     _environment: *mut jni::sys::JNIEnv,
     _activity: jni::sys::jobject,
@@ -196,7 +196,7 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnSafResult<
     'caller,
 >(
@@ -236,7 +236,7 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnRecreated(
     _environment: *mut jni::sys::JNIEnv,
     _activity: jni::sys::jobject,
@@ -248,7 +248,7 @@ pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nati
 }
 
 #[allow(non_snake_case)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "system" fn Java_org_shinkirou_roukakuplayer_RoukakuGameActivity_nativeOnNewIntent(
     _environment: *mut jni::sys::JNIEnv,
     _activity: jni::sys::jobject,

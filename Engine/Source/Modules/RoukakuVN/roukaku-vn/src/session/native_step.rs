@@ -154,19 +154,25 @@ mod tests {
             },
         ];
         validate_audio_order(&presentations, &audio).unwrap();
-        assert!(validate_audio_order(&presentations, &audio[..1])
-            .unwrap_err()
-            .to_string()
-            .contains("ORDER_MISSING"));
-        assert!(validate_audio_order(&presentations[..1], &audio)
-            .unwrap_err()
-            .to_string()
-            .contains("ORDER_EXTRA"));
+        assert!(
+            validate_audio_order(&presentations, &audio[..1])
+                .unwrap_err()
+                .to_string()
+                .contains("ORDER_MISSING")
+        );
+        assert!(
+            validate_audio_order(&presentations[..1], &audio)
+                .unwrap_err()
+                .to_string()
+                .contains("ORDER_EXTRA")
+        );
         let mut reversed = audio;
         reversed.reverse();
-        assert!(validate_audio_order(&presentations, &reversed)
-            .unwrap_err()
-            .to_string()
-            .contains("ORDER_MISMATCH"));
+        assert!(
+            validate_audio_order(&presentations, &reversed)
+                .unwrap_err()
+                .to_string()
+                .contains("ORDER_MISMATCH")
+        );
     }
 }

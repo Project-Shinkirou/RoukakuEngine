@@ -59,7 +59,9 @@ impl RuntimeWorld {
             ));
         }
         if self.awaits.has_result(token_id) {
-            return Err(RuntimeError::message("ROUKAKU_AWAIT_RESULT_PENDING: token already has a committed result waiting for its tick"));
+            return Err(RuntimeError::message(
+                "ROUKAKU_AWAIT_RESULT_PENDING: token already has a committed result waiting for its tick",
+            ));
         }
         self.tasks.handle(token_id, scope)
     }

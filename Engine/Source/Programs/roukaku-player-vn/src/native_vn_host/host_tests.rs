@@ -6,9 +6,9 @@ use super::ui_layout::{
     retained_pointer_activation_target, reusable_ui_draw_commands, save_slots_for_policy,
 };
 use super::{
-    NativeVnDecodedCacheBudget, ReadingMode, SaveCompletionPolicy, SystemPageKind,
-    SystemUiProfilePolicy, UiBlueprintModalFrameModel, UiTextAlignment, UiValue,
-    DEFAULT_NATIVE_VN_DECODED_CACHE_BYTES,
+    DEFAULT_NATIVE_VN_DECODED_CACHE_BYTES, NativeVnDecodedCacheBudget, ReadingMode,
+    SaveCompletionPolicy, SystemPageKind, SystemUiProfilePolicy, UiBlueprintModalFrameModel,
+    UiTextAlignment, UiValue,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -243,9 +243,11 @@ fn semantic_text_alignment_uses_bounded_container_offsets() {
 fn invalid_semantic_text_alignment_is_blocking() {
     let invalid = "middle".to_string();
     let error = parse_ui_text_alignment(Some(&invalid)).unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLAYER_UI_TEXT_ALIGNMENT"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLAYER_UI_TEXT_ALIGNMENT")
+    );
 }
 
 #[test]
@@ -308,9 +310,11 @@ fn frame_localization_rejects_missing_static_or_modal_projection() {
         &[],
     )
     .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLAYER_UI_LOCALIZATION_MISSING"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLAYER_UI_LOCALIZATION_MISSING")
+    );
 
     let modal = UiBlueprintModalFrameModel {
         view_id: "view.modal".into(),
@@ -327,7 +331,9 @@ fn frame_localization_rejects_missing_static_or_modal_projection() {
         &[modal],
     )
     .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLAYER_UI_LOCALIZATION_VIEW_MISSING"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLAYER_UI_LOCALIZATION_VIEW_MISSING")
+    );
 }

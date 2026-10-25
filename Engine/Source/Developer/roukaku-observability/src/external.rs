@@ -1,10 +1,10 @@
 //! Bounded native records share the Host filter, writer, ring and critical sink.
 use super::*;
 use tracing::{
+    Level, Metadata,
     callsite::{Callsite, Identifier},
     field::FieldSet,
     metadata::Kind,
-    Level, Metadata,
 };
 
 struct ExternalCallsite;

@@ -1,22 +1,21 @@
 use roukaku_core::{
-    Hash256, PerformanceBudget, PerformanceMetricBudget, PerformanceRecorder,
-    PerformanceRunIdentity, PerformanceThresholds, PerformanceUnit, PERFORMANCE_BUDGET_SCHEMA,
+    Hash256, PERFORMANCE_BUDGET_SCHEMA, PerformanceBudget, PerformanceMetricBudget,
+    PerformanceRecorder, PerformanceRunIdentity, PerformanceThresholds, PerformanceUnit,
 };
 
 use roukaku_package::{
-    ContainerKind, PackageBuildRequest, PackageBuilder, PackageManifest, PackageReader,
-    RoukakuContainerBuilder, SectionPayload, CURRENT_CONTAINER_VERSION,
+    CURRENT_CONTAINER_VERSION, ContainerKind, PackageBuildRequest, PackageBuilder, PackageManifest,
+    PackageReader, RoukakuContainerBuilder, SectionPayload,
 };
 
 use roukaku_platform::{
-    ConformanceCheck, ConformanceStatus, PlatformCapabilityReport, PlatformHostConformanceReport,
-    PlatformHostProfile, PlatformId, PLATFORM_HOST_CONFORMANCE_REPORT_SCHEMA,
+    ConformanceCheck, ConformanceStatus, PLATFORM_HOST_CONFORMANCE_REPORT_SCHEMA,
+    PlatformCapabilityReport, PlatformHostConformanceReport, PlatformHostProfile, PlatformId,
 };
 
 use roukaku_player_core::{
-    PlayerAutomationCheck, PlayerAutomationEvidence, PlayerAutomationReport,
-    PlayerAutomationStatus, PlayerPlatform, PlayerPresentationReport,
-    PLAYER_PRESENTATION_REPORT_SCHEMA,
+    PLAYER_PRESENTATION_REPORT_SCHEMA, PlayerAutomationCheck, PlayerAutomationEvidence,
+    PlayerAutomationReport, PlayerAutomationStatus, PlayerPlatform, PlayerPresentationReport,
 };
 
 use roukaku_release::{
@@ -25,10 +24,10 @@ use roukaku_release::{
 };
 
 use roukaku_vn_package::{
-    package_sections_for_project, PLAYER_LOCALE_CONFIG_SCHEMA, VN_LOCALIZATION_TABLE_SCHEMA,
+    PLAYER_LOCALE_CONFIG_SCHEMA, VN_LOCALIZATION_TABLE_SCHEMA, package_sections_for_project,
 };
 
-use roukaku_vn_script::{compile_roukaku_project, RoukakuSource};
+use roukaku_vn_script::{RoukakuSource, compile_roukaku_project};
 
 #[path = "release_report/headless_gate.rs"]
 mod headless_gate;

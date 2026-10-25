@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fs, path::Path};
 
-use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
+use image::{ExtendedColorType, ImageEncoder, codecs::png::PngEncoder};
 use roukaku_headless_protocol::{
     ArtifactEntry, ArtifactManifest, CheckpointConfig, CheckpointResult, ProductSession,
 };

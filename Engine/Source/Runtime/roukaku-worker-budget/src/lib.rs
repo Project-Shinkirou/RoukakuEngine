@@ -1,8 +1,8 @@
 //! Process-wide, bounded and FIFO worker budget.
 
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
     Arc, Condvar, Mutex, OnceLock,
+    atomic::{AtomicUsize, Ordering},
 };
 use std::{cell::Cell, fmt};
 

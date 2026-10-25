@@ -56,10 +56,12 @@ fn system_activation_captures_before_presentation_and_not_inside_system_ui() {
                 position: UiPoint { x: 20.0, y: 20.0 },
             })
             .unwrap();
-        assert!(!inside
-            .commands
-            .iter()
-            .any(|command| matches!(command, PlayerHostCommand::CaptureSurface { .. })));
+        assert!(
+            !inside
+                .commands
+                .iter()
+                .any(|command| matches!(command, PlayerHostCommand::CaptureSurface { .. }))
+        );
         source.release_resources().unwrap();
         source.shutdown().unwrap();
     }
@@ -94,10 +96,12 @@ fn ordinary_gameplay_input_does_not_read_back_the_gpu() {
         },
     ] {
         let batch = source.prepare_ui_input(event).unwrap();
-        assert!(!batch
-            .commands
-            .iter()
-            .any(|command| matches!(command, PlayerHostCommand::CaptureSurface { .. })));
+        assert!(
+            !batch
+                .commands
+                .iter()
+                .any(|command| matches!(command, PlayerHostCommand::CaptureSurface { .. }))
+        );
     }
     source.release_resources().unwrap();
     source.shutdown().unwrap();

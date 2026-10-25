@@ -116,7 +116,9 @@ mod tests {
     #[test]
     fn resize_keeps_authored_stage_and_maps_letterboxed_input_and_gpu_commands() {
         let bytes = crate::test_native_package::product_package_with_request(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n", |_| {});
+            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+            |_| {},
+        );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();
         let mut source = NativeVnHostCommandSource::from_package(
             &package,

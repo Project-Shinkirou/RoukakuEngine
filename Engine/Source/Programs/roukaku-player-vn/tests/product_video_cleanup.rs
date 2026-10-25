@@ -1,6 +1,6 @@
 use roukaku_platform::{
-    host_channel, DecodeOutput, DecodeSessionHandle, HostCommand, PlatformError, PlatformErrorCode,
-    PlatformHostProfile,
+    DecodeOutput, DecodeSessionHandle, HostCommand, PlatformError, PlatformErrorCode,
+    PlatformHostProfile, host_channel,
 };
 use roukaku_player_core::{PlatformCommandSink, PlayerHostCommandExecutor};
 use roukaku_player_vn::{NativeVnHostCommandSource, NativeVnProductMediaHost};

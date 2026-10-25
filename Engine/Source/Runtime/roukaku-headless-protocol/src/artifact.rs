@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::{is_sha256, validate_symbol, ProtocolError};
+use crate::{ProtocolError, is_sha256, validate_symbol};
 
 mod report;
 use report::safe_relative_path;
@@ -63,7 +63,7 @@ impl RendererExecutionIdentity {
 }
 
 fn hash_bytes(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!("sha256:{:x}", base16ct::HexDisplay(&Sha256::digest(bytes)))
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]

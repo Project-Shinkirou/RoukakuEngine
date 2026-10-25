@@ -1,8 +1,8 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc, sync::Arc};
 
-use roukaku_policy::{create_sandboxed_lua, PolicyExecutionBudget};
+use roukaku_policy::{PolicyExecutionBudget, create_sandboxed_lua};
 
-use roukaku_ui_core::{UiValue, MAX_EFFECTS_PER_CALL};
+use roukaku_ui_core::{MAX_EFFECTS_PER_CALL, UiValue};
 
 use roukaku_vn_ui::{
     VnUiAction, VnUiControllerEffect, VnUiControllerManifest, VnUiControllerSnapshot,
@@ -16,7 +16,7 @@ use luaur_rt as mlua;
 use luaur_rt::{Lua, LuaSerdeExt, Table, Value};
 
 #[cfg(feature = "luau-runtime")]
-use mlua::{Compiler, Lua, LuaSerdeExt, Table, Value};
+use mlua::{Lua, LuaSerdeExt, Table, Value, chunk::Compiler};
 
 use thiserror::Error;
 

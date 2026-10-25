@@ -1,7 +1,7 @@
 use std::{net::TcpListener, thread, time::Duration};
 
-use roukaku_player::{WebCdpSession, WEB_CDP_KEYBOARD, WEB_PLAYER_LIVE_EVIDENCE_SCHEMA};
-use serde_json::{json, Value};
+use roukaku_player::{WEB_CDP_KEYBOARD, WEB_PLAYER_LIVE_EVIDENCE_SCHEMA, WebCdpSession};
+use serde_json::{Value, json};
 use tungstenite::Message;
 
 #[test]

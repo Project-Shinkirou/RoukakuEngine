@@ -110,25 +110,33 @@ fn bars_and_non_finite_points_are_rejected_at_both_edges() {
         let canvas = Canvas2D::new(LOGICAL, raster).expect("positive raster extent");
         let viewport = canvas.viewport();
         assert!(canvas.raster_to_logical_point([f32::NAN, 0.0]).is_err());
-        assert!(canvas
-            .raster_to_logical_point([0.0, f32::INFINITY])
-            .is_err());
-        assert!(canvas
-            .logical_to_raster_point([f32::NEG_INFINITY, 1.0])
-            .is_err());
+        assert!(
+            canvas
+                .raster_to_logical_point([0.0, f32::INFINITY])
+                .is_err()
+        );
+        assert!(
+            canvas
+                .logical_to_raster_point([f32::NEG_INFINITY, 1.0])
+                .is_err()
+        );
 
         if viewport.y > 0 {
             assert!(!canvas.contains_raster_point([0.0, viewport.y as f32 - 0.5]));
-            assert!(canvas
-                .raster_to_logical_point([0.0, viewport.y as f32 - 0.5])
-                .is_err());
+            assert!(
+                canvas
+                    .raster_to_logical_point([0.0, viewport.y as f32 - 0.5])
+                    .is_err()
+            );
             assert!(!canvas.contains_raster_point([0.0, (viewport.y + viewport.height) as f32,]));
         }
         if viewport.x > 0 {
             assert!(!canvas.contains_raster_point([viewport.x as f32 - 0.5, 0.0]));
-            assert!(canvas
-                .raster_to_logical_point([viewport.x as f32 - 0.5, 0.0])
-                .is_err());
+            assert!(
+                canvas
+                    .raster_to_logical_point([viewport.x as f32 - 0.5, 0.0])
+                    .is_err()
+            );
             assert!(!canvas.contains_raster_point([(viewport.x + viewport.width) as f32, 0.0,]));
         }
     }

@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use sha2::{Digest, Sha256};
 use std::{
     fs::{self, File, OpenOptions},
@@ -42,7 +42,10 @@ pub fn hash(path: &Path) -> Result<String> {
         }
         digest.update(&buffer[..n]);
     }
-    Ok(format!("sha256:{:x}", digest.finalize()))
+    Ok(format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&digest.finalize())
+    ))
 }
 
 pub fn copy(source: &Path, dest: &Path) -> Result<()> {
@@ -61,10 +64,10 @@ pub fn copy(source: &Path, dest: &Path) -> Result<()> {
 }
 
 pub fn new_output(path: &Path) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        fs::create_dir_all(parent)?;
     }
     fs::create_dir(path).context("output must be a new directory")
 }

@@ -1,8 +1,8 @@
-//! Minimal ABI from libass 0.17.4 ass.h. Track fields are read by bridge.c
+//! Minimal ABI from libass 0.17.5 ass.h. Track fields are read by bridge.c
 //! against the installed official header, not a replicated Rust track layout.
 use std::ffi::{c_char, c_int};
 
-pub const VERSION: c_int = 0x01704000;
+pub const VERSION: c_int = 0x01705000;
 
 #[repr(C)]
 pub struct Library {

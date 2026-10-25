@@ -1,6 +1,6 @@
 use roukaku_vn_core::{
-    compile_roukaku_project, reduce_vn_step, PresentationCommand, RoukakuSource, SystemPageKind,
-    VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind,
+    PresentationCommand, RoukakuSource, SystemPageKind, VnPlayerCommand, VnRunConfig, VnRuntime,
+    VnWaitKind, compile_roukaku_project, reduce_vn_step,
 };
 
 const MAIN: &str = r#"
@@ -46,11 +46,13 @@ fn compiles_route_graph_source_map_and_stable_hash() {
     assert_eq!(compiled.schema, "roukaku.vn.compiled_project.v5");
     assert_eq!(compiled.stories.len(), 2);
     assert_eq!(compiled.route_graph.nodes.len(), 5);
-    assert!(compiled
-        .route_graph
-        .edges
-        .iter()
-        .any(|edge| edge.from == "state.prologue" && edge.to == "state.library"));
+    assert!(
+        compiled
+            .route_graph
+            .edges
+            .iter()
+            .any(|edge| edge.from == "state.prologue" && edge.to == "state.library")
+    );
     assert_eq!(compiled.source_map.get("line.hello").unwrap().line, 6);
     assert_eq!(
         compiled.debug_symbols.get("choice.library").unwrap(),
@@ -71,28 +73,34 @@ fn compiled_story_exposes_story_variable_and_command_manifests() {
         compiled.story_manifest.schema,
         "roukaku.vn.story_manifest.v1"
     );
-    assert!(compiled
-        .story_manifest
-        .stories
-        .iter()
-        .any(|story| story.id == "story.main"
-            && story.states == ["state.prologue", "state.library", "state.rooftop"]));
-    assert!(compiled
-        .variable_manifest
-        .scopes
-        .get("project")
-        .unwrap()
-        .keys
-        .contains("affinity"));
-    assert!(compiled
-        .command_manifest
-        .commands
-        .iter()
-        .any(|command| command.id == "line.hello"
-            && command.kind == "dialogue"
-            && command.state_id == "state.prologue"
-            && command.scene_id == "scene.room"
-            && command.source.as_ref().unwrap().line == 6));
+    assert!(
+        compiled
+            .story_manifest
+            .stories
+            .iter()
+            .any(|story| story.id == "story.main"
+                && story.states == ["state.prologue", "state.library", "state.rooftop"])
+    );
+    assert!(
+        compiled
+            .variable_manifest
+            .scopes
+            .get("project")
+            .unwrap()
+            .keys
+            .contains("affinity")
+    );
+    assert!(
+        compiled
+            .command_manifest
+            .commands
+            .iter()
+            .any(|command| command.id == "line.hello"
+                && command.kind == "dialogue"
+                && command.state_id == "state.prologue"
+                && command.scene_id == "scene.room"
+                && command.source.as_ref().unwrap().line == 6)
+    );
 }
 
 #[test]
@@ -173,19 +181,23 @@ fn runtime_drives_dialogue_choice_backlog_read_state_and_save_load() {
     assert_eq!(choice_flag.source, "choice.where:choice.library");
     assert_eq!(choice_flag.target, "state.library");
     assert_eq!(choice_flag.count, 1);
-    assert!(runtime
-        .state()
-        .backlog
-        .iter()
-        .any(|entry| entry.key == "library.followup"));
+    assert!(
+        runtime
+            .state()
+            .backlog
+            .iter()
+            .any(|entry| entry.key == "library.followup")
+    );
     assert!(runtime.state().read_state.contains("line.library"));
     assert!(runtime.state().voice_replay.contains_key("voice.hero.0002"));
     let ending = runtime.apply(VnPlayerCommand::Advance).unwrap();
     assert!(ending.coverage.reached.contains("ending.good"));
-    assert!(runtime
-        .state()
-        .route_flags
-        .contains_key("jump:jump.good:ending.good"));
+    assert!(
+        runtime
+            .state()
+            .route_flags
+            .contains_key("jump:jump.good:ending.good")
+    );
 
     let mut loaded = VnRuntime::new(compiled, VnRunConfig::classic("zh-Hans")).unwrap();
     loaded.load_slot(save).unwrap();

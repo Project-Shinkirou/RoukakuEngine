@@ -131,29 +131,24 @@ impl HostState {
         let captured = {
             let state = self.surfaces.get_mut(surface)?;
             if let Some(renderer) = &mut state.gpu_renderer {
-                if state.pending_gpu_profiles.len() >= WGPU_TIMESTAMP_RING_SIZE - 1 {
-                    if let Some(profile) = state.pending_gpu_profiles.front() {
-                        if let Some(submission) =
-                            renderer.try_resolve_profiled_submission(profile.pending)?
-                        {
-                            let profile = state
-                                .pending_gpu_profiles
-                                .pop_front()
-                                .expect("profile queue is not empty");
-                            self.performance_observer
-                                .as_ref()
-                                .ok_or_else(|| {
-                                    invalid(
-                                        "surface.performance",
-                                        "pending GPU profile has no performance observer",
-                                    )
-                                })?
-                                .record_gpu_frame(complete_gpu_sample(
-                                    profile.sample,
-                                    submission,
-                                ))?;
-                        }
-                    }
+                if state.pending_gpu_profiles.len() >= WGPU_TIMESTAMP_RING_SIZE - 1
+                    && let Some(profile) = state.pending_gpu_profiles.front()
+                    && let Some(submission) =
+                        renderer.try_resolve_profiled_submission(profile.pending)?
+                {
+                    let profile = state
+                        .pending_gpu_profiles
+                        .pop_front()
+                        .expect("profile queue is not empty");
+                    self.performance_observer
+                        .as_ref()
+                        .ok_or_else(|| {
+                            invalid(
+                                "surface.performance",
+                                "pending GPU profile has no performance observer",
+                            )
+                        })?
+                        .record_gpu_frame(complete_gpu_sample(profile.sample, submission))?;
                 }
                 if state.pending_gpu_profiles.len() == WGPU_TIMESTAMP_RING_SIZE {
                     let profile = state
@@ -262,7 +257,9 @@ impl HostState {
                     "surface.capture",
                     format!(
                         "GPU resources exceed the profile-bound residency budget: allocated_bytes={} atlas_bytes={} budget_bytes={}",
-                        counters.gpu_resource_bytes, counters.atlas_bytes, self.profile.max_gpu_resource_bytes,
+                        counters.gpu_resource_bytes,
+                        counters.atlas_bytes,
+                        self.profile.max_gpu_resource_bytes,
                     ),
                 ));
             }

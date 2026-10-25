@@ -165,7 +165,7 @@ impl<'a> BitmapRuns<'a> {
     pub fn is_empty(&self) -> bool {
         self.descriptors.is_empty()
     }
-    pub fn iter(&self) -> impl ExactSizeIterator<Item = BitmapRun<'a>> + 'a {
+    pub fn iter(&self) -> impl ExactSizeIterator<Item = BitmapRun<'a>> + 'a + use<'a> {
         let descriptors = self.descriptors;
         let masks = self.masks;
         descriptors.iter().map(move |run| {

@@ -24,10 +24,10 @@ pub(crate) fn tsuinosora_target(
     package: &PackageReader,
     selected_target: Option<&str>,
 ) -> Option<String> {
-    if let Some(target) = selected_target {
-        if target.starts_with("tsuinosora-") {
-            return Some(target.to_string());
-        }
+    if let Some(target) = selected_target
+        && target.starts_with("tsuinosora-")
+    {
+        return Some(target.to_string());
     }
     let bytes = package
         .container()

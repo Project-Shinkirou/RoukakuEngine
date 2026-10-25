@@ -1,17 +1,17 @@
 use std::{
     fs,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
 
 use roukaku_asset::{AssetSidecar, CookSettings, ReviewStatus};
 use roukaku_cook::{
-    commit_batch_directory, CookArtifact, CookBatchExecutor, CookBatchLimits, CookBatchRequest,
-    CookCancellationToken, CookError, CookNode, CookProcessor, CookProcessorRegistry, CookRequest,
-    DefaultCookProcessor, FileCookCache,
+    CookArtifact, CookBatchExecutor, CookBatchLimits, CookBatchRequest, CookCancellationToken,
+    CookError, CookNode, CookProcessor, CookProcessorRegistry, CookRequest, DefaultCookProcessor,
+    FileCookCache, commit_batch_directory,
 };
 use roukaku_core::Hash256;
 
@@ -166,11 +166,13 @@ fn batch_cook_validates_graph_uses_content_cache_and_commits_atomically() {
         serde_json::from_slice(&fs::read(destination.join("cook_batch.json")).unwrap()).unwrap();
     assert_eq!(manifest["schema"], "roukaku.cook_batch_manifest.v1");
     assert_eq!(manifest["artifacts"].as_array().unwrap().len(), 2);
-    assert!(manifest["artifacts"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .all(|artifact| artifact.get("payload").is_none()));
+    assert!(
+        manifest["artifacts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|artifact| artifact.get("payload").is_none())
+    );
 }
 
 #[test]
@@ -189,32 +191,36 @@ fn batch_cook_rejects_graph_errors_cancellation_and_corrupt_cache() {
         ],
         vec![node("a", b"a", &[]), node("a", b"other", &[])],
     ] {
-        assert!(executor
-            .execute(
-                CookBatchRequest {
-                    nodes,
-                    max_concurrency: 2,
-                    limits: limits(),
-                },
-                &CookCancellationToken::default(),
-            )
-            .is_err());
+        assert!(
+            executor
+                .execute(
+                    CookBatchRequest {
+                        nodes,
+                        max_concurrency: 2,
+                        limits: limits(),
+                    },
+                    &CookCancellationToken::default(),
+                )
+                .is_err()
+        );
     }
 
     let cancelled = CookCancellationToken::default();
     cancelled.cancel();
-    assert!(executor
-        .execute(
-            CookBatchRequest {
-                nodes: vec![node("cancelled", b"cancelled", &[])],
-                max_concurrency: 1,
-                limits: limits(),
-            },
-            &cancelled,
-        )
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_COOK_CANCELLED"));
+    assert!(
+        executor
+            .execute(
+                CookBatchRequest {
+                    nodes: vec![node("cancelled", b"cancelled", &[])],
+                    max_concurrency: 1,
+                    limits: limits(),
+                },
+                &cancelled,
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_COOK_CANCELLED")
+    );
 
     let request = CookBatchRequest {
         nodes: vec![node("cached", b"cached", &[])],
@@ -226,11 +232,13 @@ fn batch_cook_rejects_graph_errors_cancellation_and_corrupt_cache() {
         .unwrap();
     let cache_file = cache_root.join(format!("{}.cook", result.artifacts[0].cache_key.to_hex()));
     fs::write(&cache_file, b"corrupt").unwrap();
-    assert!(executor
-        .execute(request, &CookCancellationToken::default())
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_COOK_CACHE_CORRUPT"));
+    assert!(
+        executor
+            .execute(request, &CookCancellationToken::default())
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_COOK_CACHE_CORRUPT")
+    );
 
     fs::remove_file(&cache_file).unwrap();
     let request = CookBatchRequest {
@@ -245,27 +253,31 @@ fn batch_cook_rejects_graph_errors_cancellation_and_corrupt_cache() {
         postcard::from_bytes(&fs::read(&cache_file).unwrap()).unwrap();
     semantic_drift.target_profile = "different".to_string();
     fs::write(&cache_file, postcard::to_allocvec(&semantic_drift).unwrap()).unwrap();
-    assert!(executor
-        .execute(request, &CookCancellationToken::default())
-        .unwrap_err()
-        .to_string()
-        .contains("complete cook identity"));
+    assert!(
+        executor
+            .execute(request, &CookCancellationToken::default())
+            .unwrap_err()
+            .to_string()
+            .contains("complete cook identity")
+    );
 }
 
 #[test]
 fn batch_cook_rejects_zero_concurrency_and_processor_version_drift() {
     let registry = registry();
     let executor = CookBatchExecutor::new(&registry, None);
-    assert!(executor
-        .execute(
-            CookBatchRequest {
-                nodes: vec![node("zero", b"zero", &[])],
-                max_concurrency: 0,
-                limits: limits(),
-            },
-            &CookCancellationToken::default(),
-        )
-        .is_err());
+    assert!(
+        executor
+            .execute(
+                CookBatchRequest {
+                    nodes: vec![node("zero", b"zero", &[])],
+                    max_concurrency: 0,
+                    limits: limits(),
+                },
+                &CookCancellationToken::default(),
+            )
+            .is_err()
+    );
     let mut drift = node("drift", b"drift", &[]);
     drift.request.processor_version = "2.0.0".to_string();
     let error = executor
@@ -278,10 +290,12 @@ fn batch_cook_rejects_zero_concurrency_and_processor_version_drift() {
             &CookCancellationToken::default(),
         )
         .unwrap_err();
-    assert!(error
-        .diagnostics()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_COOK_PROCESSOR_VERSION_MISMATCH"));
+    assert!(
+        error
+            .diagnostics()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_COOK_PROCESSOR_VERSION_MISMATCH")
+    );
 
     for constrained in [
         CookBatchLimits {
@@ -306,16 +320,18 @@ fn batch_cook_rejects_zero_concurrency_and_processor_version_drift() {
         } else {
             vec![node("limit", b"data", &[])]
         };
-        assert!(executor
-            .execute(
-                CookBatchRequest {
-                    nodes,
-                    max_concurrency: 2,
-                    limits: constrained,
-                },
-                &CookCancellationToken::default(),
-            )
-            .is_err());
+        assert!(
+            executor
+                .execute(
+                    CookBatchRequest {
+                        nodes,
+                        max_concurrency: 2,
+                        limits: constrained,
+                    },
+                    &CookCancellationToken::default(),
+                )
+                .is_err()
+        );
     }
 }
 
@@ -348,12 +364,14 @@ fn batch_cook_cancels_in_flight_and_contains_processor_panics() {
             std::thread::yield_now();
         }
         cancellation.cancel();
-        assert!(handle
-            .join()
-            .unwrap()
-            .unwrap_err()
-            .to_string()
-            .contains("ROUKAKU_COOK_CANCELLED"));
+        assert!(
+            handle
+                .join()
+                .unwrap()
+                .unwrap_err()
+                .to_string()
+                .contains("ROUKAKU_COOK_CANCELLED")
+        );
     });
 
     let mut panic_registry = CookProcessorRegistry::default();

@@ -12,8 +12,8 @@ use std::{
     io::Write,
     path::{Component, Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
@@ -36,12 +36,12 @@ use roukaku_media_core::{
 };
 
 use roukaku_platform::{
-    host_channel, AudioDeviceFormat, AudioOutputHandle, AudioOutputLane, AudioWakeRegistration,
-    CapturedFrame, DecodeKind, DecodeOutput, DecodeSessionHandle, HeadlessHostProfile,
-    HeadlessReadbackPolicy, HeadlessRenderPolicy, HostCommand, HostLaunchProfile,
-    OpenedAudioOutput, PackageSourceHandle, PackageSourceRequest, PlatformError, PlatformErrorCode,
-    PlatformHostFactory, PlatformHostSession, RgbaFrame, SaveTransactionHandle, SurfaceHandle,
-    WindowHandle,
+    AudioDeviceFormat, AudioOutputHandle, AudioOutputLane, AudioWakeRegistration, CapturedFrame,
+    DecodeKind, DecodeOutput, DecodeSessionHandle, HeadlessHostProfile, HeadlessReadbackPolicy,
+    HeadlessRenderPolicy, HostCommand, HostLaunchProfile, OpenedAudioOutput, PackageSourceHandle,
+    PackageSourceRequest, PlatformError, PlatformErrorCode, PlatformHostFactory,
+    PlatformHostSession, RgbaFrame, SaveTransactionHandle, SurfaceHandle, WindowHandle,
+    host_channel,
 };
 
 use roukaku_platform_common::WGPU_TIMESTAMP_RING_SIZE;
@@ -59,8 +59,6 @@ use sha2::{Digest, Sha256};
 mod tests;
 
 mod headless_platform_factory;
-#[cfg(feature = "ffmpeg-vcpkg")]
-use headless_platform_factory::validate_ffmpeg_binding;
 use headless_platform_factory::AudioState;
 use headless_platform_factory::DecodeState;
 use headless_platform_factory::HeadlessAudioLane;
@@ -75,6 +73,8 @@ use headless_platform_factory::PendingGpuProfile;
 use headless_platform_factory::PendingScene;
 use headless_platform_factory::SurfaceState;
 use headless_platform_factory::WindowState;
+#[cfg(feature = "ffmpeg-vcpkg")]
+use headless_platform_factory::validate_ffmpeg_binding;
 mod gpu_instance;
 
 mod handle;

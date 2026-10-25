@@ -143,8 +143,11 @@ fn cancelled_error() -> PlatformError {
 }
 
 fn decode_audio(bytes: &[u8], cancelled: &dyn Fn() -> bool) -> Result<DecodeOutput, PlatformError> {
-    let pipeline = MediaPipeline::open(bytes,
-        "audioconvert ! audioresample ! audio/x-raw,format=F32LE,layout=interleaved,rate=48000,channels=2", cancelled)?;
+    let pipeline = MediaPipeline::open(
+        bytes,
+        "audioconvert ! audioresample ! audio/x-raw,format=F32LE,layout=interleaved,rate=48000,channels=2",
+        cancelled,
+    )?;
     let mut samples = Vec::new();
     while let Some(sample) = pipeline.pull(cancelled)? {
         let buffer = sample

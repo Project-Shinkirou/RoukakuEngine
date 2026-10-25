@@ -139,10 +139,12 @@ pub(super) fn release_profile_accepts_cooked_project_input_section() {
         .find(|check| check.id == "package.cooked_project")
         .unwrap();
     assert_eq!(cooked_project_check.status, CheckStatus::Pass);
-    assert!(cooked_project_check
-        .evidence
-        .iter()
-        .any(|entry| { entry.key == "section" && entry.value == "compiled.project" }));
+    assert!(
+        cooked_project_check
+            .evidence
+            .iter()
+            .any(|entry| { entry.key == "section" && entry.value == "compiled.project" })
+    );
 }
 
 #[test]
@@ -259,18 +261,23 @@ pub(super) fn release_report_includes_windows_platform_provider_evidence() {
         .iter()
         .find(|check| check.id == "platform.capability_report")
         .unwrap();
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "provider.renderer.selected" && entry.value == "wgpu_hardware"));
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "provider.decode.selected" && entry.value == "wmf"));
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "build_fingerprint" && entry.value.starts_with("sha256:")));
+    assert!(
+        platform_check.evidence.iter().any(
+            |entry| entry.key == "provider.renderer.selected" && entry.value == "wgpu_hardware"
+        )
+    );
+    assert!(
+        platform_check
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "provider.decode.selected" && entry.value == "wmf")
+    );
+    assert!(
+        platform_check
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "build_fingerprint" && entry.value.starts_with("sha256:"))
+    );
 }
 
 #[test]
@@ -348,26 +355,34 @@ pub(super) fn release_report_includes_web_platform_provider_evidence() {
         .find(|check| check.id == "platform.capability_report")
         .unwrap();
     assert_eq!(platform_check.status, CheckStatus::Pass);
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "provider.decode.selected" && entry.value == "webcodecs"));
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "provider.audio_mixer.selected" && entry.value == "kira"));
+    assert!(
+        platform_check
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "provider.decode.selected" && entry.value == "webcodecs")
+    );
+    assert!(
+        platform_check
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "provider.audio_mixer.selected" && entry.value == "kira")
+    );
     assert!(platform_check
         .evidence
         .iter()
         .any(|entry| entry.key == "provider.audio_output.selected" && entry.value == "webaudio"));
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "provider.save.selected" && entry.value == "opfs"));
-    assert!(platform_check
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "profile_hash" && entry.value.starts_with("sha256:")));
+    assert!(
+        platform_check
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "provider.save.selected" && entry.value == "opfs")
+    );
+    assert!(
+        platform_check
+            .evidence
+            .iter()
+            .any(|entry| entry.key == "profile_hash" && entry.value.starts_with("sha256:"))
+    );
 }
 
 #[test]

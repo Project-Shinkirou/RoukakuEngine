@@ -1,8 +1,8 @@
 #![cfg(target_os = "android")]
 
 use std::sync::{
-    atomic::{AtomicBool, AtomicU32, Ordering},
     Arc,
+    atomic::{AtomicBool, AtomicU32, Ordering},
 };
 
 use oboe::{

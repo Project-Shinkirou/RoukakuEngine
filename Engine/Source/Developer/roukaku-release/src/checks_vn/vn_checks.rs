@@ -127,9 +127,18 @@ pub(crate) fn vn_compiled_project_check(
             )),
             evidence: vec![
                 evidence("section", "vn.compiled_project"),
-                evidence("story_manifest_count", compiled.story_manifest.stories.len()),
-                evidence("variable_scope_count", compiled.variable_manifest.scopes.len()),
-                evidence("command_manifest_count", compiled.command_manifest.commands.len()),
+                evidence(
+                    "story_manifest_count",
+                    compiled.story_manifest.stories.len(),
+                ),
+                evidence(
+                    "variable_scope_count",
+                    compiled.variable_manifest.scopes.len(),
+                ),
+                evidence(
+                    "command_manifest_count",
+                    compiled.command_manifest.commands.len(),
+                ),
             ],
         };
     }
@@ -199,23 +208,23 @@ pub(crate) fn vn_profile_manifest_check(
             evidence: vec![evidence("profile", profile)],
         };
     }
-    if let Some(selected_target) = selected_target {
-        if manifest.target != selected_target {
-            return ReleaseCheckRecord {
-                id: "vn.profile_manifest".to_string(),
-                domain: ReleaseDomain::Vn,
-                status: CheckStatus::Blocked,
-                summary: "VN profile manifest target does not match selected target".to_string(),
-                diagnostic: Some(Diagnostic::blocking(
-                    "ROUKAKU_VN_PROFILE_TARGET",
-                    "vn.profile_manifest target must match selected target",
-                )),
-                evidence: vec![
-                    evidence("manifest_target", manifest.target),
-                    evidence("selected_target", selected_target),
-                ],
-            };
-        }
+    if let Some(selected_target) = selected_target
+        && manifest.target != selected_target
+    {
+        return ReleaseCheckRecord {
+            id: "vn.profile_manifest".to_string(),
+            domain: ReleaseDomain::Vn,
+            status: CheckStatus::Blocked,
+            summary: "VN profile manifest target does not match selected target".to_string(),
+            diagnostic: Some(Diagnostic::blocking(
+                "ROUKAKU_VN_PROFILE_TARGET",
+                "vn.profile_manifest target must match selected target",
+            )),
+            evidence: vec![
+                evidence("manifest_target", manifest.target),
+                evidence("selected_target", selected_target),
+            ],
+        };
     }
     ReleaseCheckRecord {
         id: "vn.profile_manifest".to_string(),

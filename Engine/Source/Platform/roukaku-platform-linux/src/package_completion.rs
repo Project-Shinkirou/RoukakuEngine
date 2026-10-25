@@ -130,9 +130,11 @@ mod tests {
         let bytes = b"replacement";
         let replacement_hash = Hash256::from_sha256(bytes).to_string();
         cache.store_verified(&replacement_hash, bytes).unwrap();
-        assert!(!cache
-            .contains(&Hash256::from_sha256(b"linux package completion").to_string())
-            .unwrap());
+        assert!(
+            !cache
+                .contains(&Hash256::from_sha256(b"linux package completion").to_string())
+                .unwrap()
+        );
         assert!(cache.contains(&replacement_hash).unwrap());
         assert_eq!(cache.entry_count(), 1);
     }

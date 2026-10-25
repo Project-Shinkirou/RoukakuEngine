@@ -2,10 +2,10 @@ use std::path::Path;
 
 use clap::ValueEnum;
 use roukaku_core::{
-    PerformanceBudget, PerformanceMetricBudget, PerformanceThresholds, PerformanceUnit,
-    PERFORMANCE_BUDGET_SCHEMA,
+    PERFORMANCE_BUDGET_SCHEMA, PerformanceBudget, PerformanceMetricBudget, PerformanceThresholds,
+    PerformanceUnit,
 };
-use roukaku_platform::{validate_headless_performance_profile, HeadlessHostProfile};
+use roukaku_platform::{HeadlessHostProfile, validate_headless_performance_profile};
 use serde::Deserialize;
 
 use super::*;

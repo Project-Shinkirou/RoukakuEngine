@@ -260,22 +260,26 @@ pub(super) async fn executes_render_audio_save_package_and_zero_leak_shutdown() 
     client.close_audio(restored_audio.handle).await.unwrap();
     client.shutdown().await.unwrap();
 
-    assert!(temp
-        .path()
-        .join("artifacts/frames/frame-0000000001.png")
-        .is_file());
-    assert!(temp
-        .path()
-        .join("artifacts/audio/output-0000000001.wav")
-        .is_file());
-    assert!(temp
-        .path()
-        .join("artifacts/audio/output-0000000002.wav")
-        .is_file());
-    assert!(temp
-        .path()
-        .join("artifacts/artifact-manifest.json")
-        .is_file());
+    assert!(
+        temp.path()
+            .join("artifacts/frames/frame-0000000001.png")
+            .is_file()
+    );
+    assert!(
+        temp.path()
+            .join("artifacts/audio/output-0000000001.wav")
+            .is_file()
+    );
+    assert!(
+        temp.path()
+            .join("artifacts/audio/output-0000000002.wav")
+            .is_file()
+    );
+    assert!(
+        temp.path()
+            .join("artifacts/artifact-manifest.json")
+            .is_file()
+    );
 }
 
 #[cfg(feature = "ffmpeg-vcpkg")]

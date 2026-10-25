@@ -111,11 +111,13 @@ pub(super) fn native_vn_source_rejects_catalog_slot_identity_mismatch() {
     let saved = writer.save("slot.01").unwrap();
 
     let mut reopened = source_for(STORY);
-    assert!(reopened
-        .ingest_save_catalog_entry("slot.02", &saved)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_SAVE_CATALOG_IDENTITY"));
+    assert!(
+        reopened
+            .ingest_save_catalog_entry("slot.02", &saved)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_SAVE_CATALOG_IDENTITY")
+    );
 }
 
 #[test]
@@ -132,9 +134,11 @@ pub(super) fn unavailable_catalog_slot_is_protected_while_other_slots_remain_pla
     )
     .unwrap();
     let old_header = postcard::to_allocvec("roukaku.player_vn_save_envelope.v8").unwrap();
-    assert!(source
-        .ingest_save_catalog_entry("slot.01", &old_header)
-        .is_err());
+    assert!(
+        source
+            .ingest_save_catalog_entry("slot.01", &old_header)
+            .is_err()
+    );
     source.reject_save_catalog_entry("slot.01");
     source.launch().unwrap();
     assert_eq!(
@@ -144,26 +148,32 @@ pub(super) fn unavailable_catalog_slot_is_protected_while_other_slots_remain_pla
             .occupied_save_slot_count,
         1
     );
-    assert!(source
-        .prepare_save_metadata("slot.01", "now".into(), 0)
-        .unwrap_err()
-        .to_string()
-        .contains("SAVE_SLOT_PROTECTED"));
-    assert!(source
-        .save("slot.01")
-        .unwrap_err()
-        .to_string()
-        .contains("SAVE_SLOT_PROTECTED"));
+    assert!(
+        source
+            .prepare_save_metadata("slot.01", "now".into(), 0)
+            .unwrap_err()
+            .to_string()
+            .contains("SAVE_SLOT_PROTECTED")
+    );
+    assert!(
+        source
+            .save("slot.01")
+            .unwrap_err()
+            .to_string()
+            .contains("SAVE_SLOT_PROTECTED")
+    );
     advance(&mut source);
     prepare_test_save_metadata(&mut source, "slot.02");
     let saved = source.save("slot.02").unwrap();
     source.restore(&saved).unwrap();
     advance(&mut source);
-    assert!(source
-        .prepare_save_metadata("slot.01", "later".into(), 1)
-        .unwrap_err()
-        .to_string()
-        .contains("SAVE_SLOT_PROTECTED"));
+    assert!(
+        source
+            .prepare_save_metadata("slot.01", "later".into(), 1)
+            .unwrap_err()
+            .to_string()
+            .contains("SAVE_SLOT_PROTECTED")
+    );
     source.release_resources().unwrap();
     source.shutdown().unwrap();
 }
@@ -451,7 +461,9 @@ pub(super) fn packaged_player_rejects_headless_presentation_binding() {
     .err()
     .expect("headless presentation binding must be rejected");
 
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLAYER_PRESENTATION_PROVIDER_INELIGIBLE"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLAYER_PRESENTATION_PROVIDER_INELIGIBLE")
+    );
 }

@@ -74,13 +74,15 @@ fn action_panic_poisoning_is_contained_until_explicit_restore() {
     assert!(world.save(SaveRequest::default()).is_err());
     assert!(world.snapshot().is_err());
     assert!(world.remove_actor(owner).is_err());
-    assert!(world
-        .load_with_validation(
-            saved.clone(),
-            &roukaku_core::SchemaMigrationRegistry::default(),
-            |_| Err::<(), _>(RuntimeError::message("host rejected state")),
-        )
-        .is_err());
+    assert!(
+        world
+            .load_with_validation(
+                saved.clone(),
+                &roukaku_core::SchemaMigrationRegistry::default(),
+                |_| Err::<(), _>(RuntimeError::message("host rejected state")),
+            )
+            .is_err()
+    );
     assert!(world.is_failed());
     world.load(saved).unwrap();
     assert!(!world.is_failed());

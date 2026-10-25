@@ -1,5 +1,5 @@
 use crate::util::{capture, copy, hash, new_output};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use std::{
     collections::BTreeSet,
     fs,
@@ -84,10 +84,10 @@ fn stage(root: &Path, target: &str, ver: &str, output: &Path, rustc: &str) -> Re
                 let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) else {
                     continue;
                 };
-                if value["reason"] == "compiler-message" {
-                    if let Some(rendered) = value["message"]["rendered"].as_str() {
-                        eprint!("{rendered}");
-                    }
+                if value["reason"] == "compiler-message"
+                    && let Some(rendered) = value["message"]["rendered"].as_str()
+                {
+                    eprint!("{rendered}");
                 }
                 if value["reason"] != "compiler-artifact" {
                     continue;
@@ -327,7 +327,12 @@ fn collect_files(input: &Path, output: &Path, ver: &str) -> Result<()> {
         ));
     }
     fs::write(output.join("SHA256SUMS"), sums)?;
-    fs::write(output.join("release-notes.md"), format!("# RoukakuEngine {ver}\n\nNative Player, Editor and CLI artifacts are attached for successful desktop builds. See each archive's build.json for source and toolchain identity.\n\n## Blocked standalone release platforms\n- Android: requires an explicitly supplied .roukakupkg and application id; use cargo xtask android. Debug APKs use debug signing; release artifacts require external signing.\n- iOS: no native Player host/signing integration.\n- OpenHarmony: no native Player host integration.\n\nSHA256SUMS covers every attached product archive.\n"))?;
+    fs::write(
+        output.join("release-notes.md"),
+        format!(
+            "# RoukakuEngine {ver}\n\nNative Player, Editor and CLI artifacts are attached for successful desktop builds. See each archive's build.json for source and toolchain identity.\n\n## Blocked standalone release platforms\n- Android: requires an explicitly supplied .roukakupkg and application id; use cargo xtask android. Debug APKs use debug signing; release artifacts require external signing.\n- iOS: no native Player host/signing integration.\n- OpenHarmony: no native Player host integration.\n\nSHA256SUMS covers every attached product archive.\n"
+        ),
+    )?;
     Ok(())
 }
 

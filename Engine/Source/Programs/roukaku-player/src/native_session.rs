@@ -433,12 +433,14 @@ async fn execute_platform_save(
             .execute_batch(capture)
             .await
             .map_err(|error| player_error_owned("player.save.capture", error))?;
-        let [PlayerHostCommandResult::Captured {
-            width,
-            height,
-            rgba8,
-            ..
-        }] = result.as_slice()
+        let [
+            PlayerHostCommandResult::Captured {
+                width,
+                height,
+                rgba8,
+                ..
+            },
+        ] = result.as_slice()
         else {
             return Err(player_error(
                 "player.save.capture",

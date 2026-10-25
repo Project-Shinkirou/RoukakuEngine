@@ -249,7 +249,7 @@ pub(crate) fn font_package_check(
                 "ROUKAKU_TEXT_PACKAGE_MANIFEST_READ",
                 format!("package font manifest could not be read: {error}"),
                 vec![evidence("section", section_id)],
-            )
+            );
         }
     };
     let manifest: FontPackageManifest = match serde_json::from_slice(&bytes) {
@@ -260,7 +260,7 @@ pub(crate) fn font_package_check(
                 "ROUKAKU_TEXT_PACKAGE_MANIFEST_DECODE",
                 format!("package font manifest JSON is invalid: {error}"),
                 vec![evidence("section", section_id)],
-            )
+            );
         }
     };
     let target = selected_target

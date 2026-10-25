@@ -15,7 +15,7 @@ pub(in super::super) fn effect_filter_graph(
         other => {
             return Err(NativeVnHostError::Asset(format!(
                 "ROUKAKU_PLAYER_FILTER_UNSUPPORTED: {other}"
-            )))
+            )));
         }
     };
     Ok(FilterGraph {

@@ -6,9 +6,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use roukaku_observability::{sample_process_memory, PerfettoTraceConfig, PerfettoTraceWriter};
+use roukaku_observability::{PerfettoTraceConfig, PerfettoTraceWriter, sample_process_memory};
 use roukaku_platform::SceneFrame;
-use roukaku_platform_common::{WgpuOffscreenRenderer, WGPU_TIMESTAMP_RING_SIZE};
+use roukaku_platform_common::{WGPU_TIMESTAMP_RING_SIZE, WgpuOffscreenRenderer};
 
 use super::*;
 

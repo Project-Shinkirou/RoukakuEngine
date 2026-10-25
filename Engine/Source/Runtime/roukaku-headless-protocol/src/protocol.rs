@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{validate_symbol, Diagnostic, InputMessage, ProtocolError, HEADLESS_PROTOCOL_SCHEMA};
+use crate::{Diagnostic, HEADLESS_PROTOCOL_SCHEMA, InputMessage, ProtocolError, validate_symbol};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]

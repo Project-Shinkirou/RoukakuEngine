@@ -1,5 +1,5 @@
 use crate::util::{capture, copy, hash, new_output, run as command};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Args;
 use std::{
     fs,
@@ -7,7 +7,7 @@ use std::{
     process::Command,
 };
 
-const NDK: &str = "30.0.15729638";
+const NDK: &str = "30.0.16248370";
 const PROJECT: &str = "Engine/Source/Programs/roukaku-player-android/android";
 #[derive(Args)]
 pub struct Options {
@@ -66,9 +66,9 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
         String::from_utf8_lossy(&java_output.stderr),
         String::from_utf8_lossy(&java_output.stdout)
     );
-    let jdk = regex::Regex::new(r#"version "(17(?:\.[^" ]*)?)""#)?
+    let jdk = regex::Regex::new(r#"version "(27(?:\.[^" ]*)?)""#)?
         .captures(&java_output)
-        .context("JDK 17 is required")?[1]
+        .context("JDK 27 is required")?[1]
         .to_string();
     let sdk = PathBuf::from(
         std::env::var_os("ANDROID_SDK_ROOT")
@@ -77,8 +77,8 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
     )
     .canonicalize()?;
     for relative in [
-        "platforms/android-36".to_string(),
-        "build-tools/36.0.0".to_string(),
+        "platforms/android-37.2".to_string(),
+        "build-tools/37.0.0".to_string(),
         format!("ndk/{NDK}"),
     ] {
         if !sdk.join(&relative).is_dir() {
@@ -222,7 +222,7 @@ fn build(
     )?;
     let manifest = serde_json::json!({"schema":"roukaku.android_bundle_manifest.v1", "target":options.target, "profile":options.profile,
         "application_id":options.application_id, "package_sha256":hash(package)?, "source_commit":String::from_utf8_lossy(&commit.stdout).trim(),
-        "cargo_lock_sha256":hash(&root.join("Cargo.lock"))?, "jdk_version":jdk, "ndk_version":NDK, "compile_sdk":36, "min_sdk":28,
+        "cargo_lock_sha256":hash(&root.join("Cargo.lock"))?, "jdk_version":jdk, "ndk_version":NDK, "compile_sdk":37, "compile_sdk_minor":2, "min_sdk":28,
         "shipping_abis":["arm64-v8a"], "debug_apk_signing":"debug", "release_signing":if signing.is_some(){"external"}else{"unsigned"}, "files":files});
     fs::write(
         output.join("android-bundle-manifest.json"),

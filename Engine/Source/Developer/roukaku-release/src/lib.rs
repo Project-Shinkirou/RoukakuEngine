@@ -2,10 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use roukaku_asset::{AssetCatalog, ResolveContext, VfsManifest, VfsSourceRef, VfsUri};
 use roukaku_core::{
-    validate_performance_report, Diagnostic, Hash256, PerformanceBudget, PerformanceReport,
+    Diagnostic, Hash256, PerformanceBudget, PerformanceReport, validate_performance_report,
 };
 use roukaku_media::{
-    FontBindingContext, FontPackageManifest, TextLayoutConfig, FONT_PACKAGE_MANIFEST_SCHEMA,
+    FONT_PACKAGE_MANIFEST_SCHEMA, FontBindingContext, FontPackageManifest, TextLayoutConfig,
 };
 use roukaku_package::{CookSummaryManifest, PackageManifest, PackageReader};
 use roukaku_platform::{
@@ -13,16 +13,16 @@ use roukaku_platform::{
 };
 use roukaku_platform_android::AndroidBundleManifest;
 use roukaku_player_core::{
-    PlayerAutomationReport, PlayerAutomationStatus, PlayerPlatform, PlayerPresentationReport,
-    PLAYER_PRESENTATION_REPORT_SCHEMA,
+    PLAYER_PRESENTATION_REPORT_SCHEMA, PlayerAutomationReport, PlayerAutomationStatus,
+    PlayerPlatform, PlayerPresentationReport,
 };
 use roukaku_plugin_abi::{PluginExtensionRegistrySnapshot, ProviderPolicy};
-use roukaku_target::{validate_manifest, TargetKind, TargetManifest, TargetValidationStatus};
+use roukaku_target::{TargetKind, TargetManifest, TargetValidationStatus, validate_manifest};
 use roukaku_vn::VnHostLimits;
 use roukaku_vn_package::{
-    decode_compiled_project, load_player_locale_config, load_presentation_provider_manifest,
     VnAdvancedPresentationManifest, VnCommercialBaselineManifest, VnExtensionManifest,
-    VnProfileManifest, VnStandardCommandManifest,
+    VnProfileManifest, VnStandardCommandManifest, decode_compiled_project,
+    load_player_locale_config, load_presentation_provider_manifest,
 };
 use roukaku_vn_policy::{VnPolicyBundleManifest, VnPolicyBundleSourceCache};
 

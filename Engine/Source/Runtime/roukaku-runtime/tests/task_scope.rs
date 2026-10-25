@@ -63,10 +63,12 @@ fn worker_started_before_restore_cannot_complete_the_restored_token() {
     release_tx.send(()).unwrap();
     let late = worker.join().unwrap();
     let report = world.tick(request(1, true, vec![late])).unwrap();
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|d| d.code == "ROUKAKU_AWAIT_RESULT_STALE"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "ROUKAKU_AWAIT_RESULT_STALE")
+    );
     assert_eq!(
         world.snapshot().unwrap().awaits.pending(),
         std::slice::from_ref(&token)
@@ -91,13 +93,15 @@ fn rejected_restore_preserves_running_handles() {
         .await_handle(token.token_id, &world.task_scope())
         .unwrap();
     let save = world.save(SaveRequest::default()).unwrap();
-    assert!(world
-        .load_with_validation(
-            save,
-            &roukaku_core::SchemaMigrationRegistry::default(),
-            |_| { Err::<(), _>(RuntimeError::message("host rejected typed state")) }
-        )
-        .is_err());
+    assert!(
+        world
+            .load_with_validation(
+                save,
+                &roukaku_core::SchemaMigrationRegistry::default(),
+                |_| { Err::<(), _>(RuntimeError::message("host rejected typed state")) }
+            )
+            .is_err()
+    );
     assert_eq!(handle.status(), TaskStatus::Pending);
     world
         .tick(request(1, false, vec![result(&handle, 1)]))
@@ -154,9 +158,11 @@ fn foreign_world_and_cancelled_token_handles_cannot_be_rebound() {
     let handle = first
         .await_handle(token.token_id, &first.task_scope())
         .unwrap();
-    assert!(second
-        .await_handle(token.token_id, &first.task_scope())
-        .is_err());
+    assert!(
+        second
+            .await_handle(token.token_id, &first.task_scope())
+            .is_err()
+    );
     second
         .tick(request(1, false, vec![result(&handle, 1)]))
         .unwrap();
@@ -214,9 +220,11 @@ fn destroying_world_cancels_workers_and_scope_binding_is_unique() {
     world.insert_await_token(token.clone()).unwrap();
     let scope = world.task_scope().child();
     let handle = world.await_handle(token.token_id, &scope).unwrap();
-    assert!(world
-        .await_handle(token.token_id, &world.task_scope())
-        .is_err());
+    assert!(
+        world
+            .await_handle(token.token_id, &world.task_scope())
+            .is_err()
+    );
     assert_eq!(world.await_handle(token.token_id, &scope).unwrap(), handle);
     drop(world);
     assert!(scope.is_cancelled());
@@ -237,11 +245,13 @@ fn saved_committed_results_survive_restore_without_worker_handles() {
     let saved = world.save(SaveRequest::default()).unwrap();
     world.load(saved).unwrap();
     assert_eq!(handle.status(), TaskStatus::Cancelled);
-    assert!(world
-        .await_handle(token.token_id, &world.task_scope())
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_AWAIT_RESULT_PENDING"));
+    assert!(
+        world
+            .await_handle(token.token_id, &world.task_scope())
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_AWAIT_RESULT_PENDING")
+    );
     world.tick(request(2, true, vec![])).unwrap();
     assert!(world.snapshot().unwrap().awaits.pending().is_empty());
     assert_eq!(
@@ -273,11 +283,13 @@ fn duplicate_saved_terminal_results_are_rejected_without_cancelling_current_work
     completions.push(completions[0].clone());
     snapshot.awaits = serde_json::from_value(queue).unwrap();
     let corrupt = write_runtime_save(snapshot, SaveRequest::default()).unwrap();
-    assert!(world
-        .load(corrupt)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_AWAIT_SAVE_RESULT_INVALID"));
+    assert!(
+        world
+            .load(corrupt)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_AWAIT_SAVE_RESULT_INVALID")
+    );
     assert_eq!(handle.status(), TaskStatus::Pending);
     assert_eq!(world.save(SaveRequest::default()).unwrap().0, before.0);
     world.tick(request(2, false, vec![])).unwrap();

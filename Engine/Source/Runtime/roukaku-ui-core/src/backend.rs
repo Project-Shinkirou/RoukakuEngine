@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{
-    UiActionEnvelope, UiBlueprintFrameModel, UiInputDisposition, UiInputFrame, UiRenderFrame,
-    UiSemanticSnapshot, UiThemeManifest, UiValidationError, UiViewport, ValidateUi,
-    MAX_NODES_PER_VIEW, MAX_TEXTURE_BYTES,
+    MAX_NODES_PER_VIEW, MAX_TEXTURE_BYTES, UiActionEnvelope, UiBlueprintFrameModel,
+    UiInputDisposition, UiInputFrame, UiRenderFrame, UiSemanticSnapshot, UiThemeManifest,
+    UiValidationError, UiViewport, ValidateUi,
 };
 
 #[derive(
@@ -210,7 +210,7 @@ impl ValidateUi for UiFrameOutput {
 pub trait UiBackend {
     fn descriptor(&self) -> &UiBackendDescriptor;
     fn render_frame(&mut self, request: UiFrameRequest)
-        -> Result<UiFrameOutput, UiValidationError>;
+    -> Result<UiFrameOutput, UiValidationError>;
     fn context_restored(
         &mut self,
         session_id: &str,

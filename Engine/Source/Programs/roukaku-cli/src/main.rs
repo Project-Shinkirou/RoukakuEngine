@@ -10,8 +10,8 @@ use roukaku_core::Hash256;
 use roukaku_release::{PackageValidateRequest, ReleaseValidator};
 use roukaku_target::validate_manifest;
 use roukaku_vn_script::{
-    compile_roukaku_project, format_roukaku_source, CompileRoukakuProjectOptions, FormatOptions,
-    RoukakuSource,
+    CompileRoukakuProjectOptions, FormatOptions, RoukakuSource, compile_roukaku_project,
+    format_roukaku_source,
 };
 use serde::Deserialize;
 use tracing::info;

@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{is_sha256, validate_symbol, ProtocolError, HEADLESS_CHECKPOINT_CONFIG_SCHEMA};
+use crate::{HEADLESS_CHECKPOINT_CONFIG_SCHEMA, ProtocolError, is_sha256, validate_symbol};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]

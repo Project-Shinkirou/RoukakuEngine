@@ -429,17 +429,17 @@ impl NativeVnProductMediaHost {
                         .saturating_add(audio_sample.completion_ns);
                 })?;
             }
-            if let Some(fence) = source.pending_wait().map(|wait| wait.fence.clone()) {
-                if self.completed_signals.remove(&fence) {
-                    let present = source
-                        .complete_wait(fence)
-                        .map_err(|error| media_error("player.media.complete_wait", error))?;
-                    executor
-                        .execute_batch(present)
-                        .await
-                        .map_err(|error| media_error("player.media.present", error))?;
-                    continue;
-                }
+            if let Some(fence) = source.pending_wait().map(|wait| wait.fence.clone())
+                && self.completed_signals.remove(&fence)
+            {
+                let present = source
+                    .complete_wait(fence)
+                    .map_err(|error| media_error("player.media.complete_wait", error))?;
+                executor
+                    .execute_batch(present)
+                    .await
+                    .map_err(|error| media_error("player.media.present", error))?;
+                continue;
             }
             return Ok(());
         }

@@ -201,10 +201,10 @@ impl PresentationCoordinator {
                 .elapsed_ns
                 .saturating_add(delta_ns)
                 .min(state.duration_ns);
-            if state.elapsed_ns == state.duration_ns {
-                if let Some(fence) = state.fence.take() {
-                    completed.push(fence);
-                }
+            if state.elapsed_ns == state.duration_ns
+                && let Some(fence) = state.fence.take()
+            {
+                completed.push(fence);
             }
         }
         for state in self.state.background.layers.values_mut() {

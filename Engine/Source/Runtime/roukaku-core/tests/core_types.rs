@@ -49,9 +49,11 @@ fn schema_versions_order_and_migration_chain_is_checked() {
     assert!(older < current);
 
     let mut registry = SchemaMigrationRegistry::default();
-    assert!(registry
-        .validate_chain("runtime.world", older, next)
-        .is_err());
+    assert!(
+        registry
+            .validate_chain("runtime.world", older, next)
+            .is_err()
+    );
     registry.register_identity("runtime.world", older, current);
     registry.register_identity("runtime.world", current, next);
     registry

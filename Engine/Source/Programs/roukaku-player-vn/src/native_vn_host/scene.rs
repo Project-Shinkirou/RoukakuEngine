@@ -216,10 +216,9 @@ impl NativeVnHostCommandSource {
                 .as_ref()
                 .and_then(|value| value.descriptor_id.as_ref())
                 .is_some()
+                && let Some(snapshot) = &self.director_transition_snapshot
             {
-                if let Some(snapshot) = &self.director_transition_snapshot {
-                    texture_ids.extend(scene_texture_ids(&snapshot.source_draw));
-                }
+                texture_ids.extend(scene_texture_ids(&snapshot.source_draw));
             }
             for asset_id in &texture_ids {
                 self.mark_texture_used(asset_id)?;

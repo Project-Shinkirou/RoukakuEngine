@@ -117,7 +117,10 @@ pub(crate) fn hash_input_messages(
     for message in messages {
         update_input_digest(&mut digest, message)?;
     }
-    Ok(format!("sha256:{:x}", digest.finalize()))
+    Ok(format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&digest.finalize())
+    ))
 }
 
 pub(crate) fn canonical_or_raw_input_hash(bytes: &[u8]) -> String {

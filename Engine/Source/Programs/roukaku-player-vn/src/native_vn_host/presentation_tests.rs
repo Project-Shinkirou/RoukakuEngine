@@ -174,11 +174,13 @@ fn frame_failure_keeps_advanced_state_and_requires_successful_restore() {
         .unwrap();
     let save = source.save("slot.01").unwrap();
     let frame = source.stage_director.state().frame_index;
-    assert!(source
-        .tick_presentation(0)
-        .unwrap_err()
-        .to_string()
-        .contains("TICK_DELTA"));
+    assert!(
+        source
+            .tick_presentation(0)
+            .unwrap_err()
+            .to_string()
+            .contains("TICK_DELTA")
+    );
     assert!(!source.presentation_failed);
     assert_eq!(source.stage_director.state().frame_index, frame);
 
@@ -187,28 +189,36 @@ fn frame_failure_keeps_advanced_state_and_requires_successful_restore() {
     source.live_texture_ids.clear();
     source.texture_cpu_bytes = 0;
     source.texture_cpu_budget_bytes = 1;
-    assert!(source
-        .tick_presentation(16_666_667)
-        .unwrap_err()
-        .to_string()
-        .contains("CPU_TEXTURE_ENTRY_BUDGET"));
+    assert!(
+        source
+            .tick_presentation(16_666_667)
+            .unwrap_err()
+            .to_string()
+            .contains("CPU_TEXTURE_ENTRY_BUDGET")
+    );
     assert!(source.stage_director.state().frame_index > frame);
     assert!(source.presentation_failed);
-    assert!(source
-        .tick_presentation(16_666_667)
-        .unwrap_err()
-        .to_string()
-        .contains("SESSION_FAILED"));
-    assert!(source
-        .save("slot.01")
-        .unwrap_err()
-        .to_string()
-        .contains("SESSION_FAILED"));
-    assert!(source
-        .command(VnPlayerCommand::Advance)
-        .unwrap_err()
-        .to_string()
-        .contains("SESSION_FAILED"));
+    assert!(
+        source
+            .tick_presentation(16_666_667)
+            .unwrap_err()
+            .to_string()
+            .contains("SESSION_FAILED")
+    );
+    assert!(
+        source
+            .save("slot.01")
+            .unwrap_err()
+            .to_string()
+            .contains("SESSION_FAILED")
+    );
+    assert!(
+        source
+            .command(VnPlayerCommand::Advance)
+            .unwrap_err()
+            .to_string()
+            .contains("SESSION_FAILED")
+    );
     assert!(source.restore(b"invalid").is_err());
     assert!(source.presentation_failed);
     // A validated save still fails if rebuilding its presentation cannot fit.
@@ -262,11 +272,13 @@ fn only_failure_of_the_awaited_fence_ends_the_player_session() {
         "movie.done",
         "movie.command",
     ));
-    assert!(source
-        .tick_presentation(16_666_667)
-        .unwrap_err()
-        .to_string()
-        .contains("FENCE_FAILED"));
+    assert!(
+        source
+            .tick_presentation(16_666_667)
+            .unwrap_err()
+            .to_string()
+            .contains("FENCE_FAILED")
+    );
     assert!(source.presentation_failed);
     source.release_resources().unwrap();
     source.shutdown().unwrap();
@@ -274,7 +286,9 @@ fn only_failure_of_the_awaited_fence_ends_the_player_session() {
 
 #[test]
 fn video_work_cannot_cross_replacement_restore_or_source_lifetime() {
-    let mut source = source_for("story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n");
+    let mut source = source_for(
+        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+    );
     source
         .cache_gameplay_surface(320, 180, vec![0x40; 320 * 180 * 4])
         .unwrap();
@@ -296,19 +310,23 @@ fn video_work_cannot_cross_replacement_restore_or_source_lifetime() {
     let old = make_request(source.replace_video_scope("movie"));
     let current = make_request(source.replace_video_scope("movie"));
     assert!(old.is_cancelled());
-    assert!(source
-        .prepare_video_decode(&old)
-        .err()
-        .unwrap()
-        .to_string()
-        .contains("REQUEST_STALE"));
+    assert!(
+        source
+            .prepare_video_decode(&old)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("REQUEST_STALE")
+    );
     source.validate_video_request(&current).unwrap();
     let foreign = make_request(roukaku_runtime::TaskScope::new());
-    assert!(source
-        .validate_video_request(&foreign)
-        .unwrap_err()
-        .to_string()
-        .contains("REQUEST_STALE"));
+    assert!(
+        source
+            .validate_video_request(&foreign)
+            .unwrap_err()
+            .to_string()
+            .contains("REQUEST_STALE")
+    );
     source.pending_video.push(current.clone());
     source.pending_stage_completions.push("movie.done".into());
     source
@@ -338,16 +356,20 @@ fn video_work_cannot_cross_replacement_restore_or_source_lifetime() {
     let late = worker.join().unwrap();
     assert!(late.is_cancelled());
     let frame = TextureFrame::from_vec(1, 1, vec![0; 4]).unwrap();
-    assert!(source
-        .bind_decoded_video_frame(&late, frame, true)
-        .unwrap_err()
-        .to_string()
-        .contains("REQUEST_STALE"));
-    assert!(source
-        .complete_video_fence(&late)
-        .unwrap_err()
-        .to_string()
-        .contains("REQUEST_STALE"));
+    assert!(
+        source
+            .bind_decoded_video_frame(&late, frame, true)
+            .unwrap_err()
+            .to_string()
+            .contains("REQUEST_STALE")
+    );
+    assert!(
+        source
+            .complete_video_fence(&late)
+            .unwrap_err()
+            .to_string()
+            .contains("REQUEST_STALE")
+    );
     assert!(source.take_video_requests().is_empty());
     assert!(source.take_stage_completions().is_empty());
     assert!(source.take_audio_requests().is_empty());
@@ -357,7 +379,9 @@ fn video_work_cannot_cross_replacement_restore_or_source_lifetime() {
     source.release_resources().unwrap();
     assert!(fresh.is_cancelled());
     source.shutdown().unwrap();
-    let source = source_for("story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n");
+    let source = source_for(
+        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+    );
     let scope = source.media_scope.child();
     drop(source);
     assert!(scope.is_cancelled());

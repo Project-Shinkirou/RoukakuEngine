@@ -183,10 +183,12 @@ async fn skipped_frames_preserve_release_and_reupload_boundaries() {
     client.destroy_window(window).await.unwrap();
     client.shutdown().await.unwrap();
     let captured = captured.unwrap();
-    assert!(captured
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|pixel| *pixel == [0, 255, 0, 255]));
+    assert!(
+        captured
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == [0, 255, 0, 255])
+    );
 }

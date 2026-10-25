@@ -1,10 +1,10 @@
 use std::sync::atomic::AtomicBool;
 
 use roukaku_platform::{
-    host_channel, AudioDeviceFormat, AudioOutputHandle, AudioOutputLane, AudioOutputRequest,
-    CapturedFrame, HostCommand, OpenedAudioOutput, PackageSourceHandle, PackageSourceRequest,
-    PlatformError, PlatformErrorCode, PlatformHostProfile, SaveTransactionHandle, SurfaceHandle,
-    SurfaceRequest, WindowHandle,
+    AudioDeviceFormat, AudioOutputHandle, AudioOutputLane, AudioOutputRequest, CapturedFrame,
+    HostCommand, OpenedAudioOutput, PackageSourceHandle, PackageSourceRequest, PlatformError,
+    PlatformErrorCode, PlatformHostProfile, SaveTransactionHandle, SurfaceHandle, SurfaceRequest,
+    WindowHandle, host_channel,
 };
 
 #[derive(Default)]

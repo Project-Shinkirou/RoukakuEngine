@@ -33,7 +33,7 @@ jobs:
             target: x86_64-apple-darwin
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           lfs: true
       - name: Select repository Rust toolchain
@@ -55,7 +55,7 @@ jobs:
       - name: Build real desktop products
         shell: bash
         run: cargo xtask release --target '${{ matrix.target }}' --version "$RELEASE_VERSION" --output .work/release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: roukaku-${{ matrix.target }}
           path: .work/release/*
@@ -67,12 +67,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           lfs: true
       - name: Select repository Rust toolchain
         run: rustup show
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.2
         with:
           pattern: roukaku-*
           path: .work/downloaded
@@ -86,7 +86,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: cargo xtask release-collect --input .work/downloaded --output .work/final --version "$RELEASE_VERSION" --publish
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: roukaku-release
           path: .work/final/*

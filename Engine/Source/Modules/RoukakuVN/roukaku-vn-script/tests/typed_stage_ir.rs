@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
 use roukaku_vn_script::{
-    compile_roukaku_project, CompileRoukakuProjectOptions, CompiledCommand,
-    ExtensionCommandDescriptor, ExtensionFieldContract, ExtensionFieldKind, ExtensionValue,
-    PresentationCommand, RoukakuSource, StageCommand, StageFitMode, TimelineCommand,
-    VnAudioControlAction, VnTimelineJoinPolicy,
+    CompileRoukakuProjectOptions, CompiledCommand, ExtensionCommandDescriptor,
+    ExtensionFieldContract, ExtensionFieldKind, ExtensionValue, PresentationCommand, RoukakuSource,
+    StageCommand, StageFitMode, TimelineCommand, VnAudioControlAction, VnTimelineJoinPolicy,
+    compile_roukaku_project,
 };
 
 fn source(command: &str) -> RoukakuSource {
@@ -263,7 +263,9 @@ fn extension_commands_require_schema_provider_and_typed_field_contracts() {
 #[test]
 fn timeline_easing_is_typed_and_unknown_rules_fail_compile() {
     for easing in ["linear", "ease_in", "ease_out", "ease_in_out"] {
-        let command = first_presentation(&format!("timeline id:pan target:hero property:x keyframes:0=0,100=1 budget_ms:1 easing:{easing}"));
+        let command = first_presentation(&format!(
+            "timeline id:pan target:hero property:x keyframes:0=0,100=1 budget_ms:1 easing:{easing}"
+        ));
         let PresentationCommand::Stage(StageCommand::Timeline(TimelineCommand::Start(spec))) =
             command
         else {

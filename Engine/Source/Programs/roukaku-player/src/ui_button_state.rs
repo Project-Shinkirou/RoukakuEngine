@@ -110,12 +110,14 @@ pub(super) async fn capture_gameplay_surface(
         .await
         .map_err(|error| player_platform_error("player.save.capture", error))?;
     let (width, height, rgba8) = match results.as_slice() {
-        [PlayerHostCommandResult::Captured {
-            width,
-            height,
-            rgba8,
-            ..
-        }] => (*width, *height, rgba8.clone()),
+        [
+            PlayerHostCommandResult::Captured {
+                width,
+                height,
+                rgba8,
+                ..
+            },
+        ] => (*width, *height, rgba8.clone()),
         _ => {
             return Err(player_platform_error(
                 "player.save.capture",

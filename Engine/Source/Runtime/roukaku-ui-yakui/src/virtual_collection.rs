@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use roukaku_ui_core::{UiValidationError, MAX_NODES_PER_VIEW};
+use roukaku_ui_core::{MAX_NODES_PER_VIEW, UiValidationError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VisibleRange {

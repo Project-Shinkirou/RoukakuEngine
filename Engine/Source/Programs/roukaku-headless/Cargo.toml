@@ -11,6 +11,7 @@ default = []
 ffmpeg-vcpkg = ["roukaku-platform-headless/ffmpeg-vcpkg"]
 
 [dependencies]
+base16ct.workspace = true
 roukaku-headless-protocol = { path = "../../Runtime/roukaku-headless-protocol" }
 roukaku-core = { path = "../../Runtime/roukaku-core" }
 roukaku-byte-source = { path = "../../Runtime/roukaku-byte-source" }

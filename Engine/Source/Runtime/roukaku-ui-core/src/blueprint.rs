@@ -5,8 +5,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    validate_id, validate_serialized_size, validate_string, UiCapability, UiValidationError,
-    UiValue, ValidateUi, MAX_NODES_PER_VIEW, MAX_TREE_DEPTH,
+    MAX_NODES_PER_VIEW, MAX_TREE_DEPTH, UiCapability, UiValidationError, UiValue, ValidateUi,
+    validate_id, validate_serialized_size, validate_string,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

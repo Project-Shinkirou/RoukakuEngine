@@ -180,17 +180,16 @@ pub(crate) fn vfs_package_mount_check(
         .map(|layer| (layer.layer_id.as_str(), layer))
         .collect::<BTreeMap<_, _>>();
     for entry in &manifest.entries {
-        if let Some(layer) = layers.get(entry.layer_id.as_str()) {
-            if !layer.profiles.is_empty()
-                && !layer.profiles.iter().any(|profile| !profile.is_empty())
-            {
-                return package_blocked(
-                    "vfs.package_mount",
-                    "ROUKAKU_VFS_PROFILE_INVALID",
-                    "VFS layer profile eligibility contains an empty profile",
-                    vec![evidence("layer_id", &entry.layer_id)],
-                );
-            }
+        if let Some(layer) = layers.get(entry.layer_id.as_str())
+            && !layer.profiles.is_empty()
+            && !layer.profiles.iter().any(|profile| !profile.is_empty())
+        {
+            return package_blocked(
+                "vfs.package_mount",
+                "ROUKAKU_VFS_PROFILE_INVALID",
+                "VFS layer profile eligibility contains an empty profile",
+                vec![evidence("layer_id", &entry.layer_id)],
+            );
         }
         if let VfsSourceRef::PackageSection { section_id } = &entry.source {
             let Some(section) = package.container().section_entry(section_id) else {
@@ -226,7 +225,7 @@ pub(crate) fn vfs_package_mount_check(
                         "ROUKAKU_VFS_PACKAGE_SECTION_READ",
                         format!("VFS package section {section_id} could not be read: {error}"),
                         vec![evidence("section_id", section_id)],
-                    )
+                    );
                 }
             };
             let (Ok(start), Ok(size)) =

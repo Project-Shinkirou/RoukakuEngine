@@ -175,7 +175,7 @@ pub(super) fn validate_action(
                 line,
                 "ROUKAKU_UI_ACTION_UNKNOWN",
                 "action is not registered",
-            ))
+            ));
         }
     };
     if let Some(missing) = required.iter().find(|name| !arguments.contains_key(**name)) {

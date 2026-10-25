@@ -1,9 +1,10 @@
-use super::{cancelled_error, host_error, invalid, DecodeResource};
+use super::{DecodeResource, cancelled_error, host_error, invalid};
 use roukaku_platform::{DecodeKind, DecodeOutput, PlatformDecodeRequest, PlatformError};
 use std::{
     sync::{
+        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
+        mpsc,
     },
     thread,
     time::Duration,

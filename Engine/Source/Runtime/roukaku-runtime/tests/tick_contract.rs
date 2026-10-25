@@ -89,24 +89,28 @@ fn module_mount_requires_matching_explicit_packaged_binding_and_unique_slot() {
         .and_then(|world| world.with_package(PackageHandle::default()))
         .unwrap();
     let slot = EngineModuleSlot("presentation".to_string());
-    assert!(ValidatedModuleBinding::validate(
-        slot.clone(),
-        "roukaku.fixture.presentation",
-        "presentation.headless",
-        binding_context("stage1.headless"),
-        true,
-        false,
-    )
-    .is_err());
-    assert!(ValidatedModuleBinding::validate(
-        slot.clone(),
-        "roukaku.fixture.presentation",
-        "presentation.headless",
-        binding_context("stage1.headless"),
-        false,
-        true,
-    )
-    .is_err());
+    assert!(
+        ValidatedModuleBinding::validate(
+            slot.clone(),
+            "roukaku.fixture.presentation",
+            "presentation.headless",
+            binding_context("stage1.headless"),
+            true,
+            false,
+        )
+        .is_err()
+    );
+    assert!(
+        ValidatedModuleBinding::validate(
+            slot.clone(),
+            "roukaku.fixture.presentation",
+            "presentation.headless",
+            binding_context("stage1.headless"),
+            false,
+            true,
+        )
+        .is_err()
+    );
     let wrong_package = ValidatedModuleBinding::validate(
         slot.clone(),
         "roukaku.fixture.presentation",
@@ -185,9 +189,11 @@ fn tick_rejects_invalid_ingress_order_and_mode_without_mutation() {
         let error = world
             .tick(TickRequest::live(input(1, 41), ingress))
             .unwrap_err();
-        assert!(error
-            .to_string()
-            .contains("ROUKAKU_RUNTIME_TICK_INGRESS_ORDER_INVALID"));
+        assert!(
+            error
+                .to_string()
+                .contains("ROUKAKU_RUNTIME_TICK_INGRESS_ORDER_INVALID")
+        );
         assert_eq!(
             postcard::to_allocvec(&world.snapshot().unwrap()).unwrap(),
             checkpoint

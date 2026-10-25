@@ -92,9 +92,11 @@ fn action_registration_rejects_invalid_parallel_pure_access() {
     let error = world
         .register_action("roukaku.test", InvalidPureAction)
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_ACTION_ACCESS_INVALID"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_ACTION_ACCESS_INVALID")
+    );
 }
 
 #[test]
@@ -149,9 +151,11 @@ fn failed_id_reservation_stops_world_without_committing_invalid_transition() {
         ))
         .unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_ACTION_ID_RESERVATION_EXCEEDED"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_ACTION_ID_RESERVATION_EXCEEDED")
+    );
     assert!(world.is_failed());
     let snapshot = world
         .debug_session()
@@ -212,12 +216,16 @@ fn undeclared_access_stops_world_without_committing_invalid_transition() {
             vec![],
         ))
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_ACTION_ACCESS_UNDECLARED"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_ACTION_ACCESS_UNDECLARED")
+    );
     assert!(world.is_failed());
-    assert!(!world
-        .debug_session()
-        .blackboard()
-        .contains_key("undeclared"));
+    assert!(
+        !world
+            .debug_session()
+            .blackboard()
+            .contains_key("undeclared")
+    );
 }

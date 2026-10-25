@@ -4,8 +4,8 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     thread,
 };
@@ -14,7 +14,7 @@ use roukaku_core::Hash256;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{expected_cache_key, CookArtifact, CookError, CookProcessor, CookRequest};
+use crate::{CookArtifact, CookError, CookProcessor, CookRequest, expected_cache_key};
 
 static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
@@ -137,7 +137,7 @@ impl FileCookCache {
             Err(error) => {
                 return Err(CookError::message(format!(
                     "ROUKAKU_COOK_CACHE_READ: {error}"
-                )))
+                )));
             }
         };
         let artifact = postcard::from_bytes::<CookArtifact>(&bytes)
@@ -321,16 +321,16 @@ impl<'a> CookBatchExecutor<'a> {
         cancellation.check_cancelled()?;
         let processor = self.registry.get(&node.request.sidecar.cook.processor)?;
         let expected_key = expected_cache_key(&node.request, processor.processor_id())?;
-        if let Some(cache) = self.cache {
-            if let Some(artifact) = cache.load(&expected_key)? {
-                artifact.validate_for(
-                    &node.request,
-                    processor.processor_id(),
-                    processor.processor_version(),
-                )?;
-                cancellation.check_cancelled()?;
-                return Ok((artifact, true));
-            }
+        if let Some(cache) = self.cache
+            && let Some(artifact) = cache.load(&expected_key)?
+        {
+            artifact.validate_for(
+                &node.request,
+                processor.processor_id(),
+                processor.processor_version(),
+            )?;
+            cancellation.check_cancelled()?;
+            return Ok((artifact, true));
         }
         let artifact = processor.cook(node.request.clone())?;
         cancellation.check_cancelled()?;

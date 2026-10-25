@@ -1,4 +1,4 @@
-use roukaku_observability::{thread_allocation_snapshot, TrackingAllocator};
+use roukaku_observability::{TrackingAllocator, thread_allocation_snapshot};
 
 #[global_allocator]
 static GLOBAL_ALLOCATOR: TrackingAllocator = TrackingAllocator::new();

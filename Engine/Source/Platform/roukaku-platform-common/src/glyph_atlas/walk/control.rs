@@ -27,8 +27,10 @@ impl<'a> WalkedScene<'a> {
                 validate_texture_metadata(frame)?;
                 if apply_mutations {
                     if let Some(previous) = self.committed_mutations.get(resource_id) {
-                        let id_hash =
-                            format!("sha256:{:x}", Sha256::digest(resource_id.as_bytes()));
+                        let id_hash = format!(
+                            "sha256:{:x}",
+                            base16ct::HexDisplay(&Sha256::digest(resource_id.as_bytes()))
+                        );
                         tracing::error!(
                             event = "platform.wgpu.scene.texture_mutation_rejected",
                             id_hash,

@@ -1,5 +1,5 @@
 use crate::util::{capture, run as command};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::{Args, ValueEnum};
 use std::{path::Path, process::Command};
 
@@ -41,12 +41,14 @@ pub fn run(root: &Path, task: &str, selected: &Selection) -> Result<()> {
             Workspace::All => bail!("target builds require an explicit workspace"),
         };
         let packages = if selected.packages.is_empty() {
-            vec![if matches!(selected.workspace, Workspace::Editor) {
-                "roukaku-editor"
-            } else {
-                "roukaku-player"
-            }
-            .into()]
+            vec![
+                if matches!(selected.workspace, Workspace::Editor) {
+                    "roukaku-editor"
+                } else {
+                    "roukaku-player"
+                }
+                .into(),
+            ]
         } else {
             selected.packages.clone()
         };

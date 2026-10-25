@@ -216,11 +216,10 @@ mod tests {
             assert!(rejected);
         }
         for limit in [0, POLICY_IO_MAX_BYTES + 1] {
-            assert!(PolicyIoCapabilities::read_text(
-                [VfsUri::parse("package:/data").unwrap()],
-                limit
-            )
-            .is_err());
+            assert!(
+                PolicyIoCapabilities::read_text([VfsUri::parse("package:/data").unwrap()], limit)
+                    .is_err()
+            );
         }
     }
     #[test]
@@ -233,9 +232,11 @@ mod tests {
                 .read_text(format!("read.{id}"), resource.clone(), &grant)
                 .unwrap();
         }
-        assert!(state
-            .read_text("overflow".into(), resource, &grant)
-            .is_err());
+        assert!(
+            state
+                .read_text("overflow".into(), resource, &grant)
+                .is_err()
+        );
         let mut restored: PolicyIoState =
             postcard::from_bytes(&postcard::to_allocvec(&state).unwrap()).unwrap();
         restored.validate().unwrap();

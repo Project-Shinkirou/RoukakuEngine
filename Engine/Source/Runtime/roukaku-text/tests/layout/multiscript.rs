@@ -60,16 +60,20 @@ fn licensed_multiscript_fallback_shapes_cjk_arabic_and_emoji_clusters() {
     for family in ["Poppins", "Noto Sans SC", "Noto Sans Arabic", "Noto Emoji"] {
         assert!(families.contains(family), "missing shaped family {family}");
     }
-    assert!(layout
-        .shaped_runs
-        .iter()
-        .filter(|run| run.run_index == 2)
-        .all(|run| run.direction == TextDirection::RightToLeft));
-    assert!(layout
-        .shaped_runs
-        .iter()
-        .flat_map(|run| &run.glyphs)
-        .all(|glyph| glyph.glyph_id != 0 && glyph.source.start <= glyph.source.end));
+    assert!(
+        layout
+            .shaped_runs
+            .iter()
+            .filter(|run| run.run_index == 2)
+            .all(|run| run.direction == TextDirection::RightToLeft)
+    );
+    assert!(
+        layout
+            .shaped_runs
+            .iter()
+            .flat_map(|run| &run.glyphs)
+            .all(|glyph| glyph.glyph_id != 0 && glyph.source.start <= glyph.source.end)
+    );
     assert!(
         layout
             .diagnostics
@@ -78,10 +82,12 @@ fn licensed_multiscript_fallback_shapes_cjk_arabic_and_emoji_clusters() {
             .count()
             >= 3
     );
-    assert!(layout
-        .glyph_resources
-        .iter()
-        .any(|resource| resource.font_asset_id.ends_with("noto-emoji")));
+    assert!(
+        layout
+            .glyph_resources
+            .iter()
+            .any(|resource| resource.font_asset_id.ends_with("noto-emoji"))
+    );
     assert_eq!(layout.revision, provider.layout(&request).unwrap().revision);
 }
 
@@ -122,10 +128,12 @@ fn cjk_vertical_layout_places_columns_ruby_rotated_glyphs_and_tate_chu_yoko() {
         assert!(layout.width >= vertical.constraint.line_height);
         assert!(layout.height > 0.0);
         assert_eq!(layout.ruby_boxes.len(), 1);
-        assert!(layout
-            .shaped_runs
-            .iter()
-            .all(|run| run.direction == direction));
+        assert!(
+            layout
+                .shaped_runs
+                .iter()
+                .all(|run| run.direction == direction)
+        );
         let glyphs = layout
             .shaped_runs
             .iter()
@@ -142,12 +150,16 @@ fn cjk_vertical_layout_places_columns_ruby_rotated_glyphs_and_tate_chu_yoko() {
             _ => unreachable!(),
         }
         assert!(glyphs.iter().any(|glyph| glyph.tate_chu_yoko));
-        assert!(glyphs
-            .iter()
-            .any(|glyph| glyph.rotation_quadrants == 1 && !glyph.tate_chu_yoko));
-        assert!(glyphs
-            .iter()
-            .all(|glyph| glyph.render_x.is_some() && glyph.render_y.is_some()));
+        assert!(
+            glyphs
+                .iter()
+                .any(|glyph| glyph.rotation_quadrants == 1 && !glyph.tate_chu_yoko)
+        );
+        assert!(
+            glyphs
+                .iter()
+                .all(|glyph| glyph.render_x.is_some() && glyph.render_y.is_some())
+        );
         assert_eq!(
             layout.revision,
             provider.layout(&vertical).unwrap().revision
@@ -177,10 +189,12 @@ fn open_font_fixture_manifest_is_revision_hash_and_license_bound() {
         );
         let license = std::fs::read(root.join(entry["license_file"].as_str().unwrap())).unwrap();
         assert!(!license.is_empty());
-        assert!(entry["source_url"]
-            .as_str()
-            .unwrap()
-            .contains(manifest["source_revision"].as_str().unwrap()));
+        assert!(
+            entry["source_url"]
+                .as_str()
+                .unwrap()
+                .contains(manifest["source_revision"].as_str().unwrap())
+        );
     }
 }
 
@@ -202,9 +216,11 @@ fn wrap_ellipsis_and_source_clusters_are_semantic() {
             .count(),
         1
     );
-    assert!(layout
-        .shaped_runs
-        .iter()
-        .flat_map(|run| &run.glyphs)
-        .all(|glyph| glyph.source.end <= request.runs[0].text.len()));
+    assert!(
+        layout
+            .shaped_runs
+            .iter()
+            .flat_map(|run| &run.glyphs)
+            .all(|glyph| glyph.source.end <= request.runs[0].text.len())
+    );
 }

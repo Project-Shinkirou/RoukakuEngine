@@ -12,7 +12,7 @@ pub use source_directory::*;
 #[cfg(all(target_os = "windows", feature = "platform-test-driver"))]
 pub use test_driver::*;
 
-use roukaku_platform::{build_fingerprint, PlatformCapabilityReport};
+use roukaku_platform::{PlatformCapabilityReport, build_fingerprint};
 
 #[cfg(target_os = "windows")]
 use roukaku_platform::PlatformHostProfile;

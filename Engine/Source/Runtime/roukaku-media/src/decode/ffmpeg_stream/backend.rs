@@ -3,8 +3,8 @@ use std::collections::VecDeque;
 use ffmpeg_next as ffmpeg;
 
 use super::{FfmpegDecodedPacket, FfmpegStreamLimits};
-use crate::decode::{decode_error, MediaError};
 use crate::VideoFramePacket;
+use crate::decode::{MediaError, decode_error};
 
 pub(super) struct VideoDecoder {
     pub(super) stream_index: usize,
@@ -219,7 +219,7 @@ pub(super) fn drain_video(
                     "ROUKAKU_FFMPEG_STREAM_FRAME",
                     "receive video frame",
                     error,
-                ))
+                ));
             }
         }
     }

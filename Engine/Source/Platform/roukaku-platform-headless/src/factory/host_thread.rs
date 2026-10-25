@@ -57,14 +57,14 @@ pub(super) async fn spawn_host(
                     }
                 }
             });
-            if let Some(scheduling) = scheduling {
-                if let Err(error) = scheduling.restore() {
-                    tracing::error!(
-                        event = "platform.headless.performance_scheduling.restore_failed",
-                        diagnostic = %error,
-                        "failed to restore Headless performance host scheduling policy"
-                    );
-                }
+            if let Some(scheduling) = scheduling
+                && let Err(error) = scheduling.restore()
+            {
+                tracing::error!(
+                    event = "platform.headless.performance_scheduling.restore_failed",
+                    diagnostic = %error,
+                    "failed to restore Headless performance host scheduling policy"
+                );
             }
         })
         .map_err(|error| thread_error("spawn", error.to_string()))?;

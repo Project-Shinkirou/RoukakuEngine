@@ -57,10 +57,11 @@ fn player_automation_report_binds_platform_identity_to_full_playable() {
         .iter()
         .find(|check| check.id == "player.full_playable")
         .unwrap();
-    assert!(full
-        .evidence
-        .iter()
-        .any(|entry| entry.key == "session_id" && entry.value == "session.windows.1"));
+    assert!(
+        full.evidence
+            .iter()
+            .any(|entry| entry.key == "session_id" && entry.value == "session.windows.1")
+    );
 }
 
 #[test]
@@ -281,11 +282,13 @@ fn typed_routes_reject_mixed_sessions_and_unbound_trace_hashes() {
             transcript.runtime_routes[0].trace_hash = format!("sha256:{}", "f".repeat(64));
         }
         let report = PlayerAutomationValidator.validate(&script, &transcript);
-        assert!(report
-            .checks
-            .iter()
-            .any(|check| check.id == "player.runtime_route_evidence"
-                && check.status == PlayerAutomationStatus::Blocked));
+        assert!(
+            report
+                .checks
+                .iter()
+                .any(|check| check.id == "player.runtime_route_evidence"
+                    && check.status == PlayerAutomationStatus::Blocked)
+        );
     }
 }
 
@@ -295,8 +298,10 @@ fn legacy_hash_transcript_schema_is_rejected() {
     let mut transcript = transcript(PlayerPlatform::Windows, "sendinput.mouse");
     transcript.schema = "roukaku.player_input_transcript.v2".into();
     let report = PlayerAutomationValidator.validate(&script, &transcript);
-    assert!(report.checks.iter().any(|check| check
-        .diagnostic
-        .as_ref()
-        .is_some_and(|d| d.code == "ROUKAKU_PLAYER_AUTOMATION_SCHEMA")));
+    assert!(report.checks.iter().any(|check| {
+        check
+            .diagnostic
+            .as_ref()
+            .is_some_and(|d| d.code == "ROUKAKU_PLAYER_AUTOMATION_SCHEMA")
+    }));
 }

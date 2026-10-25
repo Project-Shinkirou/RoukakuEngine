@@ -6,8 +6,8 @@ use std::{
 };
 
 use roukaku_observability::{
-    init_host, ConsoleFormat, CrashReportingMode, HostObservabilityConfig, HostRole,
-    LOG_EVENT_SCHEMA,
+    ConsoleFormat, CrashReportingMode, HostObservabilityConfig, HostRole, LOG_EVENT_SCHEMA,
+    init_host,
 };
 use tempfile::tempdir;
 
@@ -69,12 +69,16 @@ fn host_pipeline_writes_stable_bounded_redacted_logs_and_crash_tail() {
         .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
         .collect::<Vec<_>>();
     assert_eq!(events.len(), 5);
-    assert!(events
-        .iter()
-        .all(|event| event["schema"] == LOG_EVENT_SCHEMA));
-    assert!(events
-        .iter()
-        .all(|event| event["session_id"] == guard.session_id()));
+    assert!(
+        events
+            .iter()
+            .all(|event| event["schema"] == LOG_EVENT_SCHEMA)
+    );
+    assert!(
+        events
+            .iter()
+            .all(|event| event["session_id"] == guard.session_id())
+    );
     assert!(events.iter().any(|event| event["event"] == "test.trace"));
     let info = events
         .iter()
@@ -136,28 +140,32 @@ fn host_pipeline_writes_stable_bounded_redacted_logs_and_crash_tail() {
             Default::default(),
         )
         .unwrap();
-    assert!(guard
-        .record_external(
-            tracing::Level::INFO,
-            "shinki_emu::core",
-            "native.oversized",
-            std::collections::BTreeMap::from([(
-                "text".into(),
-                serde_json::Value::from("x".repeat(4097))
-            )]),
-        )
-        .is_err());
-    assert!(guard
-        .record_external(
-            tracing::Level::INFO,
-            "shinki_emu::core",
-            "native.nested",
-            std::collections::BTreeMap::from([(
-                "fields".into(),
-                serde_json::json!({"nested": true})
-            )]),
-        )
-        .is_err());
+    assert!(
+        guard
+            .record_external(
+                tracing::Level::INFO,
+                "shinki_emu::core",
+                "native.oversized",
+                std::collections::BTreeMap::from([(
+                    "text".into(),
+                    serde_json::Value::from("x".repeat(4097))
+                )]),
+            )
+            .is_err()
+    );
+    assert!(
+        guard
+            .record_external(
+                tracing::Level::INFO,
+                "shinki_emu::core",
+                "native.nested",
+                std::collections::BTreeMap::from([(
+                    "fields".into(),
+                    serde_json::json!({"nested": true})
+                )]),
+            )
+            .is_err()
+    );
     guard.flush().unwrap();
     let native_log = fs::read_to_string(log_dir.join("roukaku.jsonl")).unwrap();
     let native = native_log

@@ -66,9 +66,11 @@ fn timeline_blocks_clock_regression_without_mutating_tasks() {
 
     let error = scheduler.poll(39).unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLAYER_TIMELINE_CLOCK_REGRESSION"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLAYER_TIMELINE_CLOCK_REGRESSION")
+    );
     assert_eq!(scheduler.active_count(), 1);
 }
 
@@ -79,16 +81,20 @@ fn timeline_blocks_duplicate_id_and_capacity_overflow() {
         .schedule(start("intro", "hero", "intro.done", 120), 0)
         .unwrap();
 
-    assert!(scheduler
-        .schedule(start("intro", "other", "other.done", 20), 1)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_TIMELINE_TASK_DUPLICATE"));
-    assert!(scheduler
-        .schedule(start("second", "other", "second.done", 20), 1)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_TIMELINE_CAPACITY"));
+    assert!(
+        scheduler
+            .schedule(start("intro", "other", "other.done", 20), 1)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_TIMELINE_TASK_DUPLICATE")
+    );
+    assert!(
+        scheduler
+            .schedule(start("second", "other", "second.done", 20), 1)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_TIMELINE_CAPACITY")
+    );
 }
 
 #[test]

@@ -8,10 +8,10 @@ use std::{
 use roukaku_cook::CookCancellationToken;
 use roukaku_core::Hash256;
 use roukaku_media::{
-    frame_hash, CpuRendererProvider, RenderTargetFormat, Renderer2DProvider, RendererCreateRequest,
+    CpuRendererProvider, RenderTargetFormat, Renderer2DProvider, RendererCreateRequest, frame_hash,
 };
 use roukaku_package::PackageReader;
-use roukaku_player_core::{evidence_scene_command_hash, PlayerHostCommand, PlayerHostResourceId};
+use roukaku_player_core::{PlayerHostCommand, PlayerHostResourceId, evidence_scene_command_hash};
 use roukaku_player_vn::NativeVnHostCommandSource;
 use roukaku_vn_core::{VnRunConfig, VnWaitKind};
 use roukaku_vn_script::RoukakuSource;
@@ -222,28 +222,34 @@ pub(crate) fn render_ui_snapshot(
     })?;
     let mut selected = None;
     for attempt in 0..64_u64 {
-        let batch = if let Some(batch) = batches.pop() {
-            batch
-        } else if let Some(wait) = source.pending_wait().cloned() {
-            match wait.kind {
-                VnWaitKind::Dialogue | VnWaitKind::Choice | VnWaitKind::SystemPage => source
-                    .dispatch_ui_event(roukaku_ui_core::UiInputEventKind::Keyboard {
+        let batch = match batches.pop() {
+            Some(batch) => batch,
+            _ => {
+                if let Some(wait) = source.pending_wait().cloned() {
+                    match wait.kind {
+                        VnWaitKind::Dialogue | VnWaitKind::Choice | VnWaitKind::SystemPage => {
+                            source.dispatch_ui_event(
+                                roukaku_ui_core::UiInputEventKind::Keyboard {
+                                    logical_key: "Enter".into(),
+                                    physical_key: "Enter".into(),
+                                    state: roukaku_ui_core::UiButtonState::Pressed,
+                                    repeat: false,
+                                    modifiers: 0,
+                                },
+                            )?
+                        }
+                        _ => source.complete_wait(wait.fence)?,
+                    }
+                } else {
+                    source.dispatch_ui_event(roukaku_ui_core::UiInputEventKind::Keyboard {
                         logical_key: "Enter".into(),
                         physical_key: "Enter".into(),
                         state: roukaku_ui_core::UiButtonState::Pressed,
                         repeat: false,
                         modifiers: 0,
-                    })?,
-                _ => source.complete_wait(wait.fence)?,
+                    })?
+                }
             }
-        } else {
-            source.dispatch_ui_event(roukaku_ui_core::UiInputEventKind::Keyboard {
-                logical_key: "Enter".into(),
-                physical_key: "Enter".into(),
-                state: roukaku_ui_core::UiButtonState::Pressed,
-                repeat: false,
-                modifiers: 0,
-            })?
         };
         for command in batch.commands {
             let PlayerHostCommand::PresentScene {

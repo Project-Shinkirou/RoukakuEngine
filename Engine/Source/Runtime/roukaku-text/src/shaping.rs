@@ -27,18 +27,17 @@ pub(super) fn append_shaped_glyph(
     role: GlyphRole,
     glyph: ShapedGlyph,
 ) {
-    if let Some(last) = runs.last_mut() {
-        if last.run_index == run_index
-            && last.role == role
-            && last.line == glyph.line
-            && last.direction == glyph.direction
-            && last.font_asset_id == glyph.font_asset_id
-            && last.font_face_index == glyph.font_face_index
-            && last.font_hash == glyph.font_hash
-        {
-            last.glyphs.push(glyph);
-            return;
-        }
+    if let Some(last) = runs.last_mut()
+        && last.run_index == run_index
+        && last.role == role
+        && last.line == glyph.line
+        && last.direction == glyph.direction
+        && last.font_asset_id == glyph.font_asset_id
+        && last.font_face_index == glyph.font_face_index
+        && last.font_hash == glyph.font_hash
+    {
+        last.glyphs.push(glyph);
+        return;
     }
     runs.push(ShapedGlyphRun {
         run_index,
@@ -168,6 +167,7 @@ fn layout_pass(
         });
         buffer.set_rich_text(rich_spans, &default_attrs, Shaping::Advanced, None);
     }
+    buffer.shape_until_scroll(false);
     let line_offsets = source_line_offsets(text);
     let lines = buffer
         .layout_runs()
@@ -237,11 +237,12 @@ fn select_family_spans(
                 )
             })?;
         let end = start + grapheme.len();
-        if let Some(previous) = spans.last_mut() {
-            if previous.end == start && previous.family_index == family_index {
-                previous.end = end;
-                continue;
-            }
+        if let Some(previous) = spans.last_mut()
+            && previous.end == start
+            && previous.family_index == family_index
+        {
+            previous.end = end;
+            continue;
         }
         spans.push(SelectedSpan {
             start,
@@ -315,7 +316,7 @@ pub(super) fn glyph_bitmap(image: &cosmic_text::SwashImage) -> Result<GlyphBitma
                 image.placement.width,
                 image.placement.height,
                 image.data.len(),
-            )))
+            )));
         }
     };
     GlyphBitmap::from_pixels(

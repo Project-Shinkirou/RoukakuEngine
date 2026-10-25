@@ -11,4 +11,4 @@ roukaku-core = { path = "../../../Runtime/roukaku-core" }
 roukaku-vn-script = { path = "../roukaku-vn-script" }
 schemars.workspace = true
 serde.workspace = true
-parking_lot = "0.12"
+parking_lot = "0.13"

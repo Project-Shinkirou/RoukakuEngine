@@ -236,16 +236,20 @@ pub(super) fn modal_stack_is_rendered_as_bounded_dialog_semantics() {
     let mut backend =
         RoukakuYakuiBackend::new(renderer, Hash256::from_sha256(b"test")).expect("backend");
     let output = backend.render_frame(request).expect("render");
-    assert!(output
-        .semantics
-        .nodes
-        .iter()
-        .any(|node| { node.id == "root/modal.0" && node.role == UiSemanticRole::Dialog }));
-    assert!(output
-        .semantics
-        .nodes
-        .iter()
-        .any(|node| node.id == "root/modal.0/dialog/message"));
+    assert!(
+        output
+            .semantics
+            .nodes
+            .iter()
+            .any(|node| { node.id == "root/modal.0" && node.role == UiSemanticRole::Dialog })
+    );
+    assert!(
+        output
+            .semantics
+            .nodes
+            .iter()
+            .any(|node| node.id == "root/modal.0/dialog/message")
+    );
     let message = output
         .semantics
         .nodes

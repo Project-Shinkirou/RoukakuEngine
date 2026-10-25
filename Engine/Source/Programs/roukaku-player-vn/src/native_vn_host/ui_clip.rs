@@ -37,7 +37,9 @@ mod tests {
         );
         let bytes = test_native_package::product_package_with_ui_and_request(
             "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
-            &ui, test_native_package::test_compile_options(), |_| {},
+            &ui,
+            test_native_package::test_compile_options(),
+            |_| {},
         );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();
         let mut source = NativeVnHostCommandSource::from_package(
@@ -62,9 +64,11 @@ mod tests {
                         clips.pop().unwrap();
                     }
                     SceneCommand::GlyphRun { id, .. } if id.contains("clipper/body") => {
-                        assert!(clips
-                            .iter()
-                            .any(|rect| rect.width == 100 && rect.height == 40));
+                        assert!(
+                            clips
+                                .iter()
+                                .any(|rect| rect.width == 100 && rect.height == 40)
+                        );
                         found = true;
                     }
                     _ => {}

@@ -7,15 +7,15 @@ use roukaku_cook::{
 };
 use roukaku_core::Hash256;
 use roukaku_media::{
-    FontPackageEntry, FontPackageManifest, UnicodeRange, FONT_PACKAGE_MANIFEST_SCHEMA,
+    FONT_PACKAGE_MANIFEST_SCHEMA, FontPackageEntry, FontPackageManifest, UnicodeRange,
 };
 use roukaku_package::{CookSummaryManifest, SectionCodec};
 use roukaku_platform::{migrate_host_profile_json, validate_host_profile};
 use roukaku_vn_package::{
-    package_sections_for_project, PlayerLocaleConfig, PLAYER_LOCALE_CONFIG_SCHEMA,
+    PLAYER_LOCALE_CONFIG_SCHEMA, PlayerLocaleConfig, package_sections_for_project,
 };
 use roukaku_vn_policy::LuauUiControllerHost;
-use roukaku_vn_script::{compile_roukaku_project, CompileRoukakuProjectOptions, RoukakuSource};
+use roukaku_vn_script::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_project};
 
 use super::*;
 
@@ -144,7 +144,7 @@ pub(crate) fn cook_nativevn_sections(
                     "ROUKAKU_UI_THEME_FORMAT: {} must use .json, .yaml, or .yml",
                     normalize_relative_path(&theme_path)
                 )
-                .into())
+                .into());
             }
         };
         let theme = roukaku_ui_core::UiThemeManifest {

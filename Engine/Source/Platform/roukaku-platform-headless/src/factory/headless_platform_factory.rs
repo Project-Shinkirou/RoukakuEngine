@@ -139,14 +139,14 @@ pub(super) fn validate_provider_bindings(
                 PlatformErrorCode::InvalidProfile,
                 "headless.provider.bind",
                 "--gpu requires the profile to bind wgpu_offscreen",
-            ))
+            ));
         }
         ("wgpu_offscreen", false) => {
             return Err(PlatformError::new(
                 PlatformErrorCode::InvalidProfile,
                 "headless.provider.bind",
                 "wgpu_offscreen requires explicit --gpu authorization",
-            ))
+            ));
         }
         (provider, _) => {
             return Err(PlatformError::new(
@@ -154,7 +154,7 @@ pub(super) fn validate_provider_bindings(
                 "headless.provider.bind",
                 "headless profile binds an unavailable renderer",
             )
-            .with_field("provider", provider))
+            .with_field("provider", provider));
         }
     }
     for (field, actual, expected) in [

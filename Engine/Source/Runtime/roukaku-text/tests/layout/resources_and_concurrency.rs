@@ -75,9 +75,11 @@ fn frame_resource_journal_is_incremental_shared_and_transactional() {
             &["frame.b"],
         )
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_TEXT_RENDER_RESOURCE_CONFLICT"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_TEXT_RENDER_RESOURCE_CONFLICT")
+    );
 
     let after_failure = owner
         .update_frame(
@@ -130,9 +132,11 @@ fn retained_glyph_cache_reuses_resources_and_evicts_under_pressure() {
     let removed = owner.remove_layout("retained").unwrap();
     assert!(removed.is_empty());
     let reused = owner.update_layout("retained", &layout, [255; 4]).unwrap();
-    assert!(!reused
-        .iter()
-        .any(|command| matches!(command, SceneCommand::UploadGlyph { .. })));
+    assert!(
+        !reused
+            .iter()
+            .any(|command| matches!(command, SceneCommand::UploadGlyph { .. }))
+    );
     owner.remove_layout("retained").unwrap();
     assert_eq!(
         owner
@@ -177,9 +181,11 @@ fn text_layout_single_flight_and_worker_pool_are_bounded_and_parallel() {
         .into_iter()
         .map(|handle| handle.join().unwrap())
         .collect::<Vec<_>>();
-    assert!(layouts
-        .iter()
-        .all(|layout| Arc::ptr_eq(layout, &layouts[0])));
+    assert!(
+        layouts
+            .iter()
+            .all(|layout| Arc::ptr_eq(layout, &layouts[0]))
+    );
     let cache = provider.cache_stats().unwrap();
     assert_eq!(cache.misses, 1);
     assert_eq!(cache.hits, 7);

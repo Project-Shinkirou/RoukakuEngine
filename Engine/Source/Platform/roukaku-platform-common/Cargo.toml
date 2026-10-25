@@ -9,6 +9,7 @@ default = []
 platform-test-driver = []
 
 [dependencies]
+base16ct.workspace = true
 roukaku-core = { path = "../../Runtime/roukaku-core" }
 roukaku-media-core = { path = "../../Runtime/roukaku-media-core" }
 roukaku-observability = { path = "../../Developer/roukaku-observability" }

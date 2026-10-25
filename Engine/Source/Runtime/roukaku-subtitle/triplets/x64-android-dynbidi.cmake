@@ -6,6 +6,11 @@ set(VCPKG_CMAKE_SYSTEM_VERSION 26)
 set(VCPKG_MAKE_BUILD_TRIPLET "--host=x86_64-linux-android")
 set(VCPKG_CMAKE_CONFIGURE_OPTIONS -DANDROID_ABI=x86_64)
 set(VCPKG_BUILD_TYPE release)
+# Meson 1.12 validates prefixes using Android/POSIX path semantics.
+# Windows' extended path form is absolute for both the build and target hosts.
+if(CMAKE_HOST_WIN32 AND DEFINED CURRENT_PACKAGES_DIR)
+    set(VCPKG_MESON_CONFIGURE_OPTIONS --prefix "//?/${CURRENT_PACKAGES_DIR}")
+endif()
 if(PORT STREQUAL "fribidi")
     set(VCPKG_LIBRARY_LINKAGE dynamic)
 endif()

@@ -22,4 +22,4 @@ tokio-util.workspace = true
 [dev-dependencies]
 futures-util.workspace = true
 tokio.workspace = true
-parking_lot = "0.12"
+parking_lot = "0.13"

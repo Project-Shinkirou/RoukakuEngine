@@ -1,6 +1,6 @@
 use crate::{ErrorKind, Stage, SubtitleError};
 
-/// Parsed ASS `YCbCr Matrix`, in the exact official 0.17.4 enum order.
+/// Parsed ASS `YCbCr Matrix`, in the exact official 0.17.5 enum order.
 /// libass returns unconverted RGB. Geometry never determines video colorspace.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(i32)]
@@ -151,9 +151,11 @@ mod tests {
             YcbcrMatrix::Unknown.rgb_for_video([1, 2, 3], VideoColorSpace::Rgb),
             Ok([1, 2, 3])
         );
-        assert!(YcbcrMatrix::Unknown
-            .rgb_for_video([1, 2, 3], VideoColorSpace::Bt601Tv)
-            .is_err());
+        assert!(
+            YcbcrMatrix::Unknown
+                .rgb_for_video([1, 2, 3], VideoColorSpace::Bt601Tv)
+                .is_err()
+        );
         for matrix in [
             YcbcrMatrix::Bt601Tv,
             YcbcrMatrix::Bt709Pc,

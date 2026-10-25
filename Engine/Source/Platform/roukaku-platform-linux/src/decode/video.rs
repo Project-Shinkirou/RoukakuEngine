@@ -1,8 +1,8 @@
 use super::{
     host_error, invalid,
-    pipeline::{MediaPipeline, MAX_FRAME_BYTES},
+    pipeline::{MAX_FRAME_BYTES, MediaPipeline},
 };
-use gstreamer::{prelude::*, ClockTime};
+use gstreamer::{ClockTime, prelude::*};
 use gstreamer_video::prelude::*;
 use roukaku_platform::{DecodeOutput, PlatformError};
 

@@ -1,9 +1,9 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use super::luau_budget::{entry_bytes, HostBudget};
+use super::luau_budget::{HostBudget, entry_bytes};
 use super::luau_value::*;
 use mlua::Lua;
-use roukaku_policy::{create_sandboxed_lua, PolicyExecutionBudget};
+use roukaku_policy::{PolicyExecutionBudget, create_sandboxed_lua};
 
 use crate::{MutationTraceEntry, PolicyQueryContext, PolicySnapshotValue, VnError, VnPolicyState};
 

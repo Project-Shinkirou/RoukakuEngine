@@ -1,11 +1,11 @@
 use std::sync::{
-    atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
     Arc,
+    atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering},
 };
 
 use kira::{
-    sound::{Sound, SoundData},
     Frame,
+    sound::{Sound, SoundData},
 };
 use roukaku_byte_source::OwnedF32Buffer;
 use rtrb::{Consumer, Producer, RingBuffer};
@@ -298,8 +298,8 @@ impl Sound for RoukakuStreamSound {
 #[cfg(test)]
 mod tests {
     use std::sync::{
-        atomic::{AtomicUsize, Ordering},
         Arc,
+        atomic::{AtomicUsize, Ordering},
     };
 
     use super::*;

@@ -4,8 +4,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    validate_id, UiRect, UiValidationError, UiViewport, ValidateUi, MAX_DRAW_CALLS,
-    MAX_INDICES_PER_FRAME, MAX_TEXTURE_BYTES, MAX_VERTICES_PER_FRAME,
+    MAX_DRAW_CALLS, MAX_INDICES_PER_FRAME, MAX_TEXTURE_BYTES, MAX_VERTICES_PER_FRAME, UiRect,
+    UiValidationError, UiViewport, ValidateUi, validate_id,
 };
 
 #[derive(

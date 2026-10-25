@@ -1,12 +1,13 @@
 //! Explicit parent/child pipe; no ports, background service, or persistent configuration.
 use roukaku_vn_core::{
-    PreviewRejectCode as Reject, PreviewRequest, PreviewResponse, PREVIEW_MAX_MESSAGE_BYTES,
+    PREVIEW_MAX_MESSAGE_BYTES, PreviewRejectCode as Reject, PreviewRequest, PreviewResponse,
 };
 use std::{
     io::{Read, Write},
     sync::{
+        Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
+        mpsc,
     },
     thread::{self, JoinHandle},
     time::Duration,

@@ -107,12 +107,14 @@ pub(super) async fn gpu_atlas_repack_preserves_reserved_white_texel_for_solid_me
         .unwrap();
 
     let captured = client.capture_surface(surface).await.unwrap();
-    assert!(captured
-        .rgba8
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .all(|pixel| *pixel == [128, 128, 128, 255]));
+    assert!(
+        captured
+            .rgba8
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|pixel| *pixel == [128, 128, 128, 255])
+    );
     client.destroy_surface(surface).await.unwrap();
     client.destroy_window(window).await.unwrap();
     client.shutdown().await.unwrap();

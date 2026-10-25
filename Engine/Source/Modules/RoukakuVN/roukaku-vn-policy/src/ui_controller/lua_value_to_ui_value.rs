@@ -9,6 +9,9 @@ pub(super) fn lua_value_to_ui_value(value: Value, depth: usize) -> mlua::Result<
     match value {
         Value::Nil => Ok(UiValue::Null),
         Value::Boolean(value) => Ok(UiValue::Bool(value)),
+        #[cfg(feature = "luau-runtime")]
+        Value::Integer(value) => Ok(UiValue::Integer(value)),
+        #[cfg(feature = "portable-luau-runtime")]
         Value::Integer(value) => Ok(UiValue::Integer(i64::from(value))),
         Value::Number(value) if value.is_finite() => Ok(UiValue::Number(value)),
         Value::Number(_) => Err(mlua::Error::runtime(
@@ -99,18 +102,17 @@ pub(super) fn validate_effects(
         ));
     }
     for effect in effects {
-        if let VnUiControllerEffect::Trace { event, fields } = effect {
-            if event.trim().is_empty()
+        if let VnUiControllerEffect::Trace { event, fields } = effect
+            && (event.trim().is_empty()
                 || fields.values().any(|value| {
                     value.contains(['/', '\\'])
                         || value.contains("payload")
                         || value.contains("content")
-                })
-            {
-                return Err(LuauUiControllerError::Effect(
-                    "controller trace contains an unsafe or non-redacted field".into(),
-                ));
-            }
+                }))
+        {
+            return Err(LuauUiControllerError::Effect(
+                "controller trace contains an unsafe or non-redacted field".into(),
+            ));
         }
     }
     Ok(())

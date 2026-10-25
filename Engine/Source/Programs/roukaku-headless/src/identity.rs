@@ -48,7 +48,7 @@ pub(crate) fn blocked_renderer_identity(
 
 pub(crate) fn renderer_identity_hash(identity: &RendererExecutionIdentity) -> String {
     serde_json::to_vec(identity)
-        .map(|bytes| format!("sha256:{:x}", Sha256::digest(bytes)))
+        .map(|bytes| format!("sha256:{:x}", base16ct::HexDisplay(&Sha256::digest(bytes))))
         .unwrap_or_else(|_| empty_hash())
 }
 pub(crate) fn hash_file(path: &Path) -> Result<String, String> {

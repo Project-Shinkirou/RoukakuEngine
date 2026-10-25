@@ -19,28 +19,38 @@ fn decoded_audio_accepts_owned_i16_and_f32_samples() {
 
 #[test]
 fn decoded_audio_rejects_alignment_capacity_and_non_finite_samples() {
-    assert!(PlayerDecodedAudio::from_i16(48_000, 2, vec![0], 16)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_AUDIO_SAMPLE_BUDGET"));
-    assert!(PlayerDecodedAudio::from_i16(48_000, 1, vec![0, 0], 1)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_AUDIO_SAMPLE_BUDGET"));
-    assert!(PlayerDecodedAudio::from_f32(48_000, 1, vec![f32::NAN], 16)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_AUDIO_NON_FINITE"));
+    assert!(
+        PlayerDecodedAudio::from_i16(48_000, 2, vec![0], 16)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_AUDIO_SAMPLE_BUDGET")
+    );
+    assert!(
+        PlayerDecodedAudio::from_i16(48_000, 1, vec![0, 0], 1)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_AUDIO_SAMPLE_BUDGET")
+    );
+    assert!(
+        PlayerDecodedAudio::from_f32(48_000, 1, vec![f32::NAN], 16)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_AUDIO_NON_FINITE")
+    );
 }
 
 #[test]
 fn decoded_audio_rejects_invalid_stream_shape() {
-    assert!(PlayerDecodedAudio::from_f32(0, 2, vec![0.0, 0.0], 16)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_AUDIO_SAMPLE_RATE"));
-    assert!(PlayerDecodedAudio::from_f32(48_000, 0, vec![0.0], 16)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLAYER_AUDIO_CHANNELS"));
+    assert!(
+        PlayerDecodedAudio::from_f32(0, 2, vec![0.0, 0.0], 16)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_AUDIO_SAMPLE_RATE")
+    );
+    assert!(
+        PlayerDecodedAudio::from_f32(48_000, 0, vec![0.0], 16)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLAYER_AUDIO_CHANNELS")
+    );
 }

@@ -6,9 +6,9 @@ use std::{
 };
 
 use roukaku_headless_protocol::{
-    ButtonState, CheckpointConfig, Envelope, ImageTolerance, InputMessage, Message,
-    ObservationPredicate, PhysicalInput, RunReport, RunStatus, HEADLESS_CHECKPOINT_CONFIG_SCHEMA,
-    HEADLESS_PROTOCOL_SCHEMA, USER_INPUT_SEQUENCE_SCHEMA,
+    ButtonState, CheckpointConfig, Envelope, HEADLESS_CHECKPOINT_CONFIG_SCHEMA,
+    HEADLESS_PROTOCOL_SCHEMA, ImageTolerance, InputMessage, Message, ObservationPredicate,
+    PhysicalInput, RunReport, RunStatus, USER_INPUT_SEQUENCE_SCHEMA,
 };
 
 use roukaku_platform::HeadlessHostProfile;

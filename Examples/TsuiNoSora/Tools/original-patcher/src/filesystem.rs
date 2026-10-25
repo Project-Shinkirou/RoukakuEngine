@@ -5,7 +5,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use filetime::{set_file_times, FileTime};
+use filetime::{FileTime, set_file_times};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
@@ -102,7 +102,7 @@ pub fn hash_file(path: &Path) -> PatchResult<String> {
         }
         digest.update(&buffer[..read]);
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(format!("{:x}", base16ct::HexDisplay(&digest.finalize())))
 }
 
 pub fn collect_file_digests(root: &Path, excluded: Option<&str>) -> PatchResult<Vec<FileDigest>> {

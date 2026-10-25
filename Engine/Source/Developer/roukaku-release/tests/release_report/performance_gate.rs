@@ -132,10 +132,12 @@ pub(super) fn release_gate_accepts_only_measured_performance_from_the_same_clean
             .filter(|check| check.id == "performance.product_run")
             .collect::<Vec<_>>()
     );
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.id == "player.presentation" && check.status == CheckStatus::Pass));
+    assert!(
+        report
+            .checks
+            .iter()
+            .any(|check| check.id == "player.presentation" && check.status == CheckStatus::Pass)
+    );
 
     let mut request = package_request(package_bytes.clone());
     request.platform_report = Some(capability.clone());
@@ -236,9 +238,11 @@ pub(super) fn release_gate_blocks_plugin_registry_conflict_and_invalid_binding()
         });
     request.plugin_extension_registry = serde_json::to_vec(&registry).unwrap();
     let error = PackageBuilder::build(request).unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLUGIN_EXTENSION_CONFLICT"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLUGIN_EXTENSION_CONFLICT")
+    );
 }
 
 #[test]
@@ -448,7 +452,9 @@ pub(super) fn plugin_provider_gate_blocks_unpacked_vfs_prefix_provider() {
         .packaged = false;
     request.plugin_extension_registry = serde_json::to_vec(&registry).unwrap();
     let error = PackageBuilder::build(request).unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_PLUGIN_PACKAGED_INELIGIBLE"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_PLUGIN_PACKAGED_INELIGIBLE")
+    );
 }

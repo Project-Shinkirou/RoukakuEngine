@@ -1,5 +1,5 @@
 use roukaku_asset::{
-    normalize_source_path, AssetId, AssetRegistry, AssetSidecar, CookSettings, ReviewStatus,
+    AssetId, AssetRegistry, AssetSidecar, CookSettings, ReviewStatus, normalize_source_path,
 };
 use roukaku_core::DiagnosticSeverity;
 
@@ -36,9 +36,11 @@ review: accepted
 
     let mut registry = AssetRegistry::default();
     registry.insert(sidecar).unwrap();
-    assert!(registry
-        .get(&AssetId::parse("asset:/characters/hero/main").unwrap())
-        .is_some());
+    assert!(
+        registry
+            .get(&AssetId::parse("asset:/characters/hero/main").unwrap())
+            .is_some()
+    );
 }
 
 #[test]
@@ -64,24 +66,36 @@ fn sidecar_schema_invalid_sidecar_reports_blocking_diagnostics() {
         review: ReviewStatus::Accepted,
     };
     let diagnostics = sidecar.validate();
-    assert!(diagnostics
-        .iter()
-        .all(|diag| diag.severity == DiagnosticSeverity::Blocking));
-    assert!(diagnostics
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_LICENSE_MISSING"));
-    assert!(diagnostics
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_SOURCE_PATH"));
-    assert!(diagnostics
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_SOURCE_HASH_MISSING"));
-    assert!(diagnostics
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_DEPENDENCY_SELF"));
-    assert!(diagnostics
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_DEPENDENCY_DUPLICATE"));
+    assert!(
+        diagnostics
+            .iter()
+            .all(|diag| diag.severity == DiagnosticSeverity::Blocking)
+    );
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_LICENSE_MISSING")
+    );
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_SOURCE_PATH")
+    );
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_SOURCE_HASH_MISSING")
+    );
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_DEPENDENCY_SELF")
+    );
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_DEPENDENCY_DUPLICATE")
+    );
 }
 
 #[test]
@@ -94,10 +108,11 @@ fn sidecar_schema_duplicate_asset_id_blocks_registry_insert() {
     let mut registry = AssetRegistry::default();
     registry.insert(sidecar.clone()).unwrap();
     let err = registry.insert(sidecar).unwrap_err();
-    assert!(err
-        .diagnostics()
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_DUPLICATE_ID"));
+    assert!(
+        err.diagnostics()
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_DUPLICATE_ID")
+    );
 }
 
 #[test]
@@ -134,19 +149,22 @@ review: accepted
 
     let mut invalid = valid;
     invalid.font.as_mut().unwrap().coverage[1].start = 120;
-    assert!(invalid
-        .validate()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_ASSET_FONT_COVERAGE"));
+    assert!(
+        invalid
+            .validate()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_ASSET_FONT_COVERAGE")
+    );
 }
 
 #[test]
 fn font_metadata_cannot_be_omitted_or_attached_to_non_font_assets() {
     let mut font = AssetSidecar::new_test("asset:/font/ui", "content/ui.ttf", "font.ttf");
-    assert!(font
-        .validate()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_ASSET_FONT_METADATA_MISSING"));
+    assert!(
+        font.validate()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_ASSET_FONT_METADATA_MISSING")
+    );
 
     font.asset_type = "image.rgba".to_string();
     font.font = Some(roukaku_asset::FontAssetMetadata {
@@ -158,8 +176,9 @@ fn font_metadata_cannot_be_omitted_or_attached_to_non_font_assets() {
             end: 126,
         }],
     });
-    assert!(font
-        .validate()
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_ASSET_FONT_METADATA_UNEXPECTED"));
+    assert!(
+        font.validate()
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_ASSET_FONT_METADATA_UNEXPECTED")
+    );
 }

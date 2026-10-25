@@ -1,7 +1,7 @@
 use roukaku_platform::{PlatformError, PlatformErrorCode};
 use windows::Win32::{
     Foundation::HWND,
-    Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST},
+    Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow},
 };
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},

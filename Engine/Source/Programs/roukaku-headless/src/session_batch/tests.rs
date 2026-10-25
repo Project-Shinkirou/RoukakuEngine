@@ -27,14 +27,18 @@ fn batch_manifest_requires_unique_session_and_artifact_identity() {
     validate_manifest(&manifest).unwrap();
 
     manifest.jobs[1].session_id = "route.a".into();
-    assert!(validate_manifest(&manifest)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_SESSION_DUPLICATE"));
+    assert!(
+        validate_manifest(&manifest)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_SESSION_DUPLICATE")
+    );
     manifest.jobs[1].session_id = "route.b".into();
     manifest.jobs[1].artifact_root = manifest.jobs[0].artifact_root.clone();
-    assert!(validate_manifest(&manifest)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_ARTIFACT_ROOT"));
+    assert!(
+        validate_manifest(&manifest)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_ARTIFACT_ROOT")
+    );
 }
 
 #[test]
@@ -44,14 +48,18 @@ fn batch_manifest_bounds_global_workers_and_child_timeout() {
         worker_limit: 9,
         jobs: vec![job("route.a", "a")],
     };
-    assert!(validate_manifest(&manifest)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT"));
+    assert!(
+        validate_manifest(&manifest)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_WORKER_LIMIT")
+    );
     manifest.worker_limit = 1;
     manifest.jobs[0].timeout_ms = 99;
-    assert!(validate_manifest(&manifest)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_TIMEOUT"));
+    assert!(
+        validate_manifest(&manifest)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_TIMEOUT")
+    );
 }
 
 #[test]
@@ -59,12 +67,16 @@ fn batch_selects_concurrency_from_cap_jobs_and_hardware() {
     assert_eq!(select_concurrency(8, 12, 6).unwrap(), 6);
     assert_eq!(select_concurrency(8, 3, 16).unwrap(), 3);
     assert_eq!(select_concurrency(2, 12, 16).unwrap(), 2);
-    assert!(select_concurrency(8, 0, 16)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_EMPTY"));
-    assert!(select_concurrency(8, 1, 0)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_PARALLELISM_QUERY"));
+    assert!(
+        select_concurrency(8, 0, 16)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_EMPTY")
+    );
+    assert!(
+        select_concurrency(8, 1, 0)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_PARALLELISM_QUERY")
+    );
 }
 
 #[test]
@@ -73,12 +85,16 @@ fn batch_partitions_internal_workers_without_oversubscription() {
     assert_eq!(concurrent_session_worker_limit(8, 2).unwrap(), 4);
     assert_eq!(concurrent_session_worker_limit(8, 3).unwrap(), 2);
     assert_eq!(concurrent_session_worker_limit(8, 8).unwrap(), 1);
-    assert!(concurrent_session_worker_limit(8, 0)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_SELECTED_CONCURRENCY"));
-    assert!(concurrent_session_worker_limit(4, 5)
-        .unwrap_err()
-        .starts_with("ROUKAKU_HEADLESS_BATCH_SELECTED_CONCURRENCY"));
+    assert!(
+        concurrent_session_worker_limit(8, 0)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_SELECTED_CONCURRENCY")
+    );
+    assert!(
+        concurrent_session_worker_limit(4, 5)
+            .unwrap_err()
+            .starts_with("ROUKAKU_HEADLESS_BATCH_SELECTED_CONCURRENCY")
+    );
 }
 
 #[test]

@@ -1,11 +1,11 @@
 use roukaku_core::Hash256;
 use roukaku_package::{
-    section_aad_hash, validate_source_locked_container, AuthorizedSourceReader,
-    ContainerCryptoProvider, ContainerError, ContainerKind, EncryptionDescriptor, ExternalKeyRef,
-    PackageBuildRequest, PackageBuilder, PackageReader, RoukakuContainerBuilder,
-    RoukakuContainerReader, SectionPayload, SourceFingerprintCryptoProvider, SourceUnlockPolicy,
-    SourceVerificationEntry, SourceVerificationManifest, SOURCE_FINGERPRINT_METHOD,
-    SOURCE_FINGERPRINT_PROVIDER_ID,
+    AuthorizedSourceReader, ContainerCryptoProvider, ContainerError, ContainerKind,
+    EncryptionDescriptor, ExternalKeyRef, PackageBuildRequest, PackageBuilder, PackageReader,
+    RoukakuContainerBuilder, RoukakuContainerReader, SOURCE_FINGERPRINT_METHOD,
+    SOURCE_FINGERPRINT_PROVIDER_ID, SectionPayload, SourceFingerprintCryptoProvider,
+    SourceUnlockPolicy, SourceVerificationEntry, SourceVerificationManifest, section_aad_hash,
+    validate_source_locked_container,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -94,9 +94,11 @@ fn source_fingerprint_provider_roundtrips_and_authenticates() {
     let stored = provider
         .encrypt(&descriptor, b"commercial payload")
         .unwrap();
-    assert!(!stored
-        .windows(18)
-        .any(|window| window == b"commercial payload"));
+    assert!(
+        !stored
+            .windows(18)
+            .any(|window| window == b"commercial payload")
+    );
     assert_eq!(
         provider.decrypt(&descriptor, &stored).unwrap(),
         b"commercial payload"
@@ -242,10 +244,12 @@ fn package_builder_applies_source_policy_to_named_sections() {
     );
     request.source_unlock_policy = Some(policy.clone());
     let blob = PackageBuilder::build_with_crypto(request, &provider).unwrap();
-    assert!(!blob
-        .as_bytes()
-        .windows(b"commercial payload marker".len())
-        .any(|window| window == b"commercial payload marker"));
+    assert!(
+        !blob
+            .as_bytes()
+            .windows(b"commercial payload marker".len())
+            .any(|window| window == b"commercial payload marker")
+    );
     let raw = RoukakuContainerReader::new(blob.as_bytes()).unwrap();
     validate_source_locked_container(&raw, &policy, "source.unlock").unwrap();
     let package = PackageReader::open_source_locked(
@@ -295,10 +299,12 @@ fn source_locked_package_does_not_expose_common_payload_signatures() {
         b"\x89PNG\r\n\x1a\n".as_slice(),
         b"RIFFprivate-waveWAVE".as_slice(),
     ] {
-        assert!(!blob
-            .as_bytes()
-            .windows(marker.len())
-            .any(|window| window == marker));
+        assert!(
+            !blob
+                .as_bytes()
+                .windows(marker.len())
+                .any(|window| window == marker)
+        );
     }
 }
 

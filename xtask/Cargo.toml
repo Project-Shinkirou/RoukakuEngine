@@ -5,6 +5,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+base16ct.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true
 clap.workspace = true
@@ -17,4 +18,4 @@ tokio.workspace = true
 walkdir.workspace = true
 tempfile.workspace = true
 semver.workspace = true
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }

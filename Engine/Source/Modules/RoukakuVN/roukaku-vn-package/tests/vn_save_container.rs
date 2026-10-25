@@ -1,8 +1,8 @@
-use roukaku_runtime::{write_runtime_save_with_sections, RuntimeConfig, RuntimeWorld, SaveRequest};
+use roukaku_runtime::{RuntimeConfig, RuntimeWorld, SaveRequest, write_runtime_save_with_sections};
 use roukaku_vn_core::{VnPlayerCommand, VnRunConfig, VnRuntime, VnRuntimeState};
 use roukaku_vn_package::{
-    compile_roukaku_project, policy_state_save_section, read_runtime_save_policy_state,
-    read_runtime_save_vn_state, runtime_state_save_section, RoukakuSource, VnRuntimeStateSave,
+    RoukakuSource, VnRuntimeStateSave, compile_roukaku_project, policy_state_save_section,
+    read_runtime_save_policy_state, read_runtime_save_vn_state, runtime_state_save_section,
 };
 use roukaku_vn_policy::{LuauPolicy, PolicySnapshotValue, VnPolicyState};
 
@@ -46,16 +46,18 @@ fn vn_state_roundtrips_inside_runtime_save_container() {
     let runtime_snapshot = world.snapshot().unwrap();
     let mut policy = LuauPolicy::new().unwrap();
     let mut policy_state = VnPolicyState::default();
-    assert!(policy
-        .eval_bool(
-            r#"
+    assert!(
+        policy
+            .eval_bool(
+                r#"
             roukaku.mutate.set_var("project", "affinity", 7)
             roukaku.snapshot.set("ui.save", { page = "save", slot = 3 })
             return true
             "#,
-            &mut policy_state,
-        )
-        .unwrap());
+                &mut policy_state,
+            )
+            .unwrap()
+    );
     let state_payload = postcard::to_allocvec(vn.state()).unwrap();
     postcard::from_bytes::<VnRuntimeState>(&state_payload)
         .expect("vn runtime state must be postcard-decodable");
@@ -80,10 +82,12 @@ fn vn_state_roundtrips_inside_runtime_save_container() {
     let loaded_vn = read_runtime_save_vn_state(&save).unwrap();
     assert_eq!(loaded_vn.state.backlog.len(), 2);
     assert!(loaded_vn.state.voice_replay.contains_key("voice.hero.0002"));
-    assert!(loaded_vn
-        .state
-        .route_flags
-        .contains_key("choice:choice.where:choice.library:state.library"));
+    assert!(
+        loaded_vn
+            .state
+            .route_flags
+            .contains_key("choice:choice.where:choice.library:state.library")
+    );
     let loaded_policy = read_runtime_save_policy_state(&save).unwrap();
     assert_eq!(loaded_policy.state.var("project", "affinity"), Some(7));
     assert!(matches!(

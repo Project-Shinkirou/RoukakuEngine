@@ -1,14 +1,14 @@
 use roukaku_plugin_abi::{
-    LoadPhase, PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
-    ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
-    PROVIDER_POLICY_SCHEMA,
+    LoadPhase, PLUGIN_EXTENSION_REGISTRY_SCHEMA, PROVIDER_POLICY_SCHEMA,
+    PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
+    ProviderExtensionRecord, ProviderPolicy,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ContainerBlob, ContainerError, ContainerKind, RoukakuContainerBuilder, SectionPayload,
-    CURRENT_CONTAINER_VERSION,
+    CURRENT_CONTAINER_VERSION, ContainerBlob, ContainerError, ContainerKind,
+    RoukakuContainerBuilder, SectionPayload,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

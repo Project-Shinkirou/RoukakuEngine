@@ -7,8 +7,8 @@ use roukaku_core::Hash256;
 use roukaku_package::PackageReader;
 use roukaku_runtime::TaskScope;
 use roukaku_vn_policy::{
-    PolicyActionBinding, PolicyIoCapabilities, PolicyIoFailure, PolicyIoHost, PolicyReadText,
-    POLICY_IO_MAX_BYTES,
+    POLICY_IO_MAX_BYTES, PolicyActionBinding, PolicyIoCapabilities, PolicyIoFailure, PolicyIoHost,
+    PolicyReadText,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},

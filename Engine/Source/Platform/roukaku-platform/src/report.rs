@@ -122,11 +122,13 @@ impl PlatformCapabilityReport {
             audio_mixer: empty(),
             audio_output: empty(),
             save: empty(),
-            diagnostics: vec![Diagnostic::blocking(
-                "ROUKAKU_PLATFORM_NOT_IMPLEMENTED",
-                "platform host is not implemented in this release",
-            )
-            .with_field("platform", platform.as_str())],
+            diagnostics: vec![
+                Diagnostic::blocking(
+                    "ROUKAKU_PLATFORM_NOT_IMPLEMENTED",
+                    "platform host is not implemented in this release",
+                )
+                .with_field("platform", platform.as_str()),
+            ],
         }
     }
 }

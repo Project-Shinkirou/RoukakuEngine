@@ -42,7 +42,7 @@ impl AudioResource {
                     "ALSA has no exact supported format for the requested rate and channels",
                 )
             })?;
-        let config: cpal::StreamConfig = supported.clone().into();
+        let config: cpal::StreamConfig = supported.into();
         let chunk_samples = request
             .chunk_frames
             .checked_mul(usize::from(request.channels))
@@ -68,7 +68,7 @@ impl AudioResource {
                 let error_wake = audio_wake.clone();
                 let mut consumer = consumer;
                 device.build_output_stream(
-                    &config,
+                    config,
                     move |output: &mut [f32], _| {
                         let _ = consumer.fill_output_f32(output);
                         wake.notify();
@@ -86,7 +86,7 @@ impl AudioResource {
                 let error_wake = audio_wake.clone();
                 let mut consumer = consumer;
                 device.build_output_stream(
-                    &config,
+                    config,
                     move |output: &mut [i16], _| {
                         let _ = consumer.fill_output_i16(output);
                         wake.notify();
@@ -104,7 +104,7 @@ impl AudioResource {
                 let error_wake = audio_wake.clone();
                 let mut consumer = consumer;
                 device.build_output_stream(
-                    &config,
+                    config,
                     move |output: &mut [u16], _| {
                         let _ = consumer.fill_output_u16(output);
                         wake.notify();
@@ -189,7 +189,7 @@ pub(super) fn sample_format_rank(format: cpal::SampleFormat) -> Option<u8> {
     }
 }
 
-pub(super) fn set_stream_error(error: &AtomicBool, _value: cpal::StreamError) {
+pub(super) fn set_stream_error(error: &AtomicBool, _value: cpal::Error) {
     error.store(true, Ordering::Release);
 }
 

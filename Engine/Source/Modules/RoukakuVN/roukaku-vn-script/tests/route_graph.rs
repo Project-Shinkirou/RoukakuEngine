@@ -1,4 +1,4 @@
-use roukaku_vn_script::{compile_roukaku_project, RoukakuSource};
+use roukaku_vn_script::{RoukakuSource, compile_roukaku_project};
 
 #[test]
 fn system_story_states_do_not_pollute_gameplay_route_graph() {
@@ -32,10 +32,12 @@ state save #@id state.system.save
         nodes,
         vec![("ending.done", true), ("state.main.start", false)]
     );
-    assert!(project
-        .story
-        .route_graph
-        .edges
-        .iter()
-        .all(|edge| edge.from != "state.system.save"));
+    assert!(
+        project
+            .story
+            .route_graph
+            .edges
+            .iter()
+            .all(|edge| edge.from != "state.system.save")
+    );
 }

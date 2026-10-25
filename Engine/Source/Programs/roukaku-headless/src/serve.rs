@@ -7,9 +7,9 @@ use std::{
 };
 
 use roukaku_headless_protocol::{
-    ArtifactManifest, CheckpointConfig, CheckpointResult, Envelope, JsonlReader, JsonlWriter,
-    Message, PhysicalInput, ProductSession, RunReport, RunStatus, SequenceValidator,
-    HEADLESS_PROTOCOL_SCHEMA, HEADLESS_RUN_REPORT_SCHEMA, TICK_DURATION_NS,
+    ArtifactManifest, CheckpointConfig, CheckpointResult, Envelope, HEADLESS_PROTOCOL_SCHEMA,
+    HEADLESS_RUN_REPORT_SCHEMA, JsonlReader, JsonlWriter, Message, PhysicalInput, ProductSession,
+    RunReport, RunStatus, SequenceValidator, TICK_DURATION_NS,
 };
 use roukaku_platform::{
     HeadlessHostProfile, PackageSourceRequest, PlatformHostFactory, PlatformHostSession,
@@ -203,7 +203,7 @@ pub(crate) async fn serve(build_identity: &Path, gpu: bool) -> Result<(), String
                     },
                 )?;
                 session.last_sequence = envelope.sequence;
-                let input_hash = format!("sha256:{:x}", session.input_digest.clone().finalize());
+                let input_hash = format!("sha256:{:x}", base16ct::HexDisplay(&session.input_digest.clone().finalize()));
                 if session
                     .checkpoint_config
                     .as_ref()
@@ -418,7 +418,10 @@ pub(crate) async fn finalize_blocked_live_session(mut session: LiveSession, erro
         let _ = product.shutdown().await;
     }
     let _ = session.host.client.shutdown().await;
-    let input_hash = format!("sha256:{:x}", session.input_digest.clone().finalize());
+    let input_hash = format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&session.input_digest.clone().finalize())
+    );
     let manifest_path = session.artifact_root.join("artifact-manifest.json");
     let mut manifest = fs::read(&manifest_path)
         .ok()

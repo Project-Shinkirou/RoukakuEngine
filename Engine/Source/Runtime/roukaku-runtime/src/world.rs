@@ -50,6 +50,6 @@ pub use runtime_error::ValidatedModuleBinding;
 mod create;
 
 mod validate_tick_request;
-use validate_tick_request::presentation_kind;
 pub use validate_tick_request::LoadReport;
 pub use validate_tick_request::RuntimeDebugSession;
+use validate_tick_request::presentation_kind;

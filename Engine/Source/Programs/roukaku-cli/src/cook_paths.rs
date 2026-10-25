@@ -112,17 +112,16 @@ pub(crate) fn resolve_scenario_ref_path(
 }
 
 pub(crate) fn scenario_ref_schema(payload: &[u8]) -> String {
-    if let Ok(value) = serde_json::from_slice::<serde_json::Value>(payload) {
-        if let Some(schema) = value.get("schema").and_then(serde_json::Value::as_str) {
-            return schema.to_string();
-        }
+    if let Ok(value) = serde_json::from_slice::<serde_json::Value>(payload)
+        && let Some(schema) = value.get("schema").and_then(serde_json::Value::as_str)
+    {
+        return schema.to_string();
     }
-    if let Ok(text) = std::str::from_utf8(payload) {
-        if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(text) {
-            if let Some(schema) = value.get("schema").and_then(serde_yaml::Value::as_str) {
-                return schema.to_string();
-            }
-        }
+    if let Ok(text) = std::str::from_utf8(payload)
+        && let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(text)
+        && let Some(schema) = value.get("schema").and_then(serde_yaml::Value::as_str)
+    {
+        return schema.to_string();
     }
     "roukaku.scenario.v1".to_string()
 }

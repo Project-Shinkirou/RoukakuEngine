@@ -338,7 +338,7 @@ pub(super) fn saved_games_root() -> Result<std::path::PathBuf, PlatformError> {
     use std::ffi::c_void;
     use windows::Win32::{
         System::Com::CoTaskMemFree,
-        UI::Shell::{FOLDERID_SavedGames, SHGetKnownFolderPath, KF_FLAG_DEFAULT},
+        UI::Shell::{FOLDERID_SavedGames, KF_FLAG_DEFAULT, SHGetKnownFolderPath},
     };
     unsafe {
         let path = SHGetKnownFolderPath(&FOLDERID_SavedGames, KF_FLAG_DEFAULT, None)

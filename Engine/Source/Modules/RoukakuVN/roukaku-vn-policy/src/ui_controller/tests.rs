@@ -176,17 +176,18 @@ roukaku.ui.controller.register("controller.test", {
     .expect("register");
     let mut session = VnUiSessionState::default();
     let model = UiValue::Map(BTreeMap::new());
-    assert!(host
-        .invoke_open(
+    assert!(
+        host.invoke_open(
             "controller.test",
             "roukaku.vn.ui_model.test.v1",
             &model,
             &mut session,
         )
         .expect("open")
-        .is_empty());
-    assert!(host
-        .invoke_update(
+        .is_empty()
+    );
+    assert!(
+        host.invoke_update(
             "controller.test",
             "roukaku.vn.ui_model.test.v1",
             &model,
@@ -198,7 +199,8 @@ roukaku.ui.controller.register("controller.test", {
             &mut session,
         )
         .expect("update")
-        .is_empty());
+        .is_empty()
+    );
 }
 
 #[test]

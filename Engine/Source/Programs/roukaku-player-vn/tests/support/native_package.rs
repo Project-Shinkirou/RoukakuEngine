@@ -1,16 +1,16 @@
 use roukaku_asset::VfsUri;
 use roukaku_core::Hash256;
 use roukaku_media::{
-    FontPackageEntry, FontPackageManifest, UnicodeRange, FONT_PACKAGE_MANIFEST_SCHEMA,
+    FONT_PACKAGE_MANIFEST_SCHEMA, FontPackageEntry, FontPackageManifest, UnicodeRange,
 };
 use roukaku_package::{PackageBuildRequest, PackageBuilder, SectionPayload};
 use roukaku_plugin_abi::{
-    LoadPhase, PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
-    ProviderExtensionRecord, ProviderPolicy, PLUGIN_EXTENSION_REGISTRY_SCHEMA,
-    PROVIDER_POLICY_SCHEMA,
+    LoadPhase, PLUGIN_EXTENSION_REGISTRY_SCHEMA, PROVIDER_POLICY_SCHEMA,
+    PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
+    ProviderExtensionRecord, ProviderPolicy,
 };
-use roukaku_vn_core::{compile_roukaku_project, CompileRoukakuProjectOptions, RoukakuSource};
-use roukaku_vn_package::{package_sections_for_project, PLAYER_LOCALE_CONFIG_SCHEMA};
+use roukaku_vn_core::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_project};
+use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
 
 pub(crate) const TEST_UI: &str = r#"
 ui_policy profile:classic save_slots:"slot.01" quick_slot:"" allowed_pages:"quick_panel,save,load,config" reading_modes:"manual" audio_toggle:false save_completion:stay custom_actions:"" #@id ui.policy.test.classic

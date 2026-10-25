@@ -380,29 +380,29 @@ impl VnPresentationProviderManifest {
                     .with_field("preset", &preset.id),
                 );
             }
-            if let Some(filter) = &preset.filter {
-                if !self.supported_filters.iter().any(|item| item == filter) {
-                    diagnostics.push(
-                        Diagnostic::blocking(
-                            "ROUKAKU_VN_PRESENTATION_PRESET_FILTER",
-                            "presentation preset references an unsupported filter",
-                        )
-                        .with_field("preset", &preset.id)
-                        .with_field("filter", filter),
-                    );
-                }
+            if let Some(filter) = &preset.filter
+                && !self.supported_filters.iter().any(|item| item == filter)
+            {
+                diagnostics.push(
+                    Diagnostic::blocking(
+                        "ROUKAKU_VN_PRESENTATION_PRESET_FILTER",
+                        "presentation preset references an unsupported filter",
+                    )
+                    .with_field("preset", &preset.id)
+                    .with_field("filter", filter),
+                );
             }
-            if let Some(fallback) = &preset.fallback_policy_id {
-                if !fallback_ids.contains(fallback.as_str()) {
-                    diagnostics.push(
-                        Diagnostic::blocking(
-                            "ROUKAKU_VN_PRESENTATION_PRESET_FALLBACK",
-                            "presentation preset references an unknown fallback policy",
-                        )
-                        .with_field("preset", &preset.id)
-                        .with_field("fallback", fallback),
-                    );
-                }
+            if let Some(fallback) = &preset.fallback_policy_id
+                && !fallback_ids.contains(fallback.as_str())
+            {
+                diagnostics.push(
+                    Diagnostic::blocking(
+                        "ROUKAKU_VN_PRESENTATION_PRESET_FALLBACK",
+                        "presentation preset references an unknown fallback policy",
+                    )
+                    .with_field("preset", &preset.id)
+                    .with_field("fallback", fallback),
+                );
             }
         }
         presets

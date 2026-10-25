@@ -43,9 +43,10 @@ pub use roukaku_player_vn::*;
 mod windows_live {
     use super::validate_web_same_run_audio::{ParsedPlayerHostTrace, ScenarioHostInput};
     use super::{
-        parse_player_host_traces, sha256_bytes, BundleContext, LiveInputRun, PlayerAutomationError,
-        PlayerInputConsumptionEvidence, PlayerInputEvent, PlayerRuntimeRouteEvidence,
-        PlayerVisualRegionEvidence, WINDOWS_SENDINPUT_KEYBOARD, WINDOWS_SENDINPUT_MOUSE,
+        BundleContext, LiveInputRun, PlayerAutomationError, PlayerInputConsumptionEvidence,
+        PlayerInputEvent, PlayerRuntimeRouteEvidence, PlayerVisualRegionEvidence,
+        WINDOWS_SENDINPUT_KEYBOARD, WINDOWS_SENDINPUT_MOUSE, parse_player_host_traces,
+        sha256_bytes,
     };
     use roukaku_platform_windows::WindowsTestDriver;
     use std::{
@@ -308,7 +309,7 @@ mod windows_live {
 
 #[cfg(test)]
 mod host_trace_tests {
-    use super::{parse_player_host_traces, parse_scenario_input_plan, ScenarioInputAction};
+    use super::{ScenarioInputAction, parse_player_host_traces, parse_scenario_input_plan};
 
     #[test]
     fn scenario_input_plan_uses_declared_actions_instead_of_expected_route_count() {
@@ -373,12 +374,14 @@ actions:
         );
         assert_eq!(traces[0].current_state_id.as_deref(), Some("state.library"));
         assert_eq!(traces[0].session_id, "session.one");
-        assert!(parse_player_host_traces(&stderr.replacen(
-            "session_id=session.one",
-            "session_id=other",
-            1
-        ))
-        .is_empty());
+        assert!(
+            parse_player_host_traces(&stderr.replacen(
+                "session_id=session.one",
+                "session_id=other",
+                1
+            ))
+            .is_empty()
+        );
         assert!(parse_player_host_traces(&stderr.replace("session_id=session.one", "")).is_empty());
         assert_eq!(
             traces[0].pending_choice_ids,
@@ -399,33 +402,35 @@ actions:
 }
 
 mod windows_input;
-use windows_input::parse_scenario_input_plan;
+pub use windows_input::ANDROID_ACCESSIBILITY;
+pub use windows_input::ANDROID_GAMEPAD;
+pub use windows_input::ANDROID_KEYBOARD;
+pub use windows_input::ANDROID_TOUCH;
 pub use windows_input::AndroidInputHost;
+pub use windows_input::LINUX_UINPUT_GAMEPAD;
+pub use windows_input::LINUX_UINPUT_KEYBOARD;
+pub use windows_input::LINUX_UINPUT_MOUSE;
+pub use windows_input::LINUX_UINPUT_TOUCH;
 pub use windows_input::LinuxUinputHost;
+pub use windows_input::MACOS_CGEVENT_KEYBOARD;
+pub use windows_input::MACOS_CGEVENT_MOUSE;
 pub use windows_input::MacosCgEventHost;
 pub use windows_input::PlayerAutomationError;
 use windows_input::ScenarioInputAction;
+pub use windows_input::WEB_CDP_KEYBOARD;
+pub use windows_input::WEB_CDP_MOUSE;
+pub use windows_input::WINDOWS_SENDINPUT_KEYBOARD;
+pub use windows_input::WINDOWS_SENDINPUT_MOUSE;
 pub use windows_input::WebCdpInputHost;
 pub use windows_input::WebLiveAutomationRequest;
 pub use windows_input::WebLiveAutomationRun;
 pub use windows_input::WindowsLiveAutomationRequest;
 pub use windows_input::WindowsLiveAutomationRun;
 pub use windows_input::WindowsSendInputHost;
-pub use windows_input::ANDROID_ACCESSIBILITY;
-pub use windows_input::ANDROID_GAMEPAD;
-pub use windows_input::ANDROID_KEYBOARD;
-pub use windows_input::ANDROID_TOUCH;
-pub use windows_input::LINUX_UINPUT_GAMEPAD;
-pub use windows_input::LINUX_UINPUT_KEYBOARD;
-pub use windows_input::LINUX_UINPUT_MOUSE;
-pub use windows_input::LINUX_UINPUT_TOUCH;
-pub use windows_input::MACOS_CGEVENT_KEYBOARD;
-pub use windows_input::MACOS_CGEVENT_MOUSE;
-pub use windows_input::WEB_CDP_KEYBOARD;
-pub use windows_input::WEB_CDP_MOUSE;
-pub use windows_input::WINDOWS_SENDINPUT_KEYBOARD;
-pub use windows_input::WINDOWS_SENDINPUT_MOUSE;
+use windows_input::parse_scenario_input_plan;
 mod validate_web_same_run_audio;
+use validate_web_same_run_audio::BundleContext;
+use validate_web_same_run_audio::LiveInputRun;
 use validate_web_same_run_audio::host_audio_meter;
 #[cfg(any(test, all(target_os = "windows", feature = "platform-test-driver")))]
 use validate_web_same_run_audio::parse_player_host_traces;
@@ -434,5 +439,3 @@ use validate_web_same_run_audio::sha256_file;
 use validate_web_same_run_audio::validate_web_same_run_audio;
 use validate_web_same_run_audio::visual_comparison_evidence;
 use validate_web_same_run_audio::windows_live_input;
-use validate_web_same_run_audio::BundleContext;
-use validate_web_same_run_audio::LiveInputRun;

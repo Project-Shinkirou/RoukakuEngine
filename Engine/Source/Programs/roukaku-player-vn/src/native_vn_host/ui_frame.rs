@@ -293,60 +293,53 @@ impl NativeVnHostCommandSource {
             .map(|text| (text.visible_graphemes, text.text_graphemes));
         let stable_frame = request.input.events.is_empty() && !active_changed;
         host_performance.frame_model_ns = performance_phase_duration(frame_model_started)?;
-        if !active_changed {
-            if let (Some(reuse), Some(semantics)) =
+        if !active_changed
+            && let (Some(reuse), Some(semantics)) =
                 (self.ui_frame_reuse.as_mut(), self.ui_semantics.as_ref())
-            {
-                if reuse
-                    .key
-                    .matches(&request, &instance_id, text_reveal_progress)
-                {
-                    if let Some(pointer_position) = reusable_pointer_position(
-                        reuse.pointer_position,
-                        &request.input.events,
-                        semantics,
-                    ) {
-                        reuse.pointer_position = pointer_position;
-                        let mut performance = reuse.performance.clone();
-                        performance.update_layout_ns = 0;
-                        performance.paint_conversion_ns = 0;
-                        performance.texture_update_bytes = 0;
-                        self.ui_performance.record(performance.clone(), true)?;
-                        self.last_ui_performance_sample = Some(performance);
-                        tracing::trace!(
-                            event = "player.vn.ui.frame.reused",
-                            view_id = %active_view_id,
-                            generation = self.ui_generation,
-                            input_count = request.input.events.len(),
-                            semantic_generation = semantics.generation,
-                            "reused an unchanged NativeVN UI frame"
-                        );
-                        let result = NativeVnUiFrameResult {
-                            actions: Vec::new(),
-                            dispositions: request
-                                .input
-                                .events
-                                .iter()
-                                .map(|event| UiInputDisposition {
-                                    sequence: event.sequence,
-                                    disposition: UiInputDispositionKind::Bubble,
-                                    semantic_target_id: None,
-                                })
-                                .collect(),
-                            semantics: semantics.clone(),
-                            // `ui_draw` is the last complete submission and can contain
-                            // one-shot resource lifecycle commands. Replaying those commands
-                            // on a pointer-only frame would re-upload already live glyphs or
-                            // textures, which the renderer correctly rejects. The retained
-                            // resource owner remains authoritative until a new UI layout emits
-                            // an explicit lifecycle delta.
-                            draw: reusable_ui_draw_commands(&self.ui_draw),
-                        };
-                        self.accumulate_ui_host_performance(host_performance);
-                        return Ok(result);
-                    }
-                }
-            }
+            && reuse
+                .key
+                .matches(&request, &instance_id, text_reveal_progress)
+            && let Some(pointer_position) =
+                reusable_pointer_position(reuse.pointer_position, &request.input.events, semantics)
+        {
+            reuse.pointer_position = pointer_position;
+            let mut performance = reuse.performance.clone();
+            performance.update_layout_ns = 0;
+            performance.paint_conversion_ns = 0;
+            performance.texture_update_bytes = 0;
+            self.ui_performance.record(performance.clone(), true)?;
+            self.last_ui_performance_sample = Some(performance);
+            tracing::trace!(
+                event = "player.vn.ui.frame.reused",
+                view_id = %active_view_id,
+                generation = self.ui_generation,
+                input_count = request.input.events.len(),
+                semantic_generation = semantics.generation,
+                "reused an unchanged NativeVN UI frame"
+            );
+            let result = NativeVnUiFrameResult {
+                actions: Vec::new(),
+                dispositions: request
+                    .input
+                    .events
+                    .iter()
+                    .map(|event| UiInputDisposition {
+                        sequence: event.sequence,
+                        disposition: UiInputDispositionKind::Bubble,
+                        semantic_target_id: None,
+                    })
+                    .collect(),
+                semantics: semantics.clone(),
+                // `ui_draw` is the last complete submission and can contain
+                // one-shot resource lifecycle commands. Replaying those commands
+                // on a pointer-only frame would re-upload already live glyphs or
+                // textures, which the renderer correctly rejects. The retained
+                // resource owner remains authoritative until a new UI layout emits
+                // an explicit lifecycle delta.
+                draw: reusable_ui_draw_commands(&self.ui_draw),
+            };
+            self.accumulate_ui_host_performance(host_performance);
+            return Ok(result);
         }
         let reuse_key =
             NativeVnUiFrameReuseKey::from_request(&request, &instance_id, text_reveal_progress);

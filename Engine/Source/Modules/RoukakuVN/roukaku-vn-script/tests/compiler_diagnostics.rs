@@ -1,4 +1,4 @@
-use roukaku_vn_script::{compile_roukaku_project, RoukakuSource};
+use roukaku_vn_script::{RoukakuSource, compile_roukaku_project};
 
 #[test]
 fn grammar_negative_cases_block_compile() {

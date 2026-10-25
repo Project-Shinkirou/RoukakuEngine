@@ -54,13 +54,15 @@ fn playback_session_schedules_audio_master_video_pause_seek_and_eos() {
     assert_eq!(first.presented_video.unwrap().sequence, 1);
     assert_eq!(first.released_audio.len(), 1);
     session.pause().unwrap();
-    assert!(session
-        .tick(PlaybackTickRequest {
-            sequence: 2,
-            delta_us: 20_000,
-            audio_playhead_us: Some(40_000),
-        })
-        .is_err());
+    assert!(
+        session
+            .tick(PlaybackTickRequest {
+                sequence: 2,
+                delta_us: 20_000,
+                audio_playhead_us: Some(40_000),
+            })
+            .is_err()
+    );
     session.play().unwrap();
     let second = session
         .tick(PlaybackTickRequest {
@@ -109,13 +111,15 @@ fn playback_session_rejects_queue_clock_and_sync_errors_transactionally() {
     assert_eq!(session.deterministic_hash().unwrap(), before);
     session.play().unwrap();
     let before_tick = session.deterministic_hash().unwrap();
-    assert!(session
-        .tick(PlaybackTickRequest {
-            sequence: 1,
-            delta_us: 100_000,
-            audio_playhead_us: Some(200_000),
-        })
-        .is_err());
+    assert!(
+        session
+            .tick(PlaybackTickRequest {
+                sequence: 1,
+                delta_us: 100_000,
+                audio_playhead_us: Some(200_000),
+            })
+            .is_err()
+    );
     assert_eq!(session.deterministic_hash().unwrap(), before_tick);
 }
 

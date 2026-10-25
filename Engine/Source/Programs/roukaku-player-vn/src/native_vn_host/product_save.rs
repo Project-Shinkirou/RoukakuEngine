@@ -138,8 +138,8 @@ mod tests {
     use super::*;
     use crate::test_native_package;
 
-    fn executor(
-    ) -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink>
+    fn executor()
+    -> roukaku_player_core::PlayerHostCommandExecutor<roukaku_player_core::PlatformCommandSink>
     {
         let (client, _, _) = roukaku_platform::host_channel(
             roukaku_platform::PlatformHostProfile::windows_release(
@@ -158,8 +158,10 @@ mod tests {
     fn source() -> NativeVnHostCommandSource {
         let bytes = test_native_package::product_package_with_ui_and_request(
             "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\nstory system #@id story.system\nstate save #@id state.system.save\n  scene save #@id scene.system.save\n    system_page kind:save policy:roukaku.policy.standard #@id page.save\n",
-            &test_native_package::TEST_UI.replace("save_slots:\"slot.01\"", "save_slots:\"slot.01,slot.02\""),
-            test_native_package::test_compile_options(), |_| {},
+            &test_native_package::TEST_UI
+                .replace("save_slots:\"slot.01\"", "save_slots:\"slot.01,slot.02\""),
+            test_native_package::test_compile_options(),
+            |_| {},
         );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();
         let mut source = NativeVnHostCommandSource::from_package(
@@ -223,17 +225,21 @@ mod tests {
         let before = old.clone();
         let state = source.runtime_state.clone();
         let scope = source.media_scope.clone();
-        assert!(source
-            .ingest_save_catalog_entry("slot.01", &old)
-            .unwrap_err()
-            .to_string()
-            .contains("ROUKAKU_POLICY_RESTORE_VERSION"));
+        assert!(
+            source
+                .ingest_save_catalog_entry("slot.01", &old)
+                .unwrap_err()
+                .to_string()
+                .contains("ROUKAKU_POLICY_RESTORE_VERSION")
+        );
         assert!(!source.ui_save_slots["slot.01"].can_load);
-        assert!(source
-            .restore(&old)
-            .unwrap_err()
-            .to_string()
-            .contains("ROUKAKU_POLICY_RESTORE_VERSION"));
+        assert!(
+            source
+                .restore(&old)
+                .unwrap_err()
+                .to_string()
+                .contains("ROUKAKU_POLICY_RESTORE_VERSION")
+        );
         assert_eq!(source.runtime_state, state);
         assert!(!scope.is_cancelled());
         source.reject_save_catalog_entry("slot.01");
@@ -243,9 +249,11 @@ mod tests {
             source.ui_save_slots["slot.01"].migration_status,
             "unavailable"
         );
-        assert!(source
-            .prepare_save_metadata("slot.01", "2000-01-01T00:00:01Z".into(), 1)
-            .is_err());
+        assert!(
+            source
+                .prepare_save_metadata("slot.01", "2000-01-01T00:00:01Z".into(), 1)
+                .is_err()
+        );
         assert_eq!(old, before);
         source.command(VnPlayerCommand::Advance).unwrap();
         source.release_resources().unwrap();
@@ -326,9 +334,11 @@ mod tests {
                 }
                 _ => invalid.payload.schema = "roukaku.player.native_vn_save_payload.v7".into(),
             }
-            assert!(source
-                .restore(&postcard::to_allocvec(&invalid).unwrap())
-                .is_err());
+            assert!(
+                source
+                    .restore(&postcard::to_allocvec(&invalid).unwrap())
+                    .is_err()
+            );
             assert_eq!(source.runtime_state, state);
             assert!(!scope.is_cancelled());
         }
@@ -370,9 +380,11 @@ mod tests {
         let state = source.runtime_state.clone();
         let scope = source.media_scope.child();
         let media_before = serde_json::to_value(media.snapshot()).unwrap();
-        assert!(source
-            .ingest_save_catalog_entry("slot.01", &foreign)
-            .is_err());
+        assert!(
+            source
+                .ingest_save_catalog_entry("slot.01", &foreign)
+                .is_err()
+        );
         assert!(!source.ui_save_slots["slot.01"].can_load);
         for invalid in [&foreign[..], &[0xff][..]] {
             source
@@ -417,12 +429,14 @@ mod tests {
             .unwrap();
         let bytes = saved(&mut source, &media);
         source.restore(&bytes).unwrap();
-        assert!(!source
-            .runtime_state
-            .as_ref()
-            .unwrap()
-            .system_stack
-            .is_empty());
+        assert!(
+            !source
+                .runtime_state
+                .as_ref()
+                .unwrap()
+                .system_stack
+                .is_empty()
+        );
         let batch = source
             .restore_product_session(&bytes, &mut media, &mut executor)
             .await
@@ -511,10 +525,12 @@ mod tests {
                     Some(serde_json::to_vec(&snapshot).unwrap());
             }
             let invalid = postcard::to_allocvec(&envelope).unwrap();
-            assert!(source
-                .restore_product_session(&invalid, &mut media, &mut executor)
-                .await
-                .is_err());
+            assert!(
+                source
+                    .restore_product_session(&invalid, &mut media, &mut executor)
+                    .await
+                    .is_err()
+            );
             assert!(!scope.is_cancelled());
             assert!(!source.presentation_failed);
             assert_eq!(serde_json::to_value(media.snapshot()).unwrap(), expected);

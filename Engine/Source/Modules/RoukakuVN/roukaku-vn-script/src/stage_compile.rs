@@ -4,15 +4,15 @@ pub use timeline::compile_timeline_command;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use roukaku_core::{is_safe_path_symbol as safe_symbol, Diagnostic};
+use roukaku_core::{Diagnostic, is_safe_path_symbol as safe_symbol};
 
 use crate::{
-    lower::ParsedLine, AspectRatio, AudioControl, AudioCue, ExtensionCommandDescriptor,
-    ExtensionFieldKind, ExtensionPresentationCommand, ExtensionValue, FixedScalar, MovieLoopMode,
+    AspectRatio, AudioControl, AudioCue, ExtensionCommandDescriptor, ExtensionFieldKind,
+    ExtensionPresentationCommand, ExtensionValue, FixedScalar, MovieLoopMode,
     PresentationInterruptPolicy, StageBlendMode, StageClipPolicy, StageCommand, StageFitMode,
     StageLayerKind, StagePlacement, StageViewport, TimelineCommand, TimelineSpec, VnAudioBus,
     VnAudioControlAction, VnAudioSync, VnError, VnMovieEndBehavior, VnPresentationEasing,
-    VnTimelineJoinPolicy, VnTimelineKeyframe, VnTimelineTrack,
+    VnTimelineJoinPolicy, VnTimelineKeyframe, VnTimelineTrack, lower::ParsedLine,
 };
 
 mod compile_stage_command;

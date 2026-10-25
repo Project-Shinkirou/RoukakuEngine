@@ -8,7 +8,7 @@ mod services;
 
 pub use factory::*;
 
-use roukaku_platform::{build_fingerprint, PlatformCapabilityReport};
+use roukaku_platform::{PlatformCapabilityReport, build_fingerprint};
 
 #[cfg(target_arch = "wasm32")]
 use roukaku_platform::PlatformHostProfile;

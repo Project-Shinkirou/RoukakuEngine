@@ -1,4 +1,4 @@
-use roukaku_vn_package::{compile_roukaku_project, RoukakuSource, VnCommercialBaselineManifest};
+use roukaku_vn_package::{RoukakuSource, VnCommercialBaselineManifest, compile_roukaku_project};
 
 #[test]
 fn commercial_baseline_manifest_detects_required_vn_features() {
@@ -35,10 +35,12 @@ state prologue #@id state.prologue
     let report = VnCommercialBaselineManifest::from_compiled(&compiled).validate_required();
 
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_COMMERCIAL_BASELINE_FEATURE"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_COMMERCIAL_BASELINE_FEATURE")
+    );
 }
 
 fn baseline_story() -> &'static str {

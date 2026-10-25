@@ -57,13 +57,13 @@ pub(super) fn validate_commands(
         }
     }
     for command in commands {
-        if let Some(fence) = command.fence.as_deref() {
-            if !identities.insert((fence, command.command_id.as_str())) {
-                return Err(coordinator_error(
-                    "ROUKAKU_VN_PRESENTATION_FENCE_MEMBER_CONFLICT",
-                    "pending fence members require distinct command identities",
-                ));
-            }
+        if let Some(fence) = command.fence.as_deref()
+            && !identities.insert((fence, command.command_id.as_str()))
+        {
+            return Err(coordinator_error(
+                "ROUKAKU_VN_PRESENTATION_FENCE_MEMBER_CONFLICT",
+                "pending fence members require distinct command identities",
+            ));
         }
     }
     Ok(())
@@ -77,12 +77,12 @@ impl PresentationCoordinator {
     ) {
         let previous = members(before);
         for command in commands {
-            if let Some(fence) = &command.fence {
-                if !previous.iter().any(|(id, _)| *id == fence) {
-                    self.state
-                        .fences
-                        .insert(fence.clone(), FenceStatus::Pending);
-                }
+            if let Some(fence) = &command.fence
+                && !previous.iter().any(|(id, _)| *id == fence)
+            {
+                self.state
+                    .fences
+                    .insert(fence.clone(), FenceStatus::Pending);
             }
         }
         let affected: BTreeSet<_> = commands.iter().filter_map(|c| c.fence.clone()).collect();

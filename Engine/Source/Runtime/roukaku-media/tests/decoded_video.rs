@@ -1,4 +1,4 @@
-use roukaku_media::{DecodedVideoFrame, DecodedVideoStream, DECODED_VIDEO_STREAM_SCHEMA};
+use roukaku_media::{DECODED_VIDEO_STREAM_SCHEMA, DecodedVideoFrame, DecodedVideoStream};
 
 fn stream() -> DecodedVideoStream {
     DecodedVideoStream {

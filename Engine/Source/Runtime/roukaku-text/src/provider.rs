@@ -1,13 +1,13 @@
 use std::{
     collections::BTreeMap,
-    panic::{catch_unwind, AssertUnwindSafe},
+    panic::{AssertUnwindSafe, catch_unwind},
     sync::{
-        atomic::{AtomicU64, AtomicUsize, Ordering},
         Arc, Condvar, Mutex, MutexGuard,
+        atomic::{AtomicU64, AtomicUsize, Ordering},
     },
 };
 
-use cosmic_text::{fontdb, FontSystem, LayoutGlyph, SwashCache};
+use cosmic_text::{FontSystem, LayoutGlyph, SwashCache, fontdb};
 use roukaku_core::Hash256;
 use roukaku_worker_budget::WorkerBudgetBroker;
 
@@ -17,8 +17,8 @@ use super::{
     contract::*,
     layout_engine::layout_uncached,
     validation::{
-        load_database, request_cache_key, validate_config, validate_context, validate_family_chain,
-        TextLayoutCacheKey,
+        TextLayoutCacheKey, load_database, request_cache_key, validate_config, validate_context,
+        validate_family_chain,
     },
 };
 
@@ -456,7 +456,7 @@ impl CosmicTextLayoutProvider {
         };
         let layout_revision = self
             .next_layout_revision
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |current| {
                 current.checked_add(1)
             })
             .map_err(|_| {

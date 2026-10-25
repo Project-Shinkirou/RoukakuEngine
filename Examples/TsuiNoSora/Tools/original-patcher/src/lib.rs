@@ -14,9 +14,9 @@ use std::{
 };
 
 pub use error::{ErrorClass, PatchError, PatchResult};
-pub use fingerprint::{inspect_source, SourceInspection};
-pub use manifest::{PatchManifest, PATCH_MANIFEST_NAME};
-use projectorrays::{decompile_menu, resolve_helper, HelperIdentity, ReleaseHelperPolicy};
+pub use fingerprint::{SourceInspection, inspect_source};
+pub use manifest::{PATCH_MANIFEST_NAME, PatchManifest};
+use projectorrays::{HelperIdentity, ReleaseHelperPolicy, decompile_menu, resolve_helper};
 use tempfile::Builder;
 
 const PATCHER_VERSION: &str = env!("CARGO_PKG_VERSION");

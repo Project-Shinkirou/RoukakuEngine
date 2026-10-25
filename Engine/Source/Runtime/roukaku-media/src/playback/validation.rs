@@ -1,5 +1,5 @@
 use super::{
-    playback_error, AudioFramePacket, MediaError, MediaPlaybackConfig, MediaPlaybackSession,
+    AudioFramePacket, MediaError, MediaPlaybackConfig, MediaPlaybackSession, playback_error,
 };
 
 pub(super) fn validate_video_queue(session: &MediaPlaybackSession) -> Result<(), MediaError> {

@@ -65,20 +65,24 @@ fn package_vfs_mount_writes_vfs_manifest_and_catalog_without_asset_registry() {
             .unwrap(),
     )
     .unwrap();
-    assert!(registry["providers"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|provider| {
-            provider["slot"] == "vfs_provider"
-                && provider["provider_id"] == "roukaku.vfs.package"
-                && provider["packaged"] == true
-        }));
-    assert!(registry["bindings"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|binding| {
-            binding["slot"] == "vfs_provider" && binding["provider_id"] == "roukaku.vfs.package"
-        }));
+    assert!(
+        registry["providers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|provider| {
+                provider["slot"] == "vfs_provider"
+                    && provider["provider_id"] == "roukaku.vfs.package"
+                    && provider["packaged"] == true
+            })
+    );
+    assert!(
+        registry["bindings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|binding| {
+                binding["slot"] == "vfs_provider" && binding["provider_id"] == "roukaku.vfs.package"
+            })
+    );
 }

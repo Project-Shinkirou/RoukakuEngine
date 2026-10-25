@@ -65,11 +65,7 @@ fn run_with_order(order: [u64; 2]) -> Vec<roukaku_runtime::RuntimeEvent> {
 }
 
 fn token_for(value: u64, token_a: AwaitTokenId, token_b: AwaitTokenId) -> AwaitTokenId {
-    if value == 1 {
-        token_a
-    } else {
-        token_b
-    }
+    if value == 1 { token_a } else { token_b }
 }
 
 #[test]
@@ -135,10 +131,12 @@ fn await_timeout_materializes_deterministic_result() {
         ))
         .unwrap();
 
-    assert!(report
-        .diagnostics
-        .iter()
-        .all(|diagnostic| diagnostic.code != "ROUKAKU_AWAIT_TIMEOUT_INVALID"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .all(|diagnostic| diagnostic.code != "ROUKAKU_AWAIT_TIMEOUT_INVALID")
+    );
     assert!(world.debug_session().event_trace().iter().any(|event| {
         event.source == roukaku_runtime::EventSource::AwaitResult
             && event.payload.kind == "await.timeout"
@@ -191,16 +189,20 @@ fn unknown_and_duplicate_await_results_are_diagnostic_only() {
         ))
         .unwrap();
 
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_AWAIT_RESULT_DUPLICATE"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_AWAIT_RESULT_DUPLICATE")
+    );
     let scope = world.task_scope();
-    assert!(world
-        .await_handle(AwaitTokenId(StableId::deterministic_v7(3, 2, 13)), &scope)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_AWAIT_TOKEN_MISSING"));
+    assert!(
+        world
+            .await_handle(AwaitTokenId(StableId::deterministic_v7(3, 2, 13)), &scope)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_AWAIT_TOKEN_MISSING")
+    );
 
     let await_events: Vec<_> = world
         .debug_session()
@@ -229,9 +231,11 @@ fn await_completion_policy_rejects_invalid_tokens_and_live_timeout_results() {
             completion_policy: AwaitCompletionPolicy::HostResult,
         })
         .unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_AWAIT_COMPLETION_POLICY"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_AWAIT_COMPLETION_POLICY")
+    );
 
     let timeout_token = AwaitTokenId(StableId::deterministic_v7(4, 2, 13));
     world

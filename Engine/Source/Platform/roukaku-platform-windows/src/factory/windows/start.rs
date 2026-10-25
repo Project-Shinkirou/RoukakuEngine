@@ -318,11 +318,11 @@ impl SingleInstanceGuard {
     pub(super) fn acquire(profile: &PlatformHostProfile) -> Result<Self, PlatformError> {
         use roukaku_core::Hash256;
         use windows::{
-            core::PCWSTR,
             Win32::{
-                Foundation::{CloseHandle, GetLastError, ERROR_ALREADY_EXISTS},
+                Foundation::{CloseHandle, ERROR_ALREADY_EXISTS, GetLastError},
                 System::Threading::CreateMutexW,
             },
+            core::PCWSTR,
         };
 
         let identity = format!("{}\n{}\n{}", profile.package_id, profile.target, profile.id);

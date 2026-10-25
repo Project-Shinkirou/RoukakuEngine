@@ -1,9 +1,9 @@
 use std::io::{BufReader, Cursor};
 
 use roukaku_headless_protocol::{
-    AudioTolerance, ButtonState, CheckpointConfig, CheckpointExpectation, ImageTolerance,
-    InputMessage, JsonlReader, JsonlWriter, PhysicalInput, SequenceValidator,
-    HEADLESS_CHECKPOINT_CONFIG_SCHEMA, USER_INPUT_SEQUENCE_SCHEMA,
+    AudioTolerance, ButtonState, CheckpointConfig, CheckpointExpectation,
+    HEADLESS_CHECKPOINT_CONFIG_SCHEMA, ImageTolerance, InputMessage, JsonlReader, JsonlWriter,
+    PhysicalInput, SequenceValidator, USER_INPUT_SEQUENCE_SCHEMA,
 };
 
 fn hash(label: &str) -> String {

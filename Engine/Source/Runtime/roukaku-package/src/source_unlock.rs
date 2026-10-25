@@ -2,11 +2,11 @@ use crate::{
     ContainerCryptoProvider, ContainerError, EncryptionDescriptor, RoukakuContainerReader,
 };
 use aes_gcm_siv::{
+    Aes256GcmSiv,
     aead::{Aead, KeyInit, Payload},
-    Aes256GcmSiv, Nonce,
 };
 use hkdf::Hkdf;
-use roukaku_core::{is_safe_symbol as safe_symbol, Hash256};
+use roukaku_core::{Hash256, is_safe_symbol as safe_symbol};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
@@ -275,7 +275,7 @@ impl ContainerCryptoProvider for SourceFingerprintCryptoProvider {
             .map_err(|_| ContainerError::Crypto("invalid source section key".into()))?;
         cipher
             .decrypt(
-                Nonce::from_slice(nonce),
+                nonce.try_into().expect("nonce prefix has exactly 12 bytes"),
                 Payload {
                     msg: ciphertext,
                     aad: descriptor.aad_hash.as_bytes(),
@@ -301,7 +301,9 @@ impl ContainerCryptoProvider for SourceFingerprintCryptoProvider {
             .map_err(|_| ContainerError::Crypto("invalid source section key".into()))?;
         let ciphertext = cipher
             .encrypt(
-                Nonce::from_slice(nonce),
+                nonce
+                    .try_into()
+                    .expect("SHA-256 nonce prefix has exactly 12 bytes"),
                 Payload {
                     msg: plain_payload,
                     aad: descriptor.aad_hash.as_bytes(),

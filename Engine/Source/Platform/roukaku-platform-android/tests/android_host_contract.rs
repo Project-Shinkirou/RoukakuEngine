@@ -1,17 +1,19 @@
 use roukaku_platform::{PlatformHostProfile, PlatformId};
 use roukaku_platform_android::{
-    validate_interpreter_only_features, validate_selected_audio_backend, AndroidAudioBackend,
-    AndroidLifecycle, AndroidLifecycleEvent, AndroidLifecycleState,
+    AndroidAudioBackend, AndroidLifecycle, AndroidLifecycleEvent, AndroidLifecycleState,
+    validate_interpreter_only_features, validate_selected_audio_backend,
 };
 
 #[test]
 fn factory_is_android_and_probe_requires_runtime_evidence() {
     let report = roukaku_platform_android::probe(Some("nativevn-game"));
     assert_eq!(report.platform, PlatformId::Android);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_ANDROID_RUNTIME_PROBE_REQUIRED"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_ANDROID_RUNTIME_PROBE_REQUIRED")
+    );
     let _factory = roukaku_platform_android::factory();
 }
 

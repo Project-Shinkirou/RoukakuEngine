@@ -9,7 +9,7 @@ use std::{
 };
 
 use roukaku_headless_protocol::{
-    Envelope, JsonlReader, JsonlWriter, Message, HEADLESS_PROTOCOL_SCHEMA,
+    Envelope, HEADLESS_PROTOCOL_SCHEMA, JsonlReader, JsonlWriter, Message,
 };
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -205,7 +205,10 @@ fn start_server() -> Result<Server, HeadlessTestError> {
     let binary_bytes = std::fs::read(&binary).map_err(|error| {
         HeadlessTestError::Server(format!("driver binary read failed: {error}"))
     })?;
-    let actual_binary_hash = format!("sha256:{:x}", Sha256::digest(&binary_bytes));
+    let actual_binary_hash = format!(
+        "sha256:{:x}",
+        base16ct::HexDisplay(&Sha256::digest(&binary_bytes))
+    );
     let test_root = prepare_test_environment(&binary, &actual_binary_hash)?;
     let identity = test_root.join("build-identity.json");
     let profile = test_root.join("headless-profile.json");

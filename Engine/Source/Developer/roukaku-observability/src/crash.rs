@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use roukaku_core::Hash256;
 use serde::{Deserialize, Serialize};
 
-use crate::{config::HostRole, ring::RingBuffer, ObservabilityError};
+use crate::{ObservabilityError, config::HostRole, ring::RingBuffer};
 
 pub const CRASH_BUNDLE_SCHEMA: &str = "roukaku.crash_bundle.v1";
 

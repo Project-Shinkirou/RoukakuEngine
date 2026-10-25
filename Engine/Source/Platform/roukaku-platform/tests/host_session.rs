@@ -1,11 +1,11 @@
 use roukaku_platform::{
-    host_channel, host_channel_with_command_wake, HostCommand, PlatformCommandWakeRegistration,
-    PlatformErrorCode, PlatformEvent, PlatformEventKind, PlatformHostProfile, WindowHandle,
-    WindowRequest,
+    HostCommand, PlatformCommandWakeRegistration, PlatformErrorCode, PlatformEvent,
+    PlatformEventKind, PlatformHostProfile, WindowHandle, WindowRequest, host_channel,
+    host_channel_with_command_wake,
 };
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
     Arc,
+    atomic::{AtomicUsize, Ordering},
 };
 
 #[tokio::test]

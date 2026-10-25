@@ -250,11 +250,15 @@ pub(super) fn target_validate_and_platform_probe_emit_machine_readable_reports()
     if cfg!(windows) {
         assert_eq!(platform_report["sdk_status"], "present");
         assert!(platform_report["renderer"]["selected"].is_null());
-        assert!(platform_report["diagnostics"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|diagnostic| { diagnostic["code"] == "ROUKAKU_PLATFORM_RUNTIME_PROBE_REQUIRED" }));
+        assert!(
+            platform_report["diagnostics"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|diagnostic| {
+                    diagnostic["code"] == "ROUKAKU_PLATFORM_RUNTIME_PROBE_REQUIRED"
+                })
+        );
     } else {
         assert_eq!(platform_report["sdk_status"], "missing");
     }
@@ -285,9 +289,11 @@ pub(super) fn target_validate_and_platform_probe_emit_machine_readable_reports()
         assert_eq!(web_report["sdk_status"], "present");
     } else {
         assert_eq!(web_report["sdk_status"], "missing");
-        assert!(web_report["renderer"]["available"]
-            .as_array()
-            .unwrap()
-            .is_empty());
+        assert!(
+            web_report["renderer"]["available"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
     }
 }

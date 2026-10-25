@@ -153,9 +153,11 @@ pub(super) fn evidence_state_machine_cycle_uses_microstep_budget_without_live_ha
         ))
         .unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_STATE_MACHINE_BUDGET"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_STATE_MACHINE_BUDGET")
+    );
     assert!(world.is_failed());
     assert_eq!(
         world.debug_session().state_machines(actor)[0].current_state,
@@ -178,9 +180,11 @@ pub(super) fn shipping_state_machine_cycle_uses_microstep_budget_without_hash_gu
         ))
         .unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_STATE_MACHINE_BUDGET"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_STATE_MACHINE_BUDGET")
+    );
     assert!(world.is_failed());
     assert_eq!(
         world.debug_session().state_machines(actor)[0].current_state,
@@ -249,9 +253,11 @@ pub(super) fn action_registry_rejects_duplicate_action_ids() {
         .register_with_provider("roukaku.other", SetBlackboardAction)
         .unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("ROUKAKU_RUNTIME_ACTION_CONFLICT"));
+    assert!(
+        error
+            .to_string()
+            .contains("ROUKAKU_RUNTIME_ACTION_CONFLICT")
+    );
 }
 
 pub(super) fn set_blackboard_input(key: &str, value: &str) -> BTreeMap<String, BlackboardValue> {

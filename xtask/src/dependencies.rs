@@ -1,9 +1,9 @@
 use crate::util::{capture, env_file, run as command};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use clap::Args;
 use std::{fs, path::Path, process::Command};
 
-const REV: &str = "664933b8d385dfc01f4e0cdff4c7c74e71f6a740";
+const REV: &str = "0c2a9ace1964b818b15f7ae50ba1c42404918a7b";
 #[derive(Args)]
 pub struct Options {
     #[arg(long)]
@@ -53,7 +53,9 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
             .args(["rev-parse", "HEAD"]),
     )?;
     if String::from_utf8_lossy(&revision.stdout).trim() != REV {
-        bail!("existing .work/vcpkg is not at the pinned revision; leave it intact and relocate it before retrying");
+        bail!(
+            "existing .work/vcpkg is not at the pinned revision; leave it intact and relocate it before retrying"
+        );
     }
     let binary = vcpkg.join(if cfg!(windows) { "vcpkg.exe" } else { "vcpkg" });
     if !binary.is_file() {

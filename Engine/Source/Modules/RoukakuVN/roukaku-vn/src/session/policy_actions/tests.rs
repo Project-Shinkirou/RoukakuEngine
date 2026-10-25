@@ -174,11 +174,13 @@ fn pending_restore_interrupts_and_rejects_corrupt_candidate_without_stopping_liv
         (),
     );
     let old = roukaku_runtime::write_runtime_save(snapshot, SaveRequest::default()).unwrap();
-    assert!(session
-        .restore(old)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_POLICY_RESTORE_VERSION"));
+    assert!(
+        session
+            .restore(old)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_POLICY_RESTORE_VERSION")
+    );
     assert_eq!(host.drops.load(Ordering::SeqCst), 0);
     session.restore(save).unwrap();
     assert_eq!(host.drops.load(Ordering::SeqCst), 1);

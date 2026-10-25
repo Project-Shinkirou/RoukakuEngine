@@ -8,7 +8,7 @@ pub use factory::*;
 #[cfg(all(target_os = "linux", feature = "platform-test-driver"))]
 pub use test_driver::*;
 
-use roukaku_platform::{build_fingerprint, PlatformCapabilityReport};
+use roukaku_platform::{PlatformCapabilityReport, build_fingerprint};
 
 #[cfg(target_os = "linux")]
 use roukaku_platform::PlatformHostProfile;

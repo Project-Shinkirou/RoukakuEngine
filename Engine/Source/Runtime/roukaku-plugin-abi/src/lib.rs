@@ -1,9 +1,9 @@
 #[cfg(feature = "ffi")]
 use abi_stable::{
+    StableAbi,
     library::RootModule,
     sabi_types::VersionStrings,
     std_types::{RString, RVec},
-    StableAbi,
 };
 use roukaku_core::Hash256;
 use schemars::JsonSchema;

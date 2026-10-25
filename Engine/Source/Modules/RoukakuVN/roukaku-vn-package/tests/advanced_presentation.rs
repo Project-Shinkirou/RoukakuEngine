@@ -1,4 +1,4 @@
-use roukaku_vn_package::{compile_roukaku_project, RoukakuSource, VnAdvancedPresentationManifest};
+use roukaku_vn_package::{RoukakuSource, VnAdvancedPresentationManifest, compile_roukaku_project};
 
 const ADVANCED_STORY: &str = r#"
 story main #@id story.main
@@ -62,8 +62,10 @@ state prologue #@id state.prologue
     let report = manifest.validate_required();
 
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_ADVANCED_PRESENTATION_EVIDENCE"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_ADVANCED_PRESENTATION_EVIDENCE")
+    );
 }

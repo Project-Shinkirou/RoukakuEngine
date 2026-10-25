@@ -194,14 +194,13 @@ impl VnSession {
         let mut policy = self.policy_state()?;
         if completion.handle.status() == roukaku_runtime::TaskStatus::Completed
             && !completion.scope.is_cancelled()
-        {
-            if let Some(record) = policy.io.requests.values_mut().find(|record| {
+            && let Some(record) = policy.io.requests.values_mut().find(|record| {
                 record.request.id == completion.id && record.status == PolicyIoStatus::Pending
-            }) {
-                record.status = completion.status;
-                policy.awaits.remove(&completion.id);
-                self.write_policy(&policy)?;
-            }
+            })
+        {
+            record.status = completion.status;
+            policy.awaits.remove(&completion.id);
+            self.write_policy(&policy)?;
         }
         self.policy_host.stop();
         self.dispatch_policy_io(&policy)

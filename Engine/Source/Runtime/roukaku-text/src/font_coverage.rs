@@ -19,11 +19,11 @@ pub fn font_unicode_coverage(
         .collect::<BTreeSet<_>>();
     let mut ranges: Vec<UnicodeRange> = Vec::new();
     for codepoint in codepoints {
-        if let Some(last) = ranges.last_mut() {
-            if last.end + 1 == codepoint {
-                last.end = codepoint;
-                continue;
-            }
+        if let Some(last) = ranges.last_mut()
+            && last.end + 1 == codepoint
+        {
+            last.end = codepoint;
+            continue;
         }
         ranges.push(UnicodeRange {
             start: codepoint,

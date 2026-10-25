@@ -7,10 +7,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CompiledStory, CompiledVnProject, VnAdvancedPresentationManifest, VnCommercialBaselineManifest,
-    VnExtensionManifest, VnPolicyBundleManifest, VnPolicyBundleSourceCache,
-    VnPresentationProviderManifest, VnProfileManifest, VnStandardCommandManifest,
-    VnSystemUiProfileManifest, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA,
+    CompiledStory, CompiledVnProject, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA,
+    VnAdvancedPresentationManifest, VnCommercialBaselineManifest, VnExtensionManifest,
+    VnPolicyBundleManifest, VnPolicyBundleSourceCache, VnPresentationProviderManifest,
+    VnProfileManifest, VnStandardCommandManifest, VnSystemUiProfileManifest,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

@@ -11,5 +11,5 @@ use roukaku_platform::{PlatformError, PlatformErrorCode};
 mod browser;
 
 mod web_platform_factory;
-pub use web_platform_factory::factory;
 pub use web_platform_factory::WebPlatformFactory;
+pub use web_platform_factory::factory;

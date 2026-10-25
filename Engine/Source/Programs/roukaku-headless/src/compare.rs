@@ -2,7 +2,7 @@ use std::{fs, io::Cursor, path::Path, sync::Arc};
 
 use image::ImageReader;
 use roukaku_headless_protocol::{AudioMetrics, AudioTolerance, ImageMetrics, ImageTolerance};
-use rustfft::{num_complex::Complex, Fft, FftPlanner};
+use rustfft::{Fft, FftPlanner, num_complex::Complex};
 
 pub(crate) fn compare_image(
     actual_rgba: &[u8],
@@ -424,7 +424,7 @@ fn bbox_offset(left: &[u8], right: &[u8], width: u32, height: u32) -> u32 {
 mod tests {
     use std::{fs, io::Cursor};
 
-    use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
+    use image::{ExtendedColorType, ImageEncoder, codecs::png::PngEncoder};
     use roukaku_headless_protocol::{AudioTolerance, ImageTolerance};
 
     use super::{

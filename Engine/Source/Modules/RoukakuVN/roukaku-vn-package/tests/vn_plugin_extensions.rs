@@ -1,6 +1,6 @@
 use std::{path::Path, process::Command};
 
-use roukaku_plugin::{dylib_path, PluginGate, PluginLoader, PluginRegistrar};
+use roukaku_plugin::{PluginGate, PluginLoader, PluginRegistrar, dylib_path};
 use roukaku_vn_package::{VnExtensionBinding, VnExtensionManifest};
 use semver::Version;
 
@@ -45,10 +45,12 @@ fn duplicate_vn_extension_binding_blocks_validation() {
     let report = manifest.validate_required();
 
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_EXTENSION_BINDING_DUPLICATE"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_VN_EXTENSION_BINDING_DUPLICATE")
+    );
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use super::{media_error, PlatformError};
+use super::{PlatformError, media_error};
 
 #[derive(Default)]
 pub(super) struct PlaybackClock {
@@ -82,16 +82,20 @@ mod tests {
     fn clock_errors_do_not_advance_either_clock() {
         let mut clock = PlaybackClock::restored(u64::MAX - 1);
         assert_eq!(clock.advance(100).unwrap(), u64::MAX - 1);
-        assert!(clock
-            .advance(99)
-            .unwrap_err()
-            .to_string()
-            .contains("REGRESSION"));
-        assert!(clock
-            .advance(102)
-            .unwrap_err()
-            .to_string()
-            .contains("OVERFLOW"));
+        assert!(
+            clock
+                .advance(99)
+                .unwrap_err()
+                .to_string()
+                .contains("REGRESSION")
+        );
+        assert!(
+            clock
+                .advance(102)
+                .unwrap_err()
+                .to_string()
+                .contains("OVERFLOW")
+        );
         assert_eq!(clock.advance(101).unwrap(), u64::MAX);
     }
 }

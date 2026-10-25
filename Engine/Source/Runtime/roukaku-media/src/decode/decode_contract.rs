@@ -200,7 +200,7 @@ impl SymphoniaAudioStreamDecoder {
                 Err(error) => {
                     return Err(MediaError::message(format!(
                         "read streaming audio packet: {error}"
-                    )))
+                    )));
                 }
             };
             if packet.track_id != self.track_id {

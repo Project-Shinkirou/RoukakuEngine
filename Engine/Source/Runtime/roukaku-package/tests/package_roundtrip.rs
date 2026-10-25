@@ -1,8 +1,8 @@
 use roukaku_core::{Hash256, SchemaVersion};
 use roukaku_package::{
-    section_aad_hash, ContainerKind, EncryptionDescriptor, ExternalKeyRef, MigrationPolicy,
-    PackageBuildRequest, PackageBuilder, PackageReader, RoukakuContainerBuilder,
-    RoukakuContainerReader, SectionCodec, SectionPayload,
+    ContainerKind, EncryptionDescriptor, ExternalKeyRef, MigrationPolicy, PackageBuildRequest,
+    PackageBuilder, PackageReader, RoukakuContainerBuilder, RoukakuContainerReader, SectionCodec,
+    SectionPayload, section_aad_hash,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -32,17 +32,21 @@ fn container_v2_streaming_reader_requires_external_content_root() {
     let reader = RoukakuContainerReader::open_source(source.clone(), trusted).unwrap();
     assert_eq!(reader.read_section("alpha").unwrap(), b"payload");
     let wrong = Hash256::from_sha256(b"wrong");
-    assert!(RoukakuContainerReader::open_source(source, wrong)
-        .unwrap_err()
-        .to_string()
-        .contains("launch identity"));
+    assert!(
+        RoukakuContainerReader::open_source(source, wrong)
+            .unwrap_err()
+            .to_string()
+            .contains("launch identity")
+    );
 
     let mut legacy = blob.into_bytes();
     legacy[8..10].copy_from_slice(&1_u16.to_le_bytes());
-    assert!(RoukakuContainerReader::new(&legacy)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_CONTAINER_V1_MIGRATION_REQUIRED"));
+    assert!(
+        RoukakuContainerReader::new(&legacy)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_CONTAINER_V1_MIGRATION_REQUIRED")
+    );
 }
 
 #[test]
@@ -69,13 +73,15 @@ fn storage_verified_reader_streams_audit_and_rejects_wrong_storage_identity() {
         4 * 1024 * 1024
     );
 
-    assert!(RoukakuContainerReader::open_storage_verified_source(
-        source,
-        Hash256::from_sha256(b"wrong")
-    )
-    .unwrap_err()
-    .to_string()
-    .contains("storage hash"));
+    assert!(
+        RoukakuContainerReader::open_storage_verified_source(
+            source,
+            Hash256::from_sha256(b"wrong")
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("storage hash")
+    );
 }
 
 #[test]
@@ -129,10 +135,12 @@ fn container_builder_rejects_duplicate_and_invalid_section_authority() {
         SectionPayload::raw("schema.registry", "", vec![]),
         SectionPayload::raw("schema/registry", "roukaku.schema_registry.v1", vec![]),
     ] {
-        assert!(RoukakuContainerBuilder::new(ContainerKind::Package)
-            .add_section(invalid)
-            .write()
-            .is_err());
+        assert!(
+            RoukakuContainerBuilder::new(ContainerKind::Package)
+                .add_section(invalid)
+                .write()
+                .is_err()
+        );
     }
 
     let invalid_migration = SectionPayload::new(
@@ -146,10 +154,12 @@ fn container_builder_rejects_duplicate_and_invalid_section_authority() {
             current_version: SchemaVersion::new(1, 0, 0),
         },
     );
-    assert!(RoukakuContainerBuilder::new(ContainerKind::Package)
-        .add_section(invalid_migration)
-        .write()
-        .is_err());
+    assert!(
+        RoukakuContainerBuilder::new(ContainerKind::Package)
+            .add_section(invalid_migration)
+            .write()
+            .is_err()
+    );
 }
 
 #[test]
@@ -166,10 +176,12 @@ fn package_reader_rejects_cook_summary_that_does_not_cover_cooked_assets() {
     request.cook_summary =
         serde_json::to_vec(&roukaku_package::CookSummaryManifest::empty()).unwrap();
     let blob = PackageBuilder::build(request).unwrap();
-    assert!(PackageReader::open(blob.as_bytes())
-        .unwrap_err()
-        .to_string()
-        .contains("cooked asset sections"));
+    assert!(
+        PackageReader::open(blob.as_bytes())
+            .unwrap_err()
+            .to_string()
+            .contains("cooked asset sections")
+    );
 }
 
 #[test]
@@ -191,10 +203,12 @@ fn package_roundtrip_zstd_codec_roundtrips_and_encryption_descriptor_requires_pr
         aad_hash: section_aad_hash(ContainerKind::Package, &section).unwrap(),
     };
     let section = section.with_encryption_descriptor(descriptor);
-    assert!(RoukakuContainerBuilder::new(ContainerKind::Package)
-        .add_section(section.clone())
-        .write()
-        .is_err());
+    assert!(
+        RoukakuContainerBuilder::new(ContainerKind::Package)
+            .add_section(section.clone())
+            .write()
+            .is_err()
+    );
 
     let blob = RoukakuContainerBuilder::new(ContainerKind::Package)
         .add_section(section)
@@ -207,9 +221,11 @@ fn package_roundtrip_zstd_codec_roundtrips_and_encryption_descriptor_requires_pr
         SectionCodec::Zstd
     );
     assert!(reader.read_section("media.manifest").is_err());
-    assert!(reader
-        .read_section_with_crypto("media.manifest", &roukaku_package::NoCryptoProvider)
-        .is_err());
+    assert!(
+        reader
+            .read_section_with_crypto("media.manifest", &roukaku_package::NoCryptoProvider)
+            .is_err()
+    );
     assert_eq!(
         reader
             .read_section_with_crypto("media.manifest", &XorCryptoProvider)
@@ -306,20 +322,24 @@ fn package_builder_rejects_legacy_or_tampered_provider_authority() {
         serde_json::from_slice(&legacy.provider_policy).unwrap();
     legacy_policy["schema"] = "roukaku.provider_policy.v1".into();
     legacy.provider_policy = serde_json::to_vec(&legacy_policy).unwrap();
-    assert!(PackageBuilder::build(legacy)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PROVIDER_POLICY_VERSION_UNSUPPORTED"));
+    assert!(
+        PackageBuilder::build(legacy)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PROVIDER_POLICY_VERSION_UNSUPPORTED")
+    );
 
     let mut tampered = PackageBuildRequest::fixture("com.example.game", "desktop-release", vec![]);
     let mut registry: roukaku_plugin_abi::PluginExtensionRegistrySnapshot =
         serde_json::from_slice(&tampered.plugin_extension_registry).unwrap();
     registry.bindings[0].provider_id = "roukaku.renderer.unbound".to_string();
     tampered.plugin_extension_registry = serde_json::to_vec(&registry).unwrap();
-    assert!(PackageBuilder::build(tampered)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_PLUGIN_BINDING_HASH_MISMATCH"));
+    assert!(
+        PackageBuilder::build(tampered)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_PLUGIN_BINDING_HASH_MISMATCH")
+    );
 }
 
 #[test]

@@ -29,20 +29,10 @@ impl BlueprintYakuiRenderer {
             })?);
         }
         let mut name = property_text(node, frame, item)?;
-        let mut min_width = property_number(node, "min_width", frame, item)?.unwrap_or({
-            if interactive {
-                180.0
-            } else {
-                0.0
-            }
-        });
-        let mut min_height = property_number(node, "min_height", frame, item)?.unwrap_or({
-            if interactive {
-                48.0
-            } else {
-                0.0
-            }
-        });
+        let mut min_width = property_number(node, "min_width", frame, item)?
+            .unwrap_or(if interactive { 180.0 } else { 0.0 });
+        let mut min_height = property_number(node, "min_height", frame, item)?
+            .unwrap_or(if interactive { 48.0 } else { 0.0 });
         let max_width = property_number(node, "max_width", frame, item)?.unwrap_or(f32::INFINITY);
         let max_height = property_number(node, "max_height", frame, item)?.unwrap_or(f32::INFINITY);
         let default_fill = if matches!(
@@ -345,8 +335,8 @@ impl BlueprintYakuiRenderer {
                         UiValidationError::invalid(
                             "ROUKAKU_UI_NINE_SLICE_RESOURCE_UNBOUND",
                             format!(
-                            "nine-slice asset {asset} was not registered for this UI generation"
-                        ),
+                                "nine-slice asset {asset} was not registered for this UI generation"
+                            ),
                         )
                     })?;
                     RoukakuNodeWidget::show(props, || {
@@ -393,13 +383,13 @@ impl BlueprintYakuiRenderer {
                             step,
                         }
                         .show();
-                        if let Some(next) = slider.value {
-                            if (next - value).abs() > f64::EPSILON {
-                                changed_event = Some(UiValue::Map(BTreeMap::from([(
-                                    "value".to_string(),
-                                    UiValue::Number(next),
-                                )])));
-                            }
+                        if let Some(next) = slider.value
+                            && (next - value).abs() > f64::EPSILON
+                        {
+                            changed_event = Some(UiValue::Map(BTreeMap::from([(
+                                "value".to_string(),
+                                UiValue::Number(next),
+                            )])));
                         }
                     })
                 }
@@ -512,21 +502,20 @@ impl BlueprintYakuiRenderer {
                 }
             }
         }
-        if let Some(event_value) = changed_event.as_ref() {
-            if !self
+        if let Some(event_value) = changed_event.as_ref()
+            && !self
                 .accessibility_dispatched_events
                 .contains(&(semantic_id.clone(), "change".into()))
-            {
-                for event in node.events.iter().filter(|event| event.event == "change") {
-                    actions.push(action_from_event(
-                        event,
-                        &semantic_id,
-                        request,
-                        frame,
-                        item,
-                        Some(event_value),
-                    )?);
-                }
+        {
+            for event in node.events.iter().filter(|event| event.event == "change") {
+                actions.push(action_from_event(
+                    event,
+                    &semantic_id,
+                    request,
+                    frame,
+                    item,
+                    Some(event_value),
+                )?);
             }
         }
         if let Some(event_value) = submitted_event.as_ref() {

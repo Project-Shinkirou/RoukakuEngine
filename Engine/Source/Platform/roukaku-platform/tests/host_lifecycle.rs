@@ -1,7 +1,7 @@
 use roukaku_platform::{
-    host_channel, AudioOutputHandle, DecodeKind, DecodeOutput, DecodeSessionHandle, HostCommand,
+    AudioOutputHandle, DecodeKind, DecodeOutput, DecodeSessionHandle, HostCommand,
     PackageSourceHandle, PlatformDecodeRequest, PlatformHostProfile, RgbaFrame,
-    SaveTransactionHandle, SurfaceHandle, WindowHandle,
+    SaveTransactionHandle, SurfaceHandle, WindowHandle, host_channel,
 };
 
 #[tokio::test]

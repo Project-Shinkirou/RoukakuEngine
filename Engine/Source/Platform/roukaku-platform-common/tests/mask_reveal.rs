@@ -306,25 +306,29 @@ async fn mask_reveal_rejects_invalid_payload_and_mode_phase_without_poisoning_ca
     .into_iter()
     .enumerate()
     {
-        assert!(renderer
-            .render(&scene(
-                index as u64 + 1,
-                1,
-                1,
-                vec![reveal(&image, &mask, mode, phase)]
-            ))
-            .is_err());
+        assert!(
+            renderer
+                .render(&scene(
+                    index as u64 + 1,
+                    1,
+                    1,
+                    vec![reveal(&image, &mask, mode, phase)]
+                ))
+                .is_err()
+        );
     }
     let mut malformed = mask.clone();
     malformed.width = 2;
-    assert!(renderer
-        .render(&scene(
-            5,
-            1,
-            1,
-            vec![reveal(&image, &malformed, MaskRevealMode::Gradient, 512.0)]
-        ))
-        .is_err());
+    assert!(
+        renderer
+            .render(&scene(
+                5,
+                1,
+                1,
+                vec![reveal(&image, &malformed, MaskRevealMode::Gradient, 512.0)]
+            ))
+            .is_err()
+    );
     let captured = renderer
         .render(&scene(
             6,

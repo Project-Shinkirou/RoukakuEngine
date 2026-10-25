@@ -1,7 +1,7 @@
 use super::backend::{ensure_pending_budget, ffmpeg_error, timestamp_us};
 use super::{FfmpegAudioOutputFormat, FfmpegDecodedPacket, FfmpegStreamLimits};
-use crate::decode::{decode_error, MediaError};
 use crate::AudioFramePacket;
+use crate::decode::{MediaError, decode_error};
 use ffmpeg_next as ffmpeg;
 use std::collections::VecDeque;
 
@@ -230,7 +230,7 @@ pub(super) fn drain_audio(
                     "ROUKAKU_FFMPEG_STREAM_FRAME",
                     "receive audio frame",
                     error,
-                ))
+                ));
             }
         }
     }

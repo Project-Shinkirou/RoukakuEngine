@@ -8,9 +8,11 @@ sidebar: { order: 3 }
 
 ## 工具链与 workspace
 
-`rust-toolchain.toml` 选择 Rust `1.98.0`，并声明 `rustfmt`、`clippy` 和目标列表。这个列表用于安装 Rust 标准库，不是平台运行支持矩阵。安装本机 C/C++ 编译器、链接器、CMake，以及所选原生依赖需要的工具；Windows 使用 MSVC 工具链。
+`rust-toolchain.toml` 选择 Rust `1.99.1`，并声明 `rustfmt`、`clippy` 和目标列表。Engine crate 使用 Rust 2024 edition，最低需要 Rust 1.99。目标列表用于安装 Rust 标准库，不是平台运行支持矩阵。安装本机 C/C++ 编译器、链接器、CMake，以及所选原生依赖需要的工具；Windows 使用 MSVC 工具链。
 
 根 workspace 包含 Engine、RoukakuVN、Player、CLI 和共享库。Editor 使用 `Editor/Cargo.toml` 及自己的 lockfile。根目录的 `cargo xtask` 统一选择 `engine`、`editor` 或 `all`，底层 Cargo 命令使用 `--locked`。
+
+依赖基线固定为 vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`、libass 0.17.5，以及可选 FFmpeg 9.0.2 port revision 2。`mlua` 保持最新发行版 0.12.2；其发行版 `mlua-sys` 0.13.0 会在 VM 初始化时拒绝 Luau 744 生成的字节码，因此 workspace 固定使用[上游 loader 修复](https://github.com/mlua-rs/mlua/blob/ff96ed786295cae96f43ef1372bd22be0fbf7866/mlua-sys/src/luau/compat.rs)，不降级 Luau，也不跳过运行时测试。
 
 ```sh
 cargo xtask docs
@@ -58,7 +60,7 @@ $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dy
 
 ## Android Player
 
-入口是 `cargo xtask android`。需要 JDK 17、`cargo-ndk`、Rust `aarch64-linux-android` target，设置 `ANDROID_SDK_ROOT` 或 `ANDROID_HOME`。SDK 需包含 Android 36、Build Tools 36.0.0 和 NDK 30.0.15729638。
+入口是 `cargo xtask android`。需要 JDK 27、`cargo-ndk`、Rust `aarch64-linux-android` target，设置 `ANDROID_SDK_ROOT` 或 `ANDROID_HOME`。安装 SDK 平台 `platforms;android-37.2`、Build Tools `37.0.0` 和稳定版 [NDK r30](https://developer.android.com/ndk/downloads) `30.0.16248370`。工程使用 AGP 9.4.1 和 Gradle 9.8.2。JNI 库继续使用 16 KiB ELF 页对齐；APK 中不压缩的原生库使用现代 zip 对齐。
 
 先按[快速开始](quick-start.md)生成含 Android host profile 的 `.roukakupkg`，再运行：
 
@@ -98,17 +100,17 @@ export RUSTUP_HOME="$HOME/shinkirou-apple/rustup"
 export CARGO_TARGET_DIR="$HOME/shinkirou-apple/target"
 export PATH="$HOME/shinkirou-apple/tools/bin:$PATH"
 export DOCKER_CONFIG="$HOME/shinkirou-apple/docker"
-rustup toolchain install 1.98.0 --profile minimal
-rustup target add --toolchain 1.98.0 x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
-cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" cross --version 0.2.5
-cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" apple-codesign --version 0.29.0
+rustup toolchain install 1.99.1 --profile minimal
+rustup target add --toolchain 1.99.1 x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+cargo +1.99.1 install --locked --root "$HOME/shinkirou-apple/tools" cross --version 0.2.5
+cargo +1.99.1 install --locked --root "$HOME/shinkirou-apple/tools" apple-codesign --version 0.29.0
 export SHINKI_APPLE_SDK_DIR="$HOME/shinkirou-apple/sdks/macosx.sdk"
 cargo xtask apple-image --target aarch64-apple-darwin
 cargo xtask build --workspace engine --target aarch64-apple-darwin -p roukaku-player --release
 cargo xtask cross --target aarch64-apple-darwin check -- -p roukaku-core
 ```
 
-每个目标单独创建镜像，构建 iOS 时切换 SDK 目录。镜像固定 Rust 1.98.0；macOS 使用固定 revision 的 [osxcross](https://github.com/tpoechtrager/osxcross)，iOS 使用 LLVM/LLD，并配置目标专用的 C/C++、CMake 工具及 `build/cross/` 中固定 vcpkg 输入的静态 libass。宿主工具仍用 Linux 编译器。原生依赖许可导出到 `.work/apple-native/<target>`，只有镜像身份相同时才复用。构建 JSON 包含 Cargo 实际返回的 `compiler-artifact.executable`，打包使用该路径，不猜测 target 目录。
+每个目标单独创建镜像，构建 iOS 时切换 SDK 目录。镜像固定 Rust 1.99.1；macOS 使用固定 revision 的 [osxcross](https://github.com/tpoechtrager/osxcross)，iOS 使用 LLVM/LLD，并配置目标专用的 C/C++、CMake 工具及 `build/cross/` 中固定 vcpkg 输入的静态 libass。宿主工具仍用 Linux 编译器。原生依赖许可导出到 `.work/apple-native/<target>`，只有镜像身份相同时才复用。构建 JSON 包含 Cargo 实际返回的 `compiler-artifact.executable`，打包使用该路径，不猜测 target 目录。
 
 ### Player 资源与测试包
 

@@ -46,12 +46,16 @@ fn prewarm_insert_never_evicts_an_authored_prefix() {
         max_bytes: 6,
         clock: 0,
     };
-    assert!(cache
-        .insert_without_eviction("a".into(), media(b"aaaa"))
-        .unwrap());
-    assert!(!cache
-        .insert_without_eviction("b".into(), media(b"bbb"))
-        .unwrap());
+    assert!(
+        cache
+            .insert_without_eviction("a".into(), media(b"aaaa"))
+            .unwrap()
+    );
+    assert!(
+        !cache
+            .insert_without_eviction("b".into(), media(b"bbb"))
+            .unwrap()
+    );
     assert!(cache.entries.contains_key("a"));
     assert!(!cache.entries.contains_key("b"));
     assert_eq!(cache.bytes, 4);
@@ -71,9 +75,11 @@ fn background_admission_accounts_for_replacement_without_evicting_neighbors() {
 
     assert!(cache.can_insert_without_eviction("a", 4));
     assert!(!cache.can_insert_without_eviction("a", 5));
-    assert!(!cache
-        .insert_without_eviction("a".into(), media(b"aaaaa"))
-        .unwrap());
+    assert!(
+        !cache
+            .insert_without_eviction("a".into(), media(b"aaaaa"))
+            .unwrap()
+    );
     assert_eq!(cache.bytes, 8);
     assert!(cache.entries.contains_key("a"));
     assert!(cache.entries.contains_key("b"));

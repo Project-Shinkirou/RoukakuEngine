@@ -319,15 +319,15 @@ pub(super) fn execute_machine(
             let action_result = action.run(&mut ctx, &invocation.input);
             let observed_access = evidence_mode.then(|| ctx.observed_access());
             drop(ctx);
-            if let Some(observed_access) = observed_access {
-                if let Err(diagnostic) = validate_observed_access(
+            if let Some(observed_access) = observed_access
+                && let Err(diagnostic) = validate_observed_access(
                     &invocation.action_id,
                     &descriptor.access,
                     &observed_access,
-                ) {
-                    transition_failed = Some(diagnostic);
-                    break;
-                }
+                )
+            {
+                transition_failed = Some(diagnostic);
+                break;
             }
             if stable_ids_used > descriptor.stable_id_reservation && evidence_mode {
                 transition_failed = Some(
@@ -365,11 +365,11 @@ pub(super) fn execute_machine(
             failed = Some(diagnostic);
             break;
         }
-        if let Some(index) = trigger_event_index {
-            if let Err(diagnostic) = available_events.consume(index) {
-                failed = Some(diagnostic);
-                break;
-            }
+        if let Some(index) = trigger_event_index
+            && let Err(diagnostic) = available_events.consume(index)
+        {
+            failed = Some(diagnostic);
+            break;
         }
         candidate_machine.current_state = transition.to;
         if compiled.is_terminal(candidate_machine.current_state) {

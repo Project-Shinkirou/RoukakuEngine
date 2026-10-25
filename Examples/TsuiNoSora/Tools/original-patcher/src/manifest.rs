@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     director::DirectorPatchRecord,
     error::{PatchError, PatchResult},
-    filesystem::{join_relative, FileDigest},
-    fingerprint::{SourceInspection, EDITION_ID},
+    filesystem::{FileDigest, join_relative},
+    fingerprint::{EDITION_ID, SourceInspection},
     locale_emulator::{self, LocaleEmulatorRecord},
     projectorrays::HelperIdentity,
     window_policy::{self, WindowPolicyRecord},

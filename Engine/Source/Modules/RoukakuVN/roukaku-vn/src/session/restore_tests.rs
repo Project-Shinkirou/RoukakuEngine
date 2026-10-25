@@ -126,10 +126,12 @@ fn typed_restore_rejection_preserves_world_state_and_scope() {
         let error = session.restore(blob);
         assert!(error.is_err(), "{case}");
         if case == "legacy_machine" {
-            assert!(error
-                .unwrap_err()
-                .to_string()
-                .contains("ROUKAKU_NATIVE_VN_RESTORE_LEGACY_MACHINE"));
+            assert!(
+                error
+                    .unwrap_err()
+                    .to_string()
+                    .contains("ROUKAKU_NATIVE_VN_RESTORE_LEGACY_MACHINE")
+            );
         }
         assert_eq!(
             session

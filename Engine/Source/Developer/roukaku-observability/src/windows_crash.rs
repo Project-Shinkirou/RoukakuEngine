@@ -24,21 +24,21 @@ mod imp {
     };
 
     use windows::{
-        core::HSTRING,
         Win32::{
             Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0},
             System::{
                 Diagnostics::Debug::{
-                    SetUnhandledExceptionFilter, EXCEPTION_EXECUTE_HANDLER, EXCEPTION_POINTERS,
-                    LPTOP_LEVEL_EXCEPTION_FILTER,
+                    EXCEPTION_EXECUTE_HANDLER, EXCEPTION_POINTERS, LPTOP_LEVEL_EXCEPTION_FILTER,
+                    SetUnhandledExceptionFilter,
                 },
                 Memory::{
-                    CreateFileMappingW, MapViewOfFile, UnmapViewOfFile, FILE_MAP_ALL_ACCESS,
-                    MEMORY_MAPPED_VIEW_ADDRESS, PAGE_READWRITE,
+                    CreateFileMappingW, FILE_MAP_ALL_ACCESS, MEMORY_MAPPED_VIEW_ADDRESS,
+                    MapViewOfFile, PAGE_READWRITE, UnmapViewOfFile,
                 },
                 Threading::{CreateEventW, GetCurrentThreadId, SetEvent, WaitForSingleObject},
             },
         },
+        core::HSTRING,
     };
 
     use super::*;
@@ -204,13 +204,15 @@ mod imp {
     }
 
     unsafe extern "system" fn exception_filter(info: *const EXCEPTION_POINTERS) -> i32 {
-        let code = if info.is_null() || (*info).ExceptionRecord.is_null() {
-            0
-        } else {
-            (*(*info).ExceptionRecord).ExceptionCode.0 as u32
-        };
-        signal_request(1, info, code);
-        EXCEPTION_EXECUTE_HANDLER
+        unsafe {
+            let code = if info.is_null() || (*info).ExceptionRecord.is_null() {
+                0
+            } else {
+                (*(*info).ExceptionRecord).ExceptionCode.0 as u32
+            };
+            signal_request(1, info, code);
+            EXCEPTION_EXECUTE_HANDLER
+        }
     }
 
     fn signal_request(kind: u32, exception_pointers: *const EXCEPTION_POINTERS, code: u32) {

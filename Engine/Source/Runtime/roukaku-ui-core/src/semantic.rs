@@ -5,8 +5,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    validate_id, validate_string, UiRect, UiValidationError, ValidateUi, MAX_NODES_PER_VIEW,
-    MAX_TREE_DEPTH,
+    MAX_NODES_PER_VIEW, MAX_TREE_DEPTH, UiRect, UiValidationError, ValidateUi, validate_id,
+    validate_string,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -286,13 +286,13 @@ impl ValidateUi for UiSemanticSnapshot {
             ));
         }
         for (id, parent) in &parents {
-            if let Some(parent) = parent {
-                if !ids.contains(parent) {
-                    return Err(UiValidationError::invalid(
-                        "ROUKAKU_UI_SEMANTIC_PARENT_MISSING",
-                        format!("semantic node {id} references missing parent {parent}"),
-                    ));
-                }
+            if let Some(parent) = parent
+                && !ids.contains(parent)
+            {
+                return Err(UiValidationError::invalid(
+                    "ROUKAKU_UI_SEMANTIC_PARENT_MISSING",
+                    format!("semantic node {id} references missing parent {parent}"),
+                ));
             }
             let mut cursor = Some(*id);
             let mut visited = BTreeSet::new();

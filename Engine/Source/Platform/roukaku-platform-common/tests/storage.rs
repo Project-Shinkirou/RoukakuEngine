@@ -37,11 +37,13 @@ fn save_transaction_commits_reopens_and_aborts_without_partial_files() {
         store.read("slot-2").unwrap_err().code,
         PlatformErrorCode::Io
     );
-    assert!(fs::read_dir(store.root()).unwrap().all(|entry| !entry
-        .unwrap()
-        .file_name()
-        .to_string_lossy()
-        .contains("tmp")));
+    assert!(
+        fs::read_dir(store.root()).unwrap().all(|entry| !entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .contains("tmp"))
+    );
 }
 
 #[test]

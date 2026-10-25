@@ -20,7 +20,7 @@ pub use lifecycle::*;
 pub use manifest::*;
 pub use policy::*;
 
-use roukaku_platform::{build_fingerprint, PlatformCapabilityReport, PlatformHostProfile};
+use roukaku_platform::{PlatformCapabilityReport, PlatformHostProfile, build_fingerprint};
 
 pub fn probe(target: Option<&str>) -> PlatformCapabilityReport {
     let profile = PlatformHostProfile::android_release(
@@ -45,4 +45,4 @@ pub fn probe(target: Option<&str>) -> PlatformCapabilityReport {
 }
 
 #[cfg(target_os = "android")]
-pub use native::{run_player_host, AndroidPlayerEntry, AndroidPreparedPlayer};
+pub use native::{AndroidPlayerEntry, AndroidPreparedPlayer, run_player_host};

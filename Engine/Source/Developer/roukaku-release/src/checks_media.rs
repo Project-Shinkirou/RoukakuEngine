@@ -203,7 +203,7 @@ pub(crate) fn platform_profile_binding_check(
             return blocked(
                 "ROUKAKU_PLATFORM_PROFILE_SECTION_INVALID",
                 "cooked platform profile section is invalid",
-            )
+            );
         }
     };
     if !matches!(
@@ -231,7 +231,7 @@ pub(crate) fn platform_profile_binding_check(
             return blocked(
                 "ROUKAKU_PLATFORM_PROFILE_SECTION_INVALID",
                 "cooked platform profile list is invalid",
-            )
+            );
         }
     };
     let matched = profiles.iter().find(|profile| {

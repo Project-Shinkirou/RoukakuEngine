@@ -65,18 +65,20 @@ async fn real_native_vn_package_accepts_physical_input_and_produces_cpu_frame() 
         })
         .await
         .unwrap();
-    assert!(product
-        .consume(
-            0,
-            &PhysicalInput::Keyboard {
-                physical_key: "Enter".into(),
-                logical_key: Some("Enter".into()),
-                state: ButtonState::Pressed,
-                repeat: false,
-            },
-        )
-        .await
-        .is_err());
+    assert!(
+        product
+            .consume(
+                0,
+                &PhysicalInput::Keyboard {
+                    physical_key: "Enter".into(),
+                    logical_key: Some("Enter".into()),
+                    state: ButtonState::Pressed,
+                    repeat: false,
+                },
+            )
+            .await
+            .is_err()
+    );
     product.consume(0, &PhysicalInput::Resume).await.unwrap();
     product
         .consume(0, &PhysicalInput::Focus { focused: true })
@@ -94,9 +96,11 @@ async fn real_native_vn_package_accepts_physical_input_and_produces_cpu_frame() 
         )
         .await
         .unwrap();
-    assert!(observations
-        .iter()
-        .any(|item| item.key == "runtime.state_hash"));
+    assert!(
+        observations
+            .iter()
+            .any(|item| item.key == "runtime.state_hash")
+    );
     let route_terminal_hash =
         roukaku_core::Hash256::from_sha256(&serde_json::to_vec(&false).unwrap()).to_string();
     assert_eq!(
@@ -185,12 +189,14 @@ async fn real_native_vn_package_accepts_physical_input_and_produces_cpu_frame() 
                 total
             },
         );
-    assert!(performance_observer
-        .samples
-        .lock()
-        .unwrap()
-        .iter()
-        .any(|sample| sample.bind_to_next_presentation));
+    assert!(
+        performance_observer
+            .samples
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|sample| sample.bind_to_next_presentation)
+    );
     assert!(
         performance.runtime_tick_ns
             + performance.vn_step_ns

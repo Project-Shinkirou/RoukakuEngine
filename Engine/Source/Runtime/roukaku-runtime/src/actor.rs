@@ -178,11 +178,11 @@ impl<'de> Deserialize<'de> for RuntimeComponentPayload {
 }
 
 impl JsonSchema for RuntimeComponentPayload {
-    fn schema_name() -> String {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
         RuntimeComponentPayloadWire::schema_name()
     }
 
-    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
         RuntimeComponentPayloadWire::json_schema(generator)
     }
 }

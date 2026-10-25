@@ -1,7 +1,8 @@
 use std::{
     sync::{
+        Arc,
         atomic::{AtomicBool, AtomicU8, Ordering},
-        mpsc, Arc,
+        mpsc,
     },
     thread,
     time::{Duration, Instant},
@@ -68,25 +69,25 @@ mod adapter_identity_tests {
 }
 
 mod wgpu_offscreen_renderer;
+use wgpu_offscreen_renderer::GPU_MAP_FAILED;
+use wgpu_offscreen_renderer::GPU_MAP_PENDING;
+use wgpu_offscreen_renderer::GPU_MAP_SUCCEEDED;
 use wgpu_offscreen_renderer::GpuTimer;
 use wgpu_offscreen_renderer::GpuTimerSlot;
+use wgpu_offscreen_renderer::MAX_GPU_TIMESTAMP_QUERIES;
+use wgpu_offscreen_renderer::PERFORMANCE_ATLAS_BYTES;
+use wgpu_offscreen_renderer::PERFORMANCE_ATLAS_SIDE;
 use wgpu_offscreen_renderer::PendingOutput;
 use wgpu_offscreen_renderer::PendingTimestampRead;
+use wgpu_offscreen_renderer::READBACK_RING_SIZE;
+use wgpu_offscreen_renderer::READBACK_TIMEOUT;
 use wgpu_offscreen_renderer::ReadbackRing;
 pub use wgpu_offscreen_renderer::RendererExecutionIdentity;
+pub use wgpu_offscreen_renderer::WGPU_TIMESTAMP_RING_SIZE;
 pub use wgpu_offscreen_renderer::WgpuFramePerformanceCounters;
 pub use wgpu_offscreen_renderer::WgpuOffscreenRenderer;
 pub use wgpu_offscreen_renderer::WgpuPendingProfile;
 pub use wgpu_offscreen_renderer::WgpuProfiledSubmission;
-use wgpu_offscreen_renderer::GPU_MAP_FAILED;
-use wgpu_offscreen_renderer::GPU_MAP_PENDING;
-use wgpu_offscreen_renderer::GPU_MAP_SUCCEEDED;
-use wgpu_offscreen_renderer::MAX_GPU_TIMESTAMP_QUERIES;
-use wgpu_offscreen_renderer::PERFORMANCE_ATLAS_BYTES;
-use wgpu_offscreen_renderer::PERFORMANCE_ATLAS_SIDE;
-use wgpu_offscreen_renderer::READBACK_RING_SIZE;
-use wgpu_offscreen_renderer::READBACK_TIMEOUT;
-pub use wgpu_offscreen_renderer::WGPU_TIMESTAMP_RING_SIZE;
 mod with_default_compositing;
 
 mod submit_frame_internal;

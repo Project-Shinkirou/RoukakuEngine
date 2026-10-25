@@ -218,12 +218,12 @@ impl LuauUiControllerHost {
             Value::Nil => {
                 return Err(LuauUiControllerError::Registration(format!(
                     "controller requires an {handler_name} handler"
-                )))
+                )));
             }
             _ => {
                 return Err(LuauUiControllerError::Registration(format!(
                     "controller {handler_name} must be a function"
-                )))
+                )));
             }
         };
         let context = create_table(&lua).map_err(runtime_error)?;

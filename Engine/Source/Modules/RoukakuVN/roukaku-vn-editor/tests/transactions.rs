@@ -17,11 +17,12 @@ fn inspector_edit_compiles_preserves_comments_and_undo_uses_new_version() {
         .attribute_edit("main.roukaku", "hello", "speaker", "Alice")
         .unwrap();
     w.apply(batch.clone()).unwrap();
-    assert!(w
-        .document("main.roukaku")
-        .unwrap()
-        .text
-        .starts_with("# editor comment\n"));
+    assert!(
+        w.document("main.roukaku")
+            .unwrap()
+            .text
+            .starts_with("# editor comment\n")
+    );
     let compiled = w.compile(Default::default()).unwrap();
     assert!(compiled.story.source_map.contains_key("hello"));
     w.undo().unwrap();

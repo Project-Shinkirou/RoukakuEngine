@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt, fs, str::FromStr};
 
-use roukaku_core::{is_safe_symbol, Diagnostic, Hash256};
+use roukaku_core::{Diagnostic, Hash256, is_safe_symbol};
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -508,10 +508,10 @@ impl VfsManifest {
                 "VFS URI has multiple eligible entries at the same priority",
             )]);
         }
-        if let Some(whiteout_priority) = whiteout_priority {
-            if whiteout_priority >= best_priority {
-                return Ok(None);
-            }
+        if let Some(whiteout_priority) = whiteout_priority
+            && whiteout_priority >= best_priority
+        {
+            return Ok(None);
         }
         Ok(Some(best))
     }

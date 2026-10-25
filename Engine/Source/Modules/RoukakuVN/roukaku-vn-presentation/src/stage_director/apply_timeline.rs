@@ -238,7 +238,7 @@ impl ProductStageDirector {
                         return Err(stage_error(
                             "ROUKAKU_VN_STAGE_CAMERA_ZOOM",
                             "camera timeline keyframes must have positive zoom",
-                        ))
+                        ));
                     }
                     TweenProperty::Opacity
                         if !(0..=1_000_000).contains(&keyframe.value.millionths) =>
@@ -246,7 +246,7 @@ impl ProductStageDirector {
                         return Err(stage_error(
                             "ROUKAKU_VN_STAGE_ENTITY_STATE",
                             "entity timeline opacity must be between zero and one",
-                        ))
+                        ));
                     }
                     _ => {}
                 }
@@ -363,7 +363,7 @@ impl ProductStageDirector {
                     return Err(stage_error(
                         "ROUKAKU_VN_STAGE_TIMELINE_PROPERTY",
                         "camera timeline property is unsupported",
-                    ))
+                    ));
                 }
             },
             TweenTarget::Entity(id) => {
@@ -376,7 +376,7 @@ impl ProductStageDirector {
                         return Err(stage_error(
                             "ROUKAKU_VN_STAGE_TIMELINE_PROPERTY",
                             "entity timeline property is unsupported",
-                        ))
+                        ));
                     }
                 }
             }

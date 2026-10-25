@@ -62,11 +62,13 @@ fn import_cook_classifies_fresh_stale_and_blocked_artifacts() {
         processor_version: "1.0.0".to_string(),
         dependency_artifacts: Default::default(),
     });
-    assert!(blocked
-        .unwrap_err()
-        .diagnostics()
-        .iter()
-        .any(|diag| diag.code == "ROUKAKU_ASSET_LICENSE_MISSING"));
+    assert!(
+        blocked
+            .unwrap_err()
+            .diagnostics()
+            .iter()
+            .any(|diag| diag.code == "ROUKAKU_ASSET_LICENSE_MISSING")
+    );
 }
 
 #[test]
@@ -88,9 +90,11 @@ fn text_import_rejects_invalid_utf8_and_preserves_valid_source() {
     assert_eq!(imported.metadata.codec, "utf8");
     assert_eq!(imported.sidecar.cook.processor, "roukaku.cook.binary");
     std::fs::write(&path, [0xff]).unwrap();
-    assert!(importer
-        .import(request)
-        .unwrap_err()
-        .to_string()
-        .contains("ROUKAKU_IMPORT_TEXT_UTF8"));
+    assert!(
+        importer
+            .import(request)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_IMPORT_TEXT_UTF8")
+    );
 }

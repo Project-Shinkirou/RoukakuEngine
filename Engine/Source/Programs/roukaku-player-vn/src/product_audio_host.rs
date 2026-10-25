@@ -11,7 +11,7 @@ use roukaku_audio_kira::{
     AudioAssetRevision, AudioChunkTelemetry, AudioServiceCommand, AudioServiceConfig,
     AudioServiceEvent, AudioServiceSession, AudioTimelineStateV1, RoukakuChunkBackendSettings,
 };
-use roukaku_media::{PcmAsset, CANONICAL_CHANNELS, CANONICAL_SAMPLE_RATE};
+use roukaku_media::{CANONICAL_CHANNELS, CANONICAL_SAMPLE_RATE, PcmAsset};
 use roukaku_platform::{
     AudioCaptureReader, AudioOutputHandle, AudioOutputRequest, HostKind, PlatformError,
 };
@@ -153,13 +153,13 @@ impl NativeVnProductAudioHost {
             revision: package_id.to_owned(),
             byte_len,
         };
-        if let Some(existing) = self.prepared_assets.get(&asset.identity) {
-            if existing != &revision {
-                return Err(player_platform_error(
-                    "player.audio.asset",
-                    "ROUKAKU_PLAYER_AUDIO_ASSET_REVISION_CONFLICT",
-                ));
-            }
+        if let Some(existing) = self.prepared_assets.get(&asset.identity)
+            && existing != &revision
+        {
+            return Err(player_platform_error(
+                "player.audio.asset",
+                "ROUKAKU_PLAYER_AUDIO_ASSET_REVISION_CONFLICT",
+            ));
         }
         if !self.service_mut()?.is_pcm_prepared(&revision) {
             self.service_mut()?

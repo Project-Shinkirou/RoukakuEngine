@@ -288,7 +288,8 @@ mod tests {
 
     fn source() -> NativeVnHostCommandSource {
         let bytes = crate::test_native_package::product_package_with_request(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n", |_| {},
+            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+            |_| {},
         );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();
         NativeVnHostCommandSource::from_package(
@@ -337,11 +338,12 @@ mod tests {
                 3 => input.timing.delta_ns = 1_000_000_001,
                 _ => input.mode = roukaku_runtime::TickMode::Live,
             }
-            assert!(host
-                .step(input)
-                .unwrap_err()
-                .to_string()
-                .contains("STEP_ORDER"));
+            assert!(
+                host.step(input)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("STEP_ORDER")
+            );
             assert!(host.failed);
             assert!(host.save().is_err());
             host.restore(saved.clone()).unwrap();
@@ -368,13 +370,14 @@ mod tests {
             .unwrap_err();
         assert!(error.to_string().contains("OUTPUT_COUNT"));
         assert!(host.failed);
-        assert!(host
-            .step(step(
+        assert!(
+            host.step(step(
                 host,
                 2,
                 NativeVnStepCommand::Execute(VnPlayerCommand::Advance)
             ))
-            .is_err());
+            .is_err()
+        );
         source.release_resources().unwrap();
         source.shutdown().unwrap();
     }
@@ -427,22 +430,24 @@ mod tests {
     fn owned_runtime_enforces_binding_tick_failure_and_restore_continuation() {
         let mut source = source();
         let host = &mut source.host;
-        assert!(host
-            .validate_request("foreign", host.binding.profile())
-            .is_err());
+        assert!(
+            host.validate_request("foreign", host.binding.profile())
+                .is_err()
+        );
         assert!(host.destroy().is_err());
         host.step(step(host, 1, NativeVnStepCommand::LaunchDefault))
             .unwrap();
         let saved = save(host);
-        assert!(host
-            .step(step(
+        assert!(
+            host.step(step(
                 host,
                 1,
                 NativeVnStepCommand::Execute(VnPlayerCommand::Advance)
             ))
             .unwrap_err()
             .to_string()
-            .contains("STEP_ORDER"));
+            .contains("STEP_ORDER")
+        );
         assert!(host.save().is_err());
         host.restore(saved).unwrap();
         assert!(!host.failed);
@@ -460,10 +465,12 @@ mod tests {
         source.release_resources().unwrap();
         source.host.shutdown().unwrap();
         source.host.destroy().unwrap();
-        assert!(source
-            .host
-            .validate_request(source.host.binding.target(), source.host.binding.profile())
-            .is_err());
+        assert!(
+            source
+                .host
+                .validate_request(source.host.binding.target(), source.host.binding.profile())
+                .is_err()
+        );
     }
 
     #[test]
@@ -481,13 +488,14 @@ mod tests {
         host.limits = VnHostLimits::new().with_bounds(256, 1);
         assert!(host.save().is_err());
         assert!(host.failed);
-        assert!(host
-            .step(step(
+        assert!(
+            host.step(step(
                 host,
                 2,
                 NativeVnStepCommand::Execute(VnPlayerCommand::Advance)
             ))
-            .is_err());
+            .is_err()
+        );
         source.release_resources().unwrap();
         source.shutdown().unwrap();
     }

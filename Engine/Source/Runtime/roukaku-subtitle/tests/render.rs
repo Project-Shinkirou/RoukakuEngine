@@ -241,7 +241,9 @@ fn integer_motion_preserves_native_position_only_change() {
 
 #[test]
 fn zero_duration_missing_font_event_never_requires_a_fallback() {
-    let ass = format!("{ASS}\nDialogue: 0,0:00:00.00,0:00:00.00,Default,,0,0,0,,{{\\fnRoukaku Inactive Missing Family}}Inactive\n");
+    let ass = format!(
+        "{ASS}\nDialogue: 0,0:00:00.00,0:00:00.00,Default,,0,0,0,,{{\\fnRoukaku Inactive Missing Family}}Inactive\n"
+    );
     let mut renderer = AssRenderer::new(ass.as_bytes(), &fonts()).unwrap();
     assert!(!renderer.render(0, SIZE, SIZE).unwrap().runs.is_empty());
     assert!(!renderer.render(1000, SIZE, SIZE).unwrap().runs.is_empty());

@@ -104,16 +104,15 @@ pub fn validate_headless_host_profile(profile: &HeadlessHostProfile) -> Result<(
             "120 Hz presentation is reserved for timestamped headless performance E2",
         ));
     }
-    if let Some(policy) = &profile.gpu_adapter {
-        if policy
+    if let Some(policy) = &profile.gpu_adapter
+        && policy
             .adapter_identity_hash
             .as_deref()
             .is_some_and(|value| !is_sha256(value))
-        {
-            return Err(invalid_headless_profile(
-                "headless GPU adapter identity must be a full sha256 value",
-            ));
-        }
+    {
+        return Err(invalid_headless_profile(
+            "headless GPU adapter identity must be a full sha256 value",
+        ));
     }
     if profile.input.max_messages == 0
         || profile.input.max_tick == 0

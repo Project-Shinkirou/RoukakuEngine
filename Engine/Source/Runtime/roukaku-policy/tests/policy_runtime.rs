@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use roukaku_policy::{
-    create_sandboxed_lua, PolicyBundleEntry, PolicyBundleManifest, PolicyBundleSourceCache,
-    PolicyBundleSourceEntry, PolicyCommandRecord, PolicyExecutionBudget, PolicyValue, PolicyVm,
+    PolicyBundleEntry, PolicyBundleManifest, PolicyBundleSourceCache, PolicyBundleSourceEntry,
+    PolicyCommandRecord, PolicyExecutionBudget, PolicyValue, PolicyVm, create_sandboxed_lua,
 };
 
 #[test]
@@ -55,18 +55,22 @@ fn policy_vm_owns_the_shared_sandbox_and_budget() {
 #[test]
 fn policy_budget_rejects_zero_or_unbounded_configuration() {
     assert!(PolicyExecutionBudget::default().validate().is_ok());
-    assert!(PolicyExecutionBudget {
-        interrupt_limit: 0,
-        ..PolicyExecutionBudget::default()
-    }
-    .validate()
-    .is_err());
-    assert!(PolicyExecutionBudget {
-        output_limit: 0,
-        ..PolicyExecutionBudget::default()
-    }
-    .validate()
-    .is_err());
+    assert!(
+        PolicyExecutionBudget {
+            interrupt_limit: 0,
+            ..PolicyExecutionBudget::default()
+        }
+        .validate()
+        .is_err()
+    );
+    assert!(
+        PolicyExecutionBudget {
+            output_limit: 0,
+            ..PolicyExecutionBudget::default()
+        }
+        .validate()
+        .is_err()
+    );
 }
 
 #[test]
@@ -114,8 +118,10 @@ fn bundle_cache_is_hash_bound_and_path_safe() {
     leaking.bundles[0].entry = "../fixture.luau".to_string();
     let report = leaking.validate(&manifest);
     assert!(!report.passed);
-    assert!(report
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.code == "ROUKAKU_POLICY_ENTRY_PATH"));
+    assert!(
+        report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "ROUKAKU_POLICY_ENTRY_PATH")
+    );
 }

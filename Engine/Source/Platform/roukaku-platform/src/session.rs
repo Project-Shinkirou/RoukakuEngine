@@ -2,8 +2,8 @@ use std::{
     future::Future,
     pin::Pin,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc, Condvar, Mutex,
+        atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
@@ -30,6 +30,7 @@ pub use host_start_future::AudioOutputLane;
 pub use host_start_future::AudioOutputRequest;
 pub use host_start_future::AudioWakeRegistration;
 pub use host_start_future::CapturedFrame;
+pub use host_start_future::DECODE_STREAM_EOS_DIAGNOSTIC;
 pub use host_start_future::DecodeKind;
 pub use host_start_future::DecodeOutput;
 pub use host_start_future::DecodeStreamAction;
@@ -44,7 +45,6 @@ pub use host_start_future::ScenePresentReceipt;
 pub use host_start_future::SurfaceRequest;
 pub use host_start_future::UnavailablePlatformFactory;
 pub use host_start_future::WindowRequest;
-pub use host_start_future::DECODE_STREAM_EOS_DIAGNOSTIC;
 mod host_command;
 pub use host_command::AudioFocusState;
 pub use host_command::GamepadControl;
@@ -60,15 +60,15 @@ pub use host_command::WindowInsets;
 mod command_wake_registration;
 
 mod shutdown;
-pub use shutdown::host_channel;
-pub use shutdown::host_channel_with_command_wake;
-use shutdown::queue_closed;
-use shutdown::validate_rgba_frame;
 pub use shutdown::PlatformBackendChannels;
 pub use shutdown::PlatformCommandWakeRegistration;
 pub use shutdown::PlatformEventEmitter;
 pub use shutdown::PlatformEventStream;
 pub use shutdown::PlatformHostSession;
+pub use shutdown::host_channel;
+pub use shutdown::host_channel_with_command_wake;
+use shutdown::queue_closed;
+use shutdown::validate_rgba_frame;
 mod validate_scene_frame;
 use validate_scene_frame::is_safe_slot;
 use validate_scene_frame::validate_package_source;

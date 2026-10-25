@@ -222,13 +222,14 @@ fn invalid_timeline_endpoints_are_rejected_at_ingress() {
             keyframes: track("x", -1).keyframes,
         },
     ] {
-        assert!(live
-            .apply(&timeline(
+        assert!(
+            live.apply(&timeline(
                 "invalid",
                 vec![invalid],
                 VnTimelineJoinPolicy::Block
             ))
-            .is_err());
+            .is_err()
+        );
         assert_eq!(live.snapshot().unwrap(), before);
         assert!(!live.is_failed());
     }
@@ -243,7 +244,9 @@ fn compiled_timeline_easing_survives_restore_and_cancel() {
         ("ease_out", 437_500, 750_000),
         ("ease_in_out", 125_000, 500_000),
     ] {
-        let text=format!("timeline id:pan target:hero property:x easing:{name} keyframes:0=0,1000=1,2000=0 budget_ms:1 #@id pan");
+        let text = format!(
+            "timeline id:pan target:hero property:x easing:{name} keyframes:0=0,1000=1,2000=0 budget_ms:1 #@id pan"
+        );
         let parsed = roukaku_vn_presentation::parse_roukaku_source("main.roukaku", &text);
         let command = roukaku_vn_presentation::compile_timeline_command(
             "main.roukaku",

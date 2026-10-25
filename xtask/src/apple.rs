@@ -1,5 +1,5 @@
-use anyhow::{bail, Context, Result};
-use object::{read::macho::MachHeader, Object};
+use anyhow::{Context, Result, bail};
+use object::{Object, read::macho::MachHeader};
 use std::collections::BTreeSet;
 use std::{
     fs,
@@ -30,7 +30,7 @@ fn checked(command: &mut Command) -> Result<()> {
     Ok(())
 }
 fn image_name(target: &str) -> String {
-    format!("shinkirou/apple-cross:{target}-1.98.0")
+    format!("shinkirou/apple-cross:{target}-1.99.1")
 }
 
 pub fn preflight(target: &str) -> Result<()> {
@@ -54,7 +54,10 @@ pub fn preflight(target: &str) -> Result<()> {
             .stderr(std::process::Stdio::null())
             .status()?;
         if !status.success() {
-            bail!("private Apple toolchain image missing; set SHINKI_APPLE_SDK_DIR to your extracted {} SDK and run cargo xtask apple-image --target {target}", sdk_name(target));
+            bail!(
+                "private Apple toolchain image missing; set SHINKI_APPLE_SDK_DIR to your extracted {} SDK and run cargo xtask apple-image --target {target}",
+                sdk_name(target)
+            );
         }
     }
     Ok(())
@@ -76,7 +79,7 @@ pub fn command(root: &Path, target: &str) -> Result<Command> {
     let mut command = if cross_host(target) {
         let mut command = Command::new("cross");
         command
-            .arg("+1.98.0")
+            .arg("+1.99.1")
             .env("CROSS_CONFIG", root.join("Cross.toml"));
         command
     } else {
@@ -122,7 +125,10 @@ pub fn image(root: &Path, target: &str) -> Result<()> {
             .context("df available blocks")?
             .parse::<u64>()?;
         if available < 8 * 1024 * 1024 {
-            bail!("Apple image build needs at least 8 GiB free; available {} MiB; no user files/images were removed", available / 1024);
+            bail!(
+                "Apple image build needs at least 8 GiB free; available {} MiB; no user files/images were removed",
+                available / 1024
+            );
         }
     }
     checked(Command::new("docker").args(["buildx", "version"]))
@@ -167,7 +173,10 @@ pub fn image(root: &Path, target: &str) -> Result<()> {
             println!("Reusing native export for {}", identity.trim());
             return Ok(());
         }
-        bail!("native export {} already exists; use its recorded image or select a new worktree rather than overwriting it", destination.display());
+        bail!(
+            "native export {} already exists; use its recorded image or select a new worktree rather than overwriting it",
+            destination.display()
+        );
     }
     fs::create_dir_all(destination.parent().context("native export parent")?)?;
     let temp = tempfile::tempdir_in(destination.parent().unwrap())?;
@@ -218,11 +227,11 @@ fn inspect(path: &Path, target: &str, executable: bool) -> Result<(BTreeSet<Stri
         .macho_header()
         .load_commands(endian, macho.data(), 0)?;
     let expected_platform = if target.ends_with("darwin") {
-        1
+        object::macho::PLATFORM_MACOS
     } else if sdk_name(target) == "iphonesimulator" {
-        7
+        object::macho::PLATFORM_IOSSIMULATOR
     } else {
-        2
+        object::macho::PLATFORM_IOS
     };
     let mut platform = None;
     let mut dependencies = BTreeSet::new();
@@ -233,12 +242,12 @@ fn inspect(path: &Path, target: &str, executable: bool) -> Result<(BTreeSet<Stri
                 let version: &object::macho::BuildVersionCommand<_> = command.data()?;
                 platform = Some(version.platform.get(endian));
             }
-            object::macho::LC_VERSION_MIN_MACOSX => platform = Some(1),
+            object::macho::LC_VERSION_MIN_MACOSX => platform = Some(object::macho::PLATFORM_MACOS),
             object::macho::LC_VERSION_MIN_IPHONEOS => {
                 platform = Some(if architecture == object::Architecture::X86_64 {
-                    7
+                    object::macho::PLATFORM_IOSSIMULATOR
                 } else {
-                    2
+                    object::macho::PLATFORM_IOS
                 })
             }
             object::macho::LC_RPATH => {
@@ -411,7 +420,12 @@ pub fn bundle(
     } else {
         "<key>LSMinimumSystemVersion</key><string>13.0</string><key>NSHighResolutionCapable</key><true/>"
     };
-    fs::write(contents.join("Info.plist"), format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><dict><key>CFBundleExecutable</key><string>{executable}</string><key>CFBundleIdentifier</key><string>{id}</string><key>CFBundleName</key><string>{name}</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{version}</string><key>CFBundleVersion</key><string>1</string><key>CFBundleSupportedPlatforms</key><array><string>{platform}</string></array>{minimum}</dict></plist>"))?;
+    fs::write(
+        contents.join("Info.plist"),
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><dict><key>CFBundleExecutable</key><string>{executable}</string><key>CFBundleIdentifier</key><string>{id}</string><key>CFBundleName</key><string>{name}</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>{version}</string><key>CFBundleVersion</key><string>1</string><key>CFBundleSupportedPlatforms</key><array><string>{platform}</string></array>{minimum}</dict></plist>"
+        ),
+    )?;
     // @rpath libraries are beside the executable, not resolved from the build host.
     let install_name_tool = if cfg!(target_os = "macos") {
         "install_name_tool"
@@ -456,15 +470,17 @@ mod tests {
     fn invalid_identity_never_mutates_staging() {
         let tmp = tempfile::tempdir().unwrap();
         fs::write(tmp.path().join("player"), b"original").unwrap();
-        assert!(bundle(
-            tmp.path(),
-            "aarch64-apple-darwin",
-            "player",
-            "../escape",
-            "org.shinkirou.player",
-            "0.1.0"
-        )
-        .is_err());
+        assert!(
+            bundle(
+                tmp.path(),
+                "aarch64-apple-darwin",
+                "player",
+                "../escape",
+                "org.shinkirou.player",
+                "0.1.0"
+            )
+            .is_err()
+        );
         assert_eq!(fs::read(tmp.path().join("player")).unwrap(), b"original");
         assert_eq!(fs::read_dir(tmp.path()).unwrap().count(), 1);
     }
@@ -481,15 +497,17 @@ mod tests {
         let path = tmp.path().join("player");
         fs::write(&path, &bytes).unwrap();
         assert!(inspect(&path, "aarch64-apple-ios-sim", true).is_ok());
-        assert!(bundle(
-            tmp.path(),
-            "aarch64-apple-ios",
-            "player",
-            "Player",
-            "org.shinkirou.player",
-            "0.1.0"
-        )
-        .is_err());
+        assert!(
+            bundle(
+                tmp.path(),
+                "aarch64-apple-ios",
+                "player",
+                "Player",
+                "org.shinkirou.player",
+                "0.1.0"
+            )
+            .is_err()
+        );
         assert_eq!(fs::read(&path).unwrap(), bytes);
         assert_eq!(fs::read_dir(tmp.path()).unwrap().count(), 1);
     }

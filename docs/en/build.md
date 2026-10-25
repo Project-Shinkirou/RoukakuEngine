@@ -8,9 +8,11 @@ sidebar: { order: 3 }
 
 ## Toolchain and workspaces
 
-`rust-toolchain.toml` selects Rust `1.98.0`, `rustfmt`, `clippy`, and a list of Rust targets. That list installs standard libraries; it is not a runtime support matrix. Install the native C/C++ compiler, linker, CMake, and tools required by the selected dependencies. Windows builds use MSVC.
+`rust-toolchain.toml` selects Rust `1.99.1`, `rustfmt`, `clippy`, and a list of Rust targets. Engine crates use Rust edition 2024 and require Rust 1.99 or newer. That target list installs standard libraries; it is not a runtime support matrix. Install the native C/C++ compiler, linker, CMake, and tools required by the selected dependencies. Windows builds use MSVC.
 
 The root workspace contains Engine, RoukakuVN, Player, CLI, and shared libraries. Editor has its own `Editor/Cargo.toml` and lockfile. Run `cargo xtask` from the repository root, selecting `engine`, `editor`, or `all`. Cargo subprocesses use `--locked`.
+
+The dependency baseline uses vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`, libass 0.17.5, and optional FFmpeg 9.0.2 port revision 2. The latest released `mlua` 0.12.2 is retained. Its released `mlua-sys` 0.13.0 loader rejects the bytecode emitted by Luau 744 during VM initialization, so the workspace pins the [upstream loader fix](https://github.com/mlua-rs/mlua/blob/ff96ed786295cae96f43ef1372bd22be0fbf7866/mlua-sys/src/luau/compat.rs) instead of downgrading Luau or skipping runtime tests.
 
 ```sh
 cargo xtask docs
@@ -58,7 +60,7 @@ After preparing FFmpeg, also apply the printed `VCPKG_ROOT`, `VCPKG_DEFAULT_TRIP
 
 ## Android Player
 
-Use `cargo xtask android`. Install JDK 17, `cargo-ndk`, and the Rust `aarch64-linux-android` target. Set `ANDROID_SDK_ROOT` or `ANDROID_HOME`. The SDK must contain Android 36, Build Tools 36.0.0, and NDK 30.0.15729638.
+Use `cargo xtask android`. Install JDK 27, `cargo-ndk`, and the Rust `aarch64-linux-android` target. Set `ANDROID_SDK_ROOT` or `ANDROID_HOME`. Install SDK platform `platforms;android-37.2`, Build Tools `37.0.0`, and stable [NDK r30](https://developer.android.com/ndk/downloads) `30.0.16248370`. The project uses AGP 9.4.1 and Gradle 9.8.2. JNI libraries retain 16 KiB ELF page alignment; uncompressed APK native libraries use modern zip alignment.
 
 First create a `.roukakupkg` with an Android host profile using [Quick start](quick-start.md), then run:
 
@@ -98,17 +100,17 @@ export RUSTUP_HOME="$HOME/shinkirou-apple/rustup"
 export CARGO_TARGET_DIR="$HOME/shinkirou-apple/target"
 export PATH="$HOME/shinkirou-apple/tools/bin:$PATH"
 export DOCKER_CONFIG="$HOME/shinkirou-apple/docker"
-rustup toolchain install 1.98.0 --profile minimal
-rustup target add --toolchain 1.98.0 x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
-cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" cross --version 0.2.5
-cargo +1.98.0 install --locked --root "$HOME/shinkirou-apple/tools" apple-codesign --version 0.29.0
+rustup toolchain install 1.99.1 --profile minimal
+rustup target add --toolchain 1.99.1 x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+cargo +1.99.1 install --locked --root "$HOME/shinkirou-apple/tools" cross --version 0.2.5
+cargo +1.99.1 install --locked --root "$HOME/shinkirou-apple/tools" apple-codesign --version 0.29.0
 export SHINKI_APPLE_SDK_DIR="$HOME/shinkirou-apple/sdks/macosx.sdk"
 cargo xtask apple-image --target aarch64-apple-darwin
 cargo xtask build --workspace engine --target aarch64-apple-darwin -p roukaku-player --release
 cargo xtask cross --target aarch64-apple-darwin check -- -p roukaku-core
 ```
 
-Build one image per target, switching SDK directories for iOS. Images use Rust 1.98.0, pinned [osxcross](https://github.com/tpoechtrager/osxcross) for macOS, LLVM/LLD for iOS, target-scoped C/C++/CMake tools and static libass from the pinned vcpkg input in `build/cross/`. Host tools keep their Linux compiler. Native licenses are exported to `.work/apple-native/<target>` and reused only for the same image identity. Build JSON includes Cargo's actual `compiler-artifact.executable` paths; packaging takes that path, not a guessed target directory.
+Build one image per target, switching SDK directories for iOS. Images use Rust 1.99.1, pinned [osxcross](https://github.com/tpoechtrager/osxcross) for macOS, LLVM/LLD for iOS, target-scoped C/C++/CMake tools and static libass from the pinned vcpkg input in `build/cross/`. Host tools keep their Linux compiler. Native licenses are exported to `.work/apple-native/<target>` and reused only for the same image identity. Build JSON includes Cargo's actual `compiler-artifact.executable` paths; packaging takes that path, not a guessed target directory.
 
 ### Player resources and test bundles
 

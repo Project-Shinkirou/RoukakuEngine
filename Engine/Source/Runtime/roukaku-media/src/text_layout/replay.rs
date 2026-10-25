@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use roukaku_core::{is_safe_symbol as safe_symbol, Hash256};
+use roukaku_core::{Hash256, is_safe_symbol as safe_symbol};
 
 use roukaku_media_core::GlyphBitmapFormat;
 
@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::MediaError;
 
 use super::{
-    TextLayoutProvider, TextLayoutProviderIdentity, TextLayoutRequest, TextLayoutResult,
-    TEXT_LAYOUT_SCHEMA,
+    TEXT_LAYOUT_SCHEMA, TextLayoutProvider, TextLayoutProviderIdentity, TextLayoutRequest,
+    TextLayoutResult,
 };
 
 mod binary_text_layout {
@@ -335,17 +335,18 @@ mod binary_text_layout {
 }
 
 mod replay_contract;
-pub use replay_contract::text_layout_evidence_hash;
-pub use replay_contract::text_layout_replay_request_hash;
+pub use replay_contract::TEXT_LAYOUT_REPLAY_SCHEMA;
+pub use replay_contract::TEXT_LAYOUT_REPLAY_SNAPSHOT_SCHEMA;
 pub use replay_contract::TextLayoutBindingIdentity;
 pub use replay_contract::TextLayoutReplayInput;
 pub use replay_contract::TextLayoutReplayLimits;
 pub use replay_contract::TextLayoutReplayRecord;
 pub use replay_contract::TextLayoutReplaySession;
 pub use replay_contract::TextLayoutReplaySnapshot;
-pub use replay_contract::TEXT_LAYOUT_REPLAY_SCHEMA;
-pub use replay_contract::TEXT_LAYOUT_REPLAY_SNAPSHOT_SCHEMA;
+pub use replay_contract::text_layout_evidence_hash;
+pub use replay_contract::text_layout_replay_request_hash;
 mod validate_layout;
+use validate_layout::PersistedLayoutRef;
 use validate_layout::binding_hash;
 use validate_layout::canonical_hash;
 use validate_layout::ensure_snapshot_budget;
@@ -357,4 +358,3 @@ use validate_layout::text_replay_error;
 use validate_layout::transcript_hash;
 use validate_layout::valid_coverage;
 use validate_layout::validate_layout;
-use validate_layout::PersistedLayoutRef;

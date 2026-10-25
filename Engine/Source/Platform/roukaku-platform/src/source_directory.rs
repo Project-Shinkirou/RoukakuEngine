@@ -7,7 +7,7 @@ pub struct AuthorizedSourceFileStat {
 
 pub trait AuthorizedSourceDirectoryBackend: Send {
     fn stat_relative(&self, relative_path: &str)
-        -> Result<AuthorizedSourceFileStat, PlatformError>;
+    -> Result<AuthorizedSourceFileStat, PlatformError>;
     fn read_relative(&self, relative_path: &str, max_bytes: u64) -> Result<Vec<u8>, PlatformError>;
     fn read_relative_range(
         &self,
