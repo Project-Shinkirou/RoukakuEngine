@@ -14,3 +14,8 @@ incremental = false
 [profile.test]
 debug = 0
 incremental = false
+
+[patch.crates-io]
+# Released mlua-sys rejects Luau 744's bytecode version 13 during Lua::new.
+# Same upstream loader fix as the root workspace.
+mlua-sys = { git = "https://github.com/mlua-rs/mlua", rev = "ff96ed786295cae96f43ef1372bd22be0fbf7866" }
