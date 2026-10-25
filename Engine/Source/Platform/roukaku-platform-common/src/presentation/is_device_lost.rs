@@ -102,7 +102,7 @@ impl WgpuPresentationCore {
             pass.draw(0..3, 0..1);
         }
         self.queue.submit([encoder.finish()]);
-        output.present();
+        self.queue.present(output);
         Ok(())
     }
 }
@@ -149,7 +149,12 @@ impl WgpuReadback {
         .map_err(|_| invalid("surface.capture", "frame row is too large"))?;
         let padded = usize::try_from(self.padded_row)
             .map_err(|_| invalid("surface.capture", "padded frame row is too large"))?;
-        let mapped = self.buffer.slice(..).get_mapped_range();
+        let mapped = self.buffer.slice(..).get_mapped_range().map_err(|_| {
+            unavailable(
+                "surface.capture",
+                "GPU readback mapped range is unavailable",
+            )
+        })?;
         let mut rgba8 = Vec::with_capacity(row * self.height as usize);
         for value in mapped.chunks_exact(padded).take(self.height as usize) {
             rgba8.extend_from_slice(&value[..row]);

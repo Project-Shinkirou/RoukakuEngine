@@ -137,7 +137,12 @@ pub(super) fn readback(
     rx.recv()
         .map_err(|_| unavailable("offscreen.readback", "GPU readback callback was lost"))?
         .map_err(|_| unavailable("offscreen.readback", "GPU readback mapping failed"))?;
-    let mapped = slice.get_mapped_range();
+    let mapped = slice.get_mapped_range().map_err(|_| {
+        unavailable(
+            "offscreen.readback",
+            "GPU readback mapped range is unavailable",
+        )
+    })?;
     let mut rgba8 = Vec::with_capacity(row as usize * height as usize);
     for source in mapped.chunks_exact(padded as usize).take(height as usize) {
         rgba8.extend_from_slice(&source[..row as usize]);

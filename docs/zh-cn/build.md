@@ -12,6 +12,8 @@ sidebar: { order: 3 }
 
 根 workspace 包含 Engine、RoukakuVN、Player、CLI 和共享库。Editor 使用 `Editor/Cargo.toml` 及自己的 lockfile。根目录的 `cargo xtask` 统一选择 `engine`、`editor` 或 `all`，底层 Cargo 命令使用 `--locked`。
 
+Engine 渲染使用 wgpu 30.0.x，与 ShinkiEMU 及 Slint 1.18.1 的 `unstable-wgpu-30` 后端一致。Windows 保留 `static-dxc` feature。呈现通过提交命令的 queue 执行，surface 使用默认 `Auto` 色彩空间，保持 SDR 输出。Editor 当前不通过 Engine crate 依赖 wgpu，其 GPUI 渲染器及独立 lockfile 不变。
+
 ```sh
 cargo xtask docs
 cargo xtask check --workspace engine
@@ -33,6 +35,12 @@ cargo xtask check --workspace engine --hardware
 ```
 
 此参数向测试 harness 传入 `--include-ignored`，因此也会运行此前已忽略的测试。按各测试要求准备平台 codec 和 fixture。由 `platform-test-driver` 控制的测试仍需 `--features platform-test-driver`；输入驱动测试会聚焦真实窗口并发送输入。CI 不传 `--hardware`。
+
+以下测试不打开窗口，会在原生 GPU 上实际执行场景绘制、WGSL 滤镜、纹理上传与回读：
+
+```sh
+cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
+```
 
 `check-fast` 只检查文档链接和文本卫生，不编译或运行测试。`docs` 使用同一文档检查。`ui-check` 显式下载锁定的 Luau analyzer 并检查 NativeVN controller；它需要联网。
 

@@ -12,6 +12,8 @@ sidebar: { order: 3 }
 
 The root workspace contains Engine, RoukakuVN, Player, CLI, and shared libraries. Editor has its own `Editor/Cargo.toml` and lockfile. Run `cargo xtask` from the repository root, selecting `engine`, `editor`, or `all`. Cargo subprocesses use `--locked`.
 
+Engine rendering uses wgpu 30.0.x, matching ShinkiEMU and Slint 1.18.1's `unstable-wgpu-30` backend. Windows keeps the `static-dxc` feature. Presentation uses the submitting queue and the default `Auto` surface color space, preserving SDR output. Editor currently does not consume wgpu through Engine crates; its GPUI renderer and independent lockfile remain unchanged.
+
 ```sh
 cargo xtask docs
 cargo xtask check --workspace engine
@@ -33,6 +35,12 @@ cargo xtask check --workspace engine --hardware
 ```
 
 The flag passes `--include-ignored` to the test harness, so it also runs previously ignored tests. Install any additional platform codecs and provide fixtures required by those tests. Tests gated by `platform-test-driver` still require `--features platform-test-driver`; input-driver tests can focus a real window and send input. CI omits `--hardware`.
+
+To exercise the native GPU scene, WGSL filter, texture upload and readback without opening a window, run:
+
+```sh
+cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
+```
 
 `check-fast` checks documentation links and hygiene only; it does not compile or test code. `docs` runs the same documentation check. `ui-check` explicitly downloads a pinned Luau analyzer and checks NativeVN controllers, requiring network access.
 
