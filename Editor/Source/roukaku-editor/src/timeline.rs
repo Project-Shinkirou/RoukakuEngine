@@ -1,7 +1,7 @@
 #[cfg(test)]
 use roukaku_vn_editor::{
-    timeline::{edit, tracks, Keyframe, KeyframeEdit},
     AuthoringWorkspace,
+    timeline::{Keyframe, KeyframeEdit, edit, tracks},
 };
 
 /// Convert a drag on the 520-pixel time axis. Only release commits one undo batch.
@@ -89,33 +89,39 @@ mod tests {
         assert_eq!(compiled.story.source_map.get("pan").unwrap().line, 5);
         workspace.undo().unwrap();
         assert_eq!(workspace.document("main.roukaku").unwrap().text, source);
-        assert!(edit(
-            &workspace,
-            "main.roukaku",
-            1,
-            "pan",
-            KeyframeEdit::Remove { index: 0 }
-        )
-        .is_err());
+        assert!(
+            edit(
+                &workspace,
+                "main.roukaku",
+                1,
+                "pan",
+                KeyframeEdit::Remove { index: 0 }
+            )
+            .is_err()
+        );
         let version = workspace.document("main.roukaku").unwrap().version;
-        assert!(edit(
-            &workspace,
-            "main.roukaku",
-            version,
-            "pan",
-            KeyframeEdit::Remove { index: 0 }
-        )
-        .is_err());
-        assert!(edit(
-            &workspace,
-            "main.roukaku",
-            version,
-            "pan",
-            KeyframeEdit::Insert(Keyframe {
-                time_ms: 1000,
-                value: "2".into()
-            })
-        )
-        .is_err());
+        assert!(
+            edit(
+                &workspace,
+                "main.roukaku",
+                version,
+                "pan",
+                KeyframeEdit::Remove { index: 0 }
+            )
+            .is_err()
+        );
+        assert!(
+            edit(
+                &workspace,
+                "main.roukaku",
+                version,
+                "pan",
+                KeyframeEdit::Insert(Keyframe {
+                    time_ms: 1000,
+                    value: "2".into()
+                })
+            )
+            .is_err()
+        );
     }
 }

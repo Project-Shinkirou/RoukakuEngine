@@ -1,5 +1,5 @@
 use roukaku_vn_editor::{
-    parse_roukaku_source, AuthoringWorkspace, DocumentEdits, EditBatch, TextEdit,
+    AuthoringWorkspace, DocumentEdits, EditBatch, TextEdit, parse_roukaku_source,
 };
 
 /// Add a route only to a state without existing control flow. The source remains authoritative.
@@ -156,8 +156,7 @@ mod tests {
     use roukaku_vn_editor::RoukakuSource;
     #[test]
     fn connect_remove_preserve_source_and_reject_stale_or_unknown_targets() {
-        let source =
-            "# note\nstory main #@id main\nstate start #@id start\n  scene entry #@id entry\nstate finish #@id finish\n  scene ending #@id ending\n";
+        let source = "# note\nstory main #@id main\nstate start #@id start\n  scene entry #@id entry\nstate finish #@id finish\n  scene ending #@id ending\n";
         let mut workspace = AuthoringWorkspace::default();
         workspace
             .open(RoukakuSource::story("main.roukaku", source))
@@ -185,12 +184,14 @@ mod tests {
         // Removing the only incoming route leaves an unreachable state; the normal
         // compiler diagnostic remains visible until the author reconnects it.
         assert!(workspace.compile(Default::default()).is_err());
-        assert!(!workspace
-            .document("main.roukaku")
-            .unwrap()
-            .text
-            .lines()
-            .any(|line| !line.is_empty() && line.trim().is_empty()));
+        assert!(
+            !workspace
+                .document("main.roukaku")
+                .unwrap()
+                .text
+                .lines()
+                .any(|line| !line.is_empty() && line.trim().is_empty())
+        );
         workspace.undo().unwrap();
         workspace.undo().unwrap();
         assert_eq!(workspace.document("main.roukaku").unwrap().text, source);

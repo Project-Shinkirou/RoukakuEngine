@@ -1,6 +1,7 @@
 use super::*;
 use gpui_component::dock::{
-    register_panel, DockArea, DockAreaState, DockEvent, DockItem, Panel, PanelEvent,
+    BasePanel, DockAreaState, DockEvent, DockLayout, DockSkin, Panel, PanelEvent, panel_handle,
+    register_panel,
 };
 
 #[derive(Clone, Copy)]
@@ -50,15 +51,18 @@ impl Focusable for WorkspacePane {
         self.focus.clone()
     }
 }
-impl Panel for WorkspacePane {
+impl BasePanel for WorkspacePane {
     fn panel_name(&self) -> &'static str {
         self.kind.name()
     }
-    fn title(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        self.kind.title()
-    }
+
     fn closable(&self, _: &App) -> bool {
         false
+    }
+}
+impl Panel for WorkspacePane {
+    fn title(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        self.kind.title()
     }
 }
 impl Render for WorkspacePane {
@@ -87,21 +91,21 @@ impl Editor {
         let owner = cx.entity().downgrade();
         for kind in [PaneKind::Content, PaneKind::Authoring, PaneKind::Details] {
             let owner = owner.clone();
-            register_panel(cx, kind.name(), move |_, _, _, _, cx| {
-                Box::new(cx.new(|cx| WorkspacePane::new(owner.clone(), kind, cx)))
+            register_panel(cx, kind.name(), move |_, _, cx| {
+                panel_handle(cx.new(|cx| WorkspacePane::new(owner.clone(), kind, cx)))
             });
         }
-        let dock = cx.new(|cx| DockArea::new("roukaku-workspace", Some(1), window, cx));
-        let weak_dock = dock.downgrade();
-        let items = [PaneKind::Content, PaneKind::Authoring, PaneKind::Details]
+        let (dock, _) = DockSkin::dock_area("roukaku-workspace", Some(1), window, cx);
+        let center = [PaneKind::Content, PaneKind::Authoring, PaneKind::Details]
             .into_iter()
             .zip([250., 560., 280.])
-            .map(|(kind, width)| {
+            .fold(DockLayout::h_split(), |layout, (kind, width)| {
                 let pane = cx.new(|cx| WorkspacePane::new(owner.clone(), kind, cx));
-                DockItem::tab(pane, &weak_dock, window, cx).size(px(width))
-            })
-            .collect();
-        let center = DockItem::h_split(items, &weak_dock, window, cx);
+                layout.child(
+                    DockLayout::tabs().panel_view(panel_handle(pane), cx),
+                    Some(px(width)),
+                )
+            });
         dock.update(cx, |dock, cx| dock.set_center(center, window, cx));
         let path = self.project.layout_path();
         if path.exists() {

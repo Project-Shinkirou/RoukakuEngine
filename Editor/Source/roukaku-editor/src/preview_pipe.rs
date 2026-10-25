@@ -5,7 +5,7 @@ use std::{
     thread::JoinHandle,
 };
 
-use roukaku_vn_editor::{PreviewRequest, PreviewResponse, PREVIEW_MAX_MESSAGE_BYTES};
+use roukaku_vn_editor::{PREVIEW_MAX_MESSAGE_BYTES, PreviewRequest, PreviewResponse};
 
 /// The child must exit before join, so blocked pipe reads/writes are released.
 pub(crate) struct PreviewPipe {

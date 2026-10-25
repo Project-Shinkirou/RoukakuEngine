@@ -1,5 +1,5 @@
 use super::*;
-use roukaku_editor::asset_import::{prepare_image, ImageImport};
+use roukaku_editor::asset_import::{ImageImport, prepare_image};
 
 pub(super) struct ImportForm {
     token: uuid::Uuid,

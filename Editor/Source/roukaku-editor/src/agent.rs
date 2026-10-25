@@ -116,15 +116,19 @@ mod tests {
         };
         let mut agent = AgentEdits::default();
         let generation = agent.begin(EditMode::ReviewEachBatch).unwrap();
-        assert!(!agent
-            .submit(generation, batch.clone(), &mut documents)
-            .unwrap());
+        assert!(
+            !agent
+                .submit(generation, batch.clone(), &mut documents)
+                .unwrap()
+        );
         documents.apply(batch.clone()).unwrap();
         assert!(agent.resolve(true, &mut documents).is_err());
         agent.cancel();
-        assert!(agent
-            .submit(generation, batch.clone(), &mut documents)
-            .is_err());
+        assert!(
+            agent
+                .submit(generation, batch.clone(), &mut documents)
+                .is_err()
+        );
         agent.begin(EditMode::Autonomous).unwrap();
         assert!(agent.submit(generation, batch, &mut documents).is_err());
     }

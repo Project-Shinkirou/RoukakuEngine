@@ -54,11 +54,13 @@ fn external_agent_edits_through_reviewed_document_transaction() {
         }
         assert_eq!(applied, 1, "Agent did not use the Editor transaction bridge: {response}");
     });
-    assert!(documents
-        .document("main.roukaku")
-        .unwrap()
-        .text
-        .starts_with("# edited through ACP\n"));
+    assert!(
+        documents
+            .document("main.roukaku")
+            .unwrap()
+            .text
+            .starts_with("# edited through ACP\n")
+    );
     assert_eq!(
         std::fs::read_to_string(path).unwrap(),
         original,

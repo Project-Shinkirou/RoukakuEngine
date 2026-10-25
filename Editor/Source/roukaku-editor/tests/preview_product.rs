@@ -220,11 +220,13 @@ fn edit_nativevn(
         .unwrap();
     let edited = project.compile().unwrap();
     assert_ne!(edited.project_hash, original_hash);
-    assert!(edited
-        .story
-        .source_map
-        .get("experience.walk.start")
-        .is_some());
+    assert!(
+        edited
+            .story
+            .source_map
+            .get("experience.walk.start")
+            .is_some()
+    );
     (original_hash, originals)
 }
 

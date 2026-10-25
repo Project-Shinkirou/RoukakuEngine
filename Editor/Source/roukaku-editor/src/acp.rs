@@ -1,8 +1,8 @@
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
 use agent_client_protocol::{
-    schema::{v1::*, ProtocolVersion},
     AcpAgent, Agent, ConnectionTo,
+    schema::{ProtocolVersion, v1::*},
 };
 use tokio::sync::Mutex;
 
@@ -16,7 +16,10 @@ pub async fn prompt(
     bridge: EditorBridge,
 ) -> anyhow::Result<()> {
     let source = source.canonicalize()?;
-    let prompt = format!("Edit only the open source using the roukaku_editor MCP server read_document and apply_batch tools. Read the current document and generation first; submit UTF-8 byte edits with its exact version and generation. Changes are reviewed in the Editor. Do not write source files directly or use shell commands.\n\n{}", prompt);
+    let prompt = format!(
+        "Edit only the open source using the roukaku_editor MCP server read_document and apply_batch tools. Read the current document and generation first; submit UTF-8 byte edits with its exact version and generation. Changes are reviewed in the Editor. Do not write source files directly or use shell commands.\n\n{}",
+        prompt
+    );
     let root = source
         .parent()
         .ok_or_else(|| anyhow::anyhow!("Source has no parent"))?

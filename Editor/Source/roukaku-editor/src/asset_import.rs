@@ -203,17 +203,21 @@ mod tests {
             Some(roukaku_core::Hash256::from_sha256(&imported))
         );
         assert!(metadata.validate().is_empty());
-        assert!(project
-            .import_image(prepare_image(&source, settings()).unwrap())
-            .is_err());
+        assert!(
+            project
+                .import_image(prepare_image(&source, settings()).unwrap())
+                .is_err()
+        );
         assert_eq!(
             std::fs::read(dir.path().join("Images/image.png")).unwrap(),
             imported
         );
-        assert!(Project::open(&dir.path().join("project.yaml"))
-            .unwrap()
-            .content
-            .contains(&sidecar));
+        assert!(
+            Project::open(&dir.path().join("project.yaml"))
+                .unwrap()
+                .content
+                .contains(&sidecar)
+        );
         let mut unsafe_settings = settings();
         unsafe_settings.destination = "../escape.png".into();
         assert!(prepare_image(&source, unsafe_settings).is_err());

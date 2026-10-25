@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use gpui::{div, prelude::*, *};
 use gpui_component::{
-    button::Button,
-    input::{Input, InputEvent, InputState},
     Disableable, Root,
+    button::Button,
+    input::{Editor as CodeEditor, EditorState, Input, InputEvent, InputState},
 };
 use roukaku_editor::preview::{Preview, PreviewConfig};
 use roukaku_editor::project::{Project, ProjectRevision};
@@ -45,7 +45,7 @@ struct EditorServices {
 struct Editor {
     asset_import: Option<asset_panel::ImportForm>,
     project: Project,
-    input: Entity<InputState>,
+    input: Entity<EditorState>,
     status: String,
     syncing: bool,
     preview_config: Option<PreviewConfig>,
@@ -106,8 +106,8 @@ impl Editor {
             .text
             .clone();
         let input = cx.new(|cx| {
-            InputState::new(window, cx)
-                .code_editor("text")
+            EditorState::new(window, cx)
+                .language("text")
                 .line_number(true)
         });
         let agent_prompt = cx.new(|cx| {
@@ -118,12 +118,15 @@ impl Editor {
         let subscription = cx.subscribe_in(&input, window, |this, input, event, _, cx| {
             if matches!(event, InputEvent::Change) && !this.syncing {
                 let text = input.read(cx).value().to_string();
-                if let Err(error) = this.project.replace(text) {
-                    this.status = error.to_string();
-                } else {
-                    this.cancel_agent();
-                    this.preview = None;
-                    this.diagnose();
+                match this.project.replace(text) {
+                    Err(error) => {
+                        this.status = error.to_string();
+                    }
+                    _ => {
+                        this.cancel_agent();
+                        this.preview = None;
+                        this.diagnose();
+                    }
                 }
                 cx.notify();
             }
@@ -161,114 +164,124 @@ impl Editor {
             _subscription: subscription,
         };
         editor.agent.begin(editor.mode).expect("new agent turn");
-        cx.spawn_in(window, async move |this, cx| loop {
-            cx.background_executor()
-                .timer(std::time::Duration::from_millis(100))
-                .await;
-            if this
-                .update_in(cx, |this, window, cx| {
-                    this.follow_source_cursor(window, cx);
-                    if this.poll_diagnostics() {
-                        cx.notify();
-                    }
-                    while let Ok(request) = this.requests.try_recv() {
-                        match request {
-                            Request::Permission {
-                                generation,
-                                request,
-                                reply,
-                            } => {
-                                if generation != this.bridge.generation()
-                                    || this.permission.is_some()
-                                    || reply.is_closed()
-                                {
-                                    let _ = reply.send(RequestPermissionOutcome::Cancelled);
-                                } else {
-                                    this.permission = Some(PermissionReview {
-                                        generation,
-                                        request,
-                                        reply,
-                                    });
-                                    cx.notify();
-                                }
-                            }
-                            Request::AgentMessage { generation, text } => {
-                                if generation == this.bridge.generation()
-                                    && this.agent_output.len() < 16_384
-                                {
-                                    for character in text.chars() {
-                                        if this.agent_output.len() + character.len_utf8() > 16_384 {
-                                            break;
-                                        }
-                                        this.agent_output.push(character);
-                                    }
-                                    cx.notify();
-                                }
-                            }
-                            Request::Read { reply } => {
-                                let _ = reply.send(
-                                    this.project
-                                        .documents
-                                        .document(&this.project.active)
-                                        .cloned()
-                                        .map_err(Into::into),
-                                );
-                            }
-                            Request::Apply {
-                                generation,
-                                batch,
-                                reply,
-                            } => {
-                                if generation != this.bridge.generation() || reply.is_closed() {
-                                    let _ = reply.send(Err(anyhow::anyhow!("Cancelled request")));
-                                    continue;
-                                }
-                                match this.agent.submit(
+        cx.spawn_in(window, async move |this, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(std::time::Duration::from_millis(100))
+                    .await;
+                if this
+                    .update_in(cx, |this, window, cx| {
+                        this.follow_source_cursor(window, cx);
+                        if this.poll_diagnostics() {
+                            cx.notify();
+                        }
+                        while let Ok(request) = this.requests.try_recv() {
+                            match request {
+                                Request::Permission {
                                     generation,
-                                    batch,
-                                    &mut this.project.documents,
-                                ) {
-                                    Ok(true) => {
-                                        let _ = reply.send(Ok(()));
-                                        this.sync(window, cx);
-                                    }
-                                    Ok(false) => {
-                                        this.pending_reply = Some(reply);
+                                    request,
+                                    reply,
+                                } => {
+                                    if generation != this.bridge.generation()
+                                        || this.permission.is_some()
+                                        || reply.is_closed()
+                                    {
+                                        let _ = reply.send(RequestPermissionOutcome::Cancelled);
+                                    } else {
+                                        this.permission = Some(PermissionReview {
+                                            generation,
+                                            request,
+                                            reply,
+                                        });
                                         cx.notify();
                                     }
-                                    Err(error) => {
-                                        let _ = reply.send(Err(error));
+                                }
+                                Request::AgentMessage { generation, text } => {
+                                    if generation == this.bridge.generation()
+                                        && this.agent_output.len() < 16_384
+                                    {
+                                        for character in text.chars() {
+                                            if this.agent_output.len() + character.len_utf8()
+                                                > 16_384
+                                            {
+                                                break;
+                                            }
+                                            this.agent_output.push(character);
+                                        }
+                                        cx.notify();
+                                    }
+                                }
+                                Request::Read { reply } => {
+                                    let _ = reply.send(
+                                        this.project
+                                            .documents
+                                            .document(&this.project.active)
+                                            .cloned()
+                                            .map_err(Into::into),
+                                    );
+                                }
+                                Request::Apply {
+                                    generation,
+                                    batch,
+                                    reply,
+                                } => {
+                                    if generation != this.bridge.generation() || reply.is_closed() {
+                                        let _ =
+                                            reply.send(Err(anyhow::anyhow!("Cancelled request")));
+                                        continue;
+                                    }
+                                    match this.agent.submit(
+                                        generation,
+                                        batch,
+                                        &mut this.project.documents,
+                                    ) {
+                                        Ok(true) => {
+                                            let _ = reply.send(Ok(()));
+                                            this.sync(window, cx);
+                                        }
+                                        Ok(false) => {
+                                            this.pending_reply = Some(reply);
+                                            cx.notify();
+                                        }
+                                        Err(error) => {
+                                            let _ = reply.send(Err(error));
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    if this.pending_reply.as_ref().is_some_and(|r| r.is_closed()) {
-                        this.cancel_agent();
-                        cx.notify();
-                    }
-                    if this
-                        .permission
-                        .as_ref()
-                        .is_some_and(|permission| permission.reply.is_closed())
-                    {
-                        this.permission = None;
-                        cx.notify();
-                    }
-                    if let Some(preview) = &mut this.preview {
-                        if let Err(error) = preview.poll(&this.project.documents) {
-                            this.status = error.to_string();
-                            this.preview = None;
-                        } else if preview.is_finished() {
-                            this.status = preview.status.clone();
-                            this.preview = None;
+                        if this.pending_reply.as_ref().is_some_and(|r| r.is_closed()) {
+                            this.cancel_agent();
+                            cx.notify();
                         }
-                        cx.notify();
-                    }
-                })
-                .is_err()
-            {
-                break;
+                        if this
+                            .permission
+                            .as_ref()
+                            .is_some_and(|permission| permission.reply.is_closed())
+                        {
+                            this.permission = None;
+                            cx.notify();
+                        }
+                        if let Some(preview) = &mut this.preview {
+                            match preview.poll(&this.project.documents) {
+                                Err(error) => {
+                                    this.status = error.to_string();
+                                    this.preview = None;
+                                }
+                                _ => {
+                                    if preview.is_finished() {
+                                        this.status = preview.status.clone();
+                                        this.preview = None;
+                                    }
+                                }
+                            }
+                            cx.notify();
+                        }
+                    })
+                    .is_err()
+                {
+                    break;
+                }
             }
         })
         .detach();
@@ -398,7 +411,7 @@ fn main() -> anyhow::Result<()> {
     }
     let runtime_handle = runtime.handle().clone();
     let compiler = BackgroundCompiler::new(std::time::Duration::from_millis(150))?;
-    Application::new().run(move |cx: &mut App| {
+    gpui_platform::application().run(move |cx: &mut App| {
         gpui_component::init(cx);
         let bounds = Bounds::centered(None, size(px(1100.), px(760.)), cx);
         cx.open_window(
@@ -449,12 +462,12 @@ fn main() -> anyhow::Result<()> {
                                     cx.notify();
                                     return;
                                 }
-                                if choice == 1 {
-                                    if let Err(error) = this.project.save_all() {
-                                        this.status = error.to_string();
-                                        cx.notify();
-                                        return;
-                                    }
+                                if choice == 1
+                                    && let Err(error) = this.project.save_all()
+                                {
+                                    this.status = error.to_string();
+                                    cx.notify();
+                                    return;
                                 }
                                 this.close_confirmed = true;
                                 this.preview = None;

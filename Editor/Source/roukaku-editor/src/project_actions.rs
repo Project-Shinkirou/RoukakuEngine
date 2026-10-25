@@ -65,12 +65,12 @@ impl Editor {
                     cx.notify();
                     return;
                 }
-                if choice == 1 {
-                    if let Err(error) = this.project.save_all() {
-                        this.status = error.to_string();
-                        cx.notify();
-                        return;
-                    }
+                if choice == 1
+                    && let Err(error) = this.project.save_all()
+                {
+                    this.status = error.to_string();
+                    cx.notify();
+                    return;
                 }
                 match Project::open(&path) {
                     Ok(project) => {

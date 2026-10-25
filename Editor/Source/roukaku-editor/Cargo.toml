@@ -9,7 +9,7 @@ roukaku-asset = { path = "../../../Engine/Source/Runtime/roukaku-asset" }
 roukaku-cook = { path = "../../../Engine/Source/Developer/roukaku-cook" }
 roukaku-core = { path = "../../../Engine/Source/Runtime/roukaku-core" }
 roukaku-vn-editor = { path = "../../../Engine/Source/Modules/RoukakuVN/roukaku-vn-editor" }
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 serde_yaml = "0.9"
 roukaku-ui-core = { path = "../../../Engine/Source/Runtime/roukaku-ui-core" }
@@ -17,15 +17,16 @@ roukaku-vn-policy = { path = "../../../Engine/Source/Modules/RoukakuVN/roukaku-v
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 tempfile = "3"
-rmcp = { version = "=3.4.0", features = ["transport-io", "transport-streamable-http-server"] }
+rmcp = { version = "3.7.0", features = ["transport-io", "transport-streamable-http-server"] }
 axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
-tokio-util = "0.7"
+tokio-util = { version = "0.7.20", features = ["rt"] }
 uuid = { version = "1", features = ["v4"] }
-schemars = "1"
+schemars = "1.2"
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "process"] }
-agent-client-protocol = "=2.2.0"
-gpui = "=0.2.2"
-gpui-component = "=0.5.1"
+agent-client-protocol = { version = "3.5.0", features = ["process"] }
+gpui = { package = "gpui-pre", version = "=0.3.9" }
+gpui-component = "=0.8.0"
+gpui-platform = { package = "gpui-pre-platform", version = "=0.3.9", features = ["font-kit", "wayland", "x11"] }
 
 [dev-dependencies]
 image = { version = "0.25", default-features = false, features = ["png"] }

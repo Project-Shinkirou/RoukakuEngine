@@ -7,8 +7,8 @@ use std::{
 
 use crate::preview_pipe::PreviewPipe;
 use roukaku_vn_editor::{
-    AuthoringWorkspace, PreviewCommand, PreviewIdentity, PreviewRequest, PreviewResponse,
-    PreviewStatus, PREVIEW_PROTOCOL,
+    AuthoringWorkspace, PREVIEW_PROTOCOL, PreviewCommand, PreviewIdentity, PreviewRequest,
+    PreviewResponse, PreviewStatus,
 };
 use serde::Deserialize;
 
@@ -50,7 +50,13 @@ impl Preview {
 
     pub fn start(config: &PreviewConfig, identity: PreviewIdentity) -> anyhow::Result<Self> {
         if cfg!(windows) {
-            anyhow::ensure!(config.windows_runtime.as_ref().is_some_and(|path| path.is_dir()), "Windows preview requires windows_runtime pointing to the matching VC x64 CRT directory");
+            anyhow::ensure!(
+                config
+                    .windows_runtime
+                    .as_ref()
+                    .is_some_and(|path| path.is_dir()),
+                "Windows preview requires windows_runtime pointing to the matching VC x64 CRT directory"
+            );
             anyhow::ensure!(
                 config
                     .crash_reporter

@@ -1,9 +1,9 @@
 use super::*;
 use gpui_component::{
     list::ListItem,
-    tree::{tree, TreeItem, TreeState},
+    tree::{TreeItem, TreeState, tree},
 };
-use roukaku_vn_editor::{parse_roukaku_source, EditBatch};
+use roukaku_vn_editor::{EditBatch, parse_roukaku_source};
 
 pub(super) struct WorkspacePanels {
     pub(super) timeline_selection: Option<crate::timeline_panel::TimelineSelection>,
@@ -321,7 +321,7 @@ impl Editor {
             ViewMode::Source => div()
                 .flex_1()
                 .min_h_0()
-                .child(Input::new(&self.input).h_full())
+                .child(CodeEditor::new(&self.input).h_full())
                 .into_any_element(),
             ViewMode::Graph => self.graph_panel(cx),
             ViewMode::Timeline => self.timeline_panel(cx),
@@ -386,10 +386,10 @@ impl Editor {
                         this.panels.dock = None;
                         this.panels.dock_subscription = None;
                         let path = this.project.layout_path();
-                        if path.exists() {
-                            if let Err(error) = std::fs::remove_file(path) {
-                                this.status = format!("Could not reset layout: {error}");
-                            }
+                        if path.exists()
+                            && let Err(error) = std::fs::remove_file(path)
+                        {
+                            this.status = format!("Could not reset layout: {error}");
                         }
                         cx.notify();
                     })),

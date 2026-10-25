@@ -1,7 +1,8 @@
 use rmcp::{
+    ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::*,
-    tool, tool_handler, tool_router, ServerHandler, ServiceExt,
+    tool, tool_handler, tool_router,
 };
 
 use crate::bridge::EditorBridge;

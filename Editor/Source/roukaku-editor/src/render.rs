@@ -65,8 +65,13 @@ impl Render for Editor {
                     if let Err(error) = result { this.status = error.to_string(); }
                     cx.notify();
                 })))
-                .child(Button::new("stop").label("Stop preview").on_click(cx.listener(|this, _, _, cx| {
-                    if let Some(preview) = &mut this.preview { if let Err(error) = preview.stop() { this.status = error.to_string(); this.preview = None; } } cx.notify();
+                .child(Button::new("stop").label("Stop preview").on_click(cx.listener(|this, _, _, _cx| {
+                    if let Some(preview) = &mut this.preview
+                        && let Err(error) = preview.stop()
+                    {
+                        this.status = error.to_string();
+                        this.preview = None;
+                    }
                 }))))
             .child(self.preview_controls(cx))
             .child(div().flex_1().min_h_0().child(self.workspace_panels(window, cx)))
@@ -95,7 +100,7 @@ impl Render for Editor {
 }
 
 impl Editor {
-    fn permission_panel(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn permission_panel(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let mut panel = div().flex().flex_col().gap_2();
         if let Some(permission) = &self.permission {
             let generation = permission.generation;
@@ -144,7 +149,7 @@ impl Editor {
         panel
     }
 
-    fn preview_controls(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn preview_controls(&self, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let mut controls = div().flex().gap_2();
         if let Some(live) = self
             .preview
@@ -156,44 +161,42 @@ impl Editor {
                 Button::new("pause-preview")
                     .label(if paused { "Resume" } else { "Pause" })
                     .on_click(cx.listener(move |this, _, _, cx| {
-                        if let Some(preview) = &mut this.preview {
-                            if let Err(error) = preview.send(if paused {
+                        if let Some(preview) = &mut this.preview
+                            && let Err(error) = preview.send(if paused {
                                 roukaku_vn_editor::PreviewCommand::Resume
                             } else {
                                 roukaku_vn_editor::PreviewCommand::Pause
-                            }) {
-                                this.status = error.to_string();
-                            }
+                            })
+                        {
+                            this.status = error.to_string();
                         }
                         cx.notify();
                     })),
             );
-            if paused {
-                if let Some(source_id) = &live.source_id {
-                    for checkpoint in &live.checkpoints {
-                        let source_id = source_id.clone();
-                        let id = checkpoint.id;
-                        controls = controls.child(
-                            Button::new(("seek-preview", id))
-                                .label(format!(
-                                    "{:.2}s",
-                                    checkpoint.presentation_time_ns as f64 / 1_000_000_000.
-                                ))
-                                .on_click(cx.listener(move |this, _, _, cx| {
-                                    if let Some(preview) = &mut this.preview {
-                                        if let Err(error) = preview.send(
-                                            roukaku_vn_editor::PreviewCommand::SeekWithinFragment {
-                                                source_id: source_id.clone(),
-                                                checkpoint: id,
-                                            },
-                                        ) {
-                                            this.status = error.to_string();
-                                        }
-                                    }
-                                    cx.notify();
-                                })),
-                        );
-                    }
+            if paused && let Some(source_id) = &live.source_id {
+                for checkpoint in &live.checkpoints {
+                    let source_id = source_id.clone();
+                    let id = checkpoint.id;
+                    controls = controls.child(
+                        Button::new(("seek-preview", id))
+                            .label(format!(
+                                "{:.2}s",
+                                checkpoint.presentation_time_ns as f64 / 1_000_000_000.
+                            ))
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                if let Some(preview) = &mut this.preview
+                                    && let Err(error) = preview.send(
+                                        roukaku_vn_editor::PreviewCommand::SeekWithinFragment {
+                                            source_id: source_id.clone(),
+                                            checkpoint: id,
+                                        },
+                                    )
+                                {
+                                    this.status = error.to_string();
+                                }
+                                cx.notify();
+                            })),
+                    );
                 }
             }
         }

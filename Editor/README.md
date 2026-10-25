@@ -68,7 +68,7 @@ cargo test --manifest-path Editor/Cargo.toml --test preview_product nativevn_gra
 
 ## 依赖与检查
 
-GPUI 固定为 0.2.2，gpui-component 固定为与其匹配的 0.5.1；两者均为 Apache-2.0，组件库承担多行输入、IME、选择与光标行为。ACP 2.2.0 和 rmcp 3.4.0 使用官方 Rust SDK，同为 Apache-2.0。具体传递依赖由 `Cargo.lock` 固定。桌面目标为 Windows、Linux 和 macOS，各平台仍需分别运行验证。
+GPUI `gpui-pre` 固定为 0.3.9，gpui-component 固定为 0.8.0；两者均为 Apache-2.0，组件库承担多行输入、IME、选择与光标行为。ACP 3.5.0 和 rmcp 3.7.0 使用官方 Rust SDK，同为 Apache-2.0。具体传递依赖由 `Cargo.lock` 固定。桌面目标为 Windows、Linux 和 macOS，各平台仍需分别运行验证。
 
 ```sh
 cargo test -p roukaku-vn-editor
