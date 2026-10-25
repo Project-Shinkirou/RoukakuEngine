@@ -36,6 +36,44 @@ The flag passes `--include-ignored` to the test harness, so it also runs previou
 
 `check-fast` checks documentation links and hygiene only; it does not compile or test code. `docs` runs the same documentation check. `ui-check` explicitly downloads a pinned Luau analyzer and checks NativeVN controllers, requiring network access.
 
+## Compiled work extensions
+
+Work extensions implement `roukaku_plugin::WorkExtension` and register their Rust
+types with `WorkExtensionRegistry::register` in a project's `player` crate.
+Install that registry before calling `roukaku_player::run()`. Each session gets
+its own instances. Player preflight checks provider, command and schema identity;
+an unregistered provider reports `ROUKAKU_EXTENSION_PROVIDER_UNREGISTERED`.
+Commands receive typed `ExtensionInvocation` data and return real `SceneCommand`
+output, retained per provider across frames. Scalar arguments map to JSON values;
+fixed-point arguments use integer millionths.
+
+`Examples/ExtensionPlayer/extension` is a public progress-meter implementation.
+Its companion `player` crate links it into the ordinary Player host; its tests
+launch a packaged story command and inspect the resulting presentation.
+
+```sh
+cargo xtask project-player Examples/ExtensionPlayer --output ./project-player.exe
+# Optional --target selects a Cargo target; the required native SDK must be installed.
+cargo xtask project-player ./ContentProject --prebuilt ./roukaku-player.exe --output ./content-player.exe
+```
+
+`project-player` builds `player/Cargo.toml` with `--locked --release`, reads Cargo's
+artifact messages and stages its single executable. A pure-content project has
+no `player/Cargo.toml` and reuses `--prebuilt`. Pass the staged executable to the
+existing package bundle command's platform Player option. Extension projects
+cannot substitute a prebuilt binary.
+
+`WorkExtensionDeclaration` and `ExtensionCommandDeclaration` contain only data
+(provider IDs, command schemas and argument schemas). Compiled Editor panels
+can share those types without pulling Editor UI dependencies into Player.
+There is no runtime library loader, binary descriptor or plugin ABI gate.
+The `roukaku-engine` and `roukaku-vn` Rust facades build as ordinary `rlib`
+dependencies; redundant Rust `dylib` outputs are removed. Android and Web host
+`cdylib` entrypoints remain platform artifacts.
+Extensions explicitly return `Transient` or `Restorable` from `restoration()`;
+`ExtensionState` supplies capture, candidate validation and restore hooks for
+business state. The checkpoint/restore owner integrates those hooks separately.
+
 ## Native dependencies
 
 Dependency preparation is explicit. Ordinary builds do not install system packages. These commands use a pinned vcpkg revision to prepare FFmpeg and libass subtitle dependencies as selected:

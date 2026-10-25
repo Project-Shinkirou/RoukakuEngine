@@ -17,7 +17,7 @@ roukaku-runtime = { path = "../../Runtime/roukaku-runtime" }
 roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
 roukaku-platform = { path = "../../Platform/roukaku-platform" }
 roukaku-platform-android = { path = "../../Platform/roukaku-platform-android" }
-roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi", default-features = false }
+roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi" }
 roukaku-target = { path = "../../Platform/roukaku-target" }
 roukaku-vn = { path = "../../Modules/RoukakuVN/roukaku-vn" }
 roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }

@@ -36,6 +36,37 @@ cargo xtask check --workspace engine --hardware
 
 `check-fast` 只检查文档链接和文本卫生，不编译或运行测试。`docs` 使用同一文档检查。`ui-check` 显式下载锁定的 Luau analyzer 并检查 NativeVN controller；它需要联网。
 
+## 编译集成作品扩展
+
+作品扩展实现 `roukaku_plugin::WorkExtension`，在工程的 `player` crate 中通过
+`WorkExtensionRegistry::register` 注册 Rust 类型。调用 `roukaku_player::run()`
+前安装注册表，每个会话独立创建扩展实例。Player 启动时检查 provider、命令和 schema；
+未注册的 provider 报 `ROUKAKU_EXTENSION_PROVIDER_UNREGISTERED`。
+命令通过 `ExtensionInvocation` 接收参数，输出真实 `SceneCommand`，按 provider
+保留到后续帧。标量参数对应 JSON 值，定点参数使用整数百万分位。
+
+`Examples/ExtensionPlayer/extension` 提供可公开复用的进度条扩展，旁边的 `player`
+crate 将它链接进正常 Player 宿主。测试启动作品包中的命令并检查最终呈现输出。
+
+```sh
+cargo xtask project-player Examples/ExtensionPlayer --output ./project-player.exe
+# 可用 --target 指定 Cargo 目标，构建机需安装对应原生 SDK。
+cargo xtask project-player ./ContentProject --prebuilt ./roukaku-player.exe --output ./content-player.exe
+```
+
+`project-player` 用 `--locked --release` 构建 `player/Cargo.toml`，从 Cargo
+产物消息中读取唯一可执行文件并复制到输出路径。纯内容工程没有 `player/Cargo.toml`，
+直接复用 `--prebuilt`。把输出文件传给现有 package bundle 命令对应平台的 Player
+选项即可打包；扩展工程不能用预构建文件替代专用 Player。
+
+`WorkExtensionDeclaration` 和 `ExtensionCommandDeclaration` 只含 provider ID、
+命令 schema 和参数 schema。编译集成的 Editor 面板可以共享这些类型，Player
+无需依赖 Editor UI。运行时动态库加载器、二进制描述符和插件 ABI 门禁已移除。
+`roukaku-engine` 和 `roukaku-vn` 按普通 `rlib` 依赖编译，不再生成多余的 Rust
+`dylib`。Android 和 Web 宿主的 `cdylib` 入口仍作为平台产物保留。
+扩展必须通过 `restoration()` 明确选择 `Transient` 或 `Restorable`；
+`ExtensionState` 提供业务状态采集、候选验证和恢复接口，由检查点/恢复切片接入。
+
 ## 原生依赖
 
 依赖准备是显式操作，普通构建不代替你安装系统包。以下入口使用固定 vcpkg revision，按需准备 FFmpeg 和 libass 字幕依赖：

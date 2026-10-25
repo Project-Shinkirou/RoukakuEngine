@@ -1,0 +1,20 @@
+[package]
+name = "roukaku-example-extension-player"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+roukaku-player = { path = "../../../Engine/Source/Programs/roukaku-player" }
+roukaku-plugin = { path = "../../../Engine/Source/Runtime/roukaku-plugin" }
+roukaku-example-progress-meter = { path = "../extension" }
+
+[dev-dependencies]
+roukaku-player-vn = { path = "../../../Engine/Source/Programs/roukaku-player-vn", features = ["headless-test-fixtures"] }
+roukaku-player-core = { path = "../../../Engine/Source/Runtime/roukaku-player-core" }
+roukaku-vn-core = { path = "../../../Engine/Source/Modules/RoukakuVN/roukaku-vn-core" }
+roukaku-vn-script = { path = "../../../Engine/Source/Modules/RoukakuVN/roukaku-vn-script" }
+roukaku-package = { path = "../../../Engine/Source/Runtime/roukaku-package" }
+roukaku-media-core = { path = "../../../Engine/Source/Runtime/roukaku-media-core" }
+roukaku-runtime = { path = "../../../Engine/Source/Runtime/roukaku-runtime" }
+serde_json.workspace = true

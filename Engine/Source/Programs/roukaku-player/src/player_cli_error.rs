@@ -2,7 +2,7 @@ use super::*;
 
 pub(super) type PlayerCliError = Box<dyn std::error::Error + Send + Sync>;
 
-pub(super) fn main() -> Result<(), PlayerCliError> {
+pub fn main() -> Result<(), PlayerCliError> {
     let mut log_filter = env::var("ROUKAKU_LOG").ok();
     let mut log_format = None;
     let mut log_dir = None;

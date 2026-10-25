@@ -87,11 +87,7 @@ impl Eq for OwnedWritableByteBuffer {}
 use std::{ffi::c_void, slice};
 
 #[cfg(feature = "ffi")]
-use abi_stable::StableAbi;
-
-#[cfg(feature = "ffi")]
 #[repr(C)]
-#[derive(StableAbi)]
 pub struct FfiOwnedWritableByteBuffer {
     data: *mut u8,
     len: usize,

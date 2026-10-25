@@ -1,3 +1,6 @@
+mod work_extensions;
+pub use work_extensions::dispatch_work_extension;
+
 mod native_vn_host;
 mod package_assets;
 mod policy_package;
