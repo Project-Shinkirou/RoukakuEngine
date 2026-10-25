@@ -45,12 +45,15 @@ impl LinuxHostApp {
                 "user cancelled package selection",
             )
         })?;
-        let path = uri.to_file_path().map_err(|_| {
-            host_error(
-                "package.open_user_authorized",
-                "portal returned a non-file package URI",
-            )
-        })?;
+        let path = url::Url::parse(uri.as_str())
+            .ok()
+            .and_then(|uri| uri.to_file_path().ok())
+            .ok_or_else(|| {
+                host_error(
+                    "package.open_user_authorized",
+                    "portal returned a non-file package URI",
+                )
+            })?;
         let bytes = std::fs::read(path).map_err(|_| {
             host_error(
                 "package.open_user_authorized",
