@@ -2,6 +2,8 @@
 
 mod actions;
 pub use actions::*;
+#[cfg(feature = "luau-runtime")]
+pub mod authoring;
 mod host_io;
 #[cfg(feature = "luau-runtime")]
 mod luau;

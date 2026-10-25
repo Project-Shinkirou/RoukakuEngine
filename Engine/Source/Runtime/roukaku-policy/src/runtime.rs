@@ -18,7 +18,33 @@ compile_error!("native and portable Luau runtimes are mutually exclusive");
 #[cfg(not(any(feature = "luau-runtime", feature = "portable-luau-runtime")))]
 compile_error!("a Luau runtime feature is required to compile runtime.rs");
 
+/// A sandbox with a fresh interrupt allowance for each host dispatch.
+///
+/// Reset only at host-controlled boundaries, never from project code.
+pub struct SandboxedLuau {
+    lua: Lua,
+    interrupts: Rc<Cell<u64>>,
+}
+
+impl SandboxedLuau {
+    pub fn new(budget: PolicyExecutionBudget) -> Result<Self, PolicyError> {
+        sandbox(budget)
+    }
+
+    pub fn begin_dispatch(&self) {
+        self.interrupts.set(0);
+    }
+
+    pub fn lua(&self) -> &Lua {
+        &self.lua
+    }
+}
+
 pub fn create_sandboxed_lua(budget: PolicyExecutionBudget) -> Result<Lua, PolicyError> {
+    Ok(sandbox(budget)?.lua)
+}
+
+fn sandbox(budget: PolicyExecutionBudget) -> Result<SandboxedLuau, PolicyError> {
     budget.validate()?;
     let lua = Lua::new();
     lua.set_memory_limit(budget.memory_bytes)
@@ -52,7 +78,10 @@ pub fn create_sandboxed_lua(budget: PolicyExecutionBudget) -> Result<Lua, Policy
         snapshot_depth = budget.snapshot_depth,
         "shared policy sandbox created"
     );
-    Ok(lua)
+    Ok(SandboxedLuau {
+        lua,
+        interrupts: interrupt_count,
+    })
 }
 
 #[cfg(feature = "luau-runtime")]

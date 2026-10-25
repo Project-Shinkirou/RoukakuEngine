@@ -337,307 +337,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "roukaku-asset"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "camino",
- "schemars 0.8.22",
- "serde",
- "serde_yaml",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-byte-source"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "schemars 0.8.22",
- "serde",
- "sha2 0.10.9",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "roukaku-cook"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-core",
- "roukaku-package",
- "camino",
- "image",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "serde_yaml",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-property-derive",
- "blake3",
- "hex",
- "miette",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 1.0.69",
- "uuid",
-]
-
-[[package]]
-name = "roukaku-editor"
-version = "0.1.0"
-dependencies = [
- "agent-client-protocol",
- "anyhow",
- "roukaku-asset",
- "roukaku-cook",
- "roukaku-core",
- "roukaku-ui-core",
- "roukaku-vn-editor",
- "roukaku-vn-policy",
- "axum",
- "clap",
- "gpui",
- "gpui-component",
- "image",
- "rmcp",
- "schemars 1.2.2",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "tokio",
- "tokio-util",
- "uuid",
-]
-
-[[package]]
-name = "roukaku-media-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-byte-source",
- "roukaku-core",
- "rayon",
- "schemars 0.8.22",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-package"
-version = "0.1.0"
-dependencies = [
- "aes-gcm-siv",
- "roukaku-asset",
- "roukaku-byte-source",
- "roukaku-core",
- "roukaku-plugin-abi",
- "roukaku-target",
- "hkdf",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2 0.10.9",
- "thiserror 1.0.69",
- "tracing",
- "zeroize",
- "zstd",
-]
-
-[[package]]
-name = "roukaku-plugin-abi"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "schemars 0.8.22",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "roukaku-policy"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "mlua",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-property-derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "roukaku-runtime"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-package",
- "blake3",
- "indexmap 2.14.2",
- "postcard",
- "rayon",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 1.0.69",
- "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-target"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "schemars 0.8.22",
- "serde",
- "serde_yaml",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-ui-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "roukaku-vn-core"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-vn-presentation",
- "roukaku-vn-script",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-editor"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "roukaku-core",
- "roukaku-vn-script",
- "parking_lot",
- "schemars 0.8.22",
- "serde",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-policy"
-version = "0.1.0"
-dependencies = [
- "roukaku-asset",
- "roukaku-core",
- "roukaku-policy",
- "roukaku-ui-core",
- "roukaku-vn-script",
- "roukaku-vn-ui",
- "mlua",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-presentation"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-media-core",
- "roukaku-runtime",
- "roukaku-vn-script",
- "roukaku-worker-budget",
- "postcard",
- "schemars 0.8.22",
- "serde",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-script"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-ui-core",
- "blake3",
- "chumsky",
- "hex",
- "indexmap 2.14.2",
- "logos",
- "miette",
- "postcard",
- "rowan",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "text-size",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "roukaku-vn-ui"
-version = "0.1.0"
-dependencies = [
- "roukaku-core",
- "roukaku-ui-core",
- "roukaku-vn-core",
- "roukaku-vn-script",
- "schemars 0.8.22",
- "serde",
- "thiserror 1.0.69",
- "tracing",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "roukaku-worker-budget"
-version = "0.1.0"
-dependencies = [
- "tokio",
-]
-
-[[package]]
 name = "async-broadcast"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1818,10 +1517,34 @@ dependencies = [
  "rustc-hash 1.1.0",
  "rustybuzz 0.14.1",
  "self_cell",
- "smol_str",
+ "smol_str 0.2.2",
  "swash",
  "sys-locale",
  "ttf-parser 0.21.1",
+ "unicode-bidi",
+ "unicode-linebreak",
+ "unicode-script",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "cosmic-text"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbe782a9e7520cc7de2232c957a47f99d3a35e855552677d07a557bc1a3b66ed"
+dependencies = [
+ "bitflags 2.13.2",
+ "fontdb 0.23.0",
+ "harfrust",
+ "linebender_resource_handle",
+ "log",
+ "rangemap",
+ "rustc-hash 2.1.3",
+ "self_cell",
+ "skrifa 0.40.0",
+ "smol_str 0.3.7",
+ "swash",
+ "sys-locale",
  "unicode-bidi",
  "unicode-linebreak",
  "unicode-script",
@@ -2554,6 +2277,15 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "font-types"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b38ad915f6dadd993ced50848a8291a543bd41ca62bc10740d5e64e2ab4cfd7"
+dependencies = [
+ "bytemuck",
+]
+
+[[package]]
+name = "font-types"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8eb065f3251655b3c90e22e5e363f310fc5332fb3402e37bbc94752283248f6"
@@ -2978,7 +2710,7 @@ dependencies = [
  "core-graphics 0.24.0",
  "core-text",
  "core-video",
- "cosmic-text",
+ "cosmic-text 0.14.2",
  "ctor",
  "derive_more 0.99.20",
  "embed-resource",
@@ -3297,6 +3029,19 @@ dependencies = [
  "crunchy",
  "num-traits",
  "zerocopy",
+]
+
+[[package]]
+name = "harfrust"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9da2e5ae821f6e96664977bf974d6d6a2d6682f9ccee23e62ec1d134246845f9"
+dependencies = [
+ "bitflags 2.13.2",
+ "bytemuck",
+ "core_maths",
+ "read-fonts 0.37.0",
+ "smallvec",
 ]
 
 [[package]]
@@ -4145,6 +3890,12 @@ checksum = "61ff90caf6077a803a240f62fdbe88645a890bbca49ef8174c3cb0404362171d"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "linebender_resource_handle"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4a5ff6bcca6c4867b1c4fd4ef63e4db7436ef363e0ad7531d1558856bae64f4"
 
 [[package]]
 name = "linux-raw-sys"
@@ -5814,12 +5565,23 @@ dependencies = [
 
 [[package]]
 name = "read-fonts"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b634fabf032fab15307ffd272149b622260f55974d9fad689292a5d33df02e5"
+dependencies = [
+ "bytemuck",
+ "core_maths",
+ "font-types 0.11.3",
+]
+
+[[package]]
+name = "read-fonts"
 version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "046a7d674daf459825b32f5062056d6882db0d2f5a479fbd76ccfc870ac18709"
 dependencies = [
  "bytemuck",
- "font-types",
+ "font-types 0.12.5",
  "once_cell",
 ]
 
@@ -6013,6 +5775,323 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4045a00dc327d084a2bbf126976e14125b54f23bd30511d45b842eba76c52d74"
 dependencies = [
  "str_indices",
+]
+
+[[package]]
+name = "roukaku-asset"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "serde_yaml",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-byte-source"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "sha2 0.10.9",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "roukaku-cook"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "image",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-core",
+ "roukaku-package",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-core"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "hex",
+ "miette",
+ "roukaku-property-derive",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 1.0.69",
+ "uuid",
+]
+
+[[package]]
+name = "roukaku-editor"
+version = "0.1.0"
+dependencies = [
+ "agent-client-protocol",
+ "anyhow",
+ "axum",
+ "clap",
+ "gpui",
+ "gpui-component",
+ "image",
+ "rmcp",
+ "roukaku-asset",
+ "roukaku-cook",
+ "roukaku-core",
+ "roukaku-ui-core",
+ "roukaku-vn-editor",
+ "roukaku-vn-policy",
+ "schemars 1.2.2",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "uuid",
+]
+
+[[package]]
+name = "roukaku-media-core"
+version = "0.1.0"
+dependencies = [
+ "rayon",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-package"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm-siv",
+ "hkdf",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-byte-source",
+ "roukaku-core",
+ "roukaku-plugin-abi",
+ "roukaku-target",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2 0.10.9",
+ "thiserror 1.0.69",
+ "tracing",
+ "zeroize",
+ "zstd",
+]
+
+[[package]]
+name = "roukaku-plugin-abi"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "roukaku-policy"
+version = "0.1.0"
+dependencies = [
+ "mlua",
+ "postcard",
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-property-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "roukaku-runtime"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "indexmap 2.14.2",
+ "postcard",
+ "rayon",
+ "roukaku-core",
+ "roukaku-package",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 1.0.69",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-target"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "serde_yaml",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-text"
+version = "0.1.0"
+dependencies = [
+ "cosmic-text 0.18.2",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-worker-budget",
+ "schemars 0.8.22",
+ "serde",
+ "tracing",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "roukaku-ui-core"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "schemars 0.8.22",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "roukaku-vn-core"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "roukaku-vn-presentation",
+ "roukaku-vn-script",
+ "schemars 0.8.22",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-editor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "parking_lot",
+ "roukaku-core",
+ "roukaku-vn-script",
+ "schemars 0.8.22",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-policy"
+version = "0.1.0"
+dependencies = [
+ "mlua",
+ "postcard",
+ "roukaku-asset",
+ "roukaku-core",
+ "roukaku-policy",
+ "roukaku-runtime",
+ "roukaku-text",
+ "roukaku-ui-core",
+ "roukaku-vn-script",
+ "roukaku-vn-ui",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-presentation"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "roukaku-core",
+ "roukaku-media-core",
+ "roukaku-runtime",
+ "roukaku-vn-script",
+ "roukaku-worker-budget",
+ "schemars 0.8.22",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-script"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "chumsky",
+ "hex",
+ "indexmap 2.14.2",
+ "logos",
+ "miette",
+ "postcard",
+ "roukaku-core",
+ "roukaku-ui-core",
+ "rowan",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "text-size",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "roukaku-vn-ui"
+version = "0.1.0"
+dependencies = [
+ "roukaku-core",
+ "roukaku-ui-core",
+ "roukaku-vn-core",
+ "roukaku-vn-script",
+ "schemars 0.8.22",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "roukaku-worker-budget"
+version = "0.1.0"
+dependencies = [
+ "tokio",
 ]
 
 [[package]]
@@ -6716,12 +6795,22 @@ checksum = "8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649"
 
 [[package]]
 name = "skrifa"
+version = "0.40.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fbdfe3d2475fbd7ddd1f3e5cf8288a30eb3e5f95832829570cd88115a7434ac"
+dependencies = [
+ "bytemuck",
+ "read-fonts 0.37.0",
+]
+
+[[package]]
+name = "skrifa"
 version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "819ab7d62b1d3e72d9d9dea5650bac30424f9111364bb94928dbf5ecad1baa68"
 dependencies = [
  "bytemuck",
- "read-fonts",
+ "read-fonts 0.41.0",
 ]
 
 [[package]]
@@ -6767,6 +6856,12 @@ name = "smol_str"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead"
+
+[[package]]
+name = "smol_str"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eeb7109d23f319619d4cc0de5464613c8b7b1a09db2774a58101459cf6be2f10"
 
 [[package]]
 name = "socket2"
@@ -7099,7 +7194,7 @@ version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c2499c2d826531388872b2268718aed907a39bd785ab0dcfe57fab26283f92e"
 dependencies = [
- "skrifa",
+ "skrifa 0.44.0",
  "yazi",
  "zeno",
 ]

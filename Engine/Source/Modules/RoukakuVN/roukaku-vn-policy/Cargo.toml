@@ -14,6 +14,8 @@ roukaku-asset = { path = "../../../Runtime/roukaku-asset" }
 roukaku-core = { path = "../../../Runtime/roukaku-core" }
 roukaku-ui-core = { path = "../../../Runtime/roukaku-ui-core" }
 roukaku-policy = { path = "../../../Runtime/roukaku-policy", default-features = false }
+roukaku-runtime = { path = "../../../Runtime/roukaku-runtime" }
+roukaku-text = { path = "../../../Runtime/roukaku-text" }
 roukaku-vn-script = { path = "../roukaku-vn-script" }
 roukaku-vn-ui = { path = "../roukaku-vn-ui" }
 mlua = { workspace = true, optional = true }

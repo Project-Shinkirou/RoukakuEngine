@@ -40,6 +40,78 @@ These are product behavior and must survive refactoring:
 
 Pre-rename product containers, schemas, and project-owned saves are not compatible inputs. Old magic is rejected at entry; changing an extension does not convert content. Re-cook and package current authoring sources, leaving old files and user data untouched.
 
+## Luau authoring mechanism contract (R1/R3 foundation)
+
+`roukaku-vn-policy::authoring::LuauAuthoringRuntime` runs project source on the official Luau VM through the existing `luau-runtime`/mlua feature. This integration API supplies mechanisms independently of the default VN UI. Player/Cook and the existing DSL remain unchanged in this branch; the product cutover consumes this API.
+
+### Paragraphs, modules and input
+
+The host constructs the runtime with `PolicyExecutionBudget`, an owner `TaskScope`, and `Rc<dyn AuthoringHost>`. `replace_module(module, source_name, source)` evaluates a source chunk returning an export table. Use a real source filename such as `@Story/chapter1.luau` for Luau errors and stack traces. Each module has a read-only global environment; use local variables and explicit registered state.
+
+```lua
+return {
+    paragraphs = {
+        intro = function()
+            local line = rk.line("greeting", { text = "Hello" })
+            rk.wait_input("advance")
+            local choice = rk.choice("route", {
+                { id = "left", text = "Left" },
+                { id = "right", text = "Right" },
+            })
+            local selected = rk.wait_input("choose")
+            rk.choice_result(choice, selected)
+        end,
+        -- Entry tables are also supported: intro = { run = function() ... end }
+    },
+}
+```
+
+`start_paragraph(ParagraphId { module, entry })` resolves `exports.paragraphs[entry]` as a function or `{ run = function }`. This pair is the stable restart/load identity. Restart cancels old owned segments and input, starts a fresh child scope/coroutine, and resets node visits. Installing entry-state and choosing when to replay are the save/replay consumer's responsibilities.
+
+`rk.wait_input(action: string): any` suspends only the story coroutine. The host sees `StoryStatus::Waiting(InputWait { token: u64, action: String })`; `input(token, action, json_payload)` resumes only a matching live wait. Unrelated or late input returns `false`. Live tokens remain distinct across paragraph restarts and runtime replacement. A wait may originate only from the active story coroutine. Presentation keeps advancing through `advance_presentation(seconds)` while the story waits. No host thread, audio clock or renderer waits for input.
+
+`rk.call(module: string, name: string, ...): ...` resolves an export at each call and supports yielding project functions. Timeline callback references use `{ module: string, name: string }` and also resolve at dispatch. Replacing a module changes subsequent calls; an already suspended frame retains its old function. A failed chunk does not replace the export table; any explicit mechanism side effects performed before that error remain. Incompatible changes require cancelling and restarting the paragraph.
+
+### Nodes, text and registered state
+
+| Mechanism | Types and semantics |
+| --- | --- |
+| `rk.line(node, data)` | Records a line with plain project data and returns `NodeOccurrence = { paragraph = { module, entry }, node, visit }`. It neither displays UI nor waits. |
+| `rk.choice(node, options)` | Records `{ id: string, text: string }[]`, with nonempty distinct option IDs, and returns the same occurrence type. |
+| `rk.choice_result(occurrence, selected)` | Commits one valid option ID to that choice occurrence exactly once. |
+| `rk.measure_text(request)` | Accepts the complete serialized `roukaku_text::TextLayoutRequest`, including direction, Ruby, font chain and constraints; returns `{ width, height, clipped, ellipsized, revision }`. |
+| `rk.display_text(id, request)` | Uses the same layout provider and returns the same measurement. `AuthoringHost::display_text` receives `Arc<TextLayoutResult>` with glyph resources and source/cluster mapping for drawing. |
+| `rk.register_state(scope, key, initial)` | Registers a nonempty state key and returns its existing value, or the initial value on first registration. Repeating a registration preserves recovered data. |
+| `rk.get_state(scope, key)` / `rk.set_state(scope, key, value)` | Read/write registered keys; unknown keys fail. Scopes are `"variables"`, `"scene"` and `"extensions"`. |
+
+Visits are one-based counters **per source node within a paragraph invocation**. Loop visits have distinct identities, while replaying the same path from the same entry reproduces them. Restart creates fresh live wait/segment tokens even when logical node identities repeat. Replacing dialogue UI cannot remove these records; history/replay consumers read `records()`.
+
+Recoverable values are finite JSON-like plain data (including arrays and null), subject to depth/host-memory limits. Functions, threads, userdata handles, arbitrary metatables and cyclic tables are rejected. `recoverable_state()` returns explicit variables/scene/extension data. `restore_registered_state(candidate)` validates before installation and requires no live story coroutine or running segment; it does not recreate native objects or resume a stack. Stage property values are also retained as `scene[target][property]`; targets must be scene objects, so project state must not use a non-object at that key. Never serialize arbitrary Luau stacks.
+
+### Declarative presentation and terminal ownership
+
+```lua
+type FunctionRef = { module: string, name: string }
+type Keyframe = { time: number, value: number }
+type Track = { target: string, property: string, keys: {Keyframe} }
+type Callback = { time: number, call: FunctionRef, complete: FunctionRef }
+type Timeline = {
+    duration: number, tracks: {Track}, callbacks: {Callback}?,
+    on_complete: FunctionRef?, on_cancel: FunctionRef?,
+}
+```
+
+`rk.segment(declaration: Timeline): number` creates a scoped segment and evaluates time zero. Times/durations are finite seconds; values are finite numbers. Each target/property appears once, keys increase strictly inside `[0, duration]`, and values interpolate linearly with endpoint clamping. `TimelineDeclaration::evaluate(time, apply)` provides pure arbitrary-time sampling for editing/preview: no callbacks or host mutation. Project effects, media or free logic use referenced callbacks and host-owned properties rather than serializing closures into declarations.
+
+`rk.set_property(target, property, value)` applies a finite numeric property through `AuthoringHost::set_property` and updates recoverable scene data. `advance_presentation(delta)` evaluates active tracks independently of story input. Timed callbacks run once when reached, in declaration order. Lifecycle callbacks are synchronous and must not yield.
+
+`rk.complete(id)` (or host `complete_segment`) claims `Completed`, applies every track's end state, dispatches the `complete` reference for each timed callback not already dispatched, then `on_complete`, and releases segment resources. Normal playback dispatches reached `call` references and completes at duration. `rk.cancel(id)`/`cancel_segment` claims `Cancelled`, stops at the current state, invokes `on_cancel`, and releases resources without applying end values or required completion results. An already terminal segment returns `false`; the first transition returns `true`. Cancellation after owner-scope invalidation releases native resources without executing project code in that dead scope.
+
+Terminal ownership is claimed before user callbacks. Callback failures propagate and cannot be retried to duplicate effects; release is attempted even on failure. An unhandled story or presentation-tick failure cancels the remaining owned work. Parent cancellation, paragraph restart, explicit cancellation and runtime drop all release owned segments. `AuthoringHost::release_segment(id)` is called once per terminal segment, for both completion and cancellation.
+
+The VM retains the existing host-IO sandbox and Lua memory limit. Instruction and output allowances reset only at host-controlled dispatch boundaries. Host-owned data is conservatively charged for the runtime lifetime, including retained records, declarations and registered-state copies; budget exhaustion is sticky. Updating an existing numeric stage property does not charge another stored copy. Create a new runtime after exhausting its allowance. No script API resets budgets or detaches work from the owner scope.
+
+
 ## One-way sharing with ShinkiEMU
 
 ShinkiEMU consumes `roukaku-core`, `roukaku-byte-source`, `roukaku-media-core`, `roukaku-text`, `roukaku-media`, `roukaku-subtitle`, `roukaku-platform`, `roukaku-platform-common`, and `roukaku-observability`. Production dependencies are centralized in the ShinkiEMU workspace and pinned to one RoukakuEngine Git revision. They must not rely on adjacent developer directories or copied Rust implementations.
