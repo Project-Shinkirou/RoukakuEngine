@@ -203,7 +203,12 @@ pub(super) fn resolve_gpu_timestamps(
     })?;
     let byte_length = u64::from(query_count) * 8;
     let slice = slot.read_buffer.slice(..byte_length);
-    let mapped = slice.get_mapped_range();
+    let mapped = slice.get_mapped_range().map_err(|_| {
+        unavailable(
+            "offscreen.timestamp_query",
+            "GPU timestamp mapped range is unavailable",
+        )
+    })?;
     let base_query_count = 2 + u32::from(profiled_atlas_upload) * 2;
     if query_count < base_query_count || !(query_count - base_query_count).is_multiple_of(2) {
         return Err(invalid(

@@ -435,7 +435,10 @@ pub(crate) fn encode_texture_upload_once(
         mapped_at_creation: true,
     });
     {
-        let mut mapped = staging.slice(..).get_mapped_range_mut();
+        let mut mapped = staging
+            .slice(..)
+            .get_mapped_range_mut()
+            .map_err(|_| invalid("glyph atlas initial upload mapping failed"))?;
         for row in 0..height as usize {
             let source = row * tight_row as usize;
             let destination = row * padded_row as usize;
@@ -492,7 +495,9 @@ pub(crate) fn encode_texture_upload_belt(
         .expect("copy row alignment is non-zero");
     let staging = staging_belt.allocate(size, alignment);
     {
-        let mut mapped = staging.get_mapped_range_mut();
+        let mut mapped = staging
+            .get_mapped_range_mut()
+            .map_err(|_| invalid("glyph atlas staging belt mapping failed"))?;
         for row in 0..height as usize {
             let source = row * tight_row as usize;
             let destination = row * padded_row as usize;

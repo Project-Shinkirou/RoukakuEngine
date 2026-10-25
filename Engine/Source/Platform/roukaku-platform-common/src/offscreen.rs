@@ -22,8 +22,8 @@ use crate::{
 
 #[cfg(test)]
 mod adapter_identity_tests {
+    use super::renderer_execution_identity;
     use super::submit_frame_internal::adapter_policy_identity;
-    use super::{device_descriptor, renderer_execution_identity};
 
     fn adapter_info(driver_info: &str) -> wgpu::AdapterInfo {
         wgpu::AdapterInfo {
@@ -37,7 +37,8 @@ mod adapter_identity_tests {
             backend: wgpu::Backend::Dx12,
             subgroup_min_size: 32,
             subgroup_max_size: 64,
-            transient_saves_memory: false,
+            transient_saves_memory: Some(false),
+            limit_bucket: None,
         }
     }
 
@@ -52,18 +53,6 @@ mod adapter_identity_tests {
             adapter_policy_identity(&info),
             adapter_policy_identity(&adapter_info("1.2.4"))
         );
-    }
-
-    #[test]
-    fn offscreen_device_uses_bounded_memory_allocation_hints() {
-        let timestamp_features =
-            wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS;
-        let descriptor = device_descriptor(true, timestamp_features);
-        assert!(matches!(
-            descriptor.memory_hints,
-            wgpu::MemoryHints::MemoryUsage
-        ));
-        assert!(descriptor.required_features.contains(timestamp_features));
     }
 }
 

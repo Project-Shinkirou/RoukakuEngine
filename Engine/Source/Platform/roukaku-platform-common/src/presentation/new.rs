@@ -19,6 +19,7 @@ impl WgpuPresentationCore {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
+                apply_limit_buckets: false,
             })
             .await
             .map_err(|_| unavailable("surface.create", "hardware adapter is unavailable"))?;
@@ -48,6 +49,7 @@ impl WgpuPresentationCore {
             ));
         }
         config.present_mode = wgpu::PresentMode::Fifo;
+        config.color_space = wgpu::SurfaceColorSpace::Auto;
         surface.configure(&device, &config);
         let (layout, sampler, pipeline) = pipeline(&device, config.format);
         let glyph_renderer = WgpuGlyphAtlasRenderer::new(&device);
@@ -232,7 +234,7 @@ impl WgpuPresentationCore {
             pass.draw(0..3, 0..1);
         }
         self.queue.submit([encoder.finish()]);
-        output.present();
+        self.queue.present(output);
         self.last_upload = Some(UploadFrame {
             texture,
             width: frame.width,
