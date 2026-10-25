@@ -25,4 +25,4 @@ ShinkiEMU is a separate product for running native legacy engines. It consumes s
 
 A platform declared in configuration is not proof of device-tested windows, input, audio, or saves. Use the [build guide](build.md) and current manifests for build entry points.
 
-[中文](../zh-cn/index.md)
+[中文](../zh-cn/index.md) · [日本語](../ja/index.md)

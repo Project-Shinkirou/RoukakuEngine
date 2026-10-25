@@ -25,4 +25,4 @@ ShinkiEMU 是运行原生旧引擎的独立产品。它按固定 Git revision �
 
 配置中声明某个平台不等于该平台的窗口、输入、声音与存读档已经通过设备验证。具体构建入口以[构建文档](build.md)和当前 manifest 为准。
 
-[English](../en/index.md)
+[English](../en/index.md) · [日本語](../ja/index.md)

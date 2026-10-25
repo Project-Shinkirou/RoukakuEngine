@@ -34,7 +34,7 @@ roukaku --help
 
 ## 文档 / Documentation
 
-- [中文文档](docs/zh-cn/index.md) · [English documentation](docs/en/index.md)
+- [中文文档](docs/zh-cn/index.md) · [English documentation](docs/en/index.md) · [日本語ドキュメント](docs/ja/index.md)
 - [参与贡献 / Contributing](CONTRIBUTING.md)
 - [来源与归属 / Origins and attribution](ORIGINS.md)
 
