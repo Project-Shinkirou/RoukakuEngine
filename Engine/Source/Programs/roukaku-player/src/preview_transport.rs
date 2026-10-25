@@ -255,7 +255,7 @@ mod tests {
         let mut child = std::process::Command::new(std::env::current_exe().unwrap())
             .args([
                 "--exact",
-                "preview_transport::tests::pipe_child",
+                "entry::preview_transport::tests::pipe_child",
                 "--ignored",
                 "--nocapture",
             ])

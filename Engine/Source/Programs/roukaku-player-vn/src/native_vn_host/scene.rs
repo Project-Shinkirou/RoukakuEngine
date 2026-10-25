@@ -304,10 +304,18 @@ impl NativeVnHostCommandSource {
                 | PresentationCommand::SystemOption { .. } => {}
                 PresentationCommand::Stage(_) => {}
                 PresentationCommand::Extension(extension) => {
-                    return Err(NativeVnHostError::Asset(format!(
-                        "ROUKAKU_PLAYER_EXTENSION_PROVIDER_UNWIRED: command {} requires provider {}",
-                        extension.command, extension.provider_id
-                    )));
+                    let commands = crate::dispatch_work_extension(&mut self.extensions, extension)
+                        .map_err(NativeVnHostError::Asset)?;
+                    let mut draw = Vec::new();
+                    for command in commands {
+                        if is_ui_resource_lifecycle(&command) {
+                            lifecycle.push(command);
+                        } else {
+                            draw.push(command);
+                        }
+                    }
+                    self.extension_draw
+                        .insert(extension.provider_id.clone(), draw);
                 }
                 PresentationCommand::Marker { .. } => {}
             }
@@ -371,6 +379,7 @@ impl NativeVnHostCommandSource {
             _ => stage_draw.to_vec(),
         };
         lifecycle.extend(composed_stage_draw);
+        lifecycle.extend(self.extension_draw.values().flatten().cloned());
         let ui_draw = ui_frame.map_or_else(Vec::new, |frame| frame.draw);
         lifecycle.extend(ui_draw.iter().cloned());
         self.command_sequence = self

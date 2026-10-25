@@ -56,6 +56,28 @@ impl NativeVnHostCommandSource {
         surface: PlayerHostResourceId,
         options: NativeVnHostOpenOptions,
     ) -> Result<Self, NativeVnHostError> {
+        Self::from_package_with_extensions(
+            package,
+            config,
+            width,
+            height,
+            surface,
+            options,
+            roukaku_plugin::linked_work_extensions(),
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_package_with_extensions(
+        package: &roukaku_package::PackageReader,
+        config: VnRunConfig,
+        width: u32,
+        height: u32,
+        surface: PlayerHostResourceId,
+        options: NativeVnHostOpenOptions,
+        registry: &roukaku_plugin::WorkExtensionRegistry,
+    ) -> Result<Self, NativeVnHostError> {
+        let extensions = registry.instantiate();
         let NativeVnHostOpenOptions {
             max_asset_cache_bytes,
             max_glyph_cache_bytes,
@@ -113,6 +135,7 @@ impl NativeVnHostCommandSource {
             &asset_store,
             &presentation_manifest,
             &config.profile,
+            &extensions,
         )?;
         let locale_config = load_player_locale_config(package)
             .map_err(|error| NativeVnHostError::Localization(error.to_string()))?;
@@ -168,6 +191,7 @@ impl NativeVnHostCommandSource {
             height,
             surface,
             ProductPackageBinding {
+                extensions,
                 product_context,
                 package_hash: package.package_hash(),
                 presentation: ProductPresentationBinding {
@@ -309,6 +333,8 @@ impl NativeVnHostCommandSource {
         let image_prefetcher =
             PackageImagePrefetcher::start(Arc::clone(&binding.presentation.asset_store))?;
         Ok(Self {
+            extensions: binding.extensions,
+            extension_draw: BTreeMap::new(),
             host,
             session_id: open,
             runtime_state: None,

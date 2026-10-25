@@ -1,3 +1,7 @@
+extern crate self as roukaku_player;
+mod entry;
+pub use entry::run;
+
 use roukaku_core::Hash256;
 
 pub use roukaku_player_core::{

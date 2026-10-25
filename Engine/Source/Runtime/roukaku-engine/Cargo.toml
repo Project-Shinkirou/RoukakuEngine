@@ -4,9 +4,6 @@ edition.workspace = true
 license.workspace = true
 version.workspace = true
 
-[lib]
-crate-type = ["rlib", "dylib"]
-
 [dependencies]
 roukaku-core = { path = "../roukaku-core" }
 roukaku-package = { path = "../roukaku-package" }

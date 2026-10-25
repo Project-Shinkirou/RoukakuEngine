@@ -4,21 +4,13 @@ edition.workspace = true
 license.workspace = true
 version.workspace = true
 
-[features]
-default = ["dynamic-abi"]
-dynamic-abi = ["dep:abi_stable", "dep:libloading", "roukaku-plugin-abi/ffi"]
-
 [dependencies]
-abi_stable = { workspace = true, optional = true }
 roukaku-core = { path = "../roukaku-core" }
-roukaku-plugin-abi = { path = "../roukaku-plugin-abi", default-features = false }
+roukaku-plugin-abi = { path = "../roukaku-plugin-abi" }
 roukaku-runtime = { path = "../roukaku-runtime" }
+roukaku-media-core = { path = "../roukaku-media-core" }
 roukaku-worker-budget = { path = "../roukaku-worker-budget" }
-libloading = { workspace = true, optional = true }
 schemars.workspace = true
-semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_yaml.workspace = true
-thiserror.workspace = true
 tracing.workspace = true

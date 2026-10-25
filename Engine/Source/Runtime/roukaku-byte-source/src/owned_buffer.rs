@@ -155,11 +155,7 @@ impl std::ops::Deref for OwnedByteBuffer {
 use std::ffi::c_void;
 
 #[cfg(feature = "ffi")]
-use abi_stable::StableAbi;
-
-#[cfg(feature = "ffi")]
 #[repr(C)]
-#[derive(StableAbi)]
 pub struct FfiOwnedByteBuffer {
     data: *const u8,
     len: usize,

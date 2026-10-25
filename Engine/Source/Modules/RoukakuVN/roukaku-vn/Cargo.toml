@@ -4,9 +4,6 @@ edition.workspace = true
 license.workspace = true
 version.workspace = true
 
-[lib]
-crate-type = ["rlib", "dylib"]
-
 [dependencies]
 tokio.workspace = true
 roukaku-vn-policy = { path = "../roukaku-vn-policy" }
@@ -14,7 +11,7 @@ tracing.workspace = true
 serde.workspace = true
 roukaku-core = { path = "../../../Runtime/roukaku-core" }
 roukaku-runtime = { path = "../../../Runtime/roukaku-runtime" }
-roukaku-plugin-abi = { path = "../../../Runtime/roukaku-plugin-abi", default-features = false }
+roukaku-plugin-abi = { path = "../../../Runtime/roukaku-plugin-abi" }
 roukaku-vn-core = { path = "../roukaku-vn-core" }
 roukaku-vn-presentation = { path = "../roukaku-vn-presentation" }
 roukaku-vn-script = { path = "../roukaku-vn-script" }

@@ -4,6 +4,7 @@ mod apple_package;
 mod dependencies;
 mod docs;
 mod product;
+mod project_player;
 mod release;
 mod ui;
 mod util;
@@ -29,6 +30,8 @@ enum Task {
     Test(product::Selection),
     Check(product::Selection),
     CheckFast(product::Selection),
+    /// Build a project's linked Player, or stage a pure-content prebuilt Player.
+    ProjectPlayer(project_player::Options),
     /// Explicitly download and build pinned native dependencies; never installs system packages.
     Deps(dependencies::Options),
     /// Download the pinned Luau analyzer and check NativeVN controllers.
@@ -81,6 +84,7 @@ fn main() -> Result<()> {
         Task::Test(s) => product::run(root(), "test", &s),
         Task::Check(s) => product::run(root(), "check", &s),
         Task::CheckFast(s) => product::run(root(), "check-fast", &s),
+        Task::ProjectPlayer(options) => project_player::run(&options),
         Task::Deps(o) => dependencies::run(root(), &o),
         Task::UiCheck => ui::run(root()),
         Task::Android(o) => android::run(root(), &o),

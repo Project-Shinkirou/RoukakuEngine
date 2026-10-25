@@ -3,9 +3,6 @@ use std::{fmt, sync::Arc};
 #[cfg(feature = "ffi")]
 use std::{ffi::c_void, slice};
 
-#[cfg(feature = "ffi")]
-use abi_stable::StableAbi;
-
 trait SampleOwner<T>: Send + Sync {
     fn samples(&self) -> &[T];
 }
@@ -154,7 +151,6 @@ macro_rules! owned_pcm_buffer {
         /// pointer and destruction authority as one move-only value.
         #[cfg(feature = "ffi")]
         #[repr(C)]
-        #[derive(StableAbi)]
         pub struct $ffi {
             data: *const $sample,
             len: usize,

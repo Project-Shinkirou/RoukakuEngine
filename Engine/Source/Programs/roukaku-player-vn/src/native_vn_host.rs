@@ -154,6 +154,8 @@ pub enum VnUiHostRequest {
 }
 
 pub struct NativeVnHostCommandSource {
+    extensions: roukaku_plugin::WorkExtensionRuntime,
+    extension_draw: BTreeMap<String, Vec<SceneCommand>>,
     presentation_failed: bool,
     compiled_project_hash: Hash256,
     media_scope: roukaku_runtime::TaskScope,
@@ -481,6 +483,7 @@ struct ProductPresentationBinding {
 }
 
 struct ProductPackageBinding {
+    extensions: roukaku_plugin::WorkExtensionRuntime,
     product_context: roukaku_package::PackageProductContext,
     package_hash: Hash256,
     presentation: ProductPresentationBinding,
