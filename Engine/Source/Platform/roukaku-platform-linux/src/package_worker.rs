@@ -33,14 +33,14 @@ impl PackageWorker {
 impl Drop for PackageWorker {
     fn drop(&mut self) {
         self.cancel();
-        if let Some(worker) = self.thread.take() {
-            if worker.join().is_err() {
-                tracing::error!(
-                    event = "platform.linux.package.worker_panic",
-                    diagnostic_code = "ROUKAKU_PLATFORM_PACKAGE_WORKER_PANIC",
-                    "Linux package worker panicked during shutdown"
-                );
-            }
+        if let Some(worker) = self.thread.take()
+            && worker.join().is_err()
+        {
+            tracing::error!(
+                event = "platform.linux.package.worker_panic",
+                diagnostic_code = "ROUKAKU_PLATFORM_PACKAGE_WORKER_PANIC",
+                "Linux package worker panicked during shutdown"
+            );
         }
     }
 }

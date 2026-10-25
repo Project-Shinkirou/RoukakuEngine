@@ -7,6 +7,12 @@
 #[path = "bundle_config.rs"]
 mod bundle_config;
 
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 use crate::native_session_clock;
 
 #[cfg(any(
@@ -35,9 +41,14 @@ use crate::{
     bundled_player_resource_root, load_bundled_observability,
 };
 
-use roukaku_player_core::{
-    PlayerAutomationScript, PlayerHostCommandResult, PlayerInputTranscript, PlayerPlatform,
-};
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
+use roukaku_player_core::PlayerHostCommandResult;
+use roukaku_player_core::{PlayerAutomationScript, PlayerInputTranscript, PlayerPlatform};
 
 use std::{env, fs, path::PathBuf};
 
@@ -45,6 +56,12 @@ use std::{env, fs, path::PathBuf};
 mod player_cli_error;
 use player_cli_error::PlayerCliError;
 pub use player_cli_error::main as run;
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
 #[path = "run_bundled_game.rs"]
 mod run_bundled_game;
 #[cfg(any(

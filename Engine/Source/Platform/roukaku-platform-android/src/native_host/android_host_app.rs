@@ -200,13 +200,13 @@ impl ApplicationHandler for AndroidHostApp {
                 other => self.emit(other),
             }
         }
-        if self.player_result.is_none() {
-            if let Ok(result) = self.player_result_rx.try_recv() {
-                let failed = result.is_err();
-                self.player_result = Some(result);
-                if failed {
-                    event_loop.exit();
-                }
+        if self.player_result.is_none()
+            && let Ok(result) = self.player_result_rx.try_recv()
+        {
+            let failed = result.is_err();
+            self.player_result = Some(result);
+            if failed {
+                event_loop.exit();
             }
         }
         if self.player_result.as_ref().is_some_and(Result::is_err) {

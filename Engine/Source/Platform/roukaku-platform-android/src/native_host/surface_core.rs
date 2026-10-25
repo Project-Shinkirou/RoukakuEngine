@@ -247,10 +247,10 @@ impl AndroidHostApp {
     pub(super) fn suspend_surfaces(&mut self) {
         let handles = self.surfaces.handles().collect::<Vec<_>>();
         for handle in handles {
-            if let Ok(slot) = self.surfaces.get_mut(handle) {
-                if let Some(core) = slot.core.as_mut() {
-                    core.detach_surface();
-                }
+            if let Ok(slot) = self.surfaces.get_mut(handle)
+                && let Some(core) = slot.core.as_mut()
+            {
+                core.detach_surface();
             }
         }
     }

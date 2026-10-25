@@ -29,10 +29,10 @@ static WAKE: std::sync::Mutex<Option<EventLoopProxy<()>>> = std::sync::Mutex::ne
 
 pub(super) fn request_retry() {
     RETRY.store(true, Ordering::Release);
-    if let Ok(wake) = WAKE.lock() {
-        if let Some(wake) = wake.as_ref() {
-            let _ = wake.send_event(());
-        }
+    if let Ok(wake) = WAKE.lock()
+        && let Some(wake) = wake.as_ref()
+    {
+        let _ = wake.send_event(());
     }
 }
 
@@ -110,10 +110,9 @@ impl Startup {
             .worker
             .as_ref()
             .is_some_and(std::thread::JoinHandle::is_finished)
+            && let Some(worker) = self.worker.take()
         {
-            if let Some(worker) = self.worker.take() {
-                let _ = worker.join();
-            }
+            let _ = worker.join();
         }
     }
 

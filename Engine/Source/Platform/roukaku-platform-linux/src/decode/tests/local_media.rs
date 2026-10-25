@@ -80,14 +80,14 @@ fn complete_local_movie_streams_through_worker_and_gpu() {
             })
             .unwrap();
         assert_eq!(capture.rgba8.as_ref(), rgba.as_slice());
-        if [0, expected_frames / 2, expected_frames - 1].contains(&index) {
-            if let Some(dir) = artifact_dir.as_ref() {
-                std::fs::write(
-                    dir.join(format!("frame-{index}-{width}x{height}.rgba")),
-                    capture.rgba8.as_ref(),
-                )
-                .unwrap();
-            }
+        if [0, expected_frames / 2, expected_frames - 1].contains(&index)
+            && let Some(dir) = artifact_dir.as_ref()
+        {
+            std::fs::write(
+                dir.join(format!("frame-{index}-{width}x{height}.rgba")),
+                capture.rgba8.as_ref(),
+            )
+            .unwrap();
         }
         if last_pixels
             .as_ref()

@@ -232,14 +232,14 @@ impl Drop for LinuxHostApp {
         self.package_workers.clear();
         self.gamepad_stop.store(true, Ordering::Release);
         self.gamepad_events = std_mpsc::sync_channel(0).1;
-        if let Some(worker) = self.gamepad_thread.take() {
-            if worker.join().is_err() {
-                tracing::error!(
-                    event = "platform.linux.gamepad.worker_panic",
-                    diagnostic_code = "ROUKAKU_PLATFORM_GAMEPAD_WORKER_PANIC",
-                    "Linux Gaming Input worker panicked during shutdown"
-                );
-            }
+        if let Some(worker) = self.gamepad_thread.take()
+            && worker.join().is_err()
+        {
+            tracing::error!(
+                event = "platform.linux.gamepad.worker_panic",
+                diagnostic_code = "ROUKAKU_PLATFORM_GAMEPAD_WORKER_PANIC",
+                "Linux Gaming Input worker panicked during shutdown"
+            );
         }
     }
 }

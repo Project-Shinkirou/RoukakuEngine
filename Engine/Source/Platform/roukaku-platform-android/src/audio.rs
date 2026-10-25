@@ -77,15 +77,16 @@ fn record_callback_latency(
     channels: u16,
     callback_samples: usize,
 ) {
-    if let Ok(millis) = stream.calculate_latency_millis() {
-        if millis.is_finite() && millis >= 0.0 {
-            consumer.record_output_latency(
-                std::time::Duration::from_secs_f64(millis / 1_000.0),
-                stream.get_sample_rate() as u32,
-                channels,
-                callback_samples,
-            );
-        }
+    if let Ok(millis) = stream.calculate_latency_millis()
+        && millis.is_finite()
+        && millis >= 0.0
+    {
+        consumer.record_output_latency(
+            std::time::Duration::from_secs_f64(millis / 1_000.0),
+            stream.get_sample_rate() as u32,
+            channels,
+            callback_samples,
+        );
     }
 }
 

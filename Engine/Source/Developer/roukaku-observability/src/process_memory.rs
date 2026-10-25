@@ -121,15 +121,15 @@ fn read_status_memory(pid: Option<u32>) -> Result<ProcessMemorySample, ProcessMe
     let mut working_set_bytes = None;
     let mut private_bytes = None;
     for line in status.lines() {
-        if working_set_bytes.is_none() {
-            if let Some(value) = line.strip_prefix("VmRSS:") {
-                working_set_bytes = parse_kib(value);
-            }
+        if working_set_bytes.is_none()
+            && let Some(value) = line.strip_prefix("VmRSS:")
+        {
+            working_set_bytes = parse_kib(value);
         }
-        if private_bytes.is_none() {
-            if let Some(value) = line.strip_prefix("RssAnon:") {
-                private_bytes = parse_kib(value);
-            }
+        if private_bytes.is_none()
+            && let Some(value) = line.strip_prefix("RssAnon:")
+        {
+            private_bytes = parse_kib(value);
         }
         if working_set_bytes.is_some() && private_bytes.is_some() {
             break;

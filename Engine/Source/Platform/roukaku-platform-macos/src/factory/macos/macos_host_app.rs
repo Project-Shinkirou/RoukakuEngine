@@ -152,13 +152,13 @@ impl PackageSourceResource {
 impl Drop for MacosHostApp {
     fn drop(&mut self) {
         self.gamepad_stop.store(true, Ordering::Release);
-        if let Some(worker) = self.gamepad_thread.take() {
-            if worker.join().is_err() {
-                tracing::error!(
-                    event = "platform.macos.gamepad.worker_panic",
-                    "macOS gamepad worker panicked during shutdown"
-                );
-            }
+        if let Some(worker) = self.gamepad_thread.take()
+            && worker.join().is_err()
+        {
+            tracing::error!(
+                event = "platform.macos.gamepad.worker_panic",
+                "macOS gamepad worker panicked during shutdown"
+            );
         }
     }
 }
