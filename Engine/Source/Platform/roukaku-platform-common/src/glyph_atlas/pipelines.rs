@@ -249,16 +249,18 @@ fn blend_state(blend: BlendMode) -> (wgpu::BlendState, &'static str) {
         BlendMode::Opaque => (wgpu::BlendState::REPLACE, "fs_opaque"),
         BlendMode::Add => (
             color_only(wgpu::BlendComponent {
-                src_factor: wgpu::BlendFactor::SrcAlpha,
+                // fs_main already outputs premultiplied color, as the CPU renderer adds.
+                src_factor: wgpu::BlendFactor::One,
                 dst_factor: wgpu::BlendFactor::One,
                 operation: wgpu::BlendOperation::Add,
             }),
             "fs_main",
         ),
+        // dst * (1 - srcA) + dst * premultiplied_src, the CPU coverage-weighted multiply.
         BlendMode::Multiply => (
             color_only(wgpu::BlendComponent {
                 src_factor: wgpu::BlendFactor::Dst,
-                dst_factor: wgpu::BlendFactor::Zero,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
                 operation: wgpu::BlendOperation::Add,
             }),
             "fs_main",
