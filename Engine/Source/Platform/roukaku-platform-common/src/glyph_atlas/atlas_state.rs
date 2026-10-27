@@ -71,6 +71,7 @@ pub(crate) struct BlendPipelineSet {
     pub(super) add: wgpu::RenderPipeline,
     pub(super) multiply: wgpu::RenderPipeline,
     pub(super) screen: wgpu::RenderPipeline,
+    pub(super) screen_rgb: wgpu::RenderPipeline,
     pub(super) mask_gradient: wgpu::RenderPipeline,
     pub(super) mask_threshold: wgpu::RenderPipeline,
 }
@@ -91,6 +92,7 @@ impl BlendPipelines {
             BlendMode::Add => &pipelines.add,
             BlendMode::Multiply => &pipelines.multiply,
             BlendMode::Screen => &pipelines.screen,
+            BlendMode::ScreenRgb => &pipelines.screen_rgb,
         }
     }
 

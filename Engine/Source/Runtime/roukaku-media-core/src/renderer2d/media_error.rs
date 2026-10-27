@@ -54,6 +54,9 @@ pub enum BlendMode {
     Opaque,
     Multiply,
     Screen,
+    /// Screens the source RGB scaled by opacity, ignoring source coverage alpha
+    /// and leaving destination alpha unchanged.
+    ScreenRgb,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -295,6 +298,28 @@ pub struct MeshVertex2D {
     pub uv: [f32; 2],
     /// Premultiplied sRGBA color.
     pub premultiplied_rgba: [u8; 4],
+}
+
+/// A homogeneous logical-pixel vertex. `position` is `[x * w, y * w, z, w]`.
+/// Triangles are clipped against XY and `w > 0` with perspective-correct
+/// interpolation; Z is never clipped and only feeds the depth test.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct ProjectiveMeshVertex2D {
+    pub position: [f32; 4],
+    pub uv: [f32; 2],
+    /// Unit-range premultiplied sRGBA color.
+    pub premultiplied_rgba: [f32; 4],
+}
+
+/// Depth testing for projective meshes. The depth buffer is cleared once per
+/// scene and shared by every depth-enabled mesh in that scene.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MeshDepth2D {
+    #[default]
+    Disabled,
+    /// Test `z / w < stored` and write the passing depth.
+    ReadWriteLess,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

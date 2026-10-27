@@ -163,6 +163,23 @@ pub(crate) fn create_blend_pipeline_set(
             "screen",
             "fs_main",
         ),
+        // Screens the tinted RGB regardless of coverage and keeps destination alpha.
+        screen_rgb: pipeline(
+            wgpu::BlendState {
+                color: wgpu::BlendComponent {
+                    src_factor: wgpu::BlendFactor::One,
+                    dst_factor: wgpu::BlendFactor::OneMinusSrc,
+                    operation: wgpu::BlendOperation::Add,
+                },
+                alpha: wgpu::BlendComponent {
+                    src_factor: wgpu::BlendFactor::Zero,
+                    dst_factor: wgpu::BlendFactor::One,
+                    operation: wgpu::BlendOperation::Add,
+                },
+            },
+            "screen-rgb",
+            "fs_screen_rgb",
+        ),
         mask_gradient: pipeline(
             wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING,
             "mask-gradient",
@@ -241,6 +258,11 @@ fn masked_sample(input: VertexOutput) -> vec4<f32> {
 @fragment fn fs_opaque(input: VertexOutput) -> @location(0) vec4<f32> {
     let sample = masked_sample(input);
     return vec4<f32>(sample.rgb * input.color.rgb, sample.a * input.color.a);
+}
+// Vertex color is premultiplied by opacity, so this is `rgb * tint * opacity`.
+@fragment fn fs_screen_rgb(input: VertexOutput) -> @location(0) vec4<f32> {
+    let sample = masked_sample(input);
+    return vec4<f32>(sample.rgb * input.color.rgb, 0.0);
 }
 // The mask texture is inverted by the native loader before submission.
 fn mask_reveal_alpha(input: VertexOutput, gradient: bool) -> f32 {

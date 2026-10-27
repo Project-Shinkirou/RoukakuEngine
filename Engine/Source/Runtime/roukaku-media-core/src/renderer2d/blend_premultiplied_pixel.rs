@@ -74,6 +74,10 @@ pub(super) fn blend_premultiplied_pixel(
                     .clamp(0.0, 255.0) as u8;
             }
         }
+        BlendMode::ScreenRgb => {
+            screen_rgb(target, &source, opacity);
+            return;
+        }
     }
     target[3] = if matches!(blend, BlendMode::Opaque) {
         (source_alpha * 255.0).round().clamp(0.0, 255.0) as u8
@@ -178,12 +182,27 @@ pub(super) fn blend_pixel(target: &mut [u8], source: &[u8], opacity: f32, blend:
                     .clamp(0.0, 255.0) as u8;
             }
         }
+        BlendMode::ScreenRgb => {
+            screen_rgb(target, source, opacity);
+            return;
+        }
     }
     target[3] = if matches!(blend, BlendMode::Opaque) {
         (alpha * 255.0).round().clamp(0.0, 255.0) as u8
     } else {
         (output_alpha * 255.0).round().clamp(0.0, 255.0) as u8
     };
+}
+
+/// Screens `source.rgb * opacity` over the target, ignoring source coverage and
+/// leaving the target alpha untouched.
+fn screen_rgb(target: &mut [u8], source: &[u8], opacity: f32) {
+    for channel in 0..3 {
+        let color = source[channel] as f32 * opacity;
+        target[channel] = (color + target[channel] as f32 * (1.0 - color / 255.0))
+            .round()
+            .clamp(0.0, 255.0) as u8;
+    }
 }
 
 pub fn frame_hash(width: u32, height: u32, format: RenderTargetFormat, bytes: &[u8]) -> Hash256 {

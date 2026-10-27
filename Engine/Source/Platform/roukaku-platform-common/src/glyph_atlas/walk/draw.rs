@@ -538,6 +538,13 @@ impl<'a> WalkedScene<'a> {
                     },
                 );
             }
+            SceneCommand::CrossfadeSprite { .. }
+            | SceneCommand::CrossfadeQuad { .. }
+            | SceneCommand::ProjectiveMesh2D { .. } => {
+                return Err(invalid(
+                    "crossfade and projective mesh commands are not supported by the GPU atlas renderer",
+                ));
+            }
             _ => unreachable!("non-draw commands are consumed by apply_control"),
         }
         Ok(())

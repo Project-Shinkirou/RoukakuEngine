@@ -143,6 +143,50 @@ impl HeadlessRenderer {
                         validate_source_rect_dimensions(dimensions, *source)?;
                     }
                 }
+                DrawCommand::CrossfadeSprite {
+                    previous_texture_id,
+                    current_texture_id,
+                    source,
+                    destination,
+                    progress,
+                    opacity,
+                    ..
+                } => {
+                    if destination.width == 0 || destination.height == 0 {
+                        return Err(MediaError::message(
+                            "ROUKAKU_MEDIA_DESTINATION_SIZE: crossfade destination is empty",
+                        ));
+                    }
+                    self.validate_crossfade(
+                        &resource_overlay,
+                        [previous_texture_id, current_texture_id],
+                        *source,
+                        *progress,
+                        *opacity,
+                    )?;
+                }
+                DrawCommand::CrossfadeQuad {
+                    previous_texture_id,
+                    current_texture_id,
+                    source,
+                    positions,
+                    progress,
+                    opacity,
+                    ..
+                } => {
+                    if positions.iter().flatten().any(|value| !value.is_finite()) {
+                        return Err(MediaError::message(
+                            "ROUKAKU_MEDIA_CROSSFADE_VERTEX: crossfade quad position is not finite",
+                        ));
+                    }
+                    self.validate_crossfade(
+                        &resource_overlay,
+                        [previous_texture_id, current_texture_id],
+                        *source,
+                        *progress,
+                        *opacity,
+                    )?;
+                }
                 DrawCommand::GlyphRun {
                     glyphs: instances,
                     opacity,
@@ -214,6 +258,53 @@ impl HeadlessRenderer {
                         _ => {
                             return Err(MediaError::message(
                                 "ROUKAKU_MEDIA_MESH_MATERIAL: mesh material and texture mismatch",
+                            ));
+                        }
+                    }
+                }
+                DrawCommand::ProjectiveMesh2D {
+                    vertices,
+                    indices,
+                    material,
+                    texture_id,
+                    opacity,
+                    ..
+                } => {
+                    validate_opacity(*opacity)?;
+                    if vertices.is_empty()
+                        || indices.is_empty()
+                        || indices.len() % 3 != 0
+                        || indices
+                            .iter()
+                            .any(|index| *index as usize >= vertices.len())
+                        || vertices.iter().any(|vertex| {
+                            !vertex.position.into_iter().all(f32::is_finite)
+                                || !vertex.uv.into_iter().all(f32::is_finite)
+                                || !vertex
+                                    .premultiplied_rgba
+                                    .into_iter()
+                                    .all(|channel| (0.0..=1.0).contains(&channel))
+                                || vertex.premultiplied_rgba[..3]
+                                    .iter()
+                                    .any(|channel| *channel > vertex.premultiplied_rgba[3])
+                        })
+                    {
+                        return Err(MediaError::message(
+                            "ROUKAKU_MEDIA_MESH_TOPOLOGY: projective mesh payload is invalid",
+                        ));
+                    }
+                    match (material, texture_id) {
+                        (MeshMaterial2D::Solid, None) => {}
+                        (MeshMaterial2D::ColorTexture | MeshMaterial2D::GlyphMask, Some(id))
+                            if retained_texture_dimensions(
+                                &self.textures,
+                                &resource_overlay,
+                                id,
+                            )
+                            .is_some() => {}
+                        _ => {
+                            return Err(MediaError::message(
+                                "ROUKAKU_MEDIA_MESH_MATERIAL: projective mesh material and texture mismatch",
                             ));
                         }
                     }
@@ -404,6 +495,34 @@ impl HeadlessRenderer {
                 }
             }
         }
+    }
+
+    fn validate_crossfade(
+        &self,
+        overlay: &BTreeMap<&str, PendingResource<'_>>,
+        texture_ids: [&String; 2],
+        source: Option<RectI>,
+        progress: f32,
+        opacity: f32,
+    ) -> Result<(), MediaError> {
+        validate_opacity(opacity)?;
+        if !progress.is_finite() || !(0.0..=1.0).contains(&progress) {
+            return Err(MediaError::message(
+                "ROUKAKU_MEDIA_CROSSFADE_PROGRESS: crossfade progress must be within 0..=1",
+            ));
+        }
+        for texture_id in texture_ids {
+            let dimensions = retained_texture_dimensions(&self.textures, overlay, texture_id)
+                .ok_or_else(|| {
+                    MediaError::message(
+                        "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: crossfade texture is not uploaded",
+                    )
+                })?;
+            if let Some(source) = source {
+                validate_source_rect_dimensions(dimensions, source)?;
+            }
+        }
+        Ok(())
     }
 }
 

@@ -29,6 +29,29 @@ pub enum SceneCommand {
         opacity: f32,
         blend: BlendMode,
     },
+    /// Crossfade between two textures by lerp-ing straight-alpha samples in
+    /// premultiplied space. Unlike two alpha-over sprites, the midpoint gives
+    /// equal weight to opaque colors from both sources.
+    CrossfadeSprite {
+        id: String,
+        previous_texture_id: String,
+        current_texture_id: String,
+        source: Option<RectI>,
+        destination: RectI,
+        progress: f32,
+        opacity: f32,
+    },
+    /// Crossfade quad variant with four screen-space corner positions: top-left,
+    /// top-right, bottom-left, bottom-right. UVs are fixed (0,0), (1,0), (0,1), (1,1).
+    CrossfadeQuad {
+        id: String,
+        previous_texture_id: String,
+        current_texture_id: String,
+        source: Option<RectI>,
+        positions: [[f32; 2]; 4],
+        progress: f32,
+        opacity: f32,
+    },
     GlyphRun {
         id: String,
         glyphs: Arc<[GlyphInstance]>,
@@ -45,6 +68,20 @@ pub enum SceneCommand {
         texture_filter: TextureFilter2D,
         opacity: f32,
         blend: BlendMode,
+    },
+    /// Homogeneous triangles. Camera and pushed transforms act on XY with
+    /// translation scaled by W; Z is never clipped and only participates in the
+    /// depth test. Per-vertex colors and UVs interpolate perspective-correctly.
+    ProjectiveMesh2D {
+        id: String,
+        vertices: Arc<[ProjectiveMeshVertex2D]>,
+        indices: Arc<[u32]>,
+        material: MeshMaterial2D,
+        texture_id: Option<String>,
+        texture_filter: TextureFilter2D,
+        opacity: f32,
+        blend: BlendMode,
+        depth: MeshDepth2D,
     },
     MeshBatch2D {
         vertices: Arc<[MeshVertex2D]>,
