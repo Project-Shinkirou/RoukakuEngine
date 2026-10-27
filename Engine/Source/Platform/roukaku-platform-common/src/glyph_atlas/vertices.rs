@@ -11,40 +11,113 @@ pub(crate) fn build_vertices(
     bytes: &mut Vec<u8>,
     batches: &mut Vec<DrawBatch>,
 ) -> Result<(), PlatformError> {
-    let mut vertex_count = 0u32;
+    // Untextured primitives inherit the previous batch's page to avoid rebinds.
+    let mut last_page = 0usize;
     for primitive in runs {
-        let clip = match primitive {
-            DrawPrimitive::Quads(index) => quad_runs[*index].clip,
-            DrawPrimitive::Mesh(run) => run.clip,
-        };
-        let blend = match primitive {
-            DrawPrimitive::Quads(index) => quad_runs[*index].blend,
-            DrawPrimitive::Mesh(run) => run.blend,
-        };
-        let texture_filter = match primitive {
-            DrawPrimitive::Quads(_) => TextureFilter2D::Linear,
-            DrawPrimitive::Mesh(run) => run.texture_filter,
-        };
-        let compositing = match primitive {
-            DrawPrimitive::Quads(index) => quad_runs[*index].compositing,
-            DrawPrimitive::Mesh(run) => run.compositing,
+        let (clip, texture_filter, compositing, pipeline) = match primitive {
+            DrawPrimitive::Quads(index) => {
+                let run = &quad_runs[*index];
+                let pipeline = match &run.mask {
+                    Some(params) => BatchPipeline::Mask(params.mode),
+                    None => BatchPipeline::Blend(run.blend),
+                };
+                (run.clip, TextureFilter2D::Linear, run.compositing, pipeline)
+            }
+            DrawPrimitive::Mesh(run) => (
+                run.clip,
+                run.texture_filter,
+                run.compositing,
+                BatchPipeline::Blend(run.blend),
+            ),
+            DrawPrimitive::Crossfade(run) => (
+                run.clip,
+                TextureFilter2D::Linear,
+                run.compositing,
+                BatchPipeline::Crossfade,
+            ),
+            DrawPrimitive::ProjectiveMesh(run) => (
+                run.clip,
+                run.texture_filter,
+                run.compositing,
+                BatchPipeline::Projective(run.blend, run.depth),
+            ),
         };
         if clip.width == 0 || clip.height == 0 {
             continue;
         }
-        let pixel_mask = match primitive {
-            DrawPrimitive::Quads(index) => quad_runs[*index].pixel_mask,
-            DrawPrimitive::Mesh(run) => run.pixel_mask,
+        let mut batch = DrawBatch {
+            byte_offset: bytes.len() as u64,
+            vertex_count: 0,
+            clip,
+            texture_filter,
+            compositing,
+            pipeline,
+            page: last_page,
+            secondary_page: last_page,
         };
-        let mask_params = match primitive {
-            DrawPrimitive::Quads(index) => quad_runs[*index].mask.as_ref(),
-            DrawPrimitive::Mesh(_) => None,
+        let (pixel_mask, mask_params) = match primitive {
+            DrawPrimitive::Quads(index) => (
+                quad_runs[*index].pixel_mask,
+                quad_runs[*index].mask.as_ref(),
+            ),
+            DrawPrimitive::Mesh(run) => (run.pixel_mask, None),
+            DrawPrimitive::Crossfade(_) | DrawPrimitive::ProjectiveMesh(_) => (0, None),
         };
-        let first_vertex = vertex_count;
         match primitive {
+            DrawPrimitive::Crossfade(run) => {
+                let [previous_page, current_page] =
+                    push_crossfade_vertices(run, atlas, frame, bytes)?;
+                batch.page = previous_page;
+                batch.secondary_page = current_page;
+                batch.vertex_count = 6;
+            }
+            DrawPrimitive::ProjectiveMesh(run) => {
+                let (count, page) =
+                    push_projective_vertices(run, atlas, resources, frame, last_page, bytes)?;
+                batch.page = page;
+                batch.secondary_page = page;
+                batch.vertex_count = count;
+            }
             DrawPrimitive::Quads(index) => {
                 let run = &quad_runs[*index];
                 let color = straight_to_premultiplied(run.rgba, run.opacity, run.compositing);
+                let mask_placement = mask_params
+                    .map(|params| {
+                        atlas
+                            .get(params.mask_resource.as_ref())
+                            .copied()
+                            .ok_or_else(|| invalid("mask resource has no atlas placement"))
+                    })
+                    .transpose()?;
+                // Untextured quads sample the white texel of whichever page the
+                // surrounding quads bind, so they never split a batch.
+                batch.page = run
+                    .quads
+                    .iter()
+                    .find_map(|quad| match &quad.source {
+                        QuadSource::Resource { resource_id, .. } => atlas
+                            .get(resource_id.as_ref())
+                            .map(|placement| placement.page),
+                        QuadSource::White => None,
+                    })
+                    .or(mask_placement.map(|placement| placement.page))
+                    .unwrap_or(last_page);
+                batch.secondary_page =
+                    mask_placement.map_or(batch.page, |placement| placement.page);
+                // Map the mask independently across each destination quad.
+                let mask_corners = match mask_placement {
+                    Some(placement) => {
+                        let width = atlas.width(placement.page) as f32;
+                        let height = atlas.height(placement.page) as f32;
+                        let (mu0, mv0) = (placement.x as f32 / width, placement.y as f32 / height);
+                        let (mu1, mv1) = (
+                            (placement.x + placement.width) as f32 / width,
+                            (placement.y + placement.height) as f32 / height,
+                        );
+                        [(mu0, mv0), (mu1, mv0), (mu1, mv1), (mu0, mv1)]
+                    }
+                    None => [(0.0, 0.0); 4],
+                };
                 for quad in &run.quads {
                     let left = quad.destination.x as f32;
                     let top = quad.destination.y as f32;
@@ -56,26 +129,47 @@ pub(crate) fn build_vertices(
                     };
                     let right = left + draw_width as f32;
                     let bottom = top + draw_height as f32;
-                    let (u0, v0, u1, v1) = match &quad.source {
+                    let placement = match &quad.source {
                         QuadSource::Resource {
                             resource_id,
                             source,
-                        } => {
-                            let placement = atlas
+                        } => Some((
+                            atlas
                                 .get(resource_id.as_ref())
-                                .ok_or_else(|| invalid("draw resource has no atlas placement"))?;
+                                .ok_or_else(|| invalid("draw resource has no atlas placement"))?,
+                            source,
+                        )),
+                        QuadSource::White => None,
+                    };
+                    if let Some((placement, _)) = placement
+                        && placement.page != batch.page
+                    {
+                        if batch.vertex_count > 0 {
+                            batches.push(batch);
+                        }
+                        batch.byte_offset = bytes.len() as u64;
+                        batch.vertex_count = 0;
+                        batch.page = placement.page;
+                        if mask_placement.is_none() {
+                            batch.secondary_page = placement.page;
+                        }
+                    }
+                    let page_width = atlas.width(batch.page) as f32;
+                    let page_height = atlas.height(batch.page) as f32;
+                    let (u0, v0, u1, v1) = match placement {
+                        Some((placement, source)) => {
                             let source_right = source.x as u32 + source.width;
                             let source_bottom = source.y as u32 + source.height;
                             (
-                                (placement.x + source.x as u32) as f32 / atlas.width() as f32,
-                                (placement.y + source.y as u32) as f32 / atlas.height() as f32,
-                                (placement.x + source_right) as f32 / atlas.width() as f32,
-                                (placement.y + source_bottom) as f32 / atlas.height() as f32,
+                                (placement.x + source.x as u32) as f32 / page_width,
+                                (placement.y + source.y as u32) as f32 / page_height,
+                                (placement.x + source_right) as f32 / page_width,
+                                (placement.y + source_bottom) as f32 / page_height,
                             )
                         }
-                        QuadSource::White => {
-                            let u = 0.5 / atlas.width() as f32;
-                            let v = 0.5 / atlas.height() as f32;
+                        None => {
+                            let u = 0.5 / page_width;
+                            let v = 0.5 / page_height;
                             (u, v, u, v)
                         }
                     };
@@ -87,28 +181,6 @@ pub(crate) fn build_vertices(
                         _ => unreachable!(),
                     };
                     let positions = [(left, top), (right, top), (right, bottom), (left, bottom)];
-                    // Map each texture independently across the destination.
-                    let mask_uv = if let Some(params) = mask_params {
-                        let placement = atlas
-                            .get(params.mask_resource.as_ref())
-                            .ok_or_else(|| invalid("mask resource has no atlas placement"))?;
-                        [
-                            (placement.x as f32) / atlas.width() as f32,
-                            (placement.y as f32) / atlas.height() as f32,
-                            ((placement.x + placement.width) as f32) / atlas.width() as f32,
-                            ((placement.y + placement.height) as f32) / atlas.height() as f32,
-                        ]
-                    } else {
-                        [0.0, 0.0, 0.0, 0.0]
-                    };
-                    let mask_corners = match mask_params {
-                        Some(_) => {
-                            let (mu0, mv0, mu1, mv1) =
-                                (mask_uv[0], mask_uv[1], mask_uv[2], mask_uv[3]);
-                            [(mu0, mv0), (mu1, mv0), (mu1, mv1), (mu0, mv1)]
-                        }
-                        None => [(0.0, 0.0); 4],
-                    };
                     for corner in [0, 1, 2, 0, 2, 3] {
                         let (x, y) = transform_point(
                             run.transform,
@@ -130,10 +202,11 @@ pub(crate) fn build_vertices(
                             [mu, mv],
                             mask_params.map_or(0.0, |params| params.phase),
                         );
-                        vertex_count = vertex_count
-                            .checked_add(1)
-                            .ok_or_else(|| invalid("scene vertex count overflowed"))?;
                     }
+                    batch.vertex_count = batch
+                        .vertex_count
+                        .checked_add(6)
+                        .ok_or_else(|| invalid("scene vertex count overflowed"))?;
                 }
             }
             DrawPrimitive::Mesh(run) => {
@@ -150,19 +223,21 @@ pub(crate) fn build_vertices(
                         Ok::<_, PlatformError>((placement, resource.width(), resource.height()))
                     })
                     .transpose()?;
+                batch.page = texture_mapping.map_or(last_page, |(placement, _, _)| placement.page);
+                batch.secondary_page = batch.page;
+                let page_width = atlas.width(batch.page) as f32;
+                let page_height = atlas.height(batch.page) as f32;
                 for index in run.indices {
                     let vertex = &run.vertices[*index as usize];
                     let (x, y) =
                         transform_point(run.transform, vertex.position[0], vertex.position[1]);
                     let (u, v) = if let Some((placement, width, height)) = texture_mapping {
                         (
-                            (placement.x as f32 + vertex.uv[0] * width as f32)
-                                / atlas.width() as f32,
-                            (placement.y as f32 + vertex.uv[1] * height as f32)
-                                / atlas.height() as f32,
+                            (placement.x as f32 + vertex.uv[0] * width as f32) / page_width,
+                            (placement.y as f32 + vertex.uv[1] * height as f32) / page_height,
                         )
                     } else {
-                        (0.5 / atlas.width() as f32, 0.5 / atlas.height() as f32)
+                        (0.5 / page_width, 0.5 / page_height)
                     };
                     let color = match run.compositing {
                         SceneCompositing2D::LinearSrgb => {
@@ -185,22 +260,16 @@ pub(crate) fn build_vertices(
                         [0.0, 0.0],
                         0.0,
                     );
-                    vertex_count = vertex_count
+                    batch.vertex_count = batch
+                        .vertex_count
                         .checked_add(1)
                         .ok_or_else(|| invalid("scene vertex count overflowed"))?;
                 }
             }
         }
-        if vertex_count > first_vertex {
-            batches.push(DrawBatch {
-                first_vertex,
-                vertex_count: vertex_count - first_vertex,
-                clip,
-                blend,
-                texture_filter,
-                compositing,
-                mask: mask_params.map(|params| params.mode),
-            });
+        if batch.vertex_count > 0 {
+            last_page = batch.page;
+            batches.push(batch);
         }
     }
     Ok(())

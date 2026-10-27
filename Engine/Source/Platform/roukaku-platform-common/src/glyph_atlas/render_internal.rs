@@ -130,43 +130,24 @@ impl WgpuGlyphAtlasRenderer {
             .allocated_bytes
             .saturating_sub(command_allocation_after.allocated_bytes);
         self.last_upload_bytes = upload_bytes;
-        let (
-            active_linear_bind_group,
-            active_nearest_bind_group,
-            active_encoded_linear_bind_group,
-            active_encoded_nearest_bind_group,
-            placement_view,
-        ) = match &atlas_update {
+        let (active_atlas, placement_view) = match &atlas_update {
             PreparedAtlasUpdate::None => {
                 let atlas = self
                     .atlas
                     .as_ref()
                     .ok_or_else(|| invalid("glyph atlas is unavailable"))?;
-                (
-                    &atlas.linear_bind_group,
-                    &atlas.nearest_bind_group,
-                    &atlas.encoded_linear_bind_group,
-                    &atlas.encoded_nearest_bind_group,
-                    AtlasPlacementView::committed(&atlas.packed),
-                )
+                (atlas, AtlasPlacementView::committed(&atlas.packed))
             }
-            PreparedAtlasUpdate::Replace(atlas) => (
-                &atlas.linear_bind_group,
-                &atlas.nearest_bind_group,
-                &atlas.encoded_linear_bind_group,
-                &atlas.encoded_nearest_bind_group,
-                AtlasPlacementView::committed(&atlas.packed),
-            ),
+            PreparedAtlasUpdate::Replace(atlas) => {
+                (atlas, AtlasPlacementView::committed(&atlas.packed))
+            }
             PreparedAtlasUpdate::Mutate(mutation) => {
                 let atlas = self
                     .atlas
                     .as_ref()
                     .ok_or_else(|| invalid("incremental atlas update has no base atlas"))?;
                 (
-                    &atlas.linear_bind_group,
-                    &atlas.nearest_bind_group,
-                    &atlas.encoded_linear_bind_group,
-                    &atlas.encoded_nearest_bind_group,
+                    atlas,
                     AtlasPlacementView::pending(&atlas.packed, &mutation.placements),
                 )
             }
@@ -196,6 +177,12 @@ impl WgpuGlyphAtlasRenderer {
             return Err(invalid(
                 "a scene frame cannot mix linear and encoded compositing batches",
             ));
+        }
+        for batch in &self.draw_batches {
+            if let BatchPipeline::Projective(blend, depth) = batch.pipeline {
+                self.pipelines
+                    .prepare_projective(device, batch.compositing, blend, depth);
+            }
         }
         let geometry_ns = profiled_elapsed_ns(profile_cpu, geometry_started)?;
         let engine_allocation_after = roukaku_observability::thread_allocation_snapshot();
@@ -283,79 +270,127 @@ impl WgpuGlyphAtlasRenderer {
             .texture
             .clone();
         let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
+        let depth_view = self
+            .draw_batches
+            .iter()
+            .any(|batch| batch.pipeline.depth_tested())
+            .then(|| DepthTarget::view(&mut self.depth_target, device, frame.width, frame.height));
+        // A render pass either has a depth attachment or not, and every
+        // pipeline must agree, so consecutive depth-tested batches get their
+        // own pass. The depth buffer is cleared once and shared by the scene.
+        let mut segments: SmallVec<[(usize, usize, bool); 4]> = SmallVec::new();
+        for (index, batch) in self.draw_batches.iter().enumerate() {
+            let depth_tested = batch.pipeline.depth_tested();
+            match segments.last_mut() {
+                Some((_, end, depth)) if *depth == depth_tested => *end = index + 1,
+                _ => segments.push((index, index + 1, depth_tested)),
+            }
+        }
+        if segments.is_empty() {
+            segments.push((0, 0, false));
+        }
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("roukaku-glyph-render-encoder"),
         });
-        {
-            let clear = frame.clear_rgba;
-            let clear_channel = |channel: u8| match compositing {
-                SceneCompositing2D::LinearSrgb => f64::from(srgb_byte_to_linear(channel)),
-                SceneCompositing2D::EncodedSrgb => f64::from(channel) / 255.0,
+        let clear = frame.clear_rgba;
+        let clear_channel = |channel: u8| match compositing {
+            SceneCompositing2D::LinearSrgb => f64::from(srgb_byte_to_linear(channel)),
+            SceneCompositing2D::EncodedSrgb => f64::from(channel) / 255.0,
+        };
+        let last_segment = segments.len() - 1;
+        let mut depth_cleared = false;
+        for (segment_index, &(start, end, depth_tested)) in segments.iter().enumerate() {
+            let color_load = if segment_index == 0 {
+                wgpu::LoadOp::Clear(wgpu::Color {
+                    r: clear_channel(clear[0]),
+                    g: clear_channel(clear[1]),
+                    b: clear_channel(clear[2]),
+                    a: f64::from(clear[3]) / 255.0,
+                })
+            } else {
+                wgpu::LoadOp::Load
             };
+            let depth_stencil_attachment = match (&depth_view, depth_tested) {
+                (Some(view), true) => {
+                    let load = if depth_cleared {
+                        wgpu::LoadOp::Load
+                    } else {
+                        wgpu::LoadOp::Clear(1.0)
+                    };
+                    depth_cleared = true;
+                    Some(wgpu::RenderPassDepthStencilAttachment {
+                        view,
+                        depth_ops: Some(wgpu::Operations {
+                            load,
+                            store: wgpu::StoreOp::Store,
+                        }),
+                        stencil_ops: None,
+                    })
+                }
+                _ => None,
+            };
+            let timestamp_writes = timestamp_query.and_then(|(query_set, beginning, end_index)| {
+                let beginning = (segment_index == 0).then_some(beginning);
+                let end_index = (segment_index == last_segment).then_some(end_index);
+                (beginning.is_some() || end_index.is_some()).then_some(
+                    wgpu::RenderPassTimestampWrites {
+                        query_set,
+                        beginning_of_pass_write_index: beginning,
+                        end_of_pass_write_index: end_index,
+                    },
+                )
+            });
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("roukaku-glyph-render-pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &output_view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: clear_channel(clear[0]),
-                            g: clear_channel(clear[1]),
-                            b: clear_channel(clear[2]),
-                            a: f64::from(clear[3]) / 255.0,
-                        }),
+                        load: color_load,
                         store: wgpu::StoreOp::Store,
                     },
                     depth_slice: None,
                 })],
-                depth_stencil_attachment: None,
-                timestamp_writes: timestamp_query.map(|(query_set, beginning, end)| {
-                    wgpu::RenderPassTimestampWrites {
-                        query_set,
-                        beginning_of_pass_write_index: Some(beginning),
-                        end_of_pass_write_index: Some(end),
-                    }
-                }),
+                depth_stencil_attachment,
+                timestamp_writes,
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
-            if let Some(vertex_buffer) = &self.vertex_buffer {
-                pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                for batch in &self.draw_batches {
+            let Some(vertex_buffer) = &self.vertex_buffer else {
+                continue;
+            };
+            for batch in &self.draw_batches[start..end] {
+                pass.set_bind_group(
+                    0,
+                    active_atlas.bind_group(
+                        batch.page,
+                        batch.secondary_page,
+                        batch.compositing,
+                        batch.texture_filter,
+                    ),
+                    &[],
+                );
+                if batch.pipeline == BatchPipeline::Crossfade {
                     pass.set_bind_group(
-                        0,
-                        match (batch.compositing, batch.texture_filter) {
-                            (SceneCompositing2D::LinearSrgb, TextureFilter2D::Nearest) => {
-                                active_nearest_bind_group
-                            }
-                            (SceneCompositing2D::LinearSrgb, TextureFilter2D::Linear) => {
-                                active_linear_bind_group
-                            }
-                            (SceneCompositing2D::EncodedSrgb, TextureFilter2D::Nearest) => {
-                                active_encoded_nearest_bind_group
-                            }
-                            (SceneCompositing2D::EncodedSrgb, TextureFilter2D::Linear) => {
-                                active_encoded_linear_bind_group
-                            }
-                        },
+                        1,
+                        active_atlas.bind_group(
+                            batch.secondary_page,
+                            batch.secondary_page,
+                            batch.compositing,
+                            batch.texture_filter,
+                        ),
                         &[],
                     );
-                    let pipeline = match batch.mask {
-                        Some(mode) => self.pipelines.select_mask(batch.compositing, mode),
-                        None => self.pipelines.select(batch.compositing, batch.blend),
-                    };
-                    pass.set_pipeline(pipeline);
-                    pass.set_scissor_rect(
-                        batch.clip.x as u32,
-                        batch.clip.y as u32,
-                        batch.clip.width,
-                        batch.clip.height,
-                    );
-                    pass.draw(
-                        batch.first_vertex..batch.first_vertex + batch.vertex_count,
-                        0..1,
-                    );
                 }
+                pass.set_pipeline(self.pipelines.select_batch(batch));
+                pass.set_scissor_rect(
+                    batch.clip.x as u32,
+                    batch.clip.y as u32,
+                    batch.clip.width,
+                    batch.clip.height,
+                );
+                pass.set_vertex_buffer(0, vertex_buffer.slice(batch.byte_offset..));
+                pass.draw(0..batch.vertex_count, 0..1);
             }
         }
         let command_buffer = encoder.finish();

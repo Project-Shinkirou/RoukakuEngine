@@ -131,29 +131,33 @@ pub(crate) fn allocate_pending_atlas_slot(
         }
         (None, Some((index, _))) => allocator.added_free_slots.remove(index),
         (None, None) => {
-            if allocator.cursor_x + required_width > allocator.width {
-                allocator.cursor_x = ATLAS_PADDING * 3;
-                allocator.cursor_y = allocator
-                    .cursor_y
-                    .checked_add(allocator.row_height + ATLAS_PADDING)
+            let (mut cursor_x, mut cursor_y, mut row_height) =
+                (allocator.cursor_x, allocator.cursor_y, allocator.row_height);
+            if cursor_x + required_width > allocator.width {
+                cursor_x = ATLAS_PADDING * 3;
+                cursor_y = cursor_y
+                    .checked_add(row_height + ATLAS_PADDING)
                     .ok_or_else(|| invalid("glyph atlas row overflowed"))?;
-                allocator.row_height = 0;
+                row_height = 0;
             }
             // Wrapping cannot make a resource wider than the atlas fit.
-            // Reject it before upload so the caller grows/re-packs the atlas.
-            if allocator.cursor_x + required_width > allocator.width
-                || allocator.cursor_y + required_height > allocator.height
+            // Reject it before upload, leaving the cursor untouched so the
+            // caller can try another page or re-pack the atlas.
+            if cursor_x + required_width > allocator.width
+                || cursor_y + required_height > allocator.height
             {
                 return Err(invalid("glyph atlas capacity was exceeded"));
             }
             let placement = AtlasPlacement {
-                x: allocator.cursor_x + ATLAS_PADDING,
-                y: allocator.cursor_y + ATLAS_PADDING,
+                page: allocator.page,
+                x: cursor_x + ATLAS_PADDING,
+                y: cursor_y + ATLAS_PADDING,
                 width,
                 height,
             };
-            allocator.cursor_x += required_width;
-            allocator.row_height = allocator.row_height.max(required_height);
+            allocator.cursor_x = cursor_x + required_width;
+            allocator.cursor_y = cursor_y;
+            allocator.row_height = row_height.max(required_height);
             return Ok(placement);
         }
     };
@@ -185,6 +189,7 @@ pub(crate) fn allocate_pending_atlas_slot(
         );
     }
     Ok(AtlasPlacement {
+        page: allocator.page,
         x: selected.x + ATLAS_PADDING,
         y: selected.y + ATLAS_PADDING,
         width,

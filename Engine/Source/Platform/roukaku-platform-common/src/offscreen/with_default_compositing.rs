@@ -83,6 +83,7 @@ impl WgpuOffscreenRenderer {
             ));
         }
         let descriptor = device_descriptor(
+            adapter.features(),
             policy.is_some_and(|policy| policy.require_timestamp_query),
             required_timestamp_features,
         );

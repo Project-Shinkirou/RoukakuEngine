@@ -538,12 +538,156 @@ impl<'a> WalkedScene<'a> {
                     },
                 );
             }
-            SceneCommand::CrossfadeSprite { .. }
-            | SceneCommand::CrossfadeQuad { .. }
-            | SceneCommand::ProjectiveMesh2D { .. } => {
-                return Err(invalid(
-                    "crossfade and projective mesh commands are not supported by the GPU atlas renderer",
-                ));
+            SceneCommand::CrossfadeSprite {
+                id,
+                previous_texture_id,
+                current_texture_id,
+                source,
+                progress,
+                opacity,
+                ..
+            }
+            | SceneCommand::CrossfadeQuad {
+                id,
+                previous_texture_id,
+                current_texture_id,
+                source,
+                progress,
+                opacity,
+                ..
+            } => {
+                validate_draw_identity(id, opacity, BlendMode::Alpha, &mut self.run_ids)?;
+                if !progress.is_finite() || !(0.0..=1.0).contains(progress) {
+                    return Err(invalid("crossfade progress must be within 0..=1"));
+                }
+                for texture_id in [previous_texture_id, current_texture_id] {
+                    let Some(AtlasResource::Texture(texture)) = resource_get!(texture_id) else {
+                        return Err(invalid("crossfade references a texture that is not live"));
+                    };
+                    if let Some(source) = source {
+                        validate_source_rect(*source, texture.base.width, texture.base.height)?;
+                    }
+                    self.drawn_resources.insert(texture_id);
+                }
+                let positions = match command {
+                    SceneCommand::CrossfadeSprite { destination, .. } => {
+                        validate_destination(*destination)?;
+                        let left = destination.x as f32;
+                        let top = destination.y as f32;
+                        let right = left + destination.width as f32;
+                        let bottom = top + destination.height as f32;
+                        [[left, top], [right, top], [left, bottom], [right, bottom]]
+                    }
+                    SceneCommand::CrossfadeQuad { positions, .. } => {
+                        if positions.iter().flatten().any(|value| !value.is_finite()) {
+                            return Err(invalid("crossfade quad position is not finite"));
+                        }
+                        *positions
+                    }
+                    _ => unreachable!("matched crossfade commands only"),
+                };
+                self.draw_runs.push(DrawPrimitive::Crossfade(CrossfadeRun {
+                    pixel_mask: self.pixel_masks.last().copied().unwrap_or(u64::MAX),
+                    previous_resource: previous_texture_id,
+                    current_resource: current_texture_id,
+                    source: *source,
+                    positions,
+                    progress: *progress,
+                    opacity: *opacity * self.opacity_stack.last().copied().unwrap_or(1.0),
+                    compositing: self.default_compositing,
+                    clip: self.clip_stack.last().copied().unwrap_or(RectI::new(
+                        0,
+                        0,
+                        frame.width,
+                        frame.height,
+                    )),
+                    transform: current_transform(self.camera, &self.transform_stack),
+                }));
+            }
+            SceneCommand::ProjectiveMesh2D {
+                id,
+                vertices,
+                indices,
+                material,
+                texture_id,
+                texture_filter,
+                opacity,
+                blend,
+                depth,
+            } => {
+                if id.is_empty()
+                    || id.len() > 256
+                    || !self.run_ids.insert(id)
+                    || !opacity.is_finite()
+                    || !(0.0..=1.0).contains(opacity)
+                    || vertices.is_empty()
+                    || indices.is_empty()
+                    || indices.len() % 3 != 0
+                {
+                    return Err(invalid(
+                        "projective mesh identity, topology, or opacity is invalid",
+                    ));
+                }
+                if vertices.len() > 250_000
+                    || indices.len() > 750_000
+                    || indices
+                        .iter()
+                        .any(|index| *index as usize >= vertices.len())
+                    || vertices.iter().any(|vertex| {
+                        !vertex.position.into_iter().all(f32::is_finite)
+                            || !vertex.uv.into_iter().all(f32::is_finite)
+                            || !vertex
+                                .premultiplied_rgba
+                                .into_iter()
+                                .all(|channel| (0.0..=1.0).contains(&channel))
+                            || vertex.premultiplied_rgba[..3]
+                                .iter()
+                                .any(|channel| *channel > vertex.premultiplied_rgba[3])
+                    })
+                {
+                    return Err(invalid(
+                        "projective mesh vertex or index payload is invalid",
+                    ));
+                }
+                let resolved_texture = match (material, texture_id) {
+                    (MeshMaterial2D::Solid, None) => None,
+                    (
+                        MeshMaterial2D::ColorTexture | MeshMaterial2D::GlyphMask,
+                        Some(resource_id),
+                    ) => {
+                        let Some(AtlasResource::Texture(_)) = resource_get!(resource_id) else {
+                            return Err(invalid(
+                                "projective mesh references a texture that is not live",
+                            ));
+                        };
+                        self.drawn_resources.insert(resource_id);
+                        Some(resource_id.as_str())
+                    }
+                    _ => {
+                        return Err(invalid(
+                            "projective mesh material and texture binding mismatch",
+                        ));
+                    }
+                };
+                self.draw_runs
+                    .push(DrawPrimitive::ProjectiveMesh(ProjectiveMeshRun {
+                        pixel_mask: self.pixel_masks.last().copied().unwrap_or(u64::MAX),
+                        vertices,
+                        indices,
+                        texture_id: resolved_texture,
+                        texture_filter: *texture_filter,
+                        compositing: self.default_compositing,
+                        opacity: *opacity * self.opacity_stack.last().copied().unwrap_or(1.0),
+                        blend: *blend,
+                        depth: *depth,
+                        clip: self.clip_stack.last().copied().unwrap_or(RectI::new(
+                            0,
+                            0,
+                            frame.width,
+                            frame.height,
+                        )),
+                        transform: current_transform(self.camera, &self.transform_stack),
+                    }));
             }
             _ => unreachable!("non-draw commands are consumed by apply_control"),
         }

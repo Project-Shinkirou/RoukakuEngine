@@ -10,8 +10,16 @@ pub(super) const ATLAS_PADDING: u32 = 1;
 
 pub(super) const MAX_SCENE_RESOURCES: usize = 65_536;
 
+/// Retained resource bytes may fill this many maximum-size atlas pages; a set
+/// that overflows one page spills onto further pages.
+pub(super) const MAX_ATLAS_PAGE_BUDGET: usize = 4;
+
+/// Packing padding and shelf fragmentation can need more pages than the raw
+/// byte budget; this caps the physical page count.
+pub(super) const MAX_ATLAS_PAGES: usize = MAX_ATLAS_PAGE_BUDGET * 2;
+
 pub(super) const MAX_SCENE_RESOURCE_BYTES: usize =
-    MAX_ATLAS_WIDTH as usize * ATLAS_SIDE as usize * 4;
+    MAX_ATLAS_PAGE_BUDGET * MAX_ATLAS_WIDTH as usize * ATLAS_SIDE as usize * 4;
 
 pub(super) const MAX_ATLAS_UPLOAD_BYTES: usize = ATLAS_SIDE as usize * ATLAS_SIDE as usize * 4;
 
@@ -48,6 +56,8 @@ pub(crate) struct WgpuGlyphAtlasRenderer {
     pub(super) atlas_staging_belts: [wgpu::util::StagingBelt; ATLAS_STAGING_RING_SIZE],
     pub(super) atlas_staging_index: usize,
     pub(super) reserved_side: Option<u32>,
+    /// Lazily sized depth attachment for depth-tested projective meshes.
+    pub(super) depth_target: Option<DepthTarget>,
 }
 
 pub(crate) struct CachedOutput {
@@ -63,6 +73,9 @@ pub(crate) struct CachedOutput {
 pub(crate) struct BlendPipelines {
     pub(super) linear: BlendPipelineSet,
     pub(super) encoded: BlendPipelineSet,
+    pub(super) projective: ProjectivePipelines,
+    pub(super) layout: wgpu::PipelineLayout,
+    pub(super) shader: wgpu::ShaderModule,
 }
 
 pub(crate) struct BlendPipelineSet {
@@ -74,6 +87,7 @@ pub(crate) struct BlendPipelineSet {
     pub(super) screen_rgb: wgpu::RenderPipeline,
     pub(super) mask_gradient: wgpu::RenderPipeline,
     pub(super) mask_threshold: wgpu::RenderPipeline,
+    pub(super) crossfade: wgpu::RenderPipeline,
 }
 
 impl BlendPipelines {
@@ -96,18 +110,19 @@ impl BlendPipelines {
         }
     }
 
-    pub(super) fn select_mask(
-        &self,
-        compositing: SceneCompositing2D,
-        mode: MaskRevealMode,
-    ) -> &wgpu::RenderPipeline {
-        let pipelines = match compositing {
+    pub(super) fn select_batch(&self, batch: &DrawBatch) -> &wgpu::RenderPipeline {
+        let pipelines = match batch.compositing {
             SceneCompositing2D::LinearSrgb => &self.linear,
             SceneCompositing2D::EncodedSrgb => &self.encoded,
         };
-        match mode {
-            MaskRevealMode::Gradient => &pipelines.mask_gradient,
-            MaskRevealMode::Threshold => &pipelines.mask_threshold,
+        match batch.pipeline {
+            BatchPipeline::Blend(blend) => self.select(batch.compositing, blend),
+            BatchPipeline::Mask(MaskRevealMode::Gradient) => &pipelines.mask_gradient,
+            BatchPipeline::Mask(MaskRevealMode::Threshold) => &pipelines.mask_threshold,
+            BatchPipeline::Crossfade => &pipelines.crossfade,
+            BatchPipeline::Projective(blend, depth) => {
+                self.select_projective(batch.compositing, blend, depth)
+            }
         }
     }
 }
@@ -243,13 +258,49 @@ impl<'a> AtlasResourceView<'a> {
     }
 }
 
+/// GPU side of a packed atlas: one texture per page. Every page reserves its
+/// origin texel as opaque white, so untextured primitives can be drawn with
+/// whichever page is bound.
 pub(crate) struct GpuAtlas {
-    pub(super) texture: wgpu::Texture,
-    pub(super) linear_bind_group: wgpu::BindGroup,
-    pub(super) nearest_bind_group: wgpu::BindGroup,
-    pub(super) encoded_linear_bind_group: wgpu::BindGroup,
-    pub(super) encoded_nearest_bind_group: wgpu::BindGroup,
+    pub(super) textures: Vec<wgpu::Texture>,
+    /// `pages * pages` entries indexed by `page * pages + mask_page`: binding 0
+    /// samples `page` and the mask binding samples `mask_page`.
+    pub(super) bind_groups: Vec<AtlasBindGroups>,
     pub(super) packed: PackedAtlas,
+}
+
+impl GpuAtlas {
+    pub(super) fn bind_group(
+        &self,
+        page: usize,
+        mask_page: usize,
+        compositing: SceneCompositing2D,
+        filter: TextureFilter2D,
+    ) -> &wgpu::BindGroup {
+        self.bind_groups[page * self.textures.len() + mask_page].select(compositing, filter)
+    }
+}
+
+pub(crate) struct AtlasBindGroups {
+    pub(super) linear: wgpu::BindGroup,
+    pub(super) nearest: wgpu::BindGroup,
+    pub(super) encoded_linear: wgpu::BindGroup,
+    pub(super) encoded_nearest: wgpu::BindGroup,
+}
+
+impl AtlasBindGroups {
+    pub(super) fn select(
+        &self,
+        compositing: SceneCompositing2D,
+        filter: TextureFilter2D,
+    ) -> &wgpu::BindGroup {
+        match (compositing, filter) {
+            (SceneCompositing2D::LinearSrgb, TextureFilter2D::Linear) => &self.linear,
+            (SceneCompositing2D::LinearSrgb, TextureFilter2D::Nearest) => &self.nearest,
+            (SceneCompositing2D::EncodedSrgb, TextureFilter2D::Linear) => &self.encoded_linear,
+            (SceneCompositing2D::EncodedSrgb, TextureFilter2D::Nearest) => &self.encoded_nearest,
+        }
+    }
 }
 
 pub(crate) enum PreparedAtlasUpdate {
@@ -262,6 +313,11 @@ pub(super) type AtlasPlacementJournal = BTreeMap<String, Option<AtlasPlacement>>
 
 pub(crate) struct PackedAtlasMutation {
     pub(super) placements: AtlasPlacementJournal,
+    /// One entry per committed page, in page order.
+    pub(super) pages: SmallVec<[AtlasPageMutation; 1]>,
+}
+
+pub(crate) struct AtlasPageMutation {
     pub(super) cursor_x: u32,
     pub(super) cursor_y: u32,
     pub(super) row_height: u32,
@@ -271,6 +327,7 @@ pub(crate) struct PackedAtlasMutation {
 }
 
 pub(crate) struct AtlasAllocatorState<'a> {
+    pub(super) page: usize,
     pub(super) width: u32,
     pub(super) height: u32,
     pub(super) cursor_x: u32,
@@ -283,17 +340,29 @@ pub(crate) struct AtlasAllocatorState<'a> {
 }
 
 impl<'a> AtlasAllocatorState<'a> {
-    pub(super) fn new(packed: &'a PackedAtlas) -> Self {
+    pub(super) fn new(page_index: usize, page: &'a AtlasPageAllocation) -> Self {
         Self {
-            width: packed.width,
-            height: packed.height,
-            cursor_x: packed.cursor_x,
-            cursor_y: packed.cursor_y,
-            row_height: packed.row_height,
-            base_free_slots: &packed.free_slots,
+            page: page_index,
+            width: page.width,
+            height: page.height,
+            cursor_x: page.cursor_x,
+            cursor_y: page.cursor_y,
+            row_height: page.row_height,
+            base_free_slots: &page.free_slots,
             consumed_free_slots: BTreeSet::new(),
             added_free_slots: Vec::new(),
-            freed_area: packed.freed_area,
+            freed_area: page.freed_area,
+        }
+    }
+
+    pub(super) fn into_mutation(self) -> AtlasPageMutation {
+        AtlasPageMutation {
+            cursor_x: self.cursor_x,
+            cursor_y: self.cursor_y,
+            row_height: self.row_height,
+            consumed_free_slots: self.consumed_free_slots,
+            added_free_slots: self.added_free_slots,
+            freed_area: self.freed_area,
         }
     }
 }
@@ -328,12 +397,12 @@ impl<'a> AtlasPlacementView<'a> {
         }
     }
 
-    pub(super) fn width(&self) -> u32 {
-        self.packed.width
+    pub(super) fn width(&self, page: usize) -> u32 {
+        self.packed.pages[page].width
     }
 
-    pub(super) fn height(&self) -> u32 {
-        self.packed.height
+    pub(super) fn height(&self, page: usize) -> u32 {
+        self.packed.pages[page].height
     }
 }
 
@@ -370,6 +439,7 @@ impl AtlasResource {
 
 #[derive(Clone, Copy)]
 pub(crate) struct AtlasPlacement {
+    pub(super) page: usize,
     pub(super) x: u32,
     pub(super) y: u32,
     pub(super) width: u32,
@@ -379,6 +449,21 @@ pub(crate) struct AtlasPlacement {
 #[derive(Clone)]
 pub(crate) struct PackedAtlas {
     pub(super) placements: BTreeMap<String, AtlasPlacement>,
+    /// Never empty; a texture set that fits one page keeps exactly one.
+    pub(super) pages: Vec<AtlasPageAllocation>,
+}
+
+impl PackedAtlas {
+    pub(super) fn byte_len(&self) -> u64 {
+        self.pages
+            .iter()
+            .map(|page| u64::from(page.width) * u64::from(page.height) * 4)
+            .sum()
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct AtlasPageAllocation {
     pub(super) width: u32,
     pub(super) height: u32,
     pub(super) cursor_x: u32,
@@ -448,4 +533,6 @@ pub(crate) struct MeshRun<'a> {
 pub(crate) enum DrawPrimitive<'a> {
     Quads(usize),
     Mesh(MeshRun<'a>),
+    Crossfade(CrossfadeRun<'a>),
+    ProjectiveMesh(ProjectiveMeshRun<'a>),
 }
