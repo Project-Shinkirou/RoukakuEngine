@@ -23,6 +23,7 @@ fn request() -> AudioOutputRequest {
 fn null_device_consumes_pcm_on_clock_and_pause_preserves_queue() {
     let (device, mut producer) =
         NullAudioDevice::open(request(), AudioWakeRegistration::default()).unwrap();
+    let reader = producer.telemetry_reader();
     producer.submit(vec![0.5; 960]).unwrap();
     std::thread::sleep(Duration::from_millis(25));
     assert_eq!(producer.consumed_samples(), 0);
@@ -32,10 +33,16 @@ fn null_device_consumes_pcm_on_clock_and_pause_preserves_queue() {
         std::thread::sleep(Duration::from_millis(1));
     }
     assert_eq!(producer.consumed_samples(), 960);
+    let telemetry = reader.snapshot();
+    assert_eq!(
+        (telemetry.queued_samples, telemetry.consumed_samples),
+        (0, 960)
+    );
     device.pause().unwrap();
     producer.submit(vec![0.25; 960]).unwrap();
     std::thread::sleep(Duration::from_millis(25));
     assert_eq!(producer.consumed_samples(), 960);
+    assert_eq!(reader.snapshot().queued_samples, 960);
 }
 
 #[test]

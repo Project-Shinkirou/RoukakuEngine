@@ -63,6 +63,13 @@ impl NativeAudioProducer {
             .pop()
             .map_err(|_| queue_overflow("audio output lane has no recycled allocation"))
     }
+
+    /// Reader over this lane's queue telemetry, shared with the consumer side.
+    pub fn telemetry_reader(&self) -> AudioQueueTelemetryReader {
+        AudioQueueTelemetryReader {
+            shared: Arc::clone(&self.telemetry),
+        }
+    }
 }
 
 impl AudioOutputLane for NativeAudioProducer {
