@@ -20,7 +20,7 @@ paragraphs["experience_menu"] = function()
     rk.call("roukaku.vn.stage", "background", "experience.background", {asset = "asset:/key-art/title-background", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
     rk.call("roukaku.vn.stage", "clear_layer", "experience.clear.character", {layer = "character", duration_ms = 0, interrupt = "replace_from_current"})
     rk.call("roukaku.vn.stage", "clear_layer", "experience.clear.video", {layer = "video", duration_ms = 0, interrupt = "replace_from_current"})
-    local selected = rk.call("roukaku.vn.choice", "select", "experience.menu", {{id = "experience.option.story", text = "experience.story"}, {id = "experience.option.read", text = "experience.read"}, {id = "experience.option.stage", text = "experience.stage"}, {id = "experience.option.media", text = "experience.media"}, {id = "experience.option.save", text = "experience.save"}, {id = "experience.option.title", text = "experience.title"}})
+    local selected = rk.call("roukaku.vn.choice", "select", "experience.menu", {{id = "experience.option.story", text = "experience.story"}, {id = "experience.option.read", text = "experience.read"}, {id = "experience.option.stage", text = "experience.stage"}, {id = "experience.option.media", text = "experience.media"}, {id = "experience.option.save", text = "experience.save"}, {id = "experience.option.title", text = "experience.title"}}, {key = "experience.welcome"})
     if selected == "experience.option.story" then
         rk.enter("story.signal_in_the_glass_rain", "scn_common_01_glass_train")
     elseif selected == "experience.option.read" then
@@ -75,7 +75,7 @@ paragraphs["experience_save"] = function()
     rk.call("roukaku.vn.stage", "timeline", "experience.keepsake.fade", {start = {id = "experience.keepsake.fade", join = "fire_and_forget", tracks = {{easing = "linear", target = "experience.witness", property = "opacity", keyframes = {{time_ms = 0, value = {millionths = 250000}}, {time_ms = 60000, value = {millionths = 1000000}}}}}, budget_us = 2000}})
     rk.call("roukaku.vn.dialog", "show", "experience.save.before", {key = "experience.save.before", window = "main"})
     rk.call("roukaku.vn.dialog", "show", "experience.save.after", {key = "experience.save.after", window = "main"})
-    local selected = rk.call("roukaku.vn.choice", "select", "experience.save.choice", {{id = "experience.save.rain", text = "experience.media"}, {id = "experience.save.back", text = "experience.back"}})
+    local selected = rk.call("roukaku.vn.choice", "select", "experience.save.choice", {{id = "experience.save.rain", text = "experience.media"}, {id = "experience.save.back", text = "experience.back"}}, {key = "experience.read.question"})
     if selected == "experience.save.rain" then
         rk.enter("story.main", "experience_media")
     elseif selected == "experience.save.back" then

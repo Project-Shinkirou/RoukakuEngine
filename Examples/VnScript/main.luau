@@ -48,7 +48,7 @@ paragraphs.prologue = function()
     local selected = rk.call("roukaku.vn.choice", "select", "choice.where", {
         {id = "choice.library", text = "choice.library"},
         {id = "choice.rooftop", text = "choice.rooftop"},
-    })
+    }, {key = "prologue.where"})
     if selected == "choice.library" then
         rk.enter("story.main", "library")
     elseif selected == "choice.rooftop" then

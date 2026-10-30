@@ -16,7 +16,7 @@ paragraphs["prologue"] = function()
     rk.call("roukaku.vn.dialog", "show", "line.hello", {key = "prologue.hello", speaker = "hero", window = "main", effects = {{text = "cinematic.reveal", lip_sync = true, filter = "soft_glow"}}})
     rk.call("roukaku.vn.stage", "wait", "wait.voice", "voice_end")
     rk.call("roukaku.vn.stage", "transition", "trans.flash", {preset = "flash_soft", duration_ms = 220})
-    local selected = rk.call("roukaku.vn.choice", "select", "choice.where", {{id = "choice.library", text = "choice.library"}, {id = "choice.rooftop", text = "choice.rooftop"}})
+    local selected = rk.call("roukaku.vn.choice", "select", "choice.where", {{id = "choice.library", text = "choice.library"}, {id = "choice.rooftop", text = "choice.rooftop"}}, {key = "prologue.where"})
     if selected == "choice.library" then
         rk.enter("story.main", "library")
     elseif selected == "choice.rooftop" then

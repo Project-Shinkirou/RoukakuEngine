@@ -193,7 +193,7 @@ paragraphs["scn_common_06_decision_bridge"] = function()
     rk.call("roukaku.vn.dialog", "show", "line.ln_c06_011", {key = "line.ln_c06_011", speaker = "zhou_heng", voice = "voice.vc_ln_c06_011", window = "main"})
     rk.call("roukaku.vn.stage", "voice", "voice.vc_ln_c06_012", {id = "voice.vc_ln_c06_012", bus = "voice", asset = "asset:/voice/vc_ln_c06_012", looped = false, fade_ms = 0, sync = "text"})
     rk.call("roukaku.vn.dialog", "show", "line.ln_c06_012", {key = "line.ln_c06_012", speaker = "lin_yao", voice = "voice.vc_ln_c06_012", window = "main"})
-    local selected = rk.call("roukaku.vn.choice", "select", "choice.choice_common_01_disposition", {{id = "option_truth_publish", text = "choice.option_truth_publish"}, {id = "option_silence_close", text = "choice.option_silence_close"}, {id = "option_signal_control", text = "choice.option_signal_control"}})
+    local selected = rk.call("roukaku.vn.choice", "select", "choice.choice_common_01_disposition", {{id = "option_truth_publish", text = "choice.option_truth_publish"}, {id = "option_silence_close", text = "choice.option_silence_close"}, {id = "option_signal_control", text = "choice.option_signal_control"}}, {key = "choice.choice_common_01_disposition"})
     if selected == "option_truth_publish" then
         rk.enter("story.signal_in_the_glass_rain", "scn_truth_01_observatory")
     elseif selected == "option_silence_close" then
