@@ -78,6 +78,18 @@ impl NativeVnHostCommandSource {
         self.asset_store.is_image_cached(asset_id)
     }
 
+    pub fn mount_asset_overlay(
+        &self,
+        mount_id: &str,
+        overlay: &roukaku_package::OverlayPack,
+    ) -> Result<(), NativeVnHostError> {
+        self.asset_store.mount_overlay(mount_id, overlay)
+    }
+
+    pub fn unmount_asset_overlay(&self, mount_id: &str) -> Result<(), NativeVnHostError> {
+        self.asset_store.unmount_overlay(mount_id)
+    }
+
     pub fn take_ui_host_request(&mut self) -> Option<VnUiHostRequest> {
         self.pending_ui_host_request.take()
     }

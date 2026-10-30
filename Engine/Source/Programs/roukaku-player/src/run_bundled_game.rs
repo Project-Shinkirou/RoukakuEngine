@@ -6,6 +6,25 @@ use super::*;
     target_os = "macos",
     target_os = "ios"
 ))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "ios"
+))]
+fn load_overlay_package(
+    path: &std::path::Path,
+) -> Result<(String, roukaku_package::OverlayPack), PlayerCliError> {
+    let mount_id = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty())
+        .ok_or("overlay package filename must have a UTF-8 stem")?
+        .to_owned();
+    let bytes = fs::read(path)?;
+    let package = roukaku_package::OverlayPack::open(&bytes)?;
+    Ok((mount_id, package))
+}
 pub(super) fn run_bundled_game(
     test_null_audio: bool,
     preview_control: bool,
@@ -29,18 +48,8 @@ pub(super) fn run_bundled_game(
         .map(|(alias, path)| (alias.as_str(), path.as_path()))
         .collect::<Vec<_>>();
     let overlay_packages = overlay_package_paths
-        .into_iter()
-        .map(|path| {
-            let mount_id = path
-                .file_stem()
-                .and_then(|value| value.to_str())
-                .filter(|value| !value.is_empty())
-                .ok_or("overlay package filename must have a UTF-8 stem")?
-                .to_owned();
-            let bytes = fs::read(&path)?;
-            let package = roukaku_package::PackageReader::open(&bytes)?;
-            Ok::<_, PlayerCliError>((mount_id, package))
-        })
+        .iter()
+        .map(|path| load_overlay_package(path))
         .collect::<Result<Vec<_>, _>>()?;
     let overlay_mounts = overlay_packages
         .iter()
@@ -507,4 +516,42 @@ pub(super) fn run_bundled_game(
         .build()?
         .block_on(player())?;
     Ok(())
+}
+
+#[cfg(all(
+    test,
+    any(
+        target_os = "windows",
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "ios"
+    )
+))]
+mod tests {
+    use super::load_overlay_package;
+    use roukaku_package::{PackageBuildRequest, PackageBuilder};
+
+    #[test]
+    fn cli_overlay_path_accepts_validated_standalone_overlay_container() {
+        let bytes = PackageBuilder::build(PackageBuildRequest::fixture(
+            "com.example.cli-overlay",
+            "classic",
+            vec![],
+        ))
+        .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("presentation.rkpkg");
+        std::fs::write(&path, bytes.as_bytes()).unwrap();
+
+        let (mount_id, _overlay) = load_overlay_package(&path).unwrap();
+        assert_eq!(mount_id, "presentation");
+    }
+
+    #[test]
+    fn cli_overlay_path_rejects_unvalidated_container_bytes() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("invalid.rkpkg");
+        std::fs::write(&path, b"not a package").unwrap();
+        assert!(load_overlay_package(&path).is_err());
+    }
 }

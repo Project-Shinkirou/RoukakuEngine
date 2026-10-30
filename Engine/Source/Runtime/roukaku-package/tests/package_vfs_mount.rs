@@ -116,7 +116,11 @@ fn mounted_asset_resolver_reads_catalog_assets_with_source_identity() {
     );
 }
 
-fn package_with_overlay_layer(layer_id: &str, priority: i32, bytes: &[u8]) -> PackageReader {
+fn package_with_overlay_layer(
+    layer_id: &str,
+    priority: i32,
+    bytes: &[u8],
+) -> roukaku_package::OverlayPack {
     let section = SectionPayload::raw(
         "asset.background.opening",
         "roukaku.cooked_asset.v1",
@@ -133,7 +137,123 @@ fn package_with_overlay_layer(layer_id: &str, priority: i32, bytes: &[u8]) -> Pa
     manifest["layers"][0]["priority"] = priority.into();
     manifest["entries"][0]["layer_id"] = layer_id.into();
     request.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
-    PackageReader::open(PackageBuilder::build(request).unwrap().as_bytes()).unwrap()
+    roukaku_package::OverlayPack::open(PackageBuilder::build(request).unwrap().as_bytes()).unwrap()
+}
+
+fn mark_font_asset(request: &mut PackageBuildRequest) {
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&request.asset_vfs_manifest).unwrap();
+    for entry in manifest["entries"].as_array_mut().unwrap() {
+        if entry["uri"] == "package:/asset/font/primary" {
+            entry["media_kind"] = "font/ttf".into();
+        }
+    }
+    request.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
+    let mut catalog: serde_json::Value = serde_json::from_slice(&request.asset_catalog).unwrap();
+    for asset in catalog["assets"].as_array_mut().unwrap() {
+        if asset["asset_id"] == "asset:/font/primary" {
+            asset["media_kind"] = "font/ttf".into();
+        }
+    }
+    request.asset_catalog = serde_json::to_vec(&catalog).unwrap();
+}
+
+#[test]
+fn overlay_replaces_ui_localization_and_font_manifest_sections() {
+    let mut request = PackageBuildRequest::fixture(
+        "com.example.nativevn",
+        "classic",
+        vec![
+            SectionPayload::raw(
+                "vn.ui_blueprint",
+                "roukaku.ui_blueprint_bundle.v2",
+                b"base-ui".to_vec(),
+            ),
+            SectionPayload::raw(
+                "vn.localization.en",
+                "roukaku.vn.localization_table.v1",
+                b"base-locale".to_vec(),
+            ),
+            SectionPayload::raw(
+                "media.font_manifest",
+                "roukaku.font_manifest.v1",
+                b"base-font".to_vec(),
+            ),
+            SectionPayload::raw(
+                "asset.font.primary",
+                "roukaku.cooked_asset.v1",
+                b"base-font-file".to_vec(),
+            ),
+        ],
+    );
+    mark_font_asset(&mut request);
+    let base = PackageReader::open(PackageBuilder::build(request).unwrap().as_bytes()).unwrap();
+    let mut overlay_request = PackageBuildRequest::fixture(
+        "com.example.overlay.presentation",
+        "classic",
+        vec![
+            SectionPayload::raw(
+                "vn.ui_blueprint",
+                "roukaku.ui_blueprint_bundle.v2",
+                b"overlay-ui".to_vec(),
+            ),
+            SectionPayload::raw(
+                "vn.localization.en",
+                "roukaku.vn.localization_table.v1",
+                b"overlay-locale".to_vec(),
+            ),
+            SectionPayload::raw(
+                "media.font_manifest",
+                "roukaku.font_manifest.v1",
+                b"overlay-font".to_vec(),
+            ),
+            SectionPayload::raw(
+                "asset.font.primary",
+                "roukaku.cooked_asset.v1",
+                b"overlay-font-file".to_vec(),
+            ),
+        ],
+    );
+    mark_font_asset(&mut overlay_request);
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&overlay_request.asset_vfs_manifest).unwrap();
+    manifest["layers"][0]["layer_id"] = "overlay.presentation".into();
+    manifest["layers"][0]["priority"] = 10.into();
+    for entry in manifest["entries"].as_array_mut().unwrap() {
+        entry["layer_id"] = "overlay.presentation".into();
+    }
+    overlay_request.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
+    let overlay = roukaku_package::OverlayPack::open(
+        PackageBuilder::build(overlay_request).unwrap().as_bytes(),
+    )
+    .unwrap();
+    let mut resolver = roukaku_package::MountedAssetResolver::new(&base).unwrap();
+    resolver.mount_overlay("presentation", &overlay).unwrap();
+    for (section, expected) in [
+        ("vn.ui_blueprint", b"overlay-ui".as_slice()),
+        ("vn.localization.en", b"overlay-locale".as_slice()),
+        ("media.font_manifest", b"overlay-font".as_slice()),
+    ] {
+        let resolved = resolver.resolve_section(section, 1024).unwrap();
+        assert_eq!(resolved.bytes.as_ref(), expected);
+        assert_eq!(resolved.identity.source_mount, "overlay.presentation");
+    }
+    let font = resolver.resolve_asset("asset:/font/primary", 1024).unwrap();
+    assert_eq!(font.bytes.as_ref(), b"overlay-font-file");
+    assert_eq!(font.identity.source_mount, "overlay.presentation");
+}
+
+#[test]
+fn standalone_overlay_pack_is_a_valid_package_container() {
+    let overlay = package_with_overlay_layer("overlay.standalone", 10, b"standalone");
+    let base = base_package();
+    let mut resolver = roukaku_package::MountedAssetResolver::new(&base).unwrap();
+    resolver.mount_overlay("standalone", &overlay).unwrap();
+    let asset = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap();
+    assert_eq!(asset.bytes.as_ref(), b"standalone");
+    assert_eq!(asset.identity.source_mount, "overlay.standalone");
 }
 
 fn base_package() -> PackageReader {
@@ -204,7 +324,9 @@ fn overlay_whiteout_hides_base_asset() {
         "profiles": []
     }]);
     overlay.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
-    let overlay = PackageReader::open(PackageBuilder::build(overlay).unwrap().as_bytes()).unwrap();
+    let overlay =
+        roukaku_package::OverlayPack::open(PackageBuilder::build(overlay).unwrap().as_bytes())
+            .unwrap();
     let mut resolver = roukaku_package::MountedAssetResolver::new(&base).unwrap();
     resolver.mount_overlay("whiteout", &overlay).unwrap();
     let error = resolver

@@ -98,7 +98,7 @@ impl NativeVnHostCommandSource {
         height: u32,
         surface: PlayerHostResourceId,
         options: NativeVnHostOpenOptions,
-        overlays: &[(&str, &roukaku_package::PackageReader)],
+        overlays: &[(&str, &roukaku_package::OverlayPack)],
         authorized_directories: &[(&str, &std::path::Path)],
     ) -> Result<Self, NativeVnHostError> {
         Self::from_package_with_extensions_and_mounts(
@@ -123,7 +123,7 @@ impl NativeVnHostCommandSource {
         surface: PlayerHostResourceId,
         options: NativeVnHostOpenOptions,
         registry: &roukaku_plugin::WorkExtensionRegistry,
-        overlays: &[(&str, &roukaku_package::PackageReader)],
+        overlays: &[(&str, &roukaku_package::OverlayPack)],
         authorized_directories: &[(&str, &std::path::Path)],
     ) -> Result<Self, NativeVnHostError> {
         let extensions = registry.instantiate();

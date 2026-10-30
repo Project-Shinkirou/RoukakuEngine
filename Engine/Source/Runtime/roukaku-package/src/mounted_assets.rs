@@ -6,9 +6,39 @@ use roukaku_asset::{
 };
 use roukaku_core::Hash256;
 
-use crate::{ContainerError, PackageReader};
+use crate::{ContainerError, ContainerKind, PackageReader, RoukakuContainerReader};
 
-/// Identity used by decoded caches. A content revision is the resolved VFS content hash.
+/// A standalone overlay is a real package-kind container with bounded VFS metadata.
+/// It does not need a launch manifest, provider registry, or an executable story.
+#[derive(Debug, Clone)]
+pub struct OverlayPack {
+    container: RoukakuContainerReader,
+    manifest: VfsManifest,
+    catalog: AssetCatalog,
+}
+
+impl OverlayPack {
+    pub fn open(bytes: &[u8]) -> Result<Self, ContainerError> {
+        Self::from_container(RoukakuContainerReader::new(bytes)?)
+    }
+
+    pub fn from_container(container: RoukakuContainerReader) -> Result<Self, ContainerError> {
+        if container.kind() != ContainerKind::Package {
+            return Err(ContainerError::message(
+                "ROUKAKU_VFS_OVERLAY_CONTAINER_KIND",
+            ));
+        }
+        let manifest = read_manifest(&container)?;
+        let catalog = read_catalog(&container)?;
+        Ok(Self {
+            container,
+            manifest,
+            catalog,
+        })
+    }
+}
+
+/// Identity of a decoded asset, independent of unrelated mount revisions.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ResolvedAssetIdentity {
     pub asset_id: String,
@@ -25,23 +55,22 @@ pub struct ResolvedAssetBytes {
     pub bytes: Arc<[u8]>,
 }
 
-/// Package, overlay-package and explicitly authorized local-directory resolver.
-/// Mount order is determined solely by the VFS layer priorities in each package manifest.
+/// Package, overlay-pack and explicitly authorized local-directory resolution.
 #[derive(Debug, Clone)]
 pub struct MountedAssetResolver {
     package: PackageReader,
     manifest: VfsManifest,
     catalog: AssetCatalog,
-    mount_readers: BTreeMap<String, PackageReader>,
-    mounted_layers: BTreeMap<String, Vec<String>>,
+    mount_readers: BTreeMap<String, RoukakuContainerReader>,
+    overlays: BTreeMap<String, OverlayPack>,
     local_roots: BTreeMap<String, LocalMountRootSet>,
     context: ResolveContext,
 }
 
 impl MountedAssetResolver {
     pub fn new(package: &PackageReader) -> Result<Self, ContainerError> {
-        let manifest = read_manifest(package)?;
-        let catalog = read_catalog(package)?;
+        let manifest = read_manifest(package.container())?;
+        let catalog = read_catalog(package.container())?;
         let context = ResolveContext {
             target: package.product_context().target().to_owned(),
             profile: package.product_context().profile().to_owned(),
@@ -53,11 +82,10 @@ impl MountedAssetResolver {
             manifest,
             catalog,
             mount_readers: BTreeMap::new(),
-            mounted_layers: BTreeMap::new(),
+            overlays: BTreeMap::new(),
             local_roots: BTreeMap::new(),
             context,
         };
-        result.index_package(package)?;
         if let Some(layer_id) = result
             .manifest
             .layers
@@ -66,8 +94,9 @@ impl MountedAssetResolver {
             .min_by_key(|layer| layer.priority)
             .map(|layer| layer.layer_id.clone())
         {
-            result.index_product_sections(package, &layer_id)?;
+            result.index_product_sections(package.container(), &layer_id)?;
         }
+        result.validate()?;
         Ok(result)
     }
 
@@ -75,34 +104,68 @@ impl MountedAssetResolver {
         &self.catalog.assets
     }
 
-    /// Add an overlay package. It must declare compatible prefixes and unique layer IDs.
+    /// Add a new mount; failed validation leaves every existing mount unchanged.
     pub fn mount_overlay(
         &mut self,
         mount_id: &str,
-        overlay: &PackageReader,
+        overlay: &OverlayPack,
     ) -> Result<(), ContainerError> {
-        if mount_id.trim().is_empty() || self.mounted_layers.contains_key(mount_id) {
+        if mount_id.trim().is_empty() || self.overlays.contains_key(mount_id) {
             return Err(ContainerError::message("ROUKAKU_VFS_MOUNT_ID_INVALID"));
         }
-        let overlay_manifest = read_manifest(overlay)?;
-        for prefix in overlay_manifest.prefixes {
+        self.replace_overlay(mount_id, overlay)
+    }
+
+    /// Add or replace a mount atomically, rebuilding its metadata and removing old entries.
+    pub fn replace_overlay(
+        &mut self,
+        mount_id: &str,
+        overlay: &OverlayPack,
+    ) -> Result<(), ContainerError> {
+        if mount_id.trim().is_empty() {
+            return Err(ContainerError::message("ROUKAKU_VFS_MOUNT_ID_INVALID"));
+        }
+        let mut overlays = self.overlays.clone();
+        overlays.insert(mount_id.to_owned(), overlay.clone());
+        self.rebuild(overlays)
+    }
+
+    pub fn unmount_overlay(&mut self, mount_id: &str) -> Result<(), ContainerError> {
+        let mut overlays = self.overlays.clone();
+        if overlays.remove(mount_id).is_none() {
+            return Err(ContainerError::message("ROUKAKU_VFS_MOUNT_MISSING"));
+        }
+        self.rebuild(overlays)
+    }
+
+    fn rebuild(&mut self, overlays: BTreeMap<String, OverlayPack>) -> Result<(), ContainerError> {
+        let mut next = Self::new(&self.package)?;
+        next.local_roots = self.local_roots.clone();
+        for overlay in overlays.values() {
+            next.merge_overlay(overlay)?;
+        }
+        next.validate()?;
+        next.overlays = overlays;
+        *self = next;
+        Ok(())
+    }
+
+    fn merge_overlay(&mut self, overlay: &OverlayPack) -> Result<(), ContainerError> {
+        for prefix in &overlay.manifest.prefixes {
             if let Some(existing) = self
                 .manifest
                 .prefixes
                 .iter()
                 .find(|item| item.prefix == prefix.prefix)
             {
-                if existing.provider_id != prefix.provider_id
-                    || existing.capabilities != prefix.capabilities
-                {
+                if existing != prefix {
                     return Err(ContainerError::message("ROUKAKU_VFS_MOUNT_PREFIX_MISMATCH"));
                 }
             } else {
-                self.manifest.prefixes.push(prefix);
+                self.manifest.prefixes.push(prefix.clone());
             }
         }
-        let mut layer_ids = Vec::with_capacity(overlay_manifest.layers.len());
-        for layer in overlay_manifest.layers {
+        for layer in &overlay.manifest.layers {
             if self
                 .manifest
                 .layers
@@ -114,65 +177,73 @@ impl MountedAssetResolver {
                     layer.layer_id
                 )));
             }
-            layer_ids.push(layer.layer_id.clone());
             self.mount_readers
-                .insert(layer.layer_id.clone(), overlay.clone());
-            self.manifest.layers.push(layer);
+                .insert(layer.layer_id.clone(), overlay.container.clone());
+            self.manifest.layers.push(layer.clone());
         }
-        self.manifest.entries.extend(overlay_manifest.entries);
-        self.manifest.whiteouts.extend(overlay_manifest.whiteouts);
-        for asset in read_catalog(overlay)?.assets {
+        self.manifest
+            .entries
+            .extend(overlay.manifest.entries.iter().cloned());
+        self.manifest
+            .whiteouts
+            .extend(overlay.manifest.whiteouts.iter().cloned());
+        for asset in &overlay.catalog.assets {
             if let Some(existing) = self
                 .catalog
                 .assets
                 .iter()
                 .find(|existing| existing.asset_id == asset.asset_id)
             {
-                if existing.uri != asset.uri {
+                if existing.uri != asset.uri
+                    || existing.media_kind != asset.media_kind
+                    || existing.tags != asset.tags
+                {
                     return Err(ContainerError::message(format!(
                         "ROUKAKU_VFS_ASSET_ID_URI_MISMATCH: {}",
                         asset.asset_id
                     )));
                 }
             } else {
-                self.catalog.assets.push(asset);
+                self.catalog.assets.push(asset.clone());
             }
         }
-        if let Some(layer_id) = self
+        if let Some(layer_id) = overlay
             .manifest
             .layers
             .iter()
-            .filter(|layer| layer_ids.contains(&layer.layer_id) && layer.prefix == "package")
+            .filter(|layer| layer.prefix == "package")
             .max_by_key(|layer| layer.priority)
             .map(|layer| layer.layer_id.clone())
         {
-            self.index_product_sections(overlay, &layer_id)?;
-        }
-        self.mounted_layers.insert(mount_id.to_owned(), layer_ids);
-        Ok(())
-    }
-
-    pub fn unmount_overlay(&mut self, mount_id: &str) -> Result<(), ContainerError> {
-        let layers = self
-            .mounted_layers
-            .remove(mount_id)
-            .ok_or_else(|| ContainerError::message("ROUKAKU_VFS_MOUNT_MISSING"))?;
-        self.manifest
-            .layers
-            .retain(|layer| !layers.contains(&layer.layer_id));
-        self.manifest
-            .entries
-            .retain(|entry| !layers.contains(&entry.layer_id));
-        self.manifest
-            .whiteouts
-            .retain(|whiteout| !layers.contains(&whiteout.layer_id));
-        for layer in layers {
-            self.mount_readers.remove(&layer);
+            self.index_product_sections(&overlay.container, &layer_id)?;
         }
         Ok(())
     }
 
-    /// Host authorization is explicit. The alias must match LocalAuthorized source references.
+    fn validate(&self) -> Result<(), ContainerError> {
+        let diagnostics = self.manifest.validate();
+        if !diagnostics.is_empty() {
+            return Err(ContainerError::message(
+                diagnostics
+                    .iter()
+                    .map(|d| d.code.as_str())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ));
+        }
+        let mut ids = BTreeMap::new();
+        for asset in &self.catalog.assets {
+            if ids.insert(&asset.asset_id, &asset.uri).is_some() {
+                return Err(ContainerError::message(format!(
+                    "ROUKAKU_VFS_ASSET_CATALOG_MAPPING: {}",
+                    asset.asset_id
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    /// Authorization grants a root to manifest LocalAuthorized references, never to arbitrary paths.
     pub fn authorize_directory(
         &mut self,
         alias: &str,
@@ -186,66 +257,58 @@ impl MountedAssetResolver {
         Ok(())
     }
 
-    pub fn resolve_asset(
-        &self,
-        asset_id: &str,
-        max_bytes: usize,
-    ) -> Result<ResolvedAssetBytes, ContainerError> {
-        let matches: Vec<&AssetCatalogEntry> = self
-            .catalog
+    fn asset_uri(&self, asset_id: &str) -> Result<&VfsUri, ContainerError> {
+        self.catalog
             .assets
             .iter()
-            .filter(|asset| asset.asset_id == asset_id)
-            .collect();
-        let [asset] = matches.as_slice() else {
-            return Err(ContainerError::message(format!(
-                "ROUKAKU_VFS_ASSET_CATALOG_MAPPING: {asset_id}"
-            )));
-        };
-        self.resolve_uri(&asset.uri, asset_id, max_bytes)
+            .find(|asset| asset.asset_id == asset_id)
+            .map(|asset| &asset.uri)
+            .ok_or_else(|| {
+                ContainerError::message(format!("ROUKAKU_VFS_ASSET_CATALOG_MAPPING: {asset_id}"))
+            })
     }
 
-    pub fn resolve_asset_identity(
-        &self,
-        asset_id: &str,
-    ) -> Result<ResolvedAssetIdentity, ContainerError> {
-        let mut assets = self
-            .catalog
-            .assets
-            .iter()
-            .filter(|asset| asset.asset_id == asset_id);
-        let asset = assets.next().ok_or_else(|| {
-            ContainerError::message(format!("ROUKAKU_VFS_ASSET_CATALOG_MAPPING: {asset_id}"))
-        })?;
-        if assets.next().is_some() {
-            return Err(ContainerError::message(format!(
-                "ROUKAKU_VFS_ASSET_CATALOG_MAPPING: {asset_id}"
-            )));
-        }
+    fn entry(&self, uri: &VfsUri, asset_id: &str) -> Result<&VfsManifestEntry, ContainerError> {
         let prefix = self
             .manifest
             .prefixes
             .iter()
-            .find(|prefix| prefix.prefix == asset.uri.prefix())
+            .find(|prefix| prefix.prefix == uri.prefix())
             .ok_or_else(|| ContainerError::message("ROUKAKU_VFS_PREFIX_MISSING"))?;
-        let mut context = self.context.clone();
-        context.provider_binding = prefix.provider_id.clone();
-        context.capability = prefix.backend.required_provider_capability().to_owned();
-        let entry = self
-            .manifest
-            .resolve(&asset.uri, &context)
+        let context = ResolveContext {
+            provider_binding: prefix.provider_id.clone(),
+            capability: prefix.backend.required_provider_capability().to_owned(),
+            ..self.context.clone()
+        };
+        self.manifest
+            .resolve(uri, &context)
             .map_err(|diagnostics| {
                 ContainerError::message(
                     diagnostics
                         .iter()
-                        .map(|diagnostic| diagnostic.code.as_str())
+                        .map(|d| d.code.as_str())
                         .collect::<Vec<_>>()
                         .join(","),
                 )
             })?
             .ok_or_else(|| {
                 ContainerError::message(format!("ROUKAKU_VFS_ASSET_WHITEOUT: {asset_id}"))
-            })?;
+            })
+    }
+
+    pub fn resolve_asset(
+        &self,
+        asset_id: &str,
+        max_bytes: usize,
+    ) -> Result<ResolvedAssetBytes, ContainerError> {
+        self.resolve_uri(self.asset_uri(asset_id)?, asset_id, max_bytes)
+    }
+
+    pub fn resolve_asset_identity(
+        &self,
+        asset_id: &str,
+    ) -> Result<ResolvedAssetIdentity, ContainerError> {
+        let entry = self.entry(self.asset_uri(asset_id)?, asset_id)?;
         Ok(ResolvedAssetIdentity {
             asset_id: asset_id.to_owned(),
             source_mount: entry.layer_id.clone(),
@@ -269,47 +332,25 @@ impl MountedAssetResolver {
         asset_id: &str,
         max_bytes: usize,
     ) -> Result<ResolvedAssetBytes, ContainerError> {
-        let prefix = self
-            .manifest
-            .prefixes
-            .iter()
-            .find(|prefix| prefix.prefix == uri.prefix())
-            .ok_or_else(|| ContainerError::message("ROUKAKU_VFS_PREFIX_MISSING"))?;
-        let mut context = self.context.clone();
-        context.provider_binding = prefix.provider_id.clone();
-        context.capability = prefix.backend.required_provider_capability().to_owned();
-        let entry = self
-            .manifest
-            .resolve(uri, &context)
-            .map_err(|diagnostics| {
-                ContainerError::message(
-                    diagnostics
-                        .iter()
-                        .map(|diagnostic| diagnostic.code.as_str())
-                        .collect::<Vec<_>>()
-                        .join(","),
-                )
-            })?
-            .ok_or_else(|| {
-                ContainerError::message(format!("ROUKAKU_VFS_ASSET_WHITEOUT: {asset_id}"))
-            })?;
+        let entry = self.entry(uri, asset_id)?;
         if entry.size > max_bytes as u64 {
             return Err(ContainerError::message(format!(
                 "ROUKAKU_VFS_READ_BOUND: {asset_id}"
             )));
         }
-        let source_mount = entry.layer_id.clone();
         let bytes = match &entry.source {
             VfsSourceRef::PackageSection { section_id } => {
                 let reader = self
                     .mount_readers
                     .get(&entry.layer_id)
-                    .unwrap_or(&self.package);
-                let section = reader.container().read_bounded(section_id, max_bytes)?;
+                    .unwrap_or(self.package.container());
+                let section = reader.read_bounded(section_id, max_bytes)?;
                 let start = usize::try_from(entry.offset)
                     .map_err(|_| ContainerError::message("ROUKAKU_VFS_RANGE"))?;
+                let size = usize::try_from(entry.size)
+                    .map_err(|_| ContainerError::message("ROUKAKU_VFS_RANGE"))?;
                 let end = start
-                    .checked_add(entry.size as usize)
+                    .checked_add(size)
                     .ok_or_else(|| ContainerError::message("ROUKAKU_VFS_RANGE"))?;
                 section
                     .get(start..end)
@@ -317,6 +358,9 @@ impl MountedAssetResolver {
                     .to_vec()
             }
             VfsSourceRef::LocalAuthorized { alias } => {
+                if entry.offset != 0 {
+                    return Err(ContainerError::message("ROUKAKU_VFS_LOCAL_RANGE"));
+                }
                 let roots = self.local_roots.get(alias).ok_or_else(|| {
                     ContainerError::message(format!("ROUKAKU_VFS_LOCAL_UNAUTHORIZED: {alias}"))
                 })?;
@@ -338,7 +382,7 @@ impl MountedAssetResolver {
         Ok(ResolvedAssetBytes {
             identity: ResolvedAssetIdentity {
                 asset_id: asset_id.to_owned(),
-                source_mount,
+                source_mount: entry.layer_id.clone(),
                 content_revision: entry.hash,
             },
             uri: uri.clone(),
@@ -348,28 +392,16 @@ impl MountedAssetResolver {
         })
     }
 
-    fn index_package(&mut self, package: &PackageReader) -> Result<(), ContainerError> {
-        for layer in &self.manifest.layers {
-            if matches!(layer.source, VfsSourceRef::PackageSection { .. }) {
-                self.mount_readers
-                    .entry(layer.layer_id.clone())
-                    .or_insert_with(|| package.clone());
-            }
-        }
-        Ok(())
-    }
     fn index_product_sections(
         &mut self,
-        package: &PackageReader,
+        container: &RoukakuContainerReader,
         layer_id: &str,
     ) -> Result<(), ContainerError> {
-        for section in package.container().entries() {
+        for section in container.entries() {
             let media_kind = if section.id.starts_with("vn.localization.") {
                 "text"
             } else if section.id == "media.font_manifest" {
                 "font_manifest"
-            } else if section.id.starts_with("vn.policy") {
-                "script"
             } else if section.id.starts_with("vn.ui_") {
                 "ui"
             } else if section.id.starts_with("vn.") {
@@ -405,19 +437,26 @@ impl MountedAssetResolver {
     }
 }
 
-fn read_manifest(package: &PackageReader) -> Result<VfsManifest, ContainerError> {
-    serde_json::from_slice(
-        &package
-            .container()
-            .read_bounded("asset.vfs_manifest", 32 * 1024 * 1024)?,
-    )
-    .map_err(|error| ContainerError::message(format!("ROUKAKU_VFS_MANIFEST_DECODE: {error}")))
+fn read_manifest(container: &RoukakuContainerReader) -> Result<VfsManifest, ContainerError> {
+    let manifest: VfsManifest =
+        serde_json::from_slice(&container.read_bounded("asset.vfs_manifest", 16 * 1024 * 1024)?)
+            .map_err(|error| {
+                ContainerError::message(format!("ROUKAKU_VFS_MANIFEST_DECODE: {error}"))
+            })?;
+    if manifest.schema != "roukaku.asset_vfs_manifest.v1" {
+        return Err(ContainerError::message("ROUKAKU_VFS_SCHEMA"));
+    }
+    Ok(manifest)
 }
-fn read_catalog(package: &PackageReader) -> Result<AssetCatalog, ContainerError> {
-    serde_json::from_slice(
-        &package
-            .container()
-            .read_bounded("asset.catalog", 16 * 1024 * 1024)?,
-    )
-    .map_err(|error| ContainerError::message(format!("ROUKAKU_VFS_CATALOG_DECODE: {error}")))
+
+fn read_catalog(container: &RoukakuContainerReader) -> Result<AssetCatalog, ContainerError> {
+    let catalog: AssetCatalog =
+        serde_json::from_slice(&container.read_bounded("asset.catalog", 16 * 1024 * 1024)?)
+            .map_err(|error| {
+                ContainerError::message(format!("ROUKAKU_VFS_CATALOG_DECODE: {error}"))
+            })?;
+    if catalog.schema != "roukaku.asset_catalog.v1" {
+        return Err(ContainerError::message("ROUKAKU_VFS_CATALOG_SCHEMA"));
+    }
+    Ok(catalog)
 }
