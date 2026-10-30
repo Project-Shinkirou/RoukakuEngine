@@ -7,8 +7,8 @@
 | 文件 | 用途 |
 | --- | --- |
 | [project.yaml](project.yaml) / `Examples/NativeVN/project.yaml` | Game target、profile 和 scenario refs |
-| [main.roukaku](main.roukaku) / `Examples/NativeVN/Scripts/main.roukaku` | 多层 stage、camera、video、timeline、text effect、choice 和 system story |
-| [system.roukaku](system.roukaku) | 旧设计参考；可执行 system story 已合并到 NativeVN canonical story |
+| [main.luau](main.luau) / `Examples/NativeVN/Scripts/main.luau` | Luau 段落、多层舞台、camera、video、voice、choice 和 system story |
+| [system.luau](system.luau) | `story.system` 系统页段落，调用默认 Luau 菜单模块 |
 | [advanced_policy.luau](advanced_policy.luau) | Timeline、fallback、shader/filter 和 text effect 策略参考 |
 
 ## Gate
@@ -22,3 +22,5 @@ roukaku package validate target/nativevn-advanced.roukakupkg --profile advanced-
 上述命令只覆盖 Cook/package 静态路径，不代表实际演出、输入、声音或路线通过。旧 YAML 执行样例不再保留，真实验证使用 NativeVN session 与对应物理输入。
 
 Expected report fields: `vn.commercial_baseline`, `vn.system_ui_profile`, `vn.advanced_presentation`, `timeline.join_cancel`, `voice.sync`, `presentation.fallback`, `renderer.effect_budget` and player route checks.
+
+剧情模块返回 `paragraphs`；`rk.enter` 切换段落并建立新的存档入口。舞台调用 `roukaku.vn.stage`，数值与时长沿用原资产契约；音频结束等待由宿主完成对应 fence，物理推进不会冒充媒体结束。

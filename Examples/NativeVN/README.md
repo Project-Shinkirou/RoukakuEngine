@@ -1,6 +1,6 @@
 # 玻璃雨中的信号 / Signal in the Glass Rain
 
-这是直接替换原两路线技术样例的 NativeVN 旗舰项目。默认入口正在重构为连续的分层演出，复用已有授权视听资产；旧故事保留为可玩分支，不要求新演出维持旧对白数量或路线组织。`.roukaku`、UI 和 controller 是作者源码；项目刷新工具不再根据旧剧本 JSON 覆盖它们。
+这是直接替换原两路线技术样例的 NativeVN 旗舰项目。默认入口是连续的分层演出，复用已有授权视听资产；旧故事保留为可玩分支，不要求新演出维持旧对白数量或路线组织。`Scripts/*.luau`、UI 和 controller 是作者源码；项目刷新工具不再根据旧剧本 JSON 覆盖它们。
 
 ## 范围
 
@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | `content_creation` | `complete` | 180 条中英文对白、三路线、79 张视觉文件、25 个原创音频源及其分发版本、UI 与视频素材已经入包；不等于可运行或可发布。 |
 | `public_release_assets` | `ready_with_authorized_voice` | 180 条配音与其他素材按 manifest/provenance 进入发行 Cook 输入。 |
-| `engine_integration` | `cook_ready_with_voice` | `.roukaku`、项目、UI、localization、283 个 asset sidecar 和 package section 已接入 Cook；未执行 Runtime/Player 验收。 |
+| `engine_integration` | `luau_story_cutover` | 剧情已转换为 Luau 段落；Cook、Player、UI 和媒体的集成验收由正常产品路径执行。 |
 | `S3-FLAGSHIP-DEMO-01` | `IN_PROGRESS` | Cook evidence 不能替代 真实平台 Runtime/Player/UI 验证。 |
 
 完整状态见 [STATUS.md](STATUS.md)，迁移边界见 [NativeVN Flagship Demo Migration](../../Docs/migrations/nativevn-flagship-demo-migration.md)。
@@ -47,11 +47,11 @@ target manifest v3 已移除 gameplay/UI provider 元数据字段；NativeVN 和
 
 ## 雨中的片刻
 
-[experience.roukaku](Scripts/experience.roukaku) 是默认连续片段：雨夜站台读字、林瑶走近、周衡在前景等待、镜头推进、信号变暗与恢复，再到可保存的重逢。背景、人物、前景、影片、效果与文字有独立深度层；位移、镜头和透明度使用现有 timeline。结束处可听雨看完整影片，或返回选择页进入旧故事。标题页也能重进“雨中的片刻”。
+[experience.luau](Scripts/experience.luau) 是模块 `story.main` 的默认连续片段：雨夜站台读字、林瑶走近、周衡在前景等待、镜头推进、信号变暗与恢复，再到可保存的重逢。背景、人物、前景、影片、效果与文字有独立深度层；位移与镜头使用声明式多轨片段，透明度使用独立片段并显式替换/取消。结束处可听雨看完整影片，或返回选择页进入旧故事。标题页也能重进“雨中的片刻”。
 
-`.roukaku` 是演出和 UI 的作者源。`Narrative/` 是旧内容批次的素材/配音来源记录，不负责重建当前场景。当前引擎只有镜头缩放，没有人物自身缩放轨道；TaskGroup 新机制尚未集成。没有生成新语音或图片。
+[main.luau](Scripts/main.luau) 保留 `story.signal_in_the_glass_rain` 的十五个段落、原对白本地化 key、配音和三条路线。[system.luau](Scripts/system.luau) 提供 `story.system` 系统页与 UI 动作。每个模块返回 `paragraphs`；跨段落使用 `rk.enter`，默认对白、选择、菜单和舞台动作调用 `roukaku.vn.*` 模块。
 
-演出示例使用现有 timeline 的 fire-and-forget、replace_target、cancel 与阻塞 fence；删除对象时沿用共享取消机制。它没有使用尚未接入的 TaskGroup/Sequence 新语法。保存示例允许在渐变期间打开存档页，并提示退出进程后再读取；实际恢复是否正确仍必须运行验证。新说明文字使用双语本地化，不生成新配音。
+`Scripts/*.luau` 是剧情和演出的唯一作者源；`Narrative/` 是旧内容批次的素材/配音来源记录，不负责重建当前场景。阻塞渐变与影片等待使用宿主完成的明确 fence，不把按键当作媒体结束。保存从段落入口重放变量和场景，渐变期间的存读档行为仍由实际运行验收。没有生成新语音或图片。
 
 可生成连续片段的物理输入，然后交给同树 `roukaku-headless run --gpu` 执行：
 
