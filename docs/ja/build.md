@@ -73,17 +73,17 @@ cargo xtask deps --target x86_64-pc-windows-msvc --ffmpeg --subtitle
 
 `--ffmpeg` と `--subtitle` のどちらも指定しなければ、何もダウンロードしません。FFmpeg が必要かどうかは、実際にビルドする crate／features とデコード provider によって決まります。プロジェクトが明示的にバインドした WMF、GStreamer、AVFoundation などには引き続きそれぞれのネイティブ環境が必要で、FFmpeg を用意してもこれらのバインディングが置き換わることはありません。
 
-ツールは vcpkg を `.work/vcpkg` に、字幕用は独立した `.work/vcpkg-subtitle` に配置します。環境設定を出力し、GitHub Actions では環境ファイルに書き込みます。ローカルで続けてコマンドを実行する場合は、出力された設定を自分で適用してください。Windows PowerShell での字幕の設定は次のとおりです。
+ツールは vcpkg を `.work/vcpkg` に置き、target ごとに `.work/vcpkg-subtitle/installed-<triplet>` を独立したインストールルートとして使います。target 固有の環境設定を出力し、GitHub Actions では環境ファイルに書き込みます。`ROUKAKU_TEXT_VCPKG_ROOT` はインストールルートを直接指定する任意の上書きです。通常のビルドでは Cargo target から自動的に決まります。Windows MSVC の設定例：
 
 ```powershell
-$env:ROUKAKU_SUBTITLE_VCPKG_ROOT = (Resolve-Path .work/vcpkg-subtitle).Path
-$env:ROUKAKU_TEXT_VCPKG_ROOT = $env:ROUKAKU_SUBTITLE_VCPKG_ROOT
-$env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/bin;$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/debug/bin;$env:PATH"
+$env:ROUKAKU_TEXT_VCPKG_ROOT = (Resolve-Path .work/vcpkg-subtitle/installed-x64-windows-static-md-dynbidi).Path
+$env:ROUKAKU_SUBTITLE_VCPKG_ROOT = $env:ROUKAKU_TEXT_VCPKG_ROOT
+$env:PATH = "$env:ROUKAKU_TEXT_VCPKG_ROOT/x64-windows-static-md-dynbidi/bin;$env:ROUKAKU_TEXT_VCPKG_ROOT/x64-windows-static-md-dynbidi/debug/bin;$env:PATH"
 ```
 
 FFmpeg を用意した後は、出力された `VCPKG_ROOT`、`VCPKG_DEFAULT_TRIPLET`、ランタイム DLL の PATH も設定します。Windows 以外のターゲットでは、出力に従って `PKG_CONFIG_PATH` と `LD_LIBRARY_PATH` または `DYLD_LIBRARY_PATH` を設定します。製品を配布する際は、ネイティブ依存関係のライセンスと動的ライブラリの扱いにも対応してください。
 
-文字と字幕は固定版のネイティブ依存を共有します。`cargo xtask deps --target <triple> --text` は Pango 1.58 と HarfBuzz/FriBidi/FreeType/Fontconfig を libass 0.17.5 とともに `.work/vcpkg-subtitle` に導入します。`ROUKAKU_SUBTITLE_VCPKG_ROOT` に加えて `ROUKAKU_TEXT_VCPKG_ROOT` もこのディレクトリに設定し、`bin` を PATH に追加してください。pkg-config でシステムの `pangoft2 >= 1.50` を利用することもできます。
+文字と字幕は固定版のネイティブ依存を共有します。`cargo xtask deps --target <triple> --text` は Pango 1.58、HarfBuzz、FriBidi、FreeType、Fontconfig と libass 0.17.5 を `.work/vcpkg-subtitle/installed-<triplet>` に導入します。`ROUKAKU_TEXT_VCPKG_ROOT` と `ROUKAKU_SUBTITLE_VCPKG_ROOT` は同じインストールルートを指します。動的ライブラリ用に `<triplet>/bin` を PATH に追加してください。pkg-config でシステムの `pangoft2 >= 1.50` を利用することもできます。
 
 対応する vcpkg triplet は、Windows MSVC が `x64-windows-static-md-dynbidi`、Linux x64 が `x64-linux`、Android arm64/x64 が `arm64-android-dynbidi` / `x64-android-dynbidi`、macOS arm64/x64 が `arm64-osx` / `x64-osx`、iOS arm64 実機が `arm64-ios`、iOS arm64/x64 シミュレーターが `arm64-ios-simulator` / `x64-ios` です。Android は NDK のターゲットコンパイラーと pkg-config メタデータを、Apple は対応 SDK を使います。OHOS と emscripten も同じ FT2 bridge にツールチェーンを接続します。
 

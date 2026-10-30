@@ -14,7 +14,7 @@ Ruby 组合位于 `ruby` 模块。Pango 禁止在被注音正文内部断行，R
 
 ## 原生依赖
 
-运行 `cargo xtask deps --target <triple> --text`，将 `ROUKAKU_TEXT_VCPKG_ROOT` 指向 `.work/vcpkg-subtitle`，并配置动态库搜索路径。文字和字幕共用 vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`，包括 Pango 1.58、HarfBuzz、FriBidi、FreeType、Fontconfig 和 libass 0.17.5。非 Windows 也支持 pkg-config 发现 `pangoft2 >= 1.50`。各目标 triplet 和 SDK 配置见 docs/{en,zh-cn,ja}/build.md。
+运行 `cargo xtask deps --target <triple> --text`，将 `ROUKAKU_TEXT_VCPKG_ROOT` 指向 `.work/vcpkg-subtitle/installed-<triplet>`，并配置 `<triplet>/bin` 动态库搜索路径。文字和字幕共用固定 vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`，包括 Pango 1.58、HarfBuzz、FriBidi、FreeType、Fontconfig 和 libass 0.17.5。非 Windows 也支持 pkg-config 发现 `pangoft2 >= 1.50`。
 
 ## 依赖边界
 

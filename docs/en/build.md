@@ -95,17 +95,17 @@ cargo xtask deps --target x86_64-pc-windows-msvc --ffmpeg --subtitle
 
 Without either selection flag, nothing is downloaded. Whether FFmpeg is needed depends on the crates/features and decode provider being built. Explicit WMF, GStreamer, or AVFoundation bindings still require their native environments; preparing FFmpeg does not replace those bindings.
 
-The tool uses `.work/vcpkg` and a separate `.work/vcpkg-subtitle` installation. It prints environment settings and writes GitHub Actions environment files when available. Apply the printed settings yourself for subsequent local commands. Windows PowerShell subtitle setup:
+The tool uses `.work/vcpkg` and a separate install root per target at `.work/vcpkg-subtitle/installed-<triplet>`. It prints target-specific environment settings and writes GitHub Actions environment files when available. Apply them for subsequent local commands. `ROUKAKU_TEXT_VCPKG_ROOT` is an optional exact install-root override; normal builds derive it from Cargo's target. For Windows MSVC:
 
 ```powershell
-$env:ROUKAKU_SUBTITLE_VCPKG_ROOT = (Resolve-Path .work/vcpkg-subtitle).Path
-$env:ROUKAKU_TEXT_VCPKG_ROOT = $env:ROUKAKU_SUBTITLE_VCPKG_ROOT
-$env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/bin;$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/debug/bin;$env:PATH"
+$env:ROUKAKU_TEXT_VCPKG_ROOT = (Resolve-Path .work/vcpkg-subtitle/installed-x64-windows-static-md-dynbidi).Path
+$env:ROUKAKU_SUBTITLE_VCPKG_ROOT = $env:ROUKAKU_TEXT_VCPKG_ROOT
+$env:PATH = "$env:ROUKAKU_TEXT_VCPKG_ROOT/x64-windows-static-md-dynbidi/bin;$env:ROUKAKU_TEXT_VCPKG_ROOT/x64-windows-static-md-dynbidi/debug/bin;$env:PATH"
 ```
 
 After preparing FFmpeg, also apply the printed `VCPKG_ROOT`, `VCPKG_DEFAULT_TRIPLET`, and runtime DLL PATH. For non-Windows targets, apply `PKG_CONFIG_PATH` and `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH` as printed. Account for native dependency licenses and dynamic libraries when distributing the product.
 
-Text and subtitles share the pinned native stack. `cargo xtask deps --target <triple> --text` installs Pango 1.58 plus its HarfBuzz/FriBidi/FreeType/Fontconfig dependencies alongside libass 0.17.5 in `.work/vcpkg-subtitle`. Set `ROUKAKU_TEXT_VCPKG_ROOT` to that root, in addition to `ROUKAKU_SUBTITLE_VCPKG_ROOT`; keep its `bin` directory on PATH for dynamic dependencies. A system `pangoft2 >= 1.50` installation can instead be discovered through pkg-config.
+Text and subtitles share the pinned native stack. `cargo xtask deps --target <triple> --text` installs Pango 1.58 plus HarfBuzz/FriBidi/FreeType/Fontconfig alongside libass 0.17.5 in its isolated `.work/vcpkg-subtitle/installed-<triplet>` root. `ROUKAKU_TEXT_VCPKG_ROOT` and `ROUKAKU_SUBTITLE_VCPKG_ROOT` point at that exact install root. Keep its `<triplet>/bin` on PATH for dynamic dependencies. A system `pangoft2 >= 1.50` can instead be discovered through pkg-config.
 
 Prepared target → vcpkg triplets: Windows MSVC → `x64-windows-static-md-dynbidi`; Linux x64 → `x64-linux`; Android arm64/x64 → `arm64-android-dynbidi` / `x64-android-dynbidi`; macOS arm64/x64 → `arm64-osx` / `x64-osx`; iOS device arm64 → `arm64-ios`; iOS simulator arm64/x64 → `arm64-ios-simulator` / `x64-ios`. Android uses the NDK target compiler and target pkg-config metadata; Apple preparation requires the matching SDK. OHOS and emscripten add their toolchains to this same FT2 bridge.
 

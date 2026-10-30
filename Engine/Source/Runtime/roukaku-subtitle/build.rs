@@ -1,3 +1,5 @@
+#[path = "../roukaku-text/native_triplet.rs"]
+mod native_triplet;
 use std::{env, path::PathBuf};
 
 fn main() {
@@ -17,28 +19,43 @@ fn main() {
                 .any(|feature| feature == "crt-static"),
             "roukaku-subtitle requires the MD CRT (no +crt-static)"
         );
-        let root = PathBuf::from(
-            env::var_os("ROUKAKU_SUBTITLE_VCPKG_ROOT")
-                .expect("set ROUKAKU_SUBTITLE_VCPKG_ROOT to the isolated subtitle vcpkg root"),
-        );
-        let lib = vcpkg::Config::new()
-            .vcpkg_root(root)
-            .target_triplet("x64-windows-static-md-dynbidi")
-            .cargo_metadata(false)
-            .copy_dlls(false)
-            .find_package("libass")
-            .expect("install libass 0.17.5 in the isolated subtitle vcpkg root");
-        assert!(
-            lib.is_static,
-            "libass must be static; only fribidi may be dynamic"
-        );
-        for required in ["libass", "freetype", "fribidi", "harfbuzz"] {
-            assert!(
-                lib.ports.iter().any(|port| port == required),
-                "libass installation is missing a required transitive port"
+        let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(4)
+            .unwrap()
+            .to_path_buf();
+        let root = env::var_os("ROUKAKU_SUBTITLE_VCPKG_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                native_triplet::install_root(
+                    &workspace,
+                    native_triplet::triplet(&env::var("TARGET").unwrap()).unwrap(),
+                )
+            });
+        let tools = workspace.join(".work/vcpkg/downloads/tools/msys2");
+        let pkgconf = std::fs::read_dir(tools)
+            .expect("vcpkg pkg-config tools")
+            .filter_map(Result::ok)
+            .map(|entry| entry.path().join("usr/bin/pkg-config.exe"))
+            .find(|path| path.is_file())
+            .expect("vcpkg pkg-config executable");
+        unsafe {
+            env::set_var("PKG_CONFIG", pkgconf);
+            env::set_var(
+                "PKG_CONFIG_PATH",
+                env::join_paths([
+                    root.join("x64-windows-static-md-dynbidi/lib/pkgconfig"),
+                    root.join("x64-windows-static-md-dynbidi/share/pkgconfig"),
+                ])
+                .unwrap(),
             );
         }
-        (lib.include_paths, lib.cargo_metadata)
+        let lib = pkg_config::Config::new()
+            .exactly_version("0.17.5")
+            .statik(true)
+            .probe("libass")
+            .expect("prepare libass 0.17.5 with cargo xtask deps --subtitle");
+        (lib.include_paths, Vec::new())
     } else {
         // A real native installation is required on other platforms too. Never
         // provide a no-op renderer for a missing native dependency.
