@@ -68,7 +68,11 @@ targets:
     packaged: true
 nativevn:
   default_locale: zh-Hans
-  sources: [Scripts]
+  story_modules:
+    story.main: Scripts/experience.luau
+    story.signal_in_the_glass_rain: Scripts/main.luau
+    story.system: Scripts/system.luau
+  entry: { module: story.main, entry: experience_title }
   ui_sources: [UI]
   ui_themes: [Themes]
   ui_controllers: [Controllers]

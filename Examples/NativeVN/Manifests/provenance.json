@@ -22635,16 +22635,16 @@
       "release_eligible": true
     },
     {
-      "id": "prov.scripts.main.roukaku",
+      "id": "prov.scripts.main.luau",
       "role": "story_reference",
       "artifact": {
-        "relative_path": "Scripts/main.roukaku"
+        "relative_path": "Scripts/main.luau"
       },
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "352e8e96db82235e7404f271a05deed86d2c9e4ad0be179928b295c8fcdbcaf9",
-      "byte_size": 46742,
+      "sha256": "3819d7622e398bdd347f94d09ac8743bc98b818c9e2f5602357debf614bf4b47",
+      "byte_size": 81226,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/octet-stream"
@@ -22664,16 +22664,16 @@
       "release_eligible": true
     },
     {
-      "id": "prov.scripts.system.roukaku",
+      "id": "prov.scripts.system.luau",
       "role": "story_reference",
       "artifact": {
-        "relative_path": "Scripts/system.roukaku"
+        "relative_path": "Scripts/system.luau"
       },
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "107516c7d2dd1b7fe61a79b3d5a41e7299980da42344263892064ab9c71f58f1",
-      "byte_size": 2073,
+      "sha256": "65f32f139127d4eeee4b89d760b721665a036a976dcec2b8c3dc5ceb412ce1fa",
+      "byte_size": 3055,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/octet-stream"
@@ -25409,16 +25409,16 @@
       "release_eligible": true
     },
     {
-      "id": "prov.scripts.experience.roukaku",
+      "id": "prov.scripts.experience.luau",
       "role": "story_reference",
       "artifact": {
-        "relative_path": "Scripts/experience.roukaku"
+        "relative_path": "Scripts/experience.luau"
       },
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "5da77377e3814e18f2ef71d268d7b87f315a9e12719ecc3e046b02ddf0e9331b",
-      "byte_size": 6673,
+      "sha256": "78edc160621ea54c8ba279f88c51716678ab3222bec6f55a67824fbceab4f226",
+      "byte_size": 8741,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/octet-stream"

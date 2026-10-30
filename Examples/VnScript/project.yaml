@@ -45,16 +45,17 @@ targets:
     platforms: [windows, linux, macos, ios, android, web]
     packaged: true
 
-stories:
-  main: main.roukaku
-  system: system.roukaku
+story_modules:
+  story.main: main.luau
+  story.system: system.luau
+entry: { module: story.system, entry: title }
 
 system_stories:
-  title: system.title
-  config: system.config
-  gallery: system.gallery
-  replay: system.replay
-  chart: system.chart
+  title: story.system.title
+  config: story.system.config
+  gallery: story.system.gallery
+  replay: story.system.replay
+  chart: story.system.chart
 
 policies:
   standard:

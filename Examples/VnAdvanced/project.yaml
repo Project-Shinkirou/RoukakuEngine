@@ -46,20 +46,10 @@ targets:
 profiles:
   - nativevn-commercial
   - advanced-vn
-command_providers:
-  show: roukaku.vn.standard
-  hide: roukaku.vn.standard
-  move: roukaku.vn.standard
-  camera: roukaku.vn.standard
-  transition: roukaku.vn.standard
-  shake: roukaku.vn.standard
-  movie: roukaku.vn.standard
-  voice: roukaku.vn.standard
-  bgm: roukaku.vn.standard
-  se: roukaku.vn.standard
-  wait: roukaku.vn.standard
-  choice: roukaku.vn.standard
-  system_page: roukaku.vn.system
+story_modules:
+  story.main: main.luau
+  story.system: system.luau
+entry: { module: story.main, entry: prologue }
 luau:
   runtime: luau
   policy_bundle: com.example.advanced_presentation
@@ -70,16 +60,16 @@ luau:
     - filter_graph.node
     - text_effect.policy
 system_stories:
-  title: system.title
-  save: system.save
-  load: system.load
-  config: system.config
-  backlog: system.backlog
-  gallery: system.gallery
-  replay: system.replay
-  route_chart: system.route_chart
-  voice_replay: system.voice_replay
-  localization_preview: system.localization_preview
+  title: story.system.title
+  save: story.system.save
+  load: story.system.load
+  config: story.system.config
+  backlog: story.system.backlog
+  gallery: story.system.gallery
+  replay: story.system.replay
+  route_chart: story.system.route_chart
+  voice_replay: story.system.voice_replay
+  localization_preview: story.system.localization_preview
 release_checks:
   required:
     - vn.commercial_baseline
