@@ -3,10 +3,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use roukaku_asset::{AssetCatalog, VfsManifest, VfsSourceRef};
 use roukaku_core::Hash256;
 use roukaku_media_core::TextureFrame;
-use roukaku_package::PackageReader;
+use roukaku_package::{MountedAssetResolver, PackageReader, ResolvedAssetIdentity};
 use roukaku_ui_core::UiValidationError;
 use roukaku_ui_yakui::UiImageResourceProvider;
 
@@ -24,13 +23,8 @@ enum AssetKind {
 
 #[derive(Debug, Clone)]
 struct AssetDescriptor {
-    section_id: String,
-    hash: Hash256,
-    decoded_length: u64,
     kind: AssetKind,
-    codec: Option<String>,
 }
-
 #[derive(Debug, Clone)]
 enum CachedAsset {
     Image(TextureFrame),
@@ -175,15 +169,17 @@ pub(crate) struct LoadedMediaAsset {
 
 #[derive(Debug)]
 pub(crate) struct PackageAssetStore {
-    package: PackageReader,
+    resolver: MountedAssetResolver,
     descriptors: BTreeMap<String, AssetDescriptor>,
+    revisions: Mutex<BTreeMap<String, ResolvedAssetIdentity>>,
     cache: Mutex<AssetCache>,
 }
-
 impl PackageAssetStore {
-    pub fn index(
+    pub fn index_with_mounts(
         package: &PackageReader,
         max_cache_bytes: u64,
+        overlays: &[(&str, &PackageReader)],
+        authorized_directories: &[(&str, &std::path::Path)],
     ) -> Result<Arc<Self>, NativeVnHostError> {
         let max_cache_bytes = usize::try_from(max_cache_bytes).map_err(|_| {
             NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_CACHE_BUDGET_RANGE".into())
@@ -193,78 +189,37 @@ impl PackageAssetStore {
                 "ROUKAKU_PLAYER_ASSET_CACHE_BUDGET_ZERO".into(),
             ));
         }
-        let catalog: AssetCatalog = serde_json::from_slice(
-            &package
-                .container()
-                .read_bounded("asset.catalog", 16 * 1024 * 1024)
-                .map_err(|error| NativeVnHostError::Package(error.to_string()))?,
-        )
-        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
-        let manifest: VfsManifest = serde_json::from_slice(
-            &package
-                .container()
-                .read_bounded("asset.vfs_manifest", 32 * 1024 * 1024)
-                .map_err(|error| NativeVnHostError::Package(error.to_string()))?,
-        )
-        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
+        let mut resolver = MountedAssetResolver::new(package)
+            .map_err(|error| NativeVnHostError::Asset(error.to_string()))?;
+        for (mount_id, overlay) in overlays {
+            resolver
+                .mount_overlay(mount_id, overlay)
+                .map_err(|error| NativeVnHostError::Asset(error.to_string()))?;
+        }
+        for (alias, directory) in authorized_directories {
+            resolver
+                .authorize_directory(alias, directory)
+                .map_err(|error| {
+                    NativeVnHostError::Asset(format!(
+                        "ROUKAKU_VFS_LOCAL_UNAUTHORIZED: {alias}: {error}"
+                    ))
+                })?;
+        }
         let mut descriptors = BTreeMap::new();
-        for asset in catalog.assets {
-            let kind = if catalog_asset_has_type(&asset, "image.") {
+        for asset in resolver.catalog_entries() {
+            let kind = if catalog_asset_has_type(asset, "image.") {
                 AssetKind::Image
-            } else if catalog_asset_has_type(&asset, "video.") {
+            } else if catalog_asset_has_type(asset, "video.") {
                 AssetKind::Video
-            } else if catalog_asset_has_type(&asset, "audio.")
-                || catalog_asset_has_type(&asset, "voice")
+            } else if catalog_asset_has_type(asset, "audio.")
+                || catalog_asset_has_type(asset, "voice")
             {
                 AssetKind::Audio
             } else {
                 continue;
             };
-            let matches = manifest
-                .entries
-                .iter()
-                .filter(|entry| entry.uri == asset.uri)
-                .collect::<Vec<_>>();
-            let [entry] = matches.as_slice() else {
-                return Err(NativeVnHostError::Asset(format!(
-                    "ROUKAKU_PLAYER_ASSET_VFS_AMBIGUOUS: {}",
-                    asset.asset_id
-                )));
-            };
-            let VfsSourceRef::PackageSection { section_id } = &entry.source else {
-                return Err(NativeVnHostError::Asset(format!(
-                    "ROUKAKU_PLAYER_ASSET_SOURCE: {}",
-                    asset.asset_id
-                )));
-            };
-            let section = package
-                .container()
-                .entries()
-                .iter()
-                .find(|section| section.id == *section_id)
-                .ok_or_else(|| {
-                    NativeVnHostError::Asset(format!(
-                        "ROUKAKU_PLAYER_ASSET_SECTION_MISSING: {}",
-                        asset.asset_id
-                    ))
-                })?;
-            if section.hash != entry.hash || section.decoded_length != entry.size {
-                return Err(NativeVnHostError::Asset(format!(
-                    "ROUKAKU_PLAYER_ASSET_SECTION_IDENTITY: {}",
-                    asset.asset_id
-                )));
-            }
             if descriptors
-                .insert(
-                    asset.asset_id.clone(),
-                    AssetDescriptor {
-                        section_id: section_id.clone(),
-                        hash: entry.hash,
-                        decoded_length: entry.size,
-                        kind,
-                        codec: entry.codec.clone(),
-                    },
-                )
+                .insert(asset.asset_id.clone(), AssetDescriptor { kind })
                 .is_some()
             {
                 return Err(NativeVnHostError::Asset(format!(
@@ -274,8 +229,9 @@ impl PackageAssetStore {
             }
         }
         Ok(Arc::new(Self {
-            package: package.clone(),
+            resolver,
             descriptors,
+            revisions: Mutex::new(BTreeMap::new()),
             cache: Mutex::new(AssetCache {
                 entries: BTreeMap::new(),
                 pinned: BTreeSet::new(),
@@ -284,6 +240,35 @@ impl PackageAssetStore {
                 clock: 0,
             }),
         }))
+    }
+
+    pub fn resolve_asset_bytes(
+        &self,
+        asset_id: &str,
+        max_bytes: usize,
+    ) -> Result<roukaku_package::ResolvedAssetBytes, NativeVnHostError> {
+        self.resolver
+            .resolve_asset(asset_id, max_bytes)
+            .map_err(|error| NativeVnHostError::Asset(error.to_string()))
+    }
+
+    pub fn resolve_section(
+        &self,
+        section_id: &str,
+        max_bytes: usize,
+    ) -> Result<roukaku_package::ResolvedAssetBytes, NativeVnHostError> {
+        self.resolver
+            .resolve_section(section_id, max_bytes)
+            .map_err(|error| NativeVnHostError::Asset(error.to_string()))
+    }
+
+    pub fn load_policy_actions(
+        &self,
+        package: &PackageReader,
+        max_bytes: u64,
+        scope: &roukaku_runtime::TaskScope,
+    ) -> Result<crate::PreparedPolicyActions, NativeVnHostError> {
+        crate::PreparedPolicyActions::load_with_resolver(package, max_bytes, scope, &self.resolver)
     }
 
     pub fn contains_image(&self, asset_id: &str) -> bool {
@@ -425,24 +410,21 @@ impl PackageAssetStore {
                 bytes
             }
         };
-        let codec = descriptor
-            .codec
-            .as_deref()
-            .and_then(normalize_codec)
-            .or_else(|| match descriptor.kind {
-                AssetKind::Audio => sniff_audio_codec(&bytes),
-                AssetKind::Video => sniff_video_codec(&bytes),
-                AssetKind::Image => None,
-            })
-            .ok_or_else(|| {
-                NativeVnHostError::Asset(format!(
-                    "ROUKAKU_PLAYER_MEDIA_CODEC_UNSUPPORTED: {asset_id}"
-                ))
-            })?;
+        let codec = match descriptor.kind {
+            AssetKind::Audio => sniff_audio_codec(&bytes),
+            AssetKind::Video => sniff_video_codec(&bytes),
+            AssetKind::Image => None,
+        }
+        .ok_or_else(|| {
+            NativeVnHostError::Asset(format!(
+                "ROUKAKU_PLAYER_MEDIA_CODEC_UNSUPPORTED: {asset_id}"
+            ))
+        })?;
+        let byte_length = bytes.len() as u64;
         Ok(LoadedMediaAsset {
             codec: codec.into(),
             bytes,
-            byte_length: descriptor.decoded_length,
+            byte_length,
         })
     }
 
@@ -476,31 +458,41 @@ impl PackageAssetStore {
     fn read_asset(
         &self,
         asset_id: &str,
-        descriptor: &AssetDescriptor,
+        _descriptor: &AssetDescriptor,
     ) -> Result<Vec<u8>, NativeVnHostError> {
-        let max_bytes = usize::try_from(descriptor.decoded_length).map_err(|_| {
-            NativeVnHostError::Asset(format!("ROUKAKU_PLAYER_ASSET_SIZE_RANGE: {asset_id}"))
-        })?;
-        let bytes = self
-            .package
-            .container()
-            .read_bounded(&descriptor.section_id, max_bytes)
-            .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
-        if bytes.len() as u64 != descriptor.decoded_length
-            || Hash256::from_sha256(&bytes) != descriptor.hash
-        {
-            return Err(NativeVnHostError::Asset(format!(
-                "ROUKAKU_PLAYER_ASSET_HASH: {asset_id}"
-            )));
-        }
-        Ok(bytes)
+        let resolved = self
+            .resolver
+            .resolve_asset(asset_id, usize::MAX)
+            .map_err(|error| NativeVnHostError::Asset(error.to_string()))?;
+        Ok(resolved.bytes.to_vec())
     }
 
     fn cache_get(&self, asset_id: &str) -> Result<Option<CachedAsset>, NativeVnHostError> {
-        self.cache
+        let current = self
+            .resolver
+            .resolve_asset_identity(asset_id)
+            .map_err(|error| NativeVnHostError::Asset(error.to_string()))?;
+        let changed = {
+            let mut revisions = self.revisions.lock().map_err(|_| {
+                NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_REVISION_LOCK".into())
+            })?;
+            match revisions.insert(asset_id.to_owned(), current.clone()) {
+                Some(previous) => previous != current,
+                None => false,
+            }
+        };
+        let mut cache = self
+            .cache
             .lock()
-            .map_err(|_| NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_CACHE_POISONED".into()))
-            .map(|mut cache| cache.get(asset_id))
+            .map_err(|_| NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_CACHE_POISONED".into()))?;
+        if changed {
+            cache.pinned.remove(asset_id);
+            if let Some(removed) = cache.entries.remove(asset_id) {
+                cache.bytes = cache.bytes.saturating_sub(removed.value.bytes());
+            }
+            return Ok(None);
+        }
+        Ok(cache.get(asset_id))
     }
 
     fn cache_insert(&self, asset_id: &str, value: CachedAsset) -> Result<(), NativeVnHostError> {
@@ -535,18 +527,6 @@ fn catalog_asset_has_type(asset: &roukaku_asset::AssetCatalogEntry, prefix: &str
                     .as_deref()
                     .is_some_and(|prefix| tag.starts_with(prefix))
         })
-}
-
-fn normalize_codec(value: &str) -> Option<&'static str> {
-    match value.to_ascii_lowercase().as_str() {
-        "mp3" | "audio/mpeg" => Some("mp3"),
-        "ogg" | "audio/ogg" => Some("ogg"),
-        "flac" | "audio/flac" => Some("flac"),
-        "wav" | "audio/wav" | "audio/x-wav" => Some("wav"),
-        "webm" | "video/webm" => Some("webm"),
-        "mp4" | "video/mp4" => Some("mp4"),
-        _ => None,
-    }
 }
 
 fn sniff_audio_codec(bytes: &[u8]) -> Option<&'static str> {

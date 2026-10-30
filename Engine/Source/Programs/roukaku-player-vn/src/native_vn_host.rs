@@ -75,8 +75,7 @@ use roukaku_vn_package::{
     CompiledVnProject, PresentationInterruptPolicy, ProductStageDirector, ProductStageState,
     StageDirectorOutput, TextAdvanceDisposition, VnLocalizationTable,
     VnPresentationProviderManifest, VnSystemUiProfileManifest, decode_compiled_project,
-    load_localization as load_package_localization, load_player_locale_config,
-    load_presentation_provider_manifest,
+    load_player_locale_config, load_presentation_provider_manifest,
 };
 use roukaku_vn_policy::LuauUiControllerHost;
 use roukaku_vn_ui::{

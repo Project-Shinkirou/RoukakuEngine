@@ -23,6 +23,8 @@ pub fn main() -> Result<(), PlayerCliError> {
     let mut output_script = None;
     let mut output_transcript = None;
     let mut output_trace_log = None;
+    let mut authorized_overlay_dirs = std::collections::BTreeMap::<String, PathBuf>::new();
+    let mut overlay_package_paths = Vec::<PathBuf>::new();
     let mut timeout_ms = 30_000u64;
     let mut args = env::args_os().skip(1);
     while let Some(arg) = args.next() {
@@ -62,6 +64,25 @@ pub fn main() -> Result<(), PlayerCliError> {
             "--web-bundle" => web_bundle = args.next().map(PathBuf::from),
             "--browser-executable" => browser_executable = args.next().map(PathBuf::from),
             "--web-headless" => web_headless = true,
+            "--authorized-overlay" => {
+                let raw = args.next().ok_or("missing --authorized-overlay value")?;
+                let value = raw.to_string_lossy();
+                let (alias, path) = value
+                    .split_once('=')
+                    .ok_or("--authorized-overlay must be alias=path")?;
+                if alias.is_empty()
+                    || authorized_overlay_dirs
+                        .insert(alias.to_owned(), PathBuf::from(path))
+                        .is_some()
+                {
+                    return Err("invalid or repeated --authorized-overlay alias".into());
+                }
+            }
+            "--overlay-pack" => overlay_package_paths.push(
+                args.next()
+                    .ok_or("missing --overlay-pack value")
+                    .map(PathBuf::from)?,
+            ),
             "--test-null-audio" => test_null_audio = true,
             "--preview-control" => preview_control = true,
             "--visual-comparison-report" => {
@@ -191,7 +212,12 @@ pub fn main() -> Result<(), PlayerCliError> {
     }
 
     if script.is_none() && transcript.is_none() {
-        let result = run_bundled_game(test_null_audio, preview_control);
+        let result = run_bundled_game(
+            test_null_audio,
+            preview_control,
+            authorized_overlay_dirs,
+            overlay_package_paths,
+        );
         if let Err(error) = &result {
             if let Some(platform) = error.downcast_ref::<roukaku_platform::PlatformError>() {
                 tracing::error!(

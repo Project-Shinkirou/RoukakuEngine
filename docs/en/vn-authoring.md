@@ -71,6 +71,10 @@ Place `.roukaku-asset.yaml` files inside declared `asset_roots`. Each records a 
 
 Use the existing importer to update hashes and metadata after changing an asset. Do not retain stale hashes or invent permissions. Editor's Import image supports PNG/JPEG/WebP and generates sidecars; see [Editor](editor.md). Preserve redistribution licenses, sources, and authors. Commercial game text, keys, and saves do not belong in the project repository.
 
+### Overlay mounts
+
+The package VFS manifest assigns priorities to base package sections and overlay layers. A host may add overlay packages and local directories only after explicitly authorizing each directory; Player refuses an unapproved directory and reports the VFS authorization diagnostic. Keep overlays mapped to existing catalog asset IDs and URIs so images, audio, video, fonts, UI documents, localization tables, and scripts resolve through one namespace. Same-priority collisions are errors; whiteouts intentionally hide lower-priority resources. Replacing a file changes its content revision and invalidates only caches for that asset.
+
 ## Check and play
 
 ```sh

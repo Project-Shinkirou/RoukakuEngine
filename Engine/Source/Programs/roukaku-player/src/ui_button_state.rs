@@ -264,6 +264,8 @@ pub(super) fn log_consumed_vn_step(
 pub(super) fn run_bundled_game(
     _test_null_audio: bool,
     _preview_control: bool,
+    _authorized_overlay_dirs: std::collections::BTreeMap<String, std::path::PathBuf>,
+    _overlay_package_paths: Vec<std::path::PathBuf>,
 ) -> Result<(), PlayerCliError> {
     Err("native RoukakuPlayer bundle host is unavailable on this platform".into())
 }

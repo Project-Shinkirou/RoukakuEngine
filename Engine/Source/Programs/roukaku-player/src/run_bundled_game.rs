@@ -9,6 +9,8 @@ use super::*;
 pub(super) fn run_bundled_game(
     test_null_audio: bool,
     preview_control: bool,
+    authorized_overlay_dirs: std::collections::BTreeMap<String, PathBuf>,
+    overlay_package_paths: Vec<PathBuf>,
 ) -> Result<(), PlayerCliError> {
     use roukaku_platform::{
         FixedDeadlineScheduler, HostLaunchProfile, PackageSourceRequest, PlatformEventKind,
@@ -22,6 +24,28 @@ pub(super) fn run_bundled_game(
     use roukaku_vn_core::VnRunConfig;
 
     let (config, package, manifest, profile, package_storage_hash) = bundle_config::load_bundle()?;
+    let authorized_overlay_dirs = authorized_overlay_dirs
+        .iter()
+        .map(|(alias, path)| (alias.as_str(), path.as_path()))
+        .collect::<Vec<_>>();
+    let overlay_packages = overlay_package_paths
+        .into_iter()
+        .map(|path| {
+            let mount_id = path
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .filter(|value| !value.is_empty())
+                .ok_or("overlay package filename must have a UTF-8 stem")?
+                .to_owned();
+            let bytes = fs::read(&path)?;
+            let package = roukaku_package::PackageReader::open(&bytes)?;
+            Ok::<_, PlayerCliError>((mount_id, package))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let overlay_mounts = overlay_packages
+        .iter()
+        .map(|(mount_id, package)| (mount_id.as_str(), package))
+        .collect::<Vec<_>>();
     #[cfg(target_os = "macos")]
     let (mut runner, factory) = roukaku_platform_macos::main_thread_host()?;
     #[cfg(target_os = "ios")]
@@ -74,16 +98,15 @@ pub(super) fn run_bundled_game(
         let runtime_execution = roukaku_player_vn::NativeVnRuntimeExecution::shipping_parallel();
         let Some(mut prepared) = roukaku_player::prepare_native_vn_open(&package, &mut session.events, runtime_execution).await? else { return Ok(()); };
         let mut startup_events = std::mem::take(&mut prepared.events);
-        let mut vn = NativeVnHostCommandSource::from_package_with_options(
+        let mut vn = NativeVnHostCommandSource::from_package_with_mounts(
             &package,
-            VnRunConfig {
-                profile: config.profile,
-                locale: config.locale,
-            },
+            VnRunConfig { profile: config.profile, locale: config.locale },
             width,
             height,
             logical_surface,
             prepared.options,
+            &overlay_mounts,
+            &authorized_overlay_dirs,
         )
         .map_err(|error| {
             roukaku_platform::PlatformError::new(

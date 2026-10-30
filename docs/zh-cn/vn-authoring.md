@@ -71,6 +71,10 @@ Luau 的产品全局名是 **`roukaku`**。示例 controller 使用 `roukaku.ui.
 
 修改资源后用现有 importer 更新 hash 与元数据，不要保留旧 hash 或伪造授权。Editor 的 Import image 可导入 PNG/JPEG/WebP 并生成 sidecar，详见 [Editor](editor.md)。将可分发许可、来源和作者记录随资源保留；商业游戏正文、密钥和存档不进入工程仓库。
 
+### 覆盖挂载
+
+package 的 VFS manifest 为基础 package section 和覆盖层声明优先级。宿主只能挂载已明确授权的本地目录；Player 会拒绝未授权目录并给出 VFS 授权诊断。覆盖内容沿用 catalog 中已有的 asset ID 和 URI，让图片、音频、视频、字体、UI 文档、本地化表和脚本共用同一资源命名空间。同优先级冲突会报错；whiteout 用于明确隐藏低优先级资源。文件替换后内容 revision 改变，只使该资源对应的缓存失效。
+
 ## 检查与播放
 
 ```sh

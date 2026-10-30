@@ -40,6 +40,10 @@ These are product behavior and must survive refactoring:
 
 Pre-rename product containers, schemas, and project-owned saves are not compatible inputs. Old magic is rejected at entry; changing an extension does not convert content. Re-cook and package current authoring sources, leaving old files and user data untouched.
 
+### VFS overlays
+
+Player resolves catalog asset IDs through the package VFS manifest. Package sections, overlay packages, and host-authorized local directories share the same priority rules; equal-priority matches fail as ambiguous, and an applicable whiteout hides lower-priority content. Local paths are read only through bounded catalog entries rooted in directories the host explicitly authorized. Asset cache identity includes the asset ID, selected source layer, and content hash, so a changed overlay revision replaces only that asset's decoded data.
+
 ## Luau authoring mechanism contract (R1/R3 foundation)
 
 `roukaku-vn-policy::authoring::LuauAuthoringRuntime` runs project source on the official Luau VM through the existing `luau-runtime`/mlua feature. This integration API supplies mechanisms independently of the default VN UI. Player/Cook and the existing DSL remain unchanged in this branch; the product cutover consumes this API.

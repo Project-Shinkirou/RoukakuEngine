@@ -86,3 +86,32 @@ fn package_vfs_mount_writes_vfs_manifest_and_catalog_without_asset_registry() {
             })
     );
 }
+
+#[test]
+fn mounted_asset_resolver_reads_catalog_assets_with_source_identity() {
+    let cooked = SectionPayload::raw(
+        "asset.background.opening",
+        "roukaku.cooked_asset.v1",
+        b"opening revision".to_vec(),
+    );
+    let package = PackageReader::open(
+        PackageBuilder::build(PackageBuildRequest::fixture(
+            "com.example.nativevn",
+            "classic",
+            vec![cooked],
+        ))
+        .unwrap()
+        .as_bytes(),
+    )
+    .unwrap();
+    let resolver = roukaku_package::MountedAssetResolver::new(&package).unwrap();
+    let asset = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap();
+    assert_eq!(asset.bytes.as_ref(), b"opening revision");
+    assert_eq!(asset.identity.source_mount, "package.base");
+    assert_eq!(
+        asset.identity.content_revision,
+        Hash256::from_sha256(b"opening revision")
+    );
+}

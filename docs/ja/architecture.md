@@ -40,6 +40,10 @@ RoukakuVN の内部では、`roukaku-vn-script` が `.roukaku` をコンパイ�
 
 名称変更前の製品コンテナ、schema、プロジェクト独自のセーブデータは互換入力として扱いません。古い magic は入口で拒否され、拡張子を変えても中身は変換されません。現在の作者ソースから Cook とパッケージ化をやり直し、古いファイルとユーザーデータはそのまま残してください。
 
+### VFS オーバーレイ
+
+Player は package の VFS manifest を使って catalog の asset ID を解決します。ベース package section、オーバーレイ package、ホストが許可したローカルディレクトリは同じ優先順位規則に従います。同じ優先順位の候補は曖昧としてエラーになり、有効な whiteout は低い優先順位の内容を隠します。ローカルパスは、ホストが明示的に許可したディレクトリ内で、上限付きの catalog 読み取りだけを行います。アセットキャッシュの識別子には asset ID、選択されたソースレイヤー、内容 hash が含まれ、オーバーレイの revision が変わると対象アセットのデコードキャッシュだけが更新されます。
+
 ## Luau 制作機構の契約（R1/R3 の基盤）
 
 `roukaku-vn-policy::authoring::LuauAuthoringRuntime` は、既存の `luau-runtime` feature と mlua を通じて、公式の Luau VM でプロジェクトのソースを実行します。機構 API はデフォルトの VN UI から独立しています。この統合ブランチでは既存の DSL を維持し、Player／Cook のエントリーポイントも変更しません。今後の製品の切り替えでは、この API を直接使います。

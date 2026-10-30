@@ -40,6 +40,10 @@ RoukakuVN 内部，`roukaku-vn-script` 编译 `.roukaku` 并生成 source map；
 
 更名前的产品容器、schema 和自有存档不属于兼容输入。旧 magic 在入口直接拒绝；改扩展名不会转换内容。应从当前作者源重新 Cook 和打包，保留旧文件与旧用户数据原状。
 
+### VFS 覆盖层
+
+Player 根据 package 的 VFS manifest 解析 catalog asset ID。基础 package section、覆盖 package 和宿主授权的本地目录遵循同一套优先级规则；同优先级匹配会报歧义，生效的 whiteout 会隐藏低优先级内容。本地路径只能通过有界 catalog 读取，并限制在宿主明确授权的目录内。资源缓存身份包含 asset ID、选中的来源层和内容 hash，覆盖版本变化时只替换受影响资源的解码缓存。
+
 ## Luau 创作机制契约（R1/R3 基础）
 
 `roukaku-vn-policy::authoring::LuauAuthoringRuntime` 通过现有 `luau-runtime` feature 和 mlua 在官方 Luau VM 中运行项目源码。机制 API 独立于默认 VN UI。本集成分支保留原有 DSL，不改 Player/Cook 入口；后续产品切换直接使用这套 API。

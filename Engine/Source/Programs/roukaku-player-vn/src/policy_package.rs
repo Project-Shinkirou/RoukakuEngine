@@ -1,10 +1,8 @@
 //! Preload only explicitly authorized package text. Runtime reads never access disk.
 use crate::NativeVnHostError;
-use roukaku_asset::{
-    AssetCatalog, ResolveContext, VfsBackendKind, VfsManifest, VfsSourceRef, VfsUri,
-};
+use roukaku_asset::VfsUri;
 use roukaku_core::Hash256;
-use roukaku_package::PackageReader;
+use roukaku_package::{MountedAssetResolver, PackageReader};
 use roukaku_runtime::TaskScope;
 use roukaku_vn_policy::{
     POLICY_IO_MAX_BYTES, PolicyActionBinding, PolicyIoCapabilities, PolicyIoFailure, PolicyIoHost,
@@ -33,9 +31,29 @@ impl PreparedPolicyActions {
         max_bytes: u64,
         scope: &TaskScope,
     ) -> Result<Self, NativeVnHostError> {
+        let resolver = MountedAssetResolver::new(package).map_err(|_| error("MANIFEST"))?;
+        Self::load_with_resolver(package, max_bytes, scope, &resolver)
+    }
+
+    pub fn load_with_resolver(
+        package: &PackageReader,
+        max_bytes: u64,
+        scope: &TaskScope,
+        resolver: &MountedAssetResolver,
+    ) -> Result<Self, NativeVnHostError> {
         check_cancelled(scope)?;
-        let bindings =
-            roukaku_vn_package::load_policy_actions(package).map_err(|_| error("BINDINGS"))?;
+        let bindings = match resolver.resolve_section("vn.policy_actions", 4 * 1024 * 1024) {
+            Ok(section) => {
+                let bindings: Vec<PolicyActionBinding> =
+                    postcard::from_bytes(&section.bytes).map_err(|_| error("BINDINGS"))?;
+                for binding in &bindings {
+                    binding.validate().map_err(|_| error("BINDINGS"))?;
+                }
+                bindings
+            }
+            Err(_) if !package.has_section("vn.policy_actions") => Vec::new(),
+            Err(_) => return Err(error("BINDINGS")),
+        };
         let mut result = Self {
             package_hash: package.package_hash(),
             bindings,
@@ -84,90 +102,37 @@ impl PreparedPolicyActions {
                 .collect();
             PolicyIoCapabilities::read_text(resources.clone(), POLICY_IO_MAX_BYTES)
                 .map_err(|_| error("GRANTS"))?;
-            let manifest: VfsManifest = serde_json::from_slice(
-                &package
-                    .container()
-                    .read_bounded("asset.vfs_manifest", 16 * 1024 * 1024)
-                    .map_err(|_| error("MANIFEST"))?,
-            )
-            .map_err(|_| error("MANIFEST"))?;
-            let catalog: AssetCatalog = serde_json::from_slice(
-                &package
-                    .container()
-                    .read_bounded("asset.catalog", 16 * 1024 * 1024)
-                    .map_err(|_| error("CATALOG"))?,
-            )
-            .map_err(|_| error("CATALOG"))?;
             let total = resources.len();
             for (index, resource) in resources.into_iter().enumerate() {
                 check_cancelled(scope)?;
-                // Authoring IDs use exactly the catalog mapping Cook emitted, never a URI guess.
-                let matches: Vec<_> = catalog
-                    .assets
+                let asset = resolver
+                    .catalog_entries()
                     .iter()
-                    .filter(|asset| asset.asset_id == resource.as_str())
-                    .collect();
-                let [asset] = matches.as_slice() else {
-                    return Err(error("ASSET_MAPPING"));
-                };
+                    .find(|asset| asset.asset_id == resource.as_str())
+                    .ok_or_else(|| error("ASSET_MAPPING"))?;
                 if resource.prefix() != "asset"
                     || asset.media_kind != "text"
                     || (!asset.profiles.is_empty()
                         && !asset
                             .profiles
                             .iter()
-                            .any(|p| p == package.product_context().profile()))
+                            .any(|profile| profile == package.product_context().profile()))
                 {
                     return Err(error("ASSET_TYPE_OR_PROFILE"));
                 }
-                let prefix = manifest
-                    .prefixes
-                    .iter()
-                    .find(|prefix| prefix.prefix == asset.uri.prefix())
-                    .ok_or_else(|| error("PREFIX"))?;
-                if prefix.backend != VfsBackendKind::Package {
-                    return Err(error("SOURCE"));
-                }
-                let entry = manifest
-                    .resolve(
-                        &asset.uri,
-                        &ResolveContext {
-                            target: package.product_context().target().into(),
-                            profile: package.product_context().profile().into(),
-                            capability: "vfs.backend.package".into(),
-                            provider_binding: prefix.provider_id.clone(),
-                        },
-                    )
-                    .map_err(|_| error("BINDING"))?
-                    .ok_or_else(|| error("RESOURCE"))?;
-                let VfsSourceRef::PackageSection { section_id } = &entry.source else {
-                    return Err(error("SOURCE"));
-                };
-                let section = package
-                    .container()
-                    .section_entry(section_id)
-                    .ok_or_else(|| error("SECTION"))?;
-                if entry.media_kind != "text"
-                    || entry.offset != 0
-                    || entry.size != section.decoded_length
-                    || entry.hash != section.hash
-                    || entry.size > POLICY_IO_MAX_BYTES as u64
+                let resolved = resolver
+                    .resolve_asset(resource.as_str(), POLICY_IO_MAX_BYTES)
+                    .map_err(|_| error("RESOURCE"))?;
+                if resolved.media_kind != "text"
                     || result
                         .byte_len
-                        .checked_add(entry.size)
+                        .checked_add(resolved.bytes.len() as u64)
                         .is_none_or(|size| size >= max_bytes)
                 {
                     return Err(error("TEXT_BUDGET_OR_IDENTITY"));
                 }
-                let bytes = package
-                    .container()
-                    .read_bounded(section_id, POLICY_IO_MAX_BYTES)
-                    .map_err(|_| error("READ"))?;
                 check_cancelled(scope)?;
-                if bytes.len() as u64 != entry.size || Hash256::from_sha256(&bytes) != entry.hash {
-                    return Err(error("INTEGRITY"));
-                }
-                let text = String::from_utf8(bytes).map_err(|_| error("UTF8"))?;
+                let text = String::from_utf8(resolved.bytes.to_vec()).map_err(|_| error("UTF8"))?;
                 result.byte_len += text.len() as u64;
                 result.texts.insert(resource, Arc::from(text));
                 tracing::info!(

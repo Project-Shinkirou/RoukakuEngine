@@ -77,12 +77,61 @@ impl NativeVnHostCommandSource {
         options: NativeVnHostOpenOptions,
         registry: &roukaku_plugin::WorkExtensionRegistry,
     ) -> Result<Self, NativeVnHostError> {
+        Self::from_package_with_extensions_and_mounts(
+            package,
+            config,
+            width,
+            height,
+            surface,
+            options,
+            registry,
+            &[],
+            &[],
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_package_with_mounts(
+        package: &roukaku_package::PackageReader,
+        config: VnRunConfig,
+        width: u32,
+        height: u32,
+        surface: PlayerHostResourceId,
+        options: NativeVnHostOpenOptions,
+        overlays: &[(&str, &roukaku_package::PackageReader)],
+        authorized_directories: &[(&str, &std::path::Path)],
+    ) -> Result<Self, NativeVnHostError> {
+        Self::from_package_with_extensions_and_mounts(
+            package,
+            config,
+            width,
+            height,
+            surface,
+            options,
+            roukaku_plugin::linked_work_extensions(),
+            overlays,
+            authorized_directories,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_package_with_extensions_and_mounts(
+        package: &roukaku_package::PackageReader,
+        config: VnRunConfig,
+        width: u32,
+        height: u32,
+        surface: PlayerHostResourceId,
+        options: NativeVnHostOpenOptions,
+        registry: &roukaku_plugin::WorkExtensionRegistry,
+        overlays: &[(&str, &roukaku_package::PackageReader)],
+        authorized_directories: &[(&str, &std::path::Path)],
+    ) -> Result<Self, NativeVnHostError> {
         let extensions = registry.instantiate();
         let NativeVnHostOpenOptions {
             max_asset_cache_bytes,
             max_glyph_cache_bytes,
             runtime_execution,
-            policy_actions,
+            mut policy_actions,
         } = options;
         runtime_execution.validate()?;
         if policy_actions.package_hash != package.package_hash() {
@@ -90,8 +139,9 @@ impl NativeVnHostCommandSource {
                 "ROUKAKU_PLAYER_POLICY_PACKAGE_IDENTITY".into(),
             ));
         }
+        let policy_cache_reservation = policy_actions.byte_len;
         let max_asset_cache_bytes = max_asset_cache_bytes
-            .checked_sub(policy_actions.byte_len)
+            .checked_sub(policy_cache_reservation)
             .filter(|remaining| *remaining > 0)
             .ok_or_else(|| NativeVnHostError::Asset("ROUKAKU_PLAYER_POLICY_CACHE_BUDGET".into()))?;
         validate_product_provider_bindings(package)?;
@@ -103,12 +153,71 @@ impl NativeVnHostCommandSource {
                 product_context.profile()
             )));
         }
-        let compiled = decode_compiled_project(package)
+        let asset_store = PackageAssetStore::index_with_mounts(
+            package,
+            max_asset_cache_bytes,
+            overlays,
+            authorized_directories,
+        )?;
+        let mounted_policy_actions = asset_store.load_policy_actions(
+            package,
+            policy_cache_reservation.saturating_add(1),
+            &roukaku_runtime::TaskScope::new(),
+        )?;
+        if mounted_policy_actions.byte_len > policy_cache_reservation {
+            return Err(NativeVnHostError::Asset(
+                "ROUKAKU_PLAYER_POLICY_CACHE_BUDGET".into(),
+            ));
+        }
+        policy_actions = mounted_policy_actions;
+        let mut compiled = decode_compiled_project(package)
             .map_err(|err| NativeVnHostError::Package(err.to_string()))?;
-        let system_ui_manifest = package
-            .container()
-            .decode_postcard::<VnSystemUiProfileManifest>("vn.system_ui_profile_manifest")
+        compiled.ui_blueprints = postcard::from_bytes(
+            &asset_store
+                .resolve_section("vn.ui_blueprint_bundle", 16 * 1024 * 1024)
+                .map_err(|error| NativeVnHostError::Asset(error.to_string()))?
+                .bytes,
+        )
+        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
+        compiled.ui_bindings = postcard::from_bytes(
+            &asset_store
+                .resolve_section("vn.ui_binding_manifest", 16 * 1024 * 1024)
+                .map_err(|error| NativeVnHostError::Asset(error.to_string()))?
+                .bytes,
+        )
+        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
+        compiled.ui_source_map = postcard::from_bytes(
+            &asset_store
+                .resolve_section("vn.ui_source_map", 16 * 1024 * 1024)
+                .map_err(|error| NativeVnHostError::Asset(error.to_string()))?
+                .bytes,
+        )
+        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
+        let controllers: roukaku_vn_package::VnUiControllerBundle = postcard::from_bytes(
+            &asset_store
+                .resolve_section("vn.ui_controller_manifest", 16 * 1024 * 1024)
+                .map_err(|error| NativeVnHostError::Asset(error.to_string()))?
+                .bytes,
+        )
+        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
+        compiled.controller_sources = controllers.sources;
+        compiled.controller_ids = compiled.controller_sources.keys().cloned().collect();
+        compiled.themes =
+            postcard::from_bytes::<BTreeMap<String, roukaku_ui_core::UiThemeManifest>>(
+                &asset_store
+                    .resolve_section("vn.ui_theme_manifest", 16 * 1024 * 1024)
+                    .map_err(|error| NativeVnHostError::Asset(error.to_string()))?
+                    .bytes,
+            )
             .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
+        compiled.theme_ids = compiled.themes.keys().cloned().collect();
+        let system_ui_manifest: VnSystemUiProfileManifest = postcard::from_bytes(
+            &asset_store
+                .resolve_section("vn.system_ui_profile_manifest", 16 * 1024 * 1024)
+                .map_err(|error| NativeVnHostError::Asset(error.to_string()))?
+                .bytes,
+        )
+        .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
         let validation = system_ui_manifest.validate();
         if validation.status != roukaku_vn_core::SystemStoryValidationStatus::Pass {
             return Err(NativeVnHostError::Package(
@@ -126,7 +235,6 @@ impl NativeVnHostCommandSource {
                     config.profile
                 ))
             })?;
-        let asset_store = PackageAssetStore::index(package, max_asset_cache_bytes)?;
         let presentation_manifest =
             load_presentation_provider_manifest(package, &config.profile)
                 .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
@@ -153,24 +261,83 @@ impl NativeVnHostCommandSource {
             .available_locales
             .iter()
             .map(|locale| {
-                load_package_localization(package, locale, 16 * 1024 * 1024)
-                    .map(|table| (locale.clone(), table))
-                    .map_err(|error| NativeVnHostError::Localization(error.to_string()))
+                let bytes = asset_store
+                    .resolve_section(&format!("vn.localization.{locale}"), 16 * 1024 * 1024)
+                    .map_err(|error| NativeVnHostError::Localization(error.to_string()))?;
+                let table: VnLocalizationTable = serde_json::from_slice(&bytes.bytes)
+                    .map_err(|error| NativeVnHostError::Localization(error.to_string()))?;
+                table
+                    .validate(locale)
+                    .map_err(|error| NativeVnHostError::Localization(error.to_string()))?;
+                Ok((locale.clone(), table))
             })
-            .collect::<Result<BTreeMap<_, _>, _>>()?;
+            .collect::<Result<BTreeMap<_, _>, NativeVnHostError>>()?;
         let localization = localizations.get(&config.locale).cloned().ok_or_else(|| {
             NativeVnHostError::Localization(
                 "ROUKAKU_PLAYER_LOCALE_TABLE_MISSING: declared locale has no loaded table".into(),
             )
         })?;
-        let text_provider = Arc::new(roukaku_media::text_layout_from_package(
-            package,
-            "media.font_manifest",
+        let font_manifest_bytes = asset_store
+            .resolve_section("media.font_manifest", 4 * 1024 * 1024)
+            .map_err(|error| NativeVnHostError::Asset(error.to_string()))?;
+        let font_manifest: roukaku_media::FontPackageManifest =
+            serde_json::from_slice(&font_manifest_bytes.bytes).map_err(|error| {
+                NativeVnHostError::Asset(format!("ROUKAKU_TEXT_PACKAGE_MANIFEST_DECODE: {error}"))
+            })?;
+        if font_manifest.schema != roukaku_media::FONT_PACKAGE_MANIFEST_SCHEMA
+            || font_manifest.target != product_context.target()
+            || font_manifest.profile != config.profile
+        {
+            return Err(NativeVnHostError::Asset(
+                "ROUKAKU_TEXT_PACKAGE_MANIFEST_IDENTITY".into(),
+            ));
+        }
+        let mut fonts = Vec::with_capacity(font_manifest.fonts.len());
+        for font in font_manifest.fonts {
+            let resolved = asset_store.resolve_asset_bytes(&font.asset_id, 32 * 1024 * 1024)?;
+            if resolved.uri != font.uri
+                || resolved.media_kind != "font"
+                || (!font.targets.is_empty()
+                    && !font
+                        .targets
+                        .iter()
+                        .any(|target| target == product_context.target()))
+                || (!font.profiles.is_empty()
+                    && !font
+                        .profiles
+                        .iter()
+                        .any(|profile| profile == &config.profile))
+            {
+                return Err(NativeVnHostError::Asset(format!(
+                    "ROUKAKU_TEXT_PACKAGE_FONT_IDENTITY: {}",
+                    font.asset_id
+                )));
+            }
+            fonts.push(roukaku_media::PackagedFont {
+                asset_id: format!(
+                    "{}:{}:{}",
+                    font.asset_id.len(),
+                    font.asset_id,
+                    resolved.identity.source_mount
+                ),
+                family: font.family,
+                face_index: font.face_index,
+                hash: resolved.identity.content_revision,
+                license_id: font.license_id,
+                subset: font.subset,
+                coverage: font.coverage,
+                targets: font.targets,
+                profiles: font.profiles,
+                bytes: resolved.bytes.to_vec(),
+            });
+        }
+        let text_provider = Arc::new(roukaku_media::CosmicTextLayoutProvider::new(
             FontBindingContext {
                 target: product_context.target().to_string(),
                 profile: config.profile.clone(),
                 default_locale: config.locale.clone(),
             },
+            fonts,
             TextLayoutConfig::production_defaults(),
         )?);
         let font_families = text_provider
