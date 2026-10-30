@@ -11,10 +11,11 @@ use roukaku_plugin_abi::{
     PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
     ProviderExtensionRecord, ProviderPolicy,
 };
-use roukaku_vn_core::{
-    CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig, compile_roukaku_project,
+use roukaku_vn_core::{CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig, compile_roukaku_ui};
+use roukaku_vn_package::{
+    LuauStoryBundle, PLAYER_LOCALE_CONFIG_SCHEMA, VnProject, authoring::ParagraphId,
+    package_sections_for_project,
 };
-use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
 
 const TEST_UI: &str = r#"
 ui_policy profile:classic save_slots:"slot.quick,slot.01" quick_slot:slot.quick allowed_pages:"quick_panel,title,save,load,config,backlog,gallery,replay,voice_replay,route_chart,localization_preview" reading_modes:"manual" audio_toggle:true save_completion:stay custom_actions:"" #@id ui.policy.test.classic
@@ -82,16 +83,22 @@ pub fn source_for_audio(story: &str) -> NativeVnHostCommandSource {
 }
 
 fn product_package_with_video(story: &str, video: Option<Vec<u8>>, audio: bool) -> Vec<u8> {
-    let compiled = compile_roukaku_project(
-        [
-            RoukakuSource::story("main.roukaku", story),
-            RoukakuSource::ui("test-ui.roukaku", TEST_UI),
-        ],
+    let story = LuauStoryBundle::new(
+        ParagraphId {
+            module: "story.main".into(),
+            entry: "start".into(),
+        },
+        [("story.main".to_string(), story.to_string())].into(),
+    )
+    .unwrap();
+    let ui = compile_roukaku_ui(
+        [RoukakuSource::ui("test-ui.roukaku", TEST_UI)],
         test_compile_options(),
     )
     .unwrap();
+    let project = VnProject::new(story, ui).unwrap();
     let mut sections =
-        package_sections_for_project(&compiled, &["classic".to_string()], "nativevn-game").unwrap();
+        package_sections_for_project(&project, &["classic".to_string()], "nativevn-game").unwrap();
     let font =
         include_bytes!("../../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf")
             .to_vec();

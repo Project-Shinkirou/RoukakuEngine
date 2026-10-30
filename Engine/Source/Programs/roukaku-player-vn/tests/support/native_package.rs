@@ -9,8 +9,11 @@ use roukaku_plugin_abi::{
     PluginExtensionRegistrySnapshot, ProviderBinding, ProviderBindingContext,
     ProviderExtensionRecord, ProviderPolicy,
 };
-use roukaku_vn_core::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_project};
-use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
+use roukaku_vn_core::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_ui};
+use roukaku_vn_package::{
+    LuauStoryBundle, PLAYER_LOCALE_CONFIG_SCHEMA, VnProject, authoring::ParagraphId,
+    package_sections_for_project,
+};
 
 pub(crate) const TEST_UI: &str = r#"
 ui_policy profile:classic save_slots:"slot.01" quick_slot:"" allowed_pages:"quick_panel,save,load,config" reading_modes:"manual" audio_toggle:false save_completion:stay custom_actions:"" #@id ui.policy.test.classic
@@ -51,16 +54,12 @@ pub(crate) fn product_package_with_ui_and_request(
     options: CompileRoukakuProjectOptions,
     mutate: impl FnOnce(&mut PackageBuildRequest),
 ) -> Vec<u8> {
-    let compiled = compile_roukaku_project(
-        [
-            RoukakuSource::story("main.roukaku", story),
-            RoukakuSource::ui("test-ui.roukaku", ui),
-        ],
-        options,
+    let mut sections = package_sections_for_project(
+        &luau_project(story, ui, options),
+        &["classic".to_string()],
+        "nativevn-game",
     )
     .unwrap();
-    let mut sections =
-        package_sections_for_project(&compiled, &["classic".to_string()], "nativevn-game").unwrap();
     let font =
         include_bytes!("../../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf")
             .to_vec();
@@ -209,6 +208,24 @@ pub(crate) fn product_package_with_ui_and_request(
     .unwrap();
     mutate(&mut request);
     PackageBuilder::build(request).unwrap().into_bytes()
+}
+
+/// One Luau story module `story.main` entering paragraph `start`, plus the compiled UI.
+pub(crate) fn luau_project(
+    story: &str,
+    ui: &str,
+    options: CompileRoukakuProjectOptions,
+) -> VnProject {
+    let story = LuauStoryBundle::new(
+        ParagraphId {
+            module: "story.main".into(),
+            entry: "start".into(),
+        },
+        [("story.main".to_string(), story.to_string())].into(),
+    )
+    .unwrap();
+    let ui = compile_roukaku_ui([RoukakuSource::ui("test-ui.roukaku", ui)], options).unwrap();
+    VnProject::new(story, ui).unwrap()
 }
 
 pub(crate) fn test_compile_options() -> CompileRoukakuProjectOptions {
