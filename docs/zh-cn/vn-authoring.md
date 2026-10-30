@@ -80,7 +80,7 @@ Graph 和 Timeline 修改同一源码，作者不需要维护第二份运行时�
 
 样式文件是“选择器 → 属性对象”的映射。`$id` 指定运行时主题 ID，`$parent` 可指定父主题，`:root` 定义类型化 token，`:high-contrast` 提供高对比度 token。覆盖顺序为控件种类、控件 `style` 中从左到右的类、`#id`、控件内联属性。`theme:token.name`、`l10n:key`、`asset:asset:/id` 分别引用主题 token、本地化文案和资源。上述示例只展示布局与样式；完整工程还需参考已提交示例的 bindings 和 policies。
 
-`id` 是控件在 view 内的编辑器身份。可选的 `source_id` 是不透明的运行时身份；转换后的示例保留原值，使 blueprint hash 不变。它不是源文件路径，诊断位置使用 JSONC 文件名和 token 范围。
+`id` 是控件在 view 内的编辑器身份。可选的 `source_id` 是不透明的运行时身份，格式转换和布局修改都保留原值；它不是源文件路径。诊断位置使用 JSONC 文件名和 token 范围。NativeVN 将标题背景设为逻辑画布尺寸 1920×1080，将标题菜单和快捷菜单设为居中、固定宽度 560；这些是示例属性，不是引擎默认值。
 
 Cook 在 `nativevn.ui_sources` 目录下只收集 `.screen.jsonc`，在 `nativevn.ui_themes` 下只收集 `.style.jsonc`。编译后的 blueprint 复用现有 Cook 缓存，缓存键包含源路径及内容、sidecar、schema 版本、controller/policy 输入和 target/profile。UI `.roukaku` 入口与 JSON/YAML 主题读取路径已删除。
 

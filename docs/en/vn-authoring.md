@@ -80,7 +80,7 @@ Both document roots require `$schema`. The engine publishes `Engine/Schemas/ui-s
 
 Style files map selectors to property objects. `$id` identifies the runtime theme, `$parent` optionally names its parent, `:root` defines typed tokens, and `:high-contrast` overrides tokens for high contrast. Selector precedence is widget kind, classes in the control's `style` string (left to right), `#id`, then inline properties. Use `theme:token.name`, `l10n:key`, and `asset:asset:/id` expressions to reference tokens, localized text, and assets. The example is a screen/style fragment; use the checked-in project's bindings and policies for a runnable project.
 
-`id` is the editor identity within a view. Optional `source_id` is an opaque runtime identity; converted examples preserve their original identities so existing blueprint hashes remain unchanged. It is not a source-file locator. Diagnostics use the JSONC file and token span.
+`id` is the editor identity within a view. Optional `source_id` is an opaque runtime identity preserved across conversion and layout edits, not a source-file locator. Diagnostics use the JSONC file and token span. NativeVN authors its title backdrop at the logical canvas size, 1920×1080, and centers title/quick-menu columns with a fixed width of 560; these are example properties, not engine defaults.
 
 Cook discovers only `.screen.jsonc` under `nativevn.ui_sources` and `.style.jsonc` under `nativevn.ui_themes`. It caches compiled blueprints through the existing Cook artifact store, keyed by source paths/bytes, sidecars, schema versions, controller/policy inputs, and target/profile. UI `.roukaku` and JSON/YAML theme intake have been removed.
 

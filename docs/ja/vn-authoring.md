@@ -80,7 +80,7 @@ Graph と Timeline は同じソースを編集するため、作者が別のラ�
 
 スタイルは「セレクター → プロパティオブジェクト」のマップです。`$id` はランタイムのテーマ ID、`$parent` は任意の親テーマ、`:root` は型付き token、`:high-contrast` はハイコントラスト用 token を表します。優先順位はウィジェットの kind、`style` に並べたクラス（左から右）、`#id`、インライン指定の順です。`theme:token.name`、`l10n:key`、`asset:asset:/id` でテーマ token、翻訳、アセットを参照します。上の例はレイアウトとスタイルの断片です。実行可能なプロジェクトでは、リポジトリ内のサンプルの bindings と policies も参照してください。
 
-`id` は view 内の編集上の識別子です。任意の `source_id` は不透明なランタイム識別子で、変換したサンプルは元の値を保ち、blueprint hash を維持します。ファイルの参照先ではありません。診断には JSONC ファイルと token の範囲を使います。
+`id` は view 内の編集上の識別子です。任意の `source_id` は変換やレイアウト編集でも維持する不透明なランタイム識別子で、ファイルの参照先ではありません。診断には JSONC ファイルと token の範囲を使います。NativeVN はタイトル背景を論理キャンバスの 1920×1080 に設定し、タイトルとクイックメニューの列を幅 560 で中央に配置します。これはサンプル側の指定で、エンジンの既定値ではありません。
 
 Cook は `nativevn.ui_sources` から `.screen.jsonc`、`nativevn.ui_themes` から `.style.jsonc` だけを収集します。既存の Cook artifact キャッシュを再利用し、ソースのパスと内容、sidecar、schema バージョン、controller/policy 入力、target/profile をキーに含めます。UI `.roukaku` と JSON/YAML テーマの読み込み経路は削除されました。
 

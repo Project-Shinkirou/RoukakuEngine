@@ -22788,8 +22788,8 @@
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "b4891ffecacfe7f0d07e1b969f591b8b1622802e159a0af2c954cf3deb10dc18",
-      "byte_size": 56415,
+      "sha256": "1915ad757dcd8edcf64a30e0027bfa13933d0877a1cae8088f88e619f96cded2",
+      "byte_size": 56732,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/octet-stream"

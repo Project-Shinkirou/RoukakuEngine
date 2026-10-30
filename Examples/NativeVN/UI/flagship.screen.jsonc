@@ -126,13 +126,19 @@
             "kind": "image",
             "source_id": "UI/flagship.roukaku/backdrop",
             "asset": "theme:system.backdrop",
-            "min_width": 1280,
-            "min_height": 720
+            "anchor": "center",
+            "min_width": 1920,
+            "min_height": 1080
           },
           {
             "id": "content",
             "kind": "column",
             "source_id": "UI/flagship.roukaku/content",
+            "anchor": "center",
+            "min_width": 560,
+            "max_width": 560,
+            "padding": 24,
+            "gap": 12,
             "children": [
               {
                 "id": "title",
@@ -1306,6 +1312,11 @@
             "kind": "column",
             "source_id": "UI/flagship.roukaku/content",
             "background": "theme:panel.message",
+            "anchor": "center",
+            "min_width": 560,
+            "max_width": 560,
+            "padding": 24,
+            "gap": 12,
             "children": [
               {
                 "id": "title",
