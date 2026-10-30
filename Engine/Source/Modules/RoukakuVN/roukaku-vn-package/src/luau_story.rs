@@ -75,6 +75,11 @@ impl LuauStoryBundle {
 }
 
 pub fn load_luau_story_bundle(package: &PackageReader) -> Result<LuauStoryBundle, ContainerError> {
+    if package.container().section_entry("vn.story").is_some() {
+        return Err(ContainerError::message(
+            "ROUKAKU_VN_STORY_SOURCE_MIXED: package contains the retired compiled story section",
+        ));
+    }
     let bundle: LuauStoryBundle = package
         .container()
         .decode_postcard("vn.luau_story_bundle")?;
@@ -117,4 +122,34 @@ mod tests {
         changed_entry.source_revision = bundle.source_revision;
         assert!(changed_entry.validate().is_err());
     }
+
+    #[test]
+    fn rejects_packages_that_mix_luau_and_compiled_story_sections() {
+        let bundle = LuauStoryBundle::new(
+            ParagraphId {
+                module: "story.main".into(),
+                entry: "intro".into(),
+            },
+            BTreeMap::from([("story.main".into(), "return {}".into())]),
+        )
+        .unwrap();
+        let legacy = SectionPayload::postcard("vn.story", "roukaku.vn.story", &"legacy").unwrap();
+        let bytes = roukaku_package::PackageBuilder::build(
+            roukaku_package::PackageBuildRequest::fixture(
+                "luau-story-mixed-source",
+                "classic",
+                vec![bundle.section().unwrap(), legacy],
+            ),
+        )
+        .unwrap();
+        let package = PackageReader::open(bytes.as_bytes()).unwrap();
+
+        assert!(
+            load_luau_story_bundle(&package)
+                .unwrap_err()
+                .to_string()
+                .contains("ROUKAKU_VN_STORY_SOURCE_MIXED")
+        );
+    }
 }
+
