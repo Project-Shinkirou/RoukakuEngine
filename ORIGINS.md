@@ -6,6 +6,7 @@ RoukakuEngine starts a new Git history. Its code and assets come from the AstraE
 |---|---|---|
 | https://github.com/2018wzh/AstraEngine (`master`) | `1576884396ce7803c267dbc5119135cc7eb6a715` | `Engine/`, `Editor/`, `Examples/`, `scenarios/`, `Tools/LuauTypes`, `Tools/NativeVN`, `Tools/TsuiNoSora`; `Engine/Tools/xtask` became `xtask/` |
 | same repository, branch `codex/cmvs-independent-host-20261011` | `8b6a31f6123ec14cfb9236ee3b7c9095b7c8ce66` | `Engine/Source/Runtime/roukaku-media` FFmpeg frame-rate fallback |
+| https://github.com/SecondHalfGames/yakui | `f686b70396a3f325093ab44181f86f6d496597f9` → [Project-Shinkirou/yakui](https://github.com/Project-Shinkirou/yakui) `6600e8fd05fff836f27e2fbfc2567d08004707c4` | Optional built-in text feature in yakui-widgets; Engine uses layout/image/interaction widgets with the text feature disabled and shares Pango layouts for all text |
 
 The emulator half of that monorepo (`Emulator/`, its tools and metadata) moved to [ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU).
 

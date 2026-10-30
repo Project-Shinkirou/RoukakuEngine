@@ -1,5 +1,5 @@
 use crate::{MediaError, UnicodeRange};
-use cosmic_text::skrifa::prelude::*;
+use skrifa::prelude::*;
 use std::collections::BTreeSet;
 
 /// Read the selected face's character map into ordered, disjoint scalar ranges.

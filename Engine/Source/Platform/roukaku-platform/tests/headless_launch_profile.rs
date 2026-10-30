@@ -109,7 +109,7 @@ fn legacy_v1_provider_shape_is_not_deserialized() {
         "package_id": "com.example.game",
         "build_fingerprint": hash('a'),
         "package_hash": hash('b'),
-        "providers": { "renderer": "cpu_reference", "text": "cosmic_text_cpu", "audio": "old", "decode": "old", "save": "old", "package": "old" },
+        "providers": { "renderer": "cpu_reference", "text": "pango_ft2_cpu", "audio": "old", "decode": "old", "save": "old", "package": "old" },
         "input": { "schema": "roukaku.headless_input_policy.v1", "protocol_schema": "roukaku.user_input_sequence.v1", "max_messages": 1, "max_tick": 1, "allow_file": true, "allow_stdio": true, "allow_realtime": false },
         "artifacts": { "namespace": "legacy", "retention": "all", "max_artifacts": 1, "max_total_bytes": 1, "max_frames": 1, "max_audio_frames": 1, "max_duration_ns": 1, "required_checkpoints": [] },
         "package_sources": ["bundled"],

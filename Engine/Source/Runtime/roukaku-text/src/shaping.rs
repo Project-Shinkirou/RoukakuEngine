@@ -1,25 +1,11 @@
-use cosmic_text::{
-    Attrs, Buffer, Ellipsize, EllipsizeHeightLimit, Family, FontFeatures, FontSystem, Metrics,
-    Shaping, SwashContent, Wrap,
-};
-use unicode_segmentation::UnicodeSegmentation;
-
-use roukaku_media_core::{GlyphBitmap, GlyphBitmapFormat};
-
-use crate::MediaError;
-
 use super::{
     contract::*,
-    provider::{FontState, LayoutPass, RawLayout, RawLine},
-    validation::{cluster_covered, source_line_offsets, validate_direction},
+    native::{NativeFonts, NativeRange, NativeSpan, cstring},
+    provider::{FontState, RawLayout},
+    validation::cluster_covered,
 };
-
-#[derive(Debug, Clone, Copy)]
-struct SelectedSpan {
-    start: usize,
-    end: usize,
-    family_index: usize,
-}
+use crate::MediaError;
+use unicode_segmentation::UnicodeSegmentation;
 
 pub(super) fn append_shaped_glyph(
     runs: &mut Vec<ShapedGlyphRun>,
@@ -60,170 +46,39 @@ pub(super) fn shape_raw(
     locale: &str,
     direction: TextDirection,
     families: &[String],
-    features: &FontFeatures,
+    features: &str,
     constraint: LayoutConstraint,
+    keep: &[RubySpan],
     config: &TextLayoutConfig,
 ) -> Result<RawLayout, MediaError> {
-    let selected_spans = select_family_spans(text, families, state)?;
-    if !state.font_systems.contains_key(locale) {
-        if state.font_systems.len() == config.max_locales {
-            return Err(MediaError::message(
-                "ROUKAKU_TEXT_LOCALE_BUDGET: active locale count exceeds the configured budget",
-            ));
-        }
-        state.font_systems.insert(
-            locale.to_string(),
-            FontSystem::new_with_locale_and_db(locale.to_string(), state.database.clone()),
-        );
+    if !state.locales.contains(locale) && state.locales.len() == config.max_locales {
+        return Err(MediaError::message(
+            "ROUKAKU_TEXT_LOCALE_BUDGET: active locale count exceeds the configured budget",
+        ));
     }
-    let system = state.font_systems.get_mut(locale).ok_or_else(|| {
-        MediaError::message("ROUKAKU_TEXT_FONT_SYSTEM: locale font system creation failed")
-    })?;
-    let preflight = layout_pass(
-        system,
-        text,
-        families,
-        &selected_spans,
-        features,
-        direction,
-        constraint,
-        false,
-    )?;
-    let overflowed = detect_overflow(&preflight, constraint);
-    let lines = layout_pass(
-        system,
-        text,
-        families,
-        &selected_spans,
-        features,
-        direction,
-        constraint,
-        true,
-    )?
-    .lines;
-    Ok(RawLayout {
-        lines,
-        overflowed,
-        locale: locale.to_string(),
-    })
-}
-
-#[allow(clippy::too_many_arguments)]
-fn layout_pass(
-    system: &mut FontSystem,
-    text: &str,
-    families: &[String],
-    selected_spans: &[SelectedSpan],
-    features: &FontFeatures,
-    direction: TextDirection,
-    constraint: LayoutConstraint,
-    apply_overflow: bool,
-) -> Result<LayoutPass, MediaError> {
-    let metrics = Metrics::new(constraint.font_size, constraint.line_height);
-    let mut buffer = Buffer::new(system, metrics);
-    let mut buffer = buffer.borrow_with(system);
-    buffer.set_wrap(match constraint.wrap {
-        WrapPolicy::None => Wrap::None,
-        WrapPolicy::Glyph => Wrap::Glyph,
-        WrapPolicy::Word => Wrap::Word,
-        WrapPolicy::WordOrGlyph => Wrap::WordOrGlyph,
-    });
-    let height = if apply_overflow {
-        constraint.max_height.or_else(|| {
-            constraint
-                .max_lines
-                .map(|lines| lines as f32 * constraint.line_height)
-        })
-    } else {
-        None
-    };
-    buffer.set_size(Some(constraint.max_width), height);
-    if apply_overflow {
-        let limit = constraint
-            .max_lines
-            .map(|lines| EllipsizeHeightLimit::Lines(lines as usize))
-            .or_else(|| constraint.max_height.map(EllipsizeHeightLimit::Height))
-            .unwrap_or(EllipsizeHeightLimit::Lines(1));
-        buffer.set_ellipsize(match constraint.overflow {
-            OverflowPolicy::EllipsisStart => Ellipsize::Start(limit),
-            OverflowPolicy::EllipsisMiddle => Ellipsize::Middle(limit),
-            OverflowPolicy::EllipsisEnd => Ellipsize::End(limit),
-            OverflowPolicy::Visible | OverflowPolicy::Clip => Ellipsize::None,
-        });
-    }
-    let default_attrs = Attrs::new()
-        .family(Family::Name(&families[0]))
-        .font_features(features.clone());
-    if text.is_empty() {
-        buffer.set_text(text, &default_attrs, Shaping::Advanced, None);
-    } else {
-        let rich_spans = selected_spans.iter().map(|span| {
-            (
-                &text[span.start..span.end],
-                Attrs::new()
-                    .family(Family::Name(&families[span.family_index]))
-                    .font_features(features.clone()),
-            )
-        });
-        buffer.set_rich_text(rich_spans, &default_attrs, Shaping::Advanced, None);
-    }
-    buffer.shape_until_scroll(false);
-    let line_offsets = source_line_offsets(text);
-    let lines = buffer
-        .layout_runs()
-        .map(|layout| {
-            let source_offset = *line_offsets.get(layout.line_i).ok_or_else(|| {
-                MediaError::message("ROUKAKU_TEXT_LINE_MAPPING: layout line has no source mapping")
-            })?;
-            validate_direction(direction, layout.rtl)?;
-            let cluster_start = layout
-                .glyphs
-                .iter()
-                .map(|glyph| glyph.start)
-                .min()
-                .unwrap_or(0);
-            let cluster_end = layout
-                .glyphs
-                .iter()
-                .map(|glyph| glyph.end)
-                .max()
-                .unwrap_or(layout.text.len());
-            Ok(RawLine {
-                source: SourceRange {
-                    start: source_offset + cluster_start,
-                    end: source_offset + cluster_end,
-                },
-                rtl: layout.rtl,
-                top: layout.line_top,
-                baseline: layout.line_y,
-                width: layout.line_w,
-                height: layout.line_height,
-                glyphs: layout.glyphs.to_vec(),
-                source_offset,
+    state.locales.insert(locale.to_string());
+    if state.native.is_none() {
+        let ids = state
+            .fonts
+            .iter()
+            .map(|font| {
+                state
+                    .faces
+                    .iter()
+                    .find(|(_, face)| face.asset_id == font.asset_id)
+                    .map(|(id, _)| id.clone())
+                    .expect("validated font face")
             })
-        })
-        .collect::<Result<Vec<_>, MediaError>>()?;
-    let total_lines = buffer
-        .lines
+            .collect();
+        state.native = Some(NativeFonts::new(&state.fonts, ids, config.max_glyphs)?);
+    }
+    let names = families
         .iter()
-        .map(|line| line.layout_opt().map_or(0, Vec::len))
-        .sum::<usize>();
-    let max_width = lines.iter().map(|line| line.width).fold(0.0, f32::max);
-    Ok(LayoutPass {
-        lines,
-        total_lines,
-        max_width,
-    })
-}
-
-fn select_family_spans(
-    text: &str,
-    families: &[String],
-    state: &FontState,
-) -> Result<Vec<SelectedSpan>, MediaError> {
-    let mut spans: Vec<SelectedSpan> = Vec::new();
+        .map(|family| cstring(family))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut spans: Vec<NativeSpan> = Vec::new();
     for (start, grapheme) in text.grapheme_indices(true) {
-        let family_index = families
+        let index = families
             .iter()
             .position(|family| {
                 state.faces.values().any(|face| {
@@ -233,96 +88,61 @@ fn select_family_spans(
             })
             .ok_or_else(|| {
                 MediaError::message(
-                    "ROUKAKU_TEXT_GLYPH_MISSING: no declared fallback coverage contains a grapheme cluster",
+                    "ROUKAKU_TEXT_GLYPH_MISSING: no declared fallback covers a grapheme cluster",
                 )
             })?;
-        let end = start + grapheme.len();
+        let family = names[index].as_ptr();
+        let end = (start + grapheme.len()) as i32;
         if let Some(previous) = spans.last_mut()
-            && previous.end == start
-            && previous.family_index == family_index
+            && previous.family == family
         {
             previous.end = end;
-            continue;
+        } else {
+            spans.push(NativeSpan {
+                start: start as i32,
+                end,
+                family,
+            });
         }
-        spans.push(SelectedSpan {
-            start,
-            end,
-            family_index,
-        });
     }
-    Ok(spans)
-}
-
-fn detect_overflow(pass: &LayoutPass, constraint: LayoutConstraint) -> bool {
-    let width_overflow =
-        constraint.wrap == WrapPolicy::None && pass.max_width > constraint.max_width;
-    let line_overflow = constraint
-        .max_lines
-        .is_some_and(|max_lines| pass.total_lines > max_lines as usize);
-    let height_overflow = constraint
-        .max_height
-        .is_some_and(|height| pass.total_lines as f32 * constraint.line_height > height);
-    width_overflow || line_overflow || height_overflow
-}
-
-pub(super) fn glyph_bitmap(image: &cosmic_text::SwashImage) -> Result<GlyphBitmap, MediaError> {
-    let pixels = (image.placement.width as usize)
-        .checked_mul(image.placement.height as usize)
-        .ok_or_else(|| {
-            MediaError::message("ROUKAKU_TEXT_GLYPH_BITMAP: rasterized dimensions overflow")
-        })?;
-    if image.placement.width == 0 || image.placement.height == 0 {
-        return Err(MediaError::message(format!(
-            "ROUKAKU_TEXT_GLYPH_BITMAP: rasterizer returned an invalid bitmap (content={:?}, width={}, height={}, bytes={})",
-            image.content,
-            image.placement.width,
-            image.placement.height,
-            image.data.len(),
-        )));
-    }
-    let (format, pixels) = match image.content {
-        SwashContent::Mask if image.data.len() == pixels => {
-            (GlyphBitmapFormat::Alpha8, image.data.clone())
-        }
-        SwashContent::SubpixelMask
-            if image.data.len()
-                == pixels.checked_mul(3).ok_or_else(|| {
-                    MediaError::message("ROUKAKU_TEXT_GLYPH_BITMAP: subpixel bitmap size overflows")
-                })? =>
-        {
-            // SceneCommand uses target-independent glyph resources. Collapse RGB subpixel
-            // coverage to a stable mask so replay does not depend on panel stripe order.
-            let alpha = image
-                .data
-                .as_chunks::<3>()
-                .0
-                .iter()
-                .map(|coverage| coverage[0].max(coverage[1]).max(coverage[2]))
-                .collect();
-            (GlyphBitmapFormat::Alpha8, alpha)
-        }
-        SwashContent::Color
-            if image.data.len()
-                == pixels.checked_mul(4).ok_or_else(|| {
-                    MediaError::message("ROUKAKU_TEXT_GLYPH_BITMAP: color bitmap size overflows")
-                })? =>
-        {
-            (GlyphBitmapFormat::Rgba8, image.data.clone())
-        }
-        _ => {
-            return Err(MediaError::message(format!(
-                "ROUKAKU_TEXT_GLYPH_BITMAP: rasterizer returned an invalid bitmap (content={:?}, width={}, height={}, bytes={})",
-                image.content,
-                image.placement.width,
-                image.placement.height,
-                image.data.len(),
-            )));
-        }
-    };
-    GlyphBitmap::from_pixels(
-        image.placement.width,
-        image.placement.height,
-        format,
-        pixels.into(),
-    )
+    let keep = keep
+        .iter()
+        .map(|ruby| NativeRange {
+            start: ruby.base_range.start as i32,
+            end: ruby.base_range.end as i32,
+        })
+        .collect::<Vec<_>>();
+    let (lines, overflowed) = state.native.as_mut().expect("initialized font map").shape(
+        text,
+        locale,
+        features,
+        &spans,
+        &keep,
+        match direction {
+            TextDirection::Auto => 0,
+            TextDirection::LeftToRight => 1,
+            TextDirection::RightToLeft => 2,
+            TextDirection::VerticalRightToLeft => 3,
+            TextDirection::VerticalLeftToRight => 4,
+        },
+        match constraint.wrap {
+            WrapPolicy::None => 0,
+            WrapPolicy::Glyph => 1,
+            WrapPolicy::Word => 2,
+            WrapPolicy::WordOrGlyph => 3,
+        },
+        match constraint.overflow {
+            OverflowPolicy::Visible => 0,
+            OverflowPolicy::Clip => 1,
+            OverflowPolicy::EllipsisStart => 2,
+            OverflowPolicy::EllipsisMiddle => 3,
+            OverflowPolicy::EllipsisEnd => 4,
+        },
+        constraint.font_size,
+        constraint.line_height,
+        constraint.max_width,
+        constraint.max_height.unwrap_or(0.0),
+        constraint.max_lines.unwrap_or(0) as i32,
+    )?;
+    Ok(RawLayout { lines, overflowed })
 }

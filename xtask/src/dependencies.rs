@@ -12,6 +12,8 @@ pub struct Options {
     pub ffmpeg: bool,
     #[arg(long)]
     pub subtitle: bool,
+    #[arg(long)]
+    pub text: bool,
 }
 
 pub fn run(root: &Path, options: &Options) -> Result<()> {
@@ -20,12 +22,15 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
         "x86_64-unknown-linux-gnu" => "x64-linux",
         "aarch64-apple-darwin" => "arm64-osx",
         "x86_64-apple-darwin" => "x64-osx",
+        "aarch64-apple-ios" => "arm64-ios",
+        "aarch64-apple-ios-sim" => "arm64-ios-simulator",
+        "x86_64-apple-ios" => "x64-ios",
         "aarch64-linux-android" => "arm64-android-dynbidi",
         "x86_64-linux-android" => "x64-android-dynbidi",
         _ => bail!("unsupported dependency target {}", options.target),
     };
-    if !options.ffmpeg && !options.subtitle {
-        println!("No downloads selected; use --subtitle and/or --ffmpeg.");
+    if !options.ffmpeg && !options.subtitle && !options.text {
+        println!("No downloads selected; use --text, --subtitle and/or --ffmpeg.");
         return Ok(());
     }
     let vcpkg = root.join(".work/vcpkg");
@@ -73,7 +78,7 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
             )?;
         }
     }
-    if options.subtitle {
+    if options.subtitle || options.text {
         let manifest = root.join("Engine/Source/Runtime/roukaku-subtitle");
         let isolated = root.join(".work/vcpkg-subtitle");
         fs::create_dir_all(&isolated)?;
@@ -91,7 +96,11 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
                     isolated.join("installed").display()
                 ))
                 .arg(format!("--triplet={triplet}"))
-                .args(["--clean-after-build", "--disable-metrics"])
+                .args([
+                    "--clean-after-build",
+                    "--disable-metrics",
+                    "--x-wait-for-lock",
+                ])
                 .env("VCPKG_DISABLE_METRICS", "1")
                 .env("VCPKG_FORCE_SYSTEM_BINARIES", "1"),
         )?;
@@ -99,6 +108,10 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
         env_file(
             "GITHUB_ENV",
             &format!("ROUKAKU_SUBTITLE_VCPKG_ROOT={}", isolated.display()),
+        )?;
+        env_file(
+            "GITHUB_ENV",
+            &format!("ROUKAKU_TEXT_VCPKG_ROOT={}", isolated.display()),
         )?;
         for directory in ["bin", "debug/bin"] {
             env_file(

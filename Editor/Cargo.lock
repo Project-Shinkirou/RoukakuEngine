@@ -1194,6 +1194,7 @@ dependencies = [
  "block",
  "core-foundation 0.10.1",
  "core-graphics-types 0.2.0",
+ "libc",
  "objc",
 ]
 
@@ -1401,7 +1402,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be17b688510d934ce13f48a2beba700e11583e281e0fda99c22bb256a14eda73"
 dependencies = [
  "bitflags 2.13.2",
- "fontdb",
+ "fontdb 0.23.0",
  "harfrust",
  "linebender_resource_handle",
  "log",
@@ -2153,6 +2154,19 @@ dependencies = [
  "slotmap",
  "tinyvec",
  "ttf-parser",
+]
+
+[[package]]
+name = "fontdb"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2660c5e9157bf76d2db1294e4a9feba604ef610819a3b591088d0d8392a3290f"
+dependencies = [
+ "fontconfig-parser",
+ "log",
+ "memmap2",
+ "slotmap",
+ "tinyvec",
 ]
 
 [[package]]
@@ -6380,14 +6394,19 @@ dependencies = [
 name = "roukaku-text"
 version = "0.1.0"
 dependencies = [
- "cosmic-text",
+ "cc",
+ "fontdb 0.24.0",
+ "pkg-config",
  "roukaku-core",
  "roukaku-media-core",
  "roukaku-worker-budget",
  "schemars 1.2.3",
  "serde",
+ "skrifa 0.44.0",
+ "tempfile",
  "tracing",
  "unicode-segmentation",
+ "vcpkg",
 ]
 
 [[package]]
@@ -8161,7 +8180,7 @@ dependencies = [
  "base64 0.22.1",
  "data-url",
  "flate2",
- "fontdb",
+ "fontdb 0.23.0",
  "imagesize 0.13.0",
  "kurbo 0.11.3",
  "log",
@@ -8188,7 +8207,7 @@ dependencies = [
  "base64 0.22.1",
  "data-url",
  "flate2",
- "fontdb",
+ "fontdb 0.23.0",
  "imagesize 0.14.0",
  "kurbo 0.13.1",
  "log",
@@ -8247,6 +8266,12 @@ dependencies = [
  "num-traits",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "version_check"

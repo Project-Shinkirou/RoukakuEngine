@@ -23,14 +23,14 @@ class HeadlessGpuAcceptanceTests(unittest.TestCase):
                     {
                         "schema": "roukaku.headless_host_profile.v2",
                         "id": "gpu.fixture",
-                        "providers": {"renderer": "cpu_reference", "text": "cosmic_text_cpu"},
+                        "providers": {"renderer": "cpu_reference", "text": "pango_ft2_cpu"},
                     }
                 ),
                 encoding="utf-8",
             )
             profile = prepare_gpu_profile(source, output)
             self.assertEqual(profile["providers"]["renderer"], "wgpu_offscreen")
-            self.assertEqual(profile["providers"]["text"], "cosmic_text_cpu")
+            self.assertEqual(profile["providers"]["text"], "pango_ft2_cpu")
             self.assertEqual(json.loads(output.read_text())["providers"]["renderer"], "wgpu_offscreen")
 
     def test_prepare_gpu_profile_rejects_unknown_renderer(self):

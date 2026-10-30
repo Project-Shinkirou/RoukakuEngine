@@ -1,36 +1,21 @@
 # roukaku-text
 
-直接从字体字节建立 font database，使用 cosmic-text 进行 shaping、fallback、排版和字形栅格化。实现从 roukaku-media 的文字模块迁出，Engine 通过 roukaku-media 使用同一套实现；Musica 可以直接依赖本 crate，不需要创建 RuntimeWorld、package、registry 或 Headless session。Musica 接入尚未完成。
+项目字体字节驱动的共享文字布局。`PangoTextLayoutProvider` 通过 Pango FT2、HarfBuzz、FriBidi、FreeType 和独立 Fontconfig 字体表完成 shaping、双向排版及字形栅格化。Engine 通过 roukaku-media 使用同一实现，独立消费者不需要 RuntimeWorld、package 或 registry。
 
 ## 使用与所有权
 
-调用方持有 `CosmicTextLayoutProvider`，用 `new(context, fonts, config)` 传入字体。`PackagedFont` 保留既有名称，但它只持有调用方提供的字体字节、SHA-256、face index、license、coverage 和 target/profile 声明，不读取 package 或磁盘。`FontBindingContext` 的 target/profile 用来校验字体 eligibility；独立调用方同样需要显式提供匹配值。
+调用方用 `new(context, fonts, config)` 传入 `PackagedFont`，包括字节、SHA-256、必填的 `source_mount`、face index、license、coverage 和 target/profile 声明。VFS 消费者传入实际 mount identity，独立内存消费者指定自己的命名空间（如 `memory`）。provider 校验描述及字体元数据，各 worker 将字体写入独占临时目录，供 Fontconfig 延迟读取；目录随字体表销毁，不注册系统字体，也不读取用户字体目录。
 
-`TextLayoutRequest` 指定正文、语言、方向、OpenType features、约束和有序字体链。`layout_shared` 返回缓存中的 `Arc<TextLayoutResult>`，包含实际 shaped glyph、bitmap、行与 cluster/source range。结果可直接交给自有绘制器；需要 Scene2D 命令时使用 `TextRenderResourceOwner` 管理 upload/draw/release。`shutdown` 返回资源释放命令，调用方负责提交到绘制器。
+`TextLayoutRequest` 指定正文、语言、方向、OpenType features、约束及有序字体链。回退按 grapheme 和 coverage 选择，Pango 返回的实际 face 仍需通过声明校验。`layout_shared` 返回缓存中的 `Arc<TextLayoutResult>`，包含实际 glyph、bitmap、行及 cluster/source byte range。UI 测量和绘制复用该结果；`TextRenderResourceOwner` 管理 Scene2D upload/draw/release。`shutdown` 返回需要提交的释放命令。
 
-字体安装、替换与卸载保留 hash 校验、事务失败和缓存失效语义；空字库、缺失字体、非法 coverage、无效 fallback 和预算超限返回既有 `ROUKAKU_TEXT_*` diagnostic。字体 bytes 只通过显式 API 输入；本 crate 不增加文件/网络权限入口。库只发 tracing 事件，不初始化 sink；日志 category 为 `roukaku_text`。
+Ruby 组合位于 `ruby` 模块。Pango 禁止在被注音正文内部断行，Roukaku 将独立排版的注音中心对齐到正文。竖排通过 Pango EAST gravity 选择纵向字形和标点，再映射到列坐标；短数字组采用 SOUTH gravity 保持横排。RTL 和混排由 Pango/FriBidi 决定视觉顺序，保留原文 UTF-8 cluster 范围。
+
+字体增删、替换会清空缓存。字体字节在 worker 间共享，字形资源键包含 mount identity 与内容 hash；即使字节相同，换挂载来源也会重建资源身份。每个 worker 独占 native font map，按字体、glyph、字号及 Pango gravity 缓存位图，并沿用进程级 WorkerBudgetBroker 和同请求 single-flight；没有全局 Pango font map 或 Fontconfig 配置。
+
+## 原生依赖
+
+运行 `cargo xtask deps --target <triple> --text`，将 `ROUKAKU_TEXT_VCPKG_ROOT` 指向 `.work/vcpkg-subtitle`，并配置动态库搜索路径。文字和字幕共用 vcpkg `0c2a9ace1964b818b15f7ae50ba1c42404918a7b`，包括 Pango 1.58、HarfBuzz、FriBidi、FreeType、Fontconfig 和 libass 0.17.5。非 Windows 也支持 pkg-config 发现 `pangoft2 >= 1.50`。各目标 triplet 和 SDK 配置见 docs/{en,zh-cn,ja}/build.md。
 
 ## 依赖边界
 
-直接依赖 `roukaku-core`（Hash256/Diagnostic 等值类型）、`roukaku-media-core`（GlyphBitmap、SceneCommand 和 MediaError）、`roukaku-worker-budget`（进程级有界 CPU 工作预算），以及 cosmic-text、serde、schemars、tracing、unicode-segmentation。media-core 还依赖 roukaku-byte-source，并包含 CPU renderer/filter executor，因此这一阶段仍有媒体 contract/CPU executor 的链接耦合；未把它声称为完全独立的最小字体算法库。
-
-普通与测试依赖均不引入 roukaku-runtime、roukaku-package、roukaku-asset、roukaku-media 或 Headless server。现有 worker budget 仍使用全局 broker，并非新建 registry。未来是否拆分 media-core 由实际共享绘制消费者决定。
-
-## Engine 迁移
-
-`roukaku-media` re-export 这里拥有的文字类型，保持 `roukaku_media::TextLayoutRequest` 等类型身份。验证 package/VFS 并加载字体的代码仍归 roukaku-media：
-
-- `CosmicTextLayoutProvider::from_package(...)` 改为 `roukaku_media::text_layout_from_package(...)`。
-- `CosmicTextLayoutProvider::from_package_with_crypto(...)` 改为 `roukaku_media::text_layout_from_package_with_crypto(...)`。
-
-package gate、Player 和测试调用方同步迁移；验证逻辑和返回类型不变。旧文字 replay 功能保留在 roukaku-media，未进入 SDK。此重构不修改 save/package 格式，也不增加兼容 provider 或动态 ABI。
-
-## 验证
-
-```bash
-cargo test -p roukaku-text
-cargo clippy -p roukaku-text --all-targets -- -D warnings
-cargo test -p roukaku-media --test text_layout
-```
-
-原文字行为测试迁到本 crate，覆盖真实授权字体的 CJK/Arabic/emoji shaping、有序 fallback、竖排/ruby、wrap/ellipsis、glyph bitmap、资源事务/释放、缓存复用、字体替换和并发 single-flight。普通 Rust 测试直接运行，不启动 Headless。package 与 replay 的集成测试留在 roukaku-media。此验证证明库行为保留，不代表四平台产品或 Musica 完成验收。
+直接使用 roukaku-core 的值类型、roukaku-media-core 的 GlyphBitmap/SceneCommand/MediaError、roukaku-worker-budget 的进程级 CPU 预算，以及字体元数据解析、serde、schemars、tracing、unicode-segmentation。package 字体装载入口为 `roukaku_media::text_layout_from_package` 和 `text_layout_from_package_with_crypto`。package 和 replay 逻辑仍由 roukaku-media 负责。

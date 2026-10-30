@@ -198,7 +198,7 @@ impl HeadlessHostProfile {
             viewport_height: 720,
             providers: HeadlessProviderBindings {
                 renderer: "cpu_reference".to_string(),
-                text: "cosmic_text_cpu".to_string(),
+                text: "pango_ft2_cpu".to_string(),
                 audio_mixer: "kira".to_string(),
                 audio_output: "headless".to_string(),
                 image_decode: "image_cpu".to_string(),

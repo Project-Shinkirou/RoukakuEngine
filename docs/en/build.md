@@ -99,10 +99,16 @@ The tool uses `.work/vcpkg` and a separate `.work/vcpkg-subtitle` installation. 
 
 ```powershell
 $env:ROUKAKU_SUBTITLE_VCPKG_ROOT = (Resolve-Path .work/vcpkg-subtitle).Path
+$env:ROUKAKU_TEXT_VCPKG_ROOT = $env:ROUKAKU_SUBTITLE_VCPKG_ROOT
 $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/bin;$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/debug/bin;$env:PATH"
 ```
 
 After preparing FFmpeg, also apply the printed `VCPKG_ROOT`, `VCPKG_DEFAULT_TRIPLET`, and runtime DLL PATH. For non-Windows targets, apply `PKG_CONFIG_PATH` and `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH` as printed. Account for native dependency licenses and dynamic libraries when distributing the product.
+
+Text and subtitles share the pinned native stack. `cargo xtask deps --target <triple> --text` installs Pango 1.58 plus its HarfBuzz/FriBidi/FreeType/Fontconfig dependencies alongside libass 0.17.5 in `.work/vcpkg-subtitle`. Set `ROUKAKU_TEXT_VCPKG_ROOT` to that root, in addition to `ROUKAKU_SUBTITLE_VCPKG_ROOT`; keep its `bin` directory on PATH for dynamic dependencies. A system `pangoft2 >= 1.50` installation can instead be discovered through pkg-config.
+
+Prepared target → vcpkg triplets: Windows MSVC → `x64-windows-static-md-dynbidi`; Linux x64 → `x64-linux`; Android arm64/x64 → `arm64-android-dynbidi` / `x64-android-dynbidi`; macOS arm64/x64 → `arm64-osx` / `x64-osx`; iOS device arm64 → `arm64-ios`; iOS simulator arm64/x64 → `arm64-ios-simulator` / `x64-ios`. Android uses the NDK target compiler and target pkg-config metadata; Apple preparation requires the matching SDK. OHOS and emscripten add their toolchains to this same FT2 bridge.
+
 
 ## Movie playback and synchronization
 

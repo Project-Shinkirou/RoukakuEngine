@@ -35,7 +35,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use roukaku_core::Hash256;
 use roukaku_media::{
-    CosmicTextLayoutProvider, FontBindingContext, LayoutConstraint, OverflowPolicy, TextDirection,
+    FontBindingContext, LayoutConstraint, OverflowPolicy, PangoTextLayoutProvider, TextDirection,
     TextLayoutConfig, TextLayoutProvider, TextLayoutRequest, TextLayoutResult,
     TextRenderLayoutUpdate, TextRenderResourceOwner, TextRun, WrapPolicy,
 };
@@ -477,7 +477,7 @@ struct ProductPresentationBinding {
     asset_store: Arc<PackageAssetStore>,
     localization: VnLocalizationTable,
     localizations: BTreeMap<String, VnLocalizationTable>,
-    text_provider: Arc<CosmicTextLayoutProvider>,
+    text_provider: Arc<PangoTextLayoutProvider>,
     font_families: Vec<String>,
     manifest: VnPresentationProviderManifest,
 }

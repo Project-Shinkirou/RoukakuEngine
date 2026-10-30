@@ -55,6 +55,8 @@ pub struct TextLayoutRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PackagedFont {
     pub asset_id: String,
+    /// VFS mount identity, or an explicit caller-owned memory namespace.
+    pub source_mount: String,
     pub family: String,
     pub face_index: u32,
     pub hash: Hash256,
@@ -69,6 +71,7 @@ pub struct PackagedFont {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct PackagedFontIdentity {
     pub asset_id: String,
+    pub source_mount: String,
     pub family: String,
     pub face_index: u32,
     pub hash: Hash256,
@@ -87,6 +90,7 @@ impl From<&PackagedFont> for PackagedFontIdentity {
     fn from(font: &PackagedFont) -> Self {
         Self {
             asset_id: font.asset_id.clone(),
+            source_mount: font.source_mount.clone(),
             family: font.family.clone(),
             face_index: font.face_index,
             hash: font.hash,

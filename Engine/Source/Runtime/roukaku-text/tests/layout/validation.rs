@@ -48,7 +48,7 @@ fn font_binding_hash_direction_and_fallback_fail_fast() {
             .to_vec();
     let mut corrupt = font(bytes.clone());
     corrupt.hash = Hash256::from_sha256(b"wrong");
-    let error = CosmicTextLayoutProvider::new(
+    let error = PangoTextLayoutProvider::new(
         FontBindingContext {
             target: "windows".into(),
             profile: "classic".into(),
@@ -123,4 +123,34 @@ fn font_replacement_is_transactional_and_invalidates_layout_cache() {
         .unwrap_err();
     assert!(error.to_string().contains("ROUKAKU_TEXT_FONT_HASH"));
     assert_eq!(provider.cache_stats().unwrap(), before_failure);
+}
+
+#[test]
+fn changing_font_mount_rebuilds_native_and_glyph_resource_identity() {
+    let provider = provider();
+    let request = request("same bytes, new mount");
+    let first = provider.layout_shared(&request).unwrap();
+    let bytes =
+        include_bytes!("../../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf")
+            .to_vec();
+    let mut replacement = font(bytes);
+    replacement.source_mount = "overlay.fonts".into();
+    let hash = replacement.hash;
+    provider
+        .replace_font(&replacement.asset_id.clone(), hash, replacement)
+        .unwrap();
+    let second = provider.layout_shared(&request).unwrap();
+    assert_ne!(first.revision, second.revision);
+    assert_eq!(
+        first.glyph_resources[0].font_hash,
+        second.glyph_resources[0].font_hash
+    );
+    assert_ne!(
+        first.glyph_resources[0].resource_id,
+        second.glyph_resources[0].resource_id
+    );
+    assert_eq!(
+        provider.identity().unwrap().fonts[0].source_mount,
+        "overlay.fonts"
+    );
 }

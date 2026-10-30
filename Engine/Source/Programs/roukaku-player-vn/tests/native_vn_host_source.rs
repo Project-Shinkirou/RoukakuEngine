@@ -46,3 +46,7 @@ use launch_contract::packaged_native_vn_scene_reaches_live_windows_wgpu_and_rele
 mod input_contract;
 #[path = "native_vn_host_source/packaged_player_accepts_explicit_product_provider_bindings.rs"]
 mod packaged_player_accepts_explicit_product_provider_bindings;
+
+#[cfg(all(target_os = "windows", feature = "platform-test-driver"))]
+#[path = "native_vn_host_source/pango_page.rs"]
+mod pango_page;

@@ -25,6 +25,7 @@ pub(super) fn shaping_constraint(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn transform_vertical_run(
     run: &TextRun,
     run_index: usize,
@@ -33,6 +34,7 @@ pub(super) fn transform_vertical_run(
     lines: &mut [LayoutLine],
     shaped_runs: &mut [ShapedGlyphRun],
     ruby_boxes: &mut [RubyLayoutBox],
+    resources: &BTreeMap<String, crate::GlyphResource>,
 ) -> Result<(), MediaError> {
     let column_width = constraint.line_height;
     let max_width = constraint.max_width;
@@ -92,19 +94,17 @@ pub(super) fn transform_vertical_run(
         }
         for glyph in &mut shaped.glyphs {
             let old_x = glyph.x;
-            let source = run
-                .text
-                .get(glyph.source.start..glyph.source.end)
-                .unwrap_or("");
             let digit_group = digit_groups
                 .iter()
                 .find(|range| glyph.source.start >= range.start && glyph.source.end <= range.end);
             glyph.direction = run.direction;
             glyph.x = base_x + ruby_offset;
             glyph.y = old_x;
+            let old_baseline = glyph.baseline;
             glyph.baseline = shaped.baseline;
-            glyph.rotation_quadrants =
-                u8::from(digit_group.is_none() && source.chars().any(vertical_glyph_rotates));
+            // EAST gravity supplies vertical alternates and upright CJK;
+            // rotating the coordinate frame completes Pango's transform.
+            glyph.rotation_quadrants = u8::from(digit_group.is_none());
             glyph.tate_chu_yoko = digit_group.is_some();
             if let Some(group) = digit_group {
                 let group_text = &run.text[group.clone()];
@@ -117,11 +117,28 @@ pub(super) fn transform_vertical_run(
                     )
                 })?;
                 glyph.advance = constraint.font_size / scalar_count;
-            } else {
-                glyph.advance = column_width;
             }
-            glyph.render_x = Some(glyph.x.round() as i32);
-            glyph.render_y = Some(glyph.y.round() as i32);
+            if let (Some(render_x), Some(render_y), Some(resource)) = (
+                glyph.render_x,
+                glyph.render_y,
+                glyph.resource_id.as_ref().and_then(|id| resources.get(id)),
+            ) {
+                if digit_group.is_some() {
+                    glyph.render_x = Some((glyph.x + (render_x as f32 - old_x)).round() as i32);
+                    glyph.render_y = Some(
+                        (glyph.y + (render_y as f32 - old_baseline) + constraint.font_size).round()
+                            as i32,
+                    );
+                } else {
+                    glyph.render_x = Some(
+                        (shaped.baseline
+                            - (render_y as f32 - old_baseline)
+                            - resource.bitmap.height as f32)
+                            .round() as i32,
+                    );
+                    glyph.render_y = Some(render_x);
+                }
+            }
         }
     }
     for ruby in ruby_boxes
@@ -160,9 +177,4 @@ fn vertical_digit_groups(text: &str) -> Vec<std::ops::Range<usize>> {
         }
     }
     groups
-}
-
-fn vertical_glyph_rotates(character: char) -> bool {
-    character.is_ascii_alphanumeric()
-        || matches!(character, '!'..='/' | ':'..='@' | '['..='`' | '{'..='~')
 }

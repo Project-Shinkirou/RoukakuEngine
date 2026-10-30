@@ -1,18 +1,16 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
-use cosmic_text::{FontFeatures, SubpixelBin};
 use roukaku_core::Diagnostic;
 
 use super::vertical::{is_vertical, shaping_constraint, transform_vertical_run};
 use crate::MediaError;
 
+use super::ruby::append_ruby;
 use super::{
     contract::*,
     provider::{FontState, RawLayout},
-    shaping::{append_shaped_glyph, glyph_bitmap, shape_raw},
-    validation::{
-        cluster_covered, cosmic_features, ranges_overlap, validate_direction, validate_ruby,
-    },
+    shaping::{append_shaped_glyph, shape_raw},
+    validation::{cluster_covered, pango_features, validate_direction},
 };
 
 pub(super) fn layout_uncached(
@@ -20,7 +18,7 @@ pub(super) fn layout_uncached(
     state: &mut FontState,
     config: &TextLayoutConfig,
 ) -> Result<TextLayoutResult, MediaError> {
-    let features = cosmic_features(&request.features)?;
+    let features = pango_features(&request.features)?;
     let mut lines = Vec::new();
     let mut shaped_runs = Vec::new();
     let mut resources = BTreeMap::new();
@@ -43,8 +41,10 @@ pub(super) fn layout_uncached(
         let ruby_padding = if run.ruby.is_empty() {
             0.0
         } else {
-            request.constraint.font_size * 0.6
+            (request.constraint.font_size * 0.6).max(request.constraint.line_height * 0.5)
         };
+        let mut base_constraint = shaping_constraint(request.constraint, run.direction);
+        base_constraint.line_height += ruby_padding;
         let raw = shape_raw(
             state,
             &run.text,
@@ -52,7 +52,8 @@ pub(super) fn layout_uncached(
             run.direction,
             &request.font_families,
             &features,
-            shaping_constraint(request.constraint, run.direction),
+            base_constraint,
+            &run.ruby,
             config,
         )?;
         clipped |= raw.overflowed && request.constraint.overflow == OverflowPolicy::Clip;
@@ -110,6 +111,7 @@ pub(super) fn layout_uncached(
                 &mut lines,
                 &mut shaped_runs,
                 &mut ruby_boxes,
+                &resources,
             )?;
         }
         let run_bottom = lines
@@ -193,129 +195,7 @@ pub(super) fn layout_uncached(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn append_ruby(
-    state: &mut FontState,
-    request: &TextLayoutRequest,
-    run: &TextRun,
-    run_index: usize,
-    span_index: usize,
-    ruby: &RubySpan,
-    line_cursor: u32,
-    features: &FontFeatures,
-    lines: &mut Vec<LayoutLine>,
-    shaped_runs: &mut Vec<ShapedGlyphRun>,
-    resources: &mut BTreeMap<String, GlyphResource>,
-    ruby_boxes: &mut Vec<RubyLayoutBox>,
-    diagnostics: &mut Vec<Diagnostic>,
-    config: &TextLayoutConfig,
-) -> Result<(), MediaError> {
-    validate_ruby(run, ruby)?;
-    let base_glyphs = shaped_runs
-        .iter()
-        .filter(|shaped| shaped.run_index == run_index && shaped.role == GlyphRole::Base)
-        .flat_map(|shaped| &shaped.glyphs)
-        .filter(|glyph| ranges_overlap(&glyph.source, &ruby.base_range))
-        .collect::<Vec<_>>();
-    if base_glyphs.is_empty() {
-        return Err(MediaError::message(
-            "ROUKAKU_TEXT_RUBY_CLUSTER: ruby range did not resolve to a shaped base cluster",
-        ));
-    }
-    let base_lines = base_glyphs
-        .iter()
-        .map(|glyph| glyph.line)
-        .collect::<BTreeSet<_>>();
-    if base_lines.len() != 1 {
-        return Err(MediaError::message(
-            "ROUKAKU_TEXT_RUBY_MULTILINE: one ruby span cannot cross a wrapped line boundary",
-        ));
-    }
-    let line = *base_lines.first().expect("base line set is non-empty");
-    let base_x = base_glyphs
-        .iter()
-        .map(|glyph| glyph.x)
-        .fold(f32::INFINITY, f32::min);
-    let base_end = base_glyphs
-        .iter()
-        .map(|glyph| glyph.x + glyph.advance)
-        .fold(f32::NEG_INFINITY, f32::max);
-    let base_width = (base_end - base_x).max(0.0);
-    let base_top = lines
-        .iter()
-        .find(|candidate| {
-            candidate.run_index == run_index
-                && candidate.role == GlyphRole::Base
-                && candidate.line == line
-        })
-        .map(|candidate| candidate.top)
-        .ok_or_else(|| MediaError::message("ROUKAKU_TEXT_RUBY_LINE: base line is missing"))?;
-    let ruby_size = request.constraint.font_size * 0.5;
-    let ruby_height = request.constraint.line_height * 0.5;
-    let ruby_constraint = LayoutConstraint {
-        max_width: base_width.max(ruby_size),
-        max_height: None,
-        max_lines: Some(1),
-        font_size: ruby_size,
-        line_height: ruby_height,
-        wrap: WrapPolicy::None,
-        overflow: OverflowPolicy::Visible,
-    };
-    let raw = shape_raw(
-        state,
-        &ruby.text,
-        &run.language,
-        run.direction,
-        &request.font_families,
-        features,
-        ruby_constraint,
-        config,
-    )?;
-    let ruby_width = raw.lines.first().map(|value| value.width).unwrap_or(0.0);
-    let ruby_x = base_x + (base_width - ruby_width) * 0.5;
-    let ruby_y = (base_top - ruby_height).max(0.0);
-    append_raw_layout(
-        raw,
-        state,
-        run_index,
-        GlyphRole::Ruby { span_index },
-        line,
-        ruby_y,
-        &ruby.text,
-        run.direction,
-        &request.font_families,
-        lines,
-        shaped_runs,
-        resources,
-        diagnostics,
-        config,
-    )?;
-    for glyph in shaped_runs
-        .iter_mut()
-        .filter(|shaped| {
-            shaped.run_index == run_index
-                && shaped.role == GlyphRole::Ruby { span_index }
-                && shaped.line == line
-        })
-        .flat_map(|shaped| &mut shaped.glyphs)
-    {
-        glyph.x += ruby_x;
-        glyph.render_x = glyph.render_x.map(|x| x + ruby_x.round() as i32);
-    }
-    ruby_boxes.push(RubyLayoutBox {
-        run_index,
-        span_index,
-        base_range: ruby.base_range.clone(),
-        line: line_cursor + (line - line_cursor),
-        x: ruby_x,
-        y: ruby_y,
-        width: ruby_width,
-        height: ruby_height,
-    });
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn append_raw_layout(
+pub(super) fn append_raw_layout(
     raw: RawLayout,
     state: &mut FontState,
     run_index: usize,
@@ -332,9 +212,7 @@ fn append_raw_layout(
     config: &TextLayoutConfig,
 ) -> Result<(), MediaError> {
     let RawLayout {
-        lines: raw_lines,
-        locale,
-        ..
+        lines: raw_lines, ..
     } = raw;
     for (line_index, raw_line) in raw_lines.into_iter().enumerate() {
         validate_direction(requested_direction, raw_line.rtl)?;
@@ -360,7 +238,7 @@ fn append_raw_layout(
             }
             let face = state
                 .faces
-                .get(&glyph.font_id.to_string())
+                .get(&glyph.font_id)
                 .cloned()
                 .ok_or_else(|| {
                     MediaError::message(
@@ -440,42 +318,26 @@ fn append_raw_layout(
                     );
                 }
             }
-            let direction = if glyph.level.number().is_multiple_of(2) {
-                TextDirection::LeftToRight
-            } else {
+            let direction = if glyph.rtl {
                 TextDirection::RightToLeft
-            };
-            let physical = glyph.physical((0.0, y_offset + raw_line.baseline), 1.0);
-            let image = {
-                let system = state.font_systems.get_mut(&locale).ok_or_else(|| {
-                    MediaError::message("ROUKAKU_TEXT_FONT_SYSTEM: locale system is missing")
-                })?;
-                state
-                    .swash_cache
-                    .get_image(system, physical.cache_key)
-                    .clone()
+            } else {
+                TextDirection::LeftToRight
             };
             let invisible = cluster
                 .chars()
                 .all(|value| value.is_whitespace() || is_invisible_scalar(value));
-            let empty_image = image.as_ref().is_some_and(|image| {
-                image.placement.width == 0 || image.placement.height == 0 || image.data.is_empty()
-            });
-            let zero_advance = glyph.w.abs() <= f32::EPSILON;
-            let (resource_id, render_x, render_y) = if empty_image && (invisible || zero_advance) {
-                (None, None, None)
-            } else if let Some(image) = image {
-                let bitmap = glyph_bitmap(&image)?;
-                let cache_key = physical.cache_key;
+            let (resource_id, render_x, render_y) = if let Some(bitmap) = glyph.bitmap {
                 let resource_id = format!(
-                    "glyph:{}:{}:{}:{}:{}:{}:{}",
+                    "glyph:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+                    face.asset_id.len(),
                     face.asset_id,
+                    face.source_mount.len(),
+                    face.source_mount,
+                    face.hash,
                     face.face_index,
-                    cache_key.glyph_id,
-                    cache_key.font_size_bits,
-                    subpixel_bin_id(cache_key.x_bin),
-                    subpixel_bin_id(cache_key.y_bin),
-                    cache_key.flags.bits(),
+                    glyph.glyph_id,
+                    glyph.size.to_bits(),
+                    glyph.gravity
                 );
                 resources
                     .entry(resource_id.clone())
@@ -488,10 +350,10 @@ fn append_raw_layout(
                     });
                 (
                     Some(resource_id),
-                    Some(physical.x + image.placement.left),
-                    Some(physical.y - image.placement.top),
+                    Some(glyph.x.round() as i32 + glyph.left),
+                    Some((y_offset + raw_line.baseline + glyph.y).round() as i32 + glyph.top),
                 )
-            } else if invisible {
+            } else if invisible || glyph.w.abs() <= f32::EPSILON {
                 (None, None, None)
             } else {
                 return Err(MediaError::message(
@@ -534,15 +396,6 @@ fn append_raw_layout(
         }
     }
     Ok(())
-}
-
-const fn subpixel_bin_id(bin: SubpixelBin) -> u8 {
-    match bin {
-        SubpixelBin::Zero => 0,
-        SubpixelBin::One => 1,
-        SubpixelBin::Two => 2,
-        SubpixelBin::Three => 3,
-    }
 }
 
 fn is_invisible_scalar(value: char) -> bool {

@@ -1,8 +1,8 @@
 use roukaku_asset::VfsUri;
 use roukaku_core::Hash256;
 use roukaku_media::{
-    CosmicTextLayoutProvider, FONT_PACKAGE_MANIFEST_SCHEMA, FontBindingContext, FontPackageEntry,
-    FontPackageManifest, LayoutConstraint, OpenTypeFeature, OverflowPolicy, PackagedFont,
+    FONT_PACKAGE_MANIFEST_SCHEMA, FontBindingContext, FontPackageEntry, FontPackageManifest,
+    LayoutConstraint, OpenTypeFeature, OverflowPolicy, PackagedFont, PangoTextLayoutProvider,
     TextDirection, TextLayoutBindingIdentity, TextLayoutConfig, TextLayoutProvider,
     TextLayoutReplayInput, TextLayoutReplayLimits, TextLayoutReplaySession,
     TextLayoutReplaySnapshot, TextLayoutRequest, TextRun, UnicodeRange, WrapPolicy,
@@ -25,6 +25,7 @@ fn fixture_font(
     let bytes = open_font_fixture(file);
     PackagedFont {
         asset_id: asset_id.into(),
+        source_mount: "memory".into(),
         family: family.into(),
         face_index: 0,
         hash: Hash256::from_sha256(&bytes),
@@ -110,6 +111,7 @@ fn multiscript_fonts() -> Vec<PackagedFont> {
 fn font(bytes: Vec<u8>) -> PackagedFont {
     PackagedFont {
         asset_id: "asset:/font/ui/poppins-regular".into(),
+        source_mount: "memory".into(),
         family: "Poppins".into(),
         face_index: 0,
         hash: Hash256::from_sha256(&bytes),
@@ -131,8 +133,8 @@ fn font(bytes: Vec<u8>) -> PackagedFont {
     }
 }
 
-fn provider() -> CosmicTextLayoutProvider {
-    CosmicTextLayoutProvider::new(
+fn provider() -> PangoTextLayoutProvider {
+    PangoTextLayoutProvider::new(
         FontBindingContext {
             target: "windows".into(),
             profile: "classic".into(),
@@ -181,10 +183,10 @@ fn request(text: &str) -> TextLayoutRequest {
     }
 }
 
-fn replay_binding(provider: &CosmicTextLayoutProvider) -> TextLayoutBindingIdentity {
+fn replay_binding(provider: &PangoTextLayoutProvider) -> TextLayoutBindingIdentity {
     TextLayoutBindingIdentity {
-        provider_id: "roukaku.media.cosmic_text".into(),
-        provider_fingerprint: Hash256::from_sha256(b"cosmic-text-test-provider-v1"),
+        provider_id: "roukaku.media.pango_ft2".into(),
+        provider_fingerprint: Hash256::from_sha256(b"pango-ft2-test-provider-v1"),
         package_hash: Hash256::from_sha256(b"text-layout-test-package-v1"),
         build_fingerprint: Hash256::from_sha256(b"text-layout-test-build-v1"),
         session_id: "session.text-layout-test".into(),

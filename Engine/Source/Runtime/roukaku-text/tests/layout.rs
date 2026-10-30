@@ -1,7 +1,7 @@
 use roukaku_core::Hash256;
 use roukaku_text::{
-    CosmicTextLayoutProvider, FontBindingContext, GlyphRole, LayoutConstraint, OpenTypeFeature,
-    OverflowPolicy, PackagedFont, RubySpan, SourceRange, TextDirection, TextLayoutConfig,
+    FontBindingContext, GlyphRole, LayoutConstraint, OpenTypeFeature, OverflowPolicy, PackagedFont,
+    PangoTextLayoutProvider, RubySpan, SourceRange, TextDirection, TextLayoutConfig,
     TextLayoutProvider, TextLayoutRequest, TextRenderLayoutUpdate, TextRenderResourceOwner,
     TextRun, UnicodeRange, VoiceReplayRef, WrapPolicy,
 };
@@ -28,6 +28,7 @@ fn fixture_font(
     let bytes = open_font_fixture(file);
     PackagedFont {
         asset_id: asset_id.into(),
+        source_mount: "memory".into(),
         family: family.into(),
         face_index: 0,
         hash: Hash256::from_sha256(&bytes),
@@ -42,6 +43,15 @@ fn fixture_font(
 
 fn multiscript_fonts() -> Vec<PackagedFont> {
     vec![
+        fixture_font(
+            "asset:/font/fallback/noto-sans-hebrew",
+            "Noto Sans Hebrew",
+            "NotoSansHebrew-Variable.ttf",
+            vec![UnicodeRange {
+                start: 0x0590,
+                end: 0x05ff,
+            }],
+        ),
         font(
             include_bytes!("../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf")
                 .to_vec(),
@@ -113,6 +123,7 @@ fn multiscript_fonts() -> Vec<PackagedFont> {
 fn font(bytes: Vec<u8>) -> PackagedFont {
     PackagedFont {
         asset_id: "asset:/font/ui/poppins-regular".into(),
+        source_mount: "memory".into(),
         family: "Poppins".into(),
         face_index: 0,
         hash: Hash256::from_sha256(&bytes),
@@ -134,8 +145,8 @@ fn font(bytes: Vec<u8>) -> PackagedFont {
     }
 }
 
-fn provider() -> CosmicTextLayoutProvider {
-    CosmicTextLayoutProvider::new(
+fn provider() -> PangoTextLayoutProvider {
+    PangoTextLayoutProvider::new(
         FontBindingContext {
             target: "windows".into(),
             profile: "classic".into(),

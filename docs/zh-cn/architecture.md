@@ -25,6 +25,13 @@ RoukakuVN 内部，`roukaku-vn-script` 编译 `.roukaku` 并生成 source map；
 
 平台 host profile 明确 renderer、decode、audio mixer、audio output、save provider 和包来源。显式 provider 绑定失败会报告错误，不能将另一后端的输出当作原绑定成功。文字、媒体和字节源等共享库可由实际消费者独立组合，不要求先创建 VN 会话。
 
+## 共享文字排版
+
+`roukaku-text::PangoTextLayoutProvider` 使用 Pango FT2、HarfBuzz、FriBidi、FreeType 和独立的 Fontconfig 字体表，只注册项目提供的字体字节及指定 face index。字体回退按 grapheme 应用显式字体链。每个 worker 独占字体表及临时字体文件；安装、移除或替换字体会使共享布局缓存失效。
+
+测量和绘制复用同一个 `Arc<TextLayoutResult>`，保留 UTF-8 source range、shaped cluster、双向文本视觉顺序及字形位图。`roukaku-text::ruby` 负责 Ruby 组合：Pango 保证被注音的正文不跨行，Roukaku 将独立排版的注音对齐到正文中心。竖排通过 EAST gravity 和 Pango 标点替代字形完成，再将共享几何映射到各列；短数字组保持横排。
+
+
 ## 已实施的运行保护
 
 这些保护属于产品行为，重构时必须保留：

@@ -239,7 +239,7 @@ pub(in super::super) fn resolve_localized<'a>(
 pub(in super::super) fn validate_story_text(
     compiled: &CompiledStory,
     localization: &VnLocalizationTable,
-    provider: &CosmicTextLayoutProvider,
+    provider: &PangoTextLayoutProvider,
     font_families: &[String],
 ) -> Result<(), NativeVnHostError> {
     let mut keys = BTreeSet::new();

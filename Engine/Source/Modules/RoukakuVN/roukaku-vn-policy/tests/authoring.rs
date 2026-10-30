@@ -15,7 +15,7 @@ use roukaku_vn_policy::authoring::*;
 use serde_json::json;
 
 struct Presentation {
-    text: CosmicTextLayoutProvider,
+    text: PangoTextLayoutProvider,
     displayed: RefCell<BTreeMap<String, Arc<TextLayoutResult>>>,
     properties: RefCell<BTreeMap<(String, String), f64>>,
     released: RefCell<BTreeSet<u64>>,
@@ -27,7 +27,7 @@ impl Presentation {
             include_bytes!("../../../../../../Examples/NativeVN/Assets/Fonts/Poppins-Regular.ttf")
                 .to_vec();
         Rc::new(Self {
-            text: CosmicTextLayoutProvider::new(
+            text: PangoTextLayoutProvider::new(
                 FontBindingContext {
                     target: "windows".into(),
                     profile: "classic".into(),
@@ -35,6 +35,7 @@ impl Presentation {
                 },
                 vec![PackagedFont {
                     asset_id: "asset:/font/poppins".into(),
+                    source_mount: "memory".into(),
                     family: "Poppins".into(),
                     face_index: 0,
                     hash: Hash256::from_sha256(&bytes),

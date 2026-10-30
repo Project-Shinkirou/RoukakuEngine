@@ -25,6 +25,13 @@ Within RoukakuVN, `roukaku-vn-script` compiles `.roukaku` and produces source ma
 
 A platform host profile explicitly selects renderer, decode, audio mixer, audio output, save providers, and package sources. Failed explicit bindings report errors rather than presenting a different backend as successful. Consumers can compose shared text, media, and byte-source libraries without first creating a VN session.
 
+## Shared text layout
+
+`roukaku-text::PangoTextLayoutProvider` uses Pango FT2 with HarfBuzz, FriBidi, FreeType and a private Fontconfig map. Only project-supplied font bytes and selected face indices are registered; the declared fallback chain is applied per grapheme. Each worker owns its font map and temporary font files. Removing or replacing fonts invalidates the shared immutable layout cache.
+
+Measurement and drawing consume the same `Arc<TextLayoutResult>`, preserving UTF-8 source ranges, shaped clusters, visual bidi order and glyph bitmaps. Ruby is composed in `roukaku-text::ruby`: Pango keeps each annotated base span on one line and Roukaku centers its independently shaped annotation over that base. Vertical layout uses EAST gravity and Pango punctuation alternates, then maps the shared geometry into columns; short digit groups remain horizontal.
+
+
 ## Enforced runtime protections
 
 These are product behavior and must survive refactoring:

@@ -226,6 +226,7 @@ fn overlapping_cjk_fallback_honors_the_explicit_family_order() {
             .to_vec();
     let jp = PackagedFont {
         asset_id: "asset:/font/fallback/noto-sans-jp".into(),
+        source_mount: "memory".into(),
         family: "Noto Sans JP".into(),
         face_index: 0,
         hash: Hash256::from_sha256(&jp_bytes),
@@ -260,7 +261,7 @@ fn overlapping_cjk_fallback_honors_the_explicit_family_order() {
             },
         ],
     );
-    let provider = CosmicTextLayoutProvider::new(
+    let provider = PangoTextLayoutProvider::new(
         FontBindingContext {
             target: "windows".into(),
             profile: "classic".into(),

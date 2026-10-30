@@ -7,7 +7,7 @@ use std::{
     },
 };
 
-use cosmic_text::{FontSystem, LayoutGlyph, SwashCache, fontdb};
+use crate::native::{NativeFonts, RawGlyph};
 use roukaku_core::Hash256;
 use roukaku_worker_budget::WorkerBudgetBroker;
 
@@ -22,7 +22,7 @@ use super::{
     },
 };
 
-pub struct CosmicTextLayoutProvider {
+pub struct PangoTextLayoutProvider {
     context: FontBindingContext,
     config: TextLayoutConfig,
     state: Mutex<ProviderState>,
@@ -62,11 +62,10 @@ impl Drop for ActiveWorkerGuard<'_> {
 }
 
 pub(super) struct FontState {
-    pub(super) fonts: Vec<PackagedFont>,
-    pub(super) database: fontdb::Database,
+    pub(super) fonts: Arc<[PackagedFont]>,
     pub(super) faces: BTreeMap<String, LoadedFace>,
-    pub(super) font_systems: BTreeMap<String, FontSystem>,
-    pub(super) swash_cache: SwashCache,
+    pub(super) locales: std::collections::BTreeSet<String>,
+    pub(super) native: Option<NativeFonts>,
     layout_cache: BTreeMap<TextLayoutCacheKey, CacheEntry>,
     access_sequence: u64,
     generation: u64,
@@ -77,6 +76,7 @@ pub(super) struct FontState {
 #[derive(Clone)]
 pub(super) struct LoadedFace {
     pub(super) asset_id: String,
+    pub(super) source_mount: String,
     pub(super) family: String,
     pub(super) face_index: u32,
     pub(super) hash: Hash256,
@@ -130,7 +130,6 @@ impl LayoutFlight {
 }
 
 pub(super) struct LoadedDatabase {
-    pub(super) database: fontdb::Database,
     pub(super) faces: BTreeMap<String, LoadedFace>,
 }
 
@@ -141,23 +140,16 @@ pub(super) struct RawLine {
     pub(super) baseline: f32,
     pub(super) width: f32,
     pub(super) height: f32,
-    pub(super) glyphs: Vec<LayoutGlyph>,
+    pub(super) glyphs: Vec<RawGlyph>,
     pub(super) source_offset: usize,
 }
 
 pub(super) struct RawLayout {
     pub(super) lines: Vec<RawLine>,
     pub(super) overflowed: bool,
-    pub(super) locale: String,
 }
 
-pub(super) struct LayoutPass {
-    pub(super) lines: Vec<RawLine>,
-    pub(super) total_lines: usize,
-    pub(super) max_width: f32,
-}
-
-impl CosmicTextLayoutProvider {
+impl PangoTextLayoutProvider {
     pub fn new(
         context: FontBindingContext,
         mut fonts: Vec<PackagedFont>,
@@ -176,11 +168,10 @@ impl CosmicTextLayoutProvider {
             face_count = loaded.faces.len(),
         );
         let catalog = FontState {
-            fonts,
-            database: loaded.database,
+            fonts: fonts.into(),
             faces: loaded.faces,
-            font_systems: BTreeMap::new(),
-            swash_cache: SwashCache::new(),
+            locales: std::collections::BTreeSet::new(),
+            native: None,
             layout_cache: BTreeMap::new(),
             access_sequence: 0,
             generation: 1,
@@ -228,7 +219,7 @@ impl CosmicTextLayoutProvider {
                 "ROUKAKU_TEXT_FONT_DUPLICATE: font asset id is already installed",
             ));
         }
-        let mut fonts = state.catalog.fonts.clone();
+        let mut fonts = state.catalog.fonts.to_vec();
         fonts.push(font);
         self.replace_fonts_locked(&mut state, fonts)?;
         tracing::info!(
@@ -255,7 +246,7 @@ impl CosmicTextLayoutProvider {
                 "ROUKAKU_TEXT_FONT_HASH: uninstall hash does not match installed font",
             ));
         }
-        let mut fonts = state.catalog.fonts.clone();
+        let mut fonts = state.catalog.fonts.to_vec();
         fonts.remove(index);
         if fonts.is_empty() {
             return Err(MediaError::message(
@@ -297,7 +288,7 @@ impl CosmicTextLayoutProvider {
                 "ROUKAKU_TEXT_FONT_HASH: replacement hash does not match installed font",
             ));
         }
-        let mut fonts = state.catalog.fonts.clone();
+        let mut fonts = state.catalog.fonts.to_vec();
         fonts[index] = replacement;
         self.replace_fonts_locked(&mut state, fonts)?;
         tracing::info!(
@@ -352,11 +343,10 @@ impl CosmicTextLayoutProvider {
         }
         let loaded = load_database(&self.context, &self.config, &fonts)?;
         fonts.sort_by(|left, right| left.asset_id.cmp(&right.asset_id));
-        state.catalog.fonts = fonts;
-        state.catalog.database = loaded.database;
+        state.catalog.fonts = fonts.into();
         state.catalog.faces = loaded.faces;
-        state.catalog.font_systems.clear();
-        state.catalog.swash_cache = SwashCache::new();
+        state.catalog.locales.clear();
+        state.catalog.native = None;
         state.catalog.layout_cache.clear();
         state.catalog.generation = state.catalog.generation.checked_add(1).ok_or_else(|| {
             MediaError::message("ROUKAKU_TEXT_FONT_GENERATION: font generation overflow")
@@ -516,7 +506,7 @@ impl CosmicTextLayoutProvider {
     }
 }
 
-impl TextLayoutProvider for CosmicTextLayoutProvider {
+impl TextLayoutProvider for PangoTextLayoutProvider {
     fn identity(&self) -> Result<TextLayoutProviderIdentity, MediaError> {
         let state = self.lock_state()?;
         Ok(TextLayoutProviderIdentity {
@@ -553,11 +543,10 @@ fn text_worker_count(context: &FontBindingContext) -> usize {
 
 fn font_worker_from_catalog(catalog: &FontState) -> FontState {
     FontState {
-        fonts: catalog.fonts.clone(),
-        database: catalog.database.clone(),
+        fonts: Arc::clone(&catalog.fonts),
         faces: catalog.faces.clone(),
-        font_systems: BTreeMap::new(),
-        swash_cache: SwashCache::new(),
+        locales: std::collections::BTreeSet::new(),
+        native: None,
         layout_cache: BTreeMap::new(),
         access_sequence: 0,
         generation: catalog.generation,

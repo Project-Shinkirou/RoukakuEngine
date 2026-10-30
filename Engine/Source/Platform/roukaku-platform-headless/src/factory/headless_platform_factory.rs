@@ -158,7 +158,7 @@ pub(super) fn validate_provider_bindings(
         }
     }
     for (field, actual, expected) in [
-        ("text", profile.providers.text.as_str(), "cosmic_text_cpu"),
+        ("text", profile.providers.text.as_str(), "pango_ft2_cpu"),
         (
             "audio_mixer",
             profile.providers.audio_mixer.as_str(),

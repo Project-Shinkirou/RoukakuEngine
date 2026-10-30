@@ -77,7 +77,6 @@ blake3 = "1"
 camino = { version = "1", features = ["serde1"] }
 clap = { version = "4", features = ["derive"] }
 configparser = "3"
-cosmic-text = "=0.19.0"
 fontdb = "=0.24.0"
 cpal = "0.18"
 crossbeam-channel = "0.5"
@@ -196,8 +195,8 @@ winit = { version = "0.30", default-features = false }
 keyring = "=4.2.0"
 wgpu = { version = "30.0", features = ["static-dxc"] }
 rayon = "1.12"
-yakui-core = { git = "https://github.com/SecondHalfGames/yakui", rev = "f686b70396a3f325093ab44181f86f6d496597f9", default-features = false }
-yakui-widgets = { git = "https://github.com/SecondHalfGames/yakui", rev = "f686b70396a3f325093ab44181f86f6d496597f9", default-features = false }
+yakui-core = { git = "https://github.com/Project-Shinkirou/yakui", rev = "6600e8fd05fff836f27e2fbfc2567d08004707c4", default-features = false }
+yakui-widgets = { git = "https://github.com/Project-Shinkirou/yakui", rev = "6600e8fd05fff836f27e2fbfc2567d08004707c4", default-features = false }
 zstd = "0.14"
 anyhow = "1"
 ndk-sys = "0.6.0"

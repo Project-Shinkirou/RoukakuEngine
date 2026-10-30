@@ -92,10 +92,16 @@ cargo xtask deps --target x86_64-pc-windows-msvc --ffmpeg --subtitle
 
 ```powershell
 $env:ROUKAKU_SUBTITLE_VCPKG_ROOT = (Resolve-Path .work/vcpkg-subtitle).Path
+$env:ROUKAKU_TEXT_VCPKG_ROOT = $env:ROUKAKU_SUBTITLE_VCPKG_ROOT
 $env:PATH = "$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/bin;$env:ROUKAKU_SUBTITLE_VCPKG_ROOT/installed/x64-windows-static-md-dynbidi/debug/bin;$env:PATH"
 ```
 
 准备 FFmpeg 后还要设置打印的 `VCPKG_ROOT`、`VCPKG_DEFAULT_TRIPLET` 和运行库 PATH。非 Windows 目标按输出设置 `PKG_CONFIG_PATH` 及 `LD_LIBRARY_PATH` 或 `DYLD_LIBRARY_PATH`。原生依赖的分发许可与动态库仍需随最终产品处理。
+
+文字与字幕共用固定版本的原生依赖。`cargo xtask deps --target <triple> --text` 将 Pango 1.58 及 HarfBuzz/FriBidi/FreeType/Fontconfig 与 libass 0.17.5 一起安装到 `.work/vcpkg-subtitle`。除 `ROUKAKU_SUBTITLE_VCPKG_ROOT` 外，还需将 `ROUKAKU_TEXT_VCPKG_ROOT` 设为该目录，并把其 `bin` 加入 PATH。也可通过 pkg-config 使用系统安装的 `pangoft2 >= 1.50`。
+
+目标与 vcpkg triplet 的对应关系为：Windows MSVC → `x64-windows-static-md-dynbidi`；Linux x64 → `x64-linux`；Android arm64/x64 → `arm64-android-dynbidi` / `x64-android-dynbidi`；macOS arm64/x64 → `arm64-osx` / `x64-osx`；iOS arm64 真机 → `arm64-ios`；iOS arm64/x64 模拟器 → `arm64-ios-simulator` / `x64-ios`。Android 使用 NDK 目标编译器和目标 pkg-config 元数据，Apple 构建需要对应 SDK。OHOS 与 emscripten 后续在同一 FT2 bridge 上接入工具链。
+
 
 ## 视频播放与音画同步
 

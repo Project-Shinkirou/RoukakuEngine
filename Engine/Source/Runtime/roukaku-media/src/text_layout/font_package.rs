@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::MediaError;
 
 use super::{
-    CosmicTextLayoutProvider, FontBindingContext, PackagedFont, TextLayoutConfig, UnicodeRange,
+    FontBindingContext, PackagedFont, PangoTextLayoutProvider, TextLayoutConfig, UnicodeRange,
 };
 
 pub const FONT_PACKAGE_MANIFEST_SCHEMA: &str = "roukaku.font_manifest.v1";
@@ -41,7 +41,7 @@ pub fn text_layout_from_package(
     manifest_section: &str,
     context: FontBindingContext,
     config: TextLayoutConfig,
-) -> Result<CosmicTextLayoutProvider, MediaError> {
+) -> Result<PangoTextLayoutProvider, MediaError> {
     load_from_package(package, manifest_section, context, config, None)
 }
 
@@ -52,7 +52,7 @@ pub fn text_layout_from_package_with_crypto(
     context: FontBindingContext,
     config: TextLayoutConfig,
     crypto: &dyn ContainerCryptoProvider,
-) -> Result<CosmicTextLayoutProvider, MediaError> {
+) -> Result<PangoTextLayoutProvider, MediaError> {
     load_from_package(package, manifest_section, context, config, Some(crypto))
 }
 
@@ -62,7 +62,7 @@ fn load_from_package(
     context: FontBindingContext,
     config: TextLayoutConfig,
     crypto: Option<&dyn ContainerCryptoProvider>,
-) -> Result<CosmicTextLayoutProvider, MediaError> {
+) -> Result<PangoTextLayoutProvider, MediaError> {
     let entry = package
         .container()
         .section_entry(manifest_section)
@@ -202,6 +202,7 @@ fn load_from_package(
         }
         fonts.push(PackagedFont {
             asset_id: font.asset_id,
+            source_mount: "package.base".into(),
             family: font.family,
             face_index: font.face_index,
             hash: font.hash,
@@ -221,7 +222,7 @@ fn load_from_package(
         profile = %context.profile,
         font_count = fonts.len(),
     );
-    CosmicTextLayoutProvider::new(context, fonts, config)
+    PangoTextLayoutProvider::new(context, fonts, config)
 }
 
 fn read_section(

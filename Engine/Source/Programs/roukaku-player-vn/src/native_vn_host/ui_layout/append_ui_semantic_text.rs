@@ -170,7 +170,7 @@ pub(in super::super) fn ordered_ui_font_families(
 }
 
 pub(in super::super) struct NativeUiTextMeasurer {
-    pub(in super::super) provider: Arc<CosmicTextLayoutProvider>,
+    pub(in super::super) provider: Arc<PangoTextLayoutProvider>,
     pub(in super::super) font_families: Arc<RwLock<Vec<String>>>,
     pub(in super::super) locale: Arc<RwLock<String>>,
     pub(in super::super) frame_layouts: Mutex<BTreeMap<String, MeasuredUiTextLayout>>,

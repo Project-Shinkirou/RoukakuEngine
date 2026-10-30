@@ -25,6 +25,13 @@ RoukakuVN の内部では、`roukaku-vn-script` が `.roukaku` をコンパイ�
 
 プラットフォームの host profile は、renderer、decode、audio mixer、audio output、save provider、パッケージの取得元を明示的に指定します。明示した provider のバインドに失敗した場合はエラーを報告し、別のバックエンドの出力を元のバインドの成功として扱うことはありません。文字、メディア、バイトソースなどの共有ライブラリは、実際の利用側が個別に組み合わせて使え、先に VN セッションを作る必要はありません。
 
+## 共通テキストレイアウト
+
+`roukaku-text::PangoTextLayoutProvider` は Pango FT2、HarfBuzz、FriBidi、FreeType と専用の Fontconfig マップを使います。プロジェクトが渡したフォントデータと指定 face index だけを登録し、明示したフォールバック順を grapheme ごとに適用します。各 worker はフォントマップと一時フォントファイルを所有し、フォントの追加・削除・置換時に共有レイアウトキャッシュを無効化します。
+
+計測と描画は同じ `Arc<TextLayoutResult>` を使い、UTF-8 source range、shaped cluster、双方向テキストの表示順、グリフビットマップを保持します。ルビの合成は `roukaku-text::ruby` が担当します。Pango が親文字の途中での改行を防ぎ、Roukaku が別途組んだルビを親文字の中央に配置します。縦書きは EAST gravity と Pango の縦用約物を使い、共有座標を列に変換します。短い数字列は横組みを維持します。
+
+
 ## 実装済みの実行時保護
 
 これらは製品の振る舞いであり、リファクタリング時にも維持する必要があります。

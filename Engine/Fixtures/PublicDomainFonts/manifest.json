@@ -5,6 +5,17 @@
   "license": "OFL-1.1",
   "fonts": [
     {
+      "id": "noto_sans_hebrew_variable",
+      "file": "NotoSansHebrew-Variable.ttf",
+      "family": "Noto Sans Hebrew",
+      "face_index": 0,
+      "license_file": "NotoSansHebrew-OFL.txt",
+      "source_url": "https://raw.githubusercontent.com/google/fonts/ec0464b978de222073645d6d3366f3fdf03376d8/ofl/notosanshebrew/NotoSansHebrew%5Bwdth,wght%5D.ttf",
+      "byte_size": 112640,
+      "sha256": "sha256:7ef36a2c3593758cdb622e1bdef4f84523e92fbc3ccc667438dd80ff54c2de88",
+      "coverage": ["hebrew", "rtl", "combining_marks"]
+    },
+    {
       "id": "noto_sans_sc_variable",
       "file": "NotoSansSC-Variable.ttf",
       "family": "Noto Sans SC",

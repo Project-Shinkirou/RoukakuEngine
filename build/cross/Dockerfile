@@ -43,7 +43,7 @@ RUN case "$TARGET" in \
        --x-install-root=/opt/apple/installed --overlay-triplets=/opt/apple/triplets \
        --triplet="$triplet" --clean-after-build --disable-metrics \
     && ln -s "/opt/apple/installed/$triplet" /opt/apple/native
-ENV LIBASS_STATIC=1
+ENV LIBASS_STATIC=1 PANGOFT2_STATIC=1
 ENV CC_x86_64_apple_darwin=/opt/apple/bin/apple-cc \
     CXX_x86_64_apple_darwin=/opt/apple/bin/apple-cxx \
     AR_x86_64_apple_darwin=/opt/apple/bin/apple-ar \

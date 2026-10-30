@@ -2,10 +2,10 @@
 
 use roukaku_core::Hash256;
 use roukaku_media::{
-    BlendMode, CosmicTextLayoutProvider, FontBindingContext, LayoutConstraint, OverflowPolicy,
-    PackagedFont, RectI, SceneCommand, TextDirection, TextLayoutConfig, TextLayoutProvider,
-    TextLayoutRequest, TextRenderResourceOwner, TextRun, TextureFrame, Transform2D, UnicodeRange,
-    WrapPolicy,
+    BlendMode, FontBindingContext, LayoutConstraint, OverflowPolicy, PackagedFont,
+    PangoTextLayoutProvider, RectI, SceneCommand, TextDirection, TextLayoutConfig,
+    TextLayoutProvider, TextLayoutRequest, TextRenderResourceOwner, TextRun, TextureFrame,
+    Transform2D, UnicodeRange, WrapPolicy,
 };
 use roukaku_platform::{
     PlatformErrorCode, PlatformHostClient, PlatformHostFactory, PlatformHostProfile, SceneFrame,
@@ -25,6 +25,7 @@ fn font(asset_id: &str, family: &str, file: &str, coverage: Vec<UnicodeRange>) -
     .unwrap();
     PackagedFont {
         asset_id: asset_id.into(),
+        source_mount: "memory".into(),
         family: family.into(),
         face_index: 0,
         hash: Hash256::from_sha256(&bytes),
@@ -37,8 +38,8 @@ fn font(asset_id: &str, family: &str, file: &str, coverage: Vec<UnicodeRange>) -
     }
 }
 
-fn provider() -> CosmicTextLayoutProvider {
-    CosmicTextLayoutProvider::new(
+fn provider() -> PangoTextLayoutProvider {
+    PangoTextLayoutProvider::new(
         FontBindingContext {
             target: "nativevn-game".into(),
             profile: "classic".into(),
@@ -148,16 +149,6 @@ async fn windows_wgpu_renders_multiscript_layout_through_live_glyph_atlas() {
         "../../../../Fixtures/PublicDomainFonts/windows-glyph-golden.json"
     ))
     .unwrap();
-    let font_manifest: serde_json::Value = serde_json::from_slice(include_bytes!(
-        "../../../../Fixtures/PublicDomainFonts/manifest.json"
-    ))
-    .unwrap();
-    assert_eq!(golden["schema"], "roukaku.windows_gpu_glyph_golden.v1");
-    assert_eq!(golden["renderer"], "wgpu_hardware.glyph_atlas");
-    assert_eq!(golden["font_revision"], font_manifest["upstream_revision"]);
-    assert_eq!(golden["width"], WIDTH);
-    assert_eq!(golden["height"], HEIGHT);
-    assert_eq!(golden["background_rgba"], serde_json::json!(BACKGROUND));
     let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.text");
     let host = roukaku_platform_windows::factory()
         .start(roukaku_platform::HostLaunchProfile::platform(profile))

@@ -3,7 +3,6 @@ use std::{
     sync::Arc,
 };
 
-use cosmic_text::{FontFeatures, fontdb};
 use roukaku_core::Hash256;
 
 use crate::MediaError;
@@ -99,6 +98,7 @@ pub(super) fn load_database(
                 id.to_string(),
                 LoadedFace {
                     asset_id: descriptor.asset_id.clone(),
+                    source_mount: descriptor.source_mount.clone(),
                     family: descriptor.family.clone(),
                     face_index: descriptor.face_index,
                     hash,
@@ -112,7 +112,7 @@ pub(super) fn load_database(
             "ROUKAKU_TEXT_FONT_FACE: not every packaged font descriptor resolved to one face",
         ));
     }
-    Ok(LoadedDatabase { database, faces })
+    Ok(LoadedDatabase { faces })
 }
 
 pub(super) fn validate_context(context: &FontBindingContext) -> Result<(), MediaError> {
@@ -148,6 +148,9 @@ fn validate_font(context: &FontBindingContext, font: &PackagedFont) -> Result<()
     if !font.asset_id.starts_with("asset:/")
         || font.asset_id.contains("..")
         || font.asset_id.contains('\\')
+        || font.source_mount.trim().is_empty()
+        || font.source_mount.len() > 256
+        || font.source_mount.chars().any(char::is_control)
         || font.family.trim().is_empty()
         || font.family.len() > 128
         || !safe_identity(&font.license_id)
@@ -231,14 +234,14 @@ pub(super) fn validate_request(
             "ROUKAKU_TEXT_LAYOUT_CONSTRAINT: layout constraints must be finite and positive",
         ));
     }
-    if request.constraint.max_width > u32::MAX as f32
+    if values.iter().any(|value| *value > i32::MAX as f32 / 1024.0)
         || request
             .constraint
             .max_height
-            .is_some_and(|value| value > u32::MAX as f32)
+            .is_some_and(|value| value > i32::MAX as f32 / 1024.0)
     {
         return Err(MediaError::message(
-            "ROUKAKU_TEXT_LAYOUT_CONSTRAINT: layout dimensions exceed renderer coordinates",
+            "ROUKAKU_TEXT_LAYOUT_CONSTRAINT: layout dimensions exceed Pango coordinates",
         ));
     }
     if request.constraint.font_size > request.constraint.line_height * 4.0 {
@@ -300,7 +303,7 @@ pub(super) fn validate_request(
             validate_ruby(run, ruby)?;
         }
     }
-    cosmic_features(&request.features)?;
+    pango_features(&request.features)?;
     Ok(())
 }
 
@@ -350,8 +353,8 @@ pub(super) fn validate_direction(
     Ok(())
 }
 
-pub(super) fn cosmic_features(features: &[OpenTypeFeature]) -> Result<FontFeatures, MediaError> {
-    let mut result = FontFeatures::new();
+pub(super) fn pango_features(features: &[OpenTypeFeature]) -> Result<String, MediaError> {
+    let mut result = Vec::with_capacity(features.len());
     let mut seen = BTreeSet::new();
     for feature in features {
         let bytes: [u8; 4] = feature.tag.as_bytes().try_into().map_err(|_| {
@@ -362,9 +365,9 @@ pub(super) fn cosmic_features(features: &[OpenTypeFeature]) -> Result<FontFeatur
                 "ROUKAKU_TEXT_FEATURE: feature tag is invalid or duplicated",
             ));
         }
-        result.set(cosmic_text::FeatureTag::new(&bytes), feature.value);
+        result.push(format!("{}={}", feature.tag, feature.value));
     }
-    Ok(result)
+    Ok(result.join(","))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -475,16 +478,6 @@ const fn overflow_key(overflow: OverflowPolicy) -> u8 {
         OverflowPolicy::EllipsisMiddle => 3,
         OverflowPolicy::EllipsisEnd => 4,
     }
-}
-
-pub(super) fn source_line_offsets(text: &str) -> Vec<usize> {
-    let mut offsets = vec![0];
-    for (index, byte) in text.bytes().enumerate() {
-        if byte == b'\n' {
-            offsets.push(index + 1);
-        }
-    }
-    offsets
 }
 
 pub(super) fn ranges_overlap(left: &SourceRange, right: &SourceRange) -> bool {
