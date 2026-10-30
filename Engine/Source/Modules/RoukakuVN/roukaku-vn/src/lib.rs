@@ -1,19 +1,15 @@
-//! Typed RoukakuVN product sessions and authoring entry points.
+//! Typed RoukakuVN product sessions over authored Luau story modules.
 
-pub use roukaku_vn_core::{VnPlayerCommand, VnRunConfig, VnRuntime, VnWaitKind};
-pub use roukaku_vn_presentation::{StageModel, VnPresentationProviderManifest};
-pub use roukaku_vn_script::{
-    CompileRoukakuProjectOptions, FormatOptions, RoukakuSource, SystemStoryManifest,
-    SystemStoryValidationStatus, VnSystemUiProfileManifest, compile_roukaku_project,
-    format_roukaku_source,
+pub use roukaku_vn_package::{
+    LuauStoryBundle, VnPlayerCommand, VnPresentationProviderManifest, VnRunConfig, VnWaitKind,
 };
 
 mod limits;
 pub use limits::{VnHostError, VnHostLimits};
 mod session;
 pub use session::{
-    NativeVnStateView, NativeVnStepCommand, NativeVnStepInput, NativeVnStepOutput, VnSession,
-    VnSessionConfig,
+    NativeVnPropertySample, NativeVnStateView, NativeVnStepCommand, NativeVnStepInput,
+    NativeVnStepOutput, VnSession, VnSessionConfig, VnStepComplexityMetrics,
 };
 
 pub use roukaku_vn_policy::{

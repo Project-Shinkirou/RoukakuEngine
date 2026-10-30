@@ -1,11 +1,10 @@
 use super::*;
 
-pub(crate) fn compile_project_ui(
-    story: CompiledStory,
+pub(crate) fn compile_ui(
     sources: &[RoukakuSource],
     ui_themes: Vec<UiThemeManifest>,
     controller_sources: BTreeMap<String, String>,
-) -> Result<CompiledVnProject, VnError> {
+) -> Result<CompiledVnUi, VnError> {
     for source in sources {
         let parsed = crate::parse_roukaku_source(source.path.clone(), &source.text);
         if let Some(diagnostic) = parsed
@@ -199,18 +198,7 @@ pub(crate) fn compile_project_ui(
     };
     ui_bindings.hash = hash_bindings(&ui_bindings)?;
     ui_bindings.validate().map_err(ui_error)?;
-    let project_hash = hash_project(
-        &story,
-        &ui_blueprints,
-        &ui_bindings,
-        &themes,
-        &controller_sources,
-        &system_ui_profiles,
-    )?;
-    Ok(CompiledVnProject {
-        schema: "roukaku.vn.compiled_project.v5".to_string(),
-        project_hash,
-        story,
+    Ok(CompiledVnUi {
         ui_blueprints,
         ui_bindings,
         ui_source_map: source_map,
@@ -219,6 +207,29 @@ pub(crate) fn compile_project_ui(
         theme_ids,
         themes,
         system_ui_profiles,
+    })
+}
+
+pub(crate) fn compile_project_ui(
+    story: CompiledStory,
+    sources: &[RoukakuSource],
+    ui_themes: Vec<UiThemeManifest>,
+    controller_sources: BTreeMap<String, String>,
+) -> Result<CompiledVnProject, VnError> {
+    let ui = compile_ui(sources, ui_themes, controller_sources)?;
+    let project_hash = hash_project(
+        &story,
+        &ui.ui_blueprints,
+        &ui.ui_bindings,
+        &ui.themes,
+        &ui.controller_sources,
+        &ui.system_ui_profiles,
+    )?;
+    Ok(CompiledVnProject {
+        schema: "roukaku.vn.compiled_project.v5".to_string(),
+        project_hash,
+        story,
+        ui,
     })
 }
 

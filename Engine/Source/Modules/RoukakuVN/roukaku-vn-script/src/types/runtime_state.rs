@@ -35,11 +35,10 @@ pub enum RoukakuSourceRole {
     Ui,
 }
 
+/// Compiled UI declarations, themes, controllers and system UI policy. Story
+/// sources are packaged separately as authored Luau modules.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct CompiledVnProject {
-    pub schema: String,
-    pub project_hash: Hash256,
-    pub story: CompiledStory,
+pub struct CompiledVnUi {
     pub ui_blueprints: UiBlueprintBundle,
     pub ui_bindings: UiBindingManifest,
     pub ui_source_map: BTreeMap<String, SourceRef>,
@@ -48,6 +47,14 @@ pub struct CompiledVnProject {
     pub theme_ids: BTreeSet<String>,
     pub themes: BTreeMap<String, UiThemeManifest>,
     pub system_ui_profiles: BTreeMap<String, SystemUiProfilePolicy>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct CompiledVnProject {
+    pub schema: String,
+    pub project_hash: Hash256,
+    pub story: CompiledStory,
+    pub ui: CompiledVnUi,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

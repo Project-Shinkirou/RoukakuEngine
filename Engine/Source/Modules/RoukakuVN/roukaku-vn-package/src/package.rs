@@ -1,24 +1,61 @@
 use std::collections::BTreeMap;
 
-use roukaku_core::{Hash128, Hash256, SourceRef};
+use roukaku_core::{Hash256, SourceRef};
 use roukaku_package::{ContainerError, PackageReader, SectionPayload};
 use roukaku_ui_core::{UiBindingManifest, UiBlueprintBundle};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CompiledStory, CompiledVnProject, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA,
-    VnAdvancedPresentationManifest, VnCommercialBaselineManifest, VnExtensionManifest,
+    CompiledVnUi, LuauStoryBundle, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA, VnExtensionManifest,
     VnPolicyBundleManifest, VnPolicyBundleSourceCache, VnPresentationProviderManifest,
-    VnProfileManifest, VnStandardCommandManifest, VnSystemUiProfileManifest,
+    VnProfileManifest, VnStandardCommandManifest, VnSystemUiProfileManifest, load_luau_story_bundle,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct VnCompiledProjectRoot {
+pub const VN_PROJECT_SCHEMA: &str = "roukaku.vn.project.v6";
+pub const VN_PROJECT_ROOT_SCHEMA: &str = "roukaku.vn.project_root.v5";
+
+/// A packaged NativeVN product: authored Luau story modules plus compiled UI.
+#[derive(Debug, Clone, PartialEq)]
+pub struct VnProject {
     pub schema: String,
-    pub compiled_project_schema: String,
     pub project_hash: Hash256,
-    pub story_hash: Hash128,
+    pub story: LuauStoryBundle,
+    pub ui: CompiledVnUi,
+}
+
+impl VnProject {
+    pub fn new(story: LuauStoryBundle, ui: CompiledVnUi) -> Result<Self, ContainerError> {
+        story.validate()?;
+        let project_hash = project_hash(&story, &ui)?;
+        Ok(Self {
+            schema: VN_PROJECT_SCHEMA.to_string(),
+            project_hash,
+            story,
+            ui,
+        })
+    }
+}
+
+fn project_hash(story: &LuauStoryBundle, ui: &CompiledVnUi) -> Result<Hash256, ContainerError> {
+    let bytes = postcard::to_allocvec(&(
+        story.source_revision,
+        ui.ui_blueprints.hash,
+        ui.ui_bindings.hash,
+        &ui.themes,
+        &ui.controller_sources,
+        &ui.system_ui_profiles,
+    ))
+    .map_err(|error| ContainerError::message(format!("ROUKAKU_VN_PROJECT_ENCODE: {error}")))?;
+    Ok(Hash256::from_sha256(&bytes))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct VnProjectRoot {
+    pub schema: String,
+    pub project_schema: String,
+    pub project_hash: Hash256,
+    pub story_revision: Hash256,
     pub ui_blueprint_hash: Hash256,
     pub ui_binding_hash: Hash256,
     pub ui_provider: String,
@@ -39,14 +76,14 @@ pub struct VnUiBackendManifest {
 }
 
 pub fn package_sections_for_project(
-    project: &CompiledVnProject,
+    project: &VnProject,
     profiles: &[String],
     target: &str,
 ) -> Result<Vec<SectionPayload>, ContainerError> {
     tracing::info!(
         event = "vn.package.build.start",
         profile_count = profiles.len(),
-        state_count = project.story.states.len(),
+        story_module_count = project.story.modules.len(),
         target,
         "RoukakuVN package section build started"
     );
@@ -55,49 +92,45 @@ pub fn package_sections_for_project(
         target: target.to_string(),
         profiles: profiles.to_vec(),
     };
-    let root = VnCompiledProjectRoot {
-        schema: "roukaku.vn.compiled_project_root.v4".to_string(),
-        compiled_project_schema: "roukaku.vn.compiled_project.v5".to_string(),
+    let root = VnProjectRoot {
+        schema: VN_PROJECT_ROOT_SCHEMA.to_string(),
+        project_schema: project.schema.clone(),
         project_hash: project.project_hash,
-        story_hash: project.story.story_hash,
-        ui_blueprint_hash: project.ui_blueprints.hash,
-        ui_binding_hash: project.ui_bindings.hash,
+        story_revision: project.story.source_revision,
+        ui_blueprint_hash: project.ui.ui_blueprints.hash,
+        ui_binding_hash: project.ui.ui_bindings.hash,
         ui_provider: "roukaku.ui.yakui".to_string(),
     };
-    let mut sections = vec![
-        SectionPayload::postcard(
-            "vn.compiled_project",
-            "roukaku.vn.compiled_project_root.v4",
-            &root,
-        )?,
-        SectionPayload::postcard("vn.story", "roukaku.vn.story", &project.story)?,
+    let sections = vec![
+        SectionPayload::postcard("vn.project", VN_PROJECT_ROOT_SCHEMA, &root)?,
+        project.story.section()?,
         SectionPayload::postcard(
             "vn.ui_blueprint_bundle",
             "roukaku.ui_blueprint_bundle.v2",
-            &project.ui_blueprints,
+            &project.ui.ui_blueprints,
         )?,
         SectionPayload::postcard(
             "vn.ui_binding_manifest",
             "roukaku.ui_binding_manifest.v1",
-            &project.ui_bindings,
+            &project.ui.ui_bindings,
         )?,
         SectionPayload::postcard(
             "vn.ui_source_map",
             "roukaku.vn.ui_source_map.v1",
-            &project.ui_source_map,
+            &project.ui.ui_source_map,
         )?,
         SectionPayload::postcard(
             "vn.ui_controller_manifest",
             "roukaku.vn.ui_controller_manifest.v1",
             &VnUiControllerBundle {
                 schema: "roukaku.vn.ui_controller_manifest.v1".to_string(),
-                sources: project.controller_sources.clone(),
+                sources: project.ui.controller_sources.clone(),
             },
         )?,
         SectionPayload::postcard(
             "vn.ui_theme_manifest",
             "roukaku.ui_theme_bundle.v1",
-            &project.themes,
+            &project.ui.themes,
         )?,
         SectionPayload::postcard(
             "vn.ui_backend_manifest",
@@ -140,31 +173,11 @@ pub fn package_sections_for_project(
             &VnPresentationProviderManifest::standard(),
         )?,
         SectionPayload::postcard(
-            "vn.commercial_baseline_manifest",
-            "roukaku.vn.commercial_baseline_manifest.v1",
-            &VnCommercialBaselineManifest::from_compiled(&project.story),
-        )?,
-        SectionPayload::postcard(
-            "vn.system_story_manifest",
-            "roukaku.vn.system_story_manifest.v2",
-            &project.story.system_story_manifest,
-        )?,
-        SectionPayload::postcard(
             "vn.system_ui_profile_manifest",
-            "roukaku.vn.system_ui_profile_manifest.v3",
-            &VnSystemUiProfileManifest::from_compiled(project, vec!["zh-Hans".to_string()]),
+            "roukaku.vn.system_ui_profile_manifest.v4",
+            &VnSystemUiProfileManifest::from_ui(&project.ui, vec!["zh-Hans".to_string()]),
         )?,
     ];
-    if profiles
-        .iter()
-        .any(|profile| VnAdvancedPresentationManifest::profile_requires_advanced(profile))
-    {
-        sections.push(SectionPayload::postcard(
-            "vn.advanced_presentation_manifest",
-            "roukaku.vn.advanced_presentation_manifest.v1",
-            &VnAdvancedPresentationManifest::from_compiled(&project.story, "advanced-vn"),
-        )?);
-    }
     tracing::info!(
         event = "vn.package.build.complete",
         section_count = sections.len(),
@@ -213,19 +226,17 @@ pub fn load_presentation_provider_manifest(
     Ok(manifest)
 }
 
-pub fn decode_compiled_project(
-    package: &PackageReader,
-) -> Result<CompiledVnProject, ContainerError> {
-    let root: VnCompiledProjectRoot = package.container().decode_postcard("vn.compiled_project")?;
-    if root.schema != "roukaku.vn.compiled_project_root.v4"
-        || root.compiled_project_schema != "roukaku.vn.compiled_project.v5"
+pub fn decode_vn_project(package: &PackageReader) -> Result<VnProject, ContainerError> {
+    let root: VnProjectRoot = package.container().decode_postcard("vn.project")?;
+    if root.schema != VN_PROJECT_ROOT_SCHEMA
+        || root.project_schema != VN_PROJECT_SCHEMA
         || root.ui_provider != "roukaku.ui.yakui"
     {
         return Err(ContainerError::message(
-            "ROUKAKU_VN_COMPILED_PROJECT_ROOT: invalid project root or UI provider",
+            "ROUKAKU_VN_PROJECT_ROOT: invalid project root or UI provider",
         ));
     }
-    let story: CompiledStory = package.container().decode_postcard("vn.story")?;
+    let story = load_luau_story_bundle(package)?;
     let ui_blueprints: UiBlueprintBundle = package
         .container()
         .decode_postcard("vn.ui_blueprint_bundle")?;
@@ -243,48 +254,36 @@ pub fn decode_compiled_project(
     let system_ui: VnSystemUiProfileManifest = package
         .container()
         .decode_postcard("vn.system_ui_profile_manifest")?;
-    if system_ui.schema != "roukaku.vn.system_ui_profile_manifest.v3" {
+    if system_ui.schema != "roukaku.vn.system_ui_profile_manifest.v4" {
         return Err(ContainerError::message(
-            "ROUKAKU_VN_SYSTEM_UI_PROFILE_SCHEMA: packaged system UI policy is not v3",
+            "ROUKAKU_VN_SYSTEM_UI_PROFILE_SCHEMA: packaged system UI policy is not v4",
         ));
     }
-    if story.story_hash != root.story_hash
+    if story.source_revision != root.story_revision
         || ui_blueprints.hash != root.ui_blueprint_hash
         || ui_bindings.hash != root.ui_binding_hash
     {
         return Err(ContainerError::message(
-            "ROUKAKU_VN_COMPILED_PROJECT_HASH: project section hashes do not match the root",
+            "ROUKAKU_VN_PROJECT_HASH: project section hashes do not match the root",
         ));
     }
-    let project_hash = Hash256::from_sha256(
-        &postcard::to_allocvec(&(
-            story.story_hash,
-            ui_blueprints.hash,
-            ui_bindings.hash,
-            &themes,
-            &controllers.sources,
-            &system_ui.profiles,
-        ))
-        .map_err(|error| {
-            ContainerError::message(format!("ROUKAKU_VN_COMPILED_PROJECT_ENCODE: {error}"))
-        })?,
-    );
-    if project_hash != root.project_hash {
-        return Err(ContainerError::message(
-            "ROUKAKU_VN_COMPILED_PROJECT_HASH: project root hash does not cover the packaged sections",
-        ));
-    }
-    Ok(CompiledVnProject {
-        schema: "roukaku.vn.compiled_project.v5".to_string(),
-        project_hash: root.project_hash,
+    let project = VnProject::new(
         story,
-        ui_blueprints,
-        ui_bindings,
-        ui_source_map,
-        controller_ids: controllers.sources.keys().cloned().collect(),
-        controller_sources: controllers.sources,
-        theme_ids: themes.keys().cloned().collect(),
-        themes,
-        system_ui_profiles: system_ui.profiles,
-    })
+        CompiledVnUi {
+            ui_blueprints,
+            ui_bindings,
+            ui_source_map,
+            controller_ids: controllers.sources.keys().cloned().collect(),
+            controller_sources: controllers.sources,
+            theme_ids: themes.keys().cloned().collect(),
+            themes,
+            system_ui_profiles: system_ui.profiles,
+        },
+    )?;
+    if project.project_hash != root.project_hash {
+        return Err(ContainerError::message(
+            "ROUKAKU_VN_PROJECT_HASH: project root hash does not cover the packaged sections",
+        ));
+    }
+    Ok(project)
 }

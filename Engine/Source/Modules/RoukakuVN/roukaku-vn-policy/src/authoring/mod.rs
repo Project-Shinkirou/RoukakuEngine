@@ -313,7 +313,7 @@ impl LuauAuthoringRuntime {
         {
             let mut shared = self.context.shared.borrow_mut();
             shared.scope = shared.root.child();
-            shared.paragraph = Some(paragraph);
+            shared.paragraph = Some(paragraph.clone());
             shared.story_thread = Some(thread.to_pointer() as usize);
             shared.visits.clear();
             shared.pending_enter = None;
@@ -329,7 +329,16 @@ impl LuauAuthoringRuntime {
         }
         self.thread = Some(thread);
         self.status = StoryStatus::Idle;
+        if let Err(error) = self.context.host.paragraph_started(&paragraph) {
+            self.fail();
+            return Err(error);
+        }
         self.resume(Value::Nil)
+    }
+
+    /// The paragraph whose coroutine is live or most recently ran.
+    pub fn paragraph(&self) -> Option<ParagraphId> {
+        self.context.shared.borrow().paragraph.clone()
     }
 
     fn resume(&mut self, input: Value) -> mlua::Result<StoryStatus> {
@@ -345,7 +354,8 @@ impl LuauAuthoringRuntime {
             self.fail();
             return Err(error);
         }
-        if let Some(target) = self.context.shared.borrow_mut().pending_enter.take() {
+        let pending_enter = self.context.shared.borrow_mut().pending_enter.take();
+        if let Some(target) = pending_enter {
             return self.start_paragraph(target);
         }
         let status = self.thread.as_ref().map(Thread::status);

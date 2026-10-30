@@ -5662,14 +5662,14 @@ dependencies = [
 name = "roukaku-vn"
 version = "0.1.0"
 dependencies = [
+ "mlua",
  "roukaku-core",
- "roukaku-plugin-abi",
  "roukaku-runtime",
- "roukaku-vn-core",
+ "roukaku-text",
+ "roukaku-vn-package",
  "roukaku-vn-policy",
- "roukaku-vn-presentation",
- "roukaku-vn-script",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]

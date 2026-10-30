@@ -55,9 +55,17 @@ fn setup(blocked: bool) -> (VnSession, Arc<Host>) {
         source_hash: roukaku_core::Hash256::from_sha256(POLICY.as_bytes()).to_string(),
         read_text: vec!["asset:/text/note".parse().unwrap()],
     };
-    let compiled = compile_roukaku_project([RoukakuSource::story("actions.roukaku", "story main #@id main\nstate start #@id start\n  scene room #@id room\n    mutate project.count = 0 #@id init\n    jump loop #@id next\nstate loop #@id loop\n  scene again #@id again\n    note #@id note.load\n    jump loop #@id repeat\n"), RoukakuSource::story("system.roukaku", "story system.config #@id system.config\n  scene config #@id config\n    system_page kind:config policy:roukaku.policy.standard #@id page.config\n")], CompileRoukakuProjectOptions::default().bind_extension(descriptor)).unwrap();
+    let story = super::super::test_support::story(
+        r#"return { paragraphs = {
+            start = function() rk.enter("story.main", "loop") end,
+            loop = function()
+                rk.call("roukaku.vn.action", "run", "note.load", "note", {})
+                rk.enter("story.main", "loop")
+            end,
+        } }"#,
+    );
     let mut session = VnSession::new(
-        Arc::new(compiled.into()),
+        story,
         VnRunConfig::classic("en"),
         VnSessionConfig {
             target_id: "policy".into(),
@@ -112,12 +120,12 @@ fn automatic_action_ticks_complete_and_repeat_source_without_old_results() {
     tick(&mut session, 1, roukaku_runtime::TickMode::Live);
     for step in 2..100 {
         tick(&mut session, step, roukaku_runtime::TickMode::Live);
-        if session.runtime.state().variables["project"]["count"] == 2 {
+        if count(&session) == 2 {
             break;
         }
         std::thread::sleep(Duration::from_millis(1));
     }
-    assert_eq!(session.runtime.state().variables["project"]["count"], 2);
+    assert_eq!(count(&session), 2);
     assert_eq!(host.calls.load(Ordering::SeqCst), 2);
     assert!(session.policy_io_snapshot().unwrap().requests.is_empty());
     let save = session.save().unwrap();
@@ -130,7 +138,7 @@ fn pending_restore_interrupts_and_rejects_corrupt_candidate_without_stopping_liv
     tick(&mut session, 1, roukaku_runtime::TickMode::Live);
     tick(&mut session, 2, roukaku_runtime::TickMode::Live);
     wait_calls(&host, 1);
-    assert_eq!(session.runtime.state().variables["project"]["count"], 0);
+    assert_eq!(count(&session), 0);
     let save = session.save().unwrap();
     let mut snapshot = roukaku_runtime::read_runtime_save(&save, &Default::default()).unwrap();
     let component = snapshot
@@ -189,7 +197,7 @@ fn pending_restore_interrupts_and_rejects_corrupt_candidate_without_stopping_liv
         3,
         roukaku_runtime::TickMode::RestoreContinuation,
     );
-    assert_eq!(session.runtime.state().variables["project"]["count"], 1);
+    assert_eq!(count(&session), 1);
     assert_eq!(host.calls.load(Ordering::SeqCst), 1);
     session.save().unwrap();
 }
@@ -217,13 +225,13 @@ fn system_page_pauses_action_and_restored_return_does_not_dispatch_again() {
                 seed: 41,
             },
             mode: roukaku_runtime::TickMode::Live,
-            command: NativeVnStepCommand::Execute(CoreVnPlayerCommand::OpenSystem {
-                page: roukaku_vn_core::SystemPageKind::Config,
+            command: NativeVnStepCommand::Execute(VnPlayerCommand::OpenSystem {
+                page: SystemPageKind::Config,
             }),
         })
         .unwrap();
     assert!(!session.policy_action_pending().unwrap());
-    assert_eq!(session.runtime.state().variables["project"]["count"], 0);
+    assert_eq!(count(&session), 0);
     let save = session.save().unwrap();
     session.restore(save).unwrap();
     assert!(!session.policy_action_pending().unwrap());
@@ -235,13 +243,23 @@ fn system_page_pauses_action_and_restored_return_does_not_dispatch_again() {
                 seed: 41,
             },
             mode: roukaku_runtime::TickMode::RestoreContinuation,
-            command: NativeVnStepCommand::Execute(CoreVnPlayerCommand::ReturnSystem),
+            command: NativeVnStepCommand::Execute(VnPlayerCommand::ReturnSystem),
         })
         .unwrap();
     assert!(session.policy_action_pending().unwrap());
     tick(&mut session, 5, roukaku_runtime::TickMode::Live);
-    assert_eq!(session.runtime.state().variables["project"]["count"], 1);
+    assert_eq!(count(&session), 1);
     assert_eq!(host.calls.load(Ordering::SeqCst), 1);
     assert_eq!(host.drops.load(Ordering::SeqCst), 1);
     session.save().unwrap();
+}
+
+fn count(session: &VnSession) -> i64 {
+    session
+        .state
+        .variables
+        .get("project")
+        .and_then(|scope| scope.get("count"))
+        .copied()
+        .unwrap_or(0)
 }

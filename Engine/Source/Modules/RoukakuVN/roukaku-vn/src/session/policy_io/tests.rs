@@ -41,9 +41,12 @@ impl PolicyIoHost for TestHost {
     }
 }
 fn session() -> VnSession {
-    let compiled = compile_roukaku_project([RoukakuSource::story("io.roukaku", "story main #@id main\nstate start #@id start\n  scene room #@id room\n    text key:hello speaker:narrator #@id hello\n")], Default::default()).unwrap();
     VnSession::new(
-        Arc::new(compiled.into()),
+        super::super::test_support::story(
+            r#"return { paragraphs = { start = function()
+                rk.call("roukaku.vn.dialog", "show", "hello", { key = "hello", speaker = "narrator" })
+            end } }"#,
+        ),
         VnRunConfig::classic("en"),
         VnSessionConfig {
             target_id: "io".into(),
@@ -67,7 +70,7 @@ fn tick(session: &mut VnSession, fixed_step: u64, mode: roukaku_runtime::TickMod
             command: if fixed_step == 1 {
                 NativeVnStepCommand::LaunchDefault
             } else {
-                NativeVnStepCommand::Execute(CoreVnPlayerCommand::SetAuto { enabled: false })
+                NativeVnStepCommand::Execute(VnPlayerCommand::SetAuto { enabled: false })
             },
         })
         .unwrap();
@@ -326,7 +329,11 @@ fn forged_policy_await_binding_does_not_replace_or_cancel_the_live_session() {
     evaluate(&mut session, READ);
     started.recv_timeout(Duration::from_secs(3)).unwrap();
     let scope = session.engine.world().task_scope();
-    let mut snapshot = materialized_save_snapshot(&session).unwrap();
+    let mut snapshot = roukaku_runtime::read_runtime_save(
+        &session.save().unwrap(),
+        &roukaku_core::SchemaMigrationRegistry::default(),
+    )
+    .unwrap();
     let component = snapshot
         .actors
         .component_mut(session.policy_component)

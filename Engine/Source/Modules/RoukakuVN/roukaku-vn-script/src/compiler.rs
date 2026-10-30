@@ -5,6 +5,7 @@ use roukaku_core::{Diagnostic, DiagnosticSeverity, Hash128, SourceRef};
 use crate::{
     BranchOp, ChoiceOption, CommandManifest, CommandManifestEntry, CommandProvider,
     CommandRegistry, CommandSourceMap, CompiledCommand, CompiledStory, CompiledVnProject,
+    CompiledVnUi,
     ExtensionCommandDescriptor, MutationOp, PresentationCommand, RoukakuSource, RoukakuSourceRole,
     RouteEdge, RouteGraph, RouteNode, Scene, State, Story, StoryManifest, StoryManifestEntry,
     SystemActionEffect, SystemActionProgram, SystemPageKind, SystemStoryManifest,
@@ -19,6 +20,7 @@ pub use semantic_pass::CompileRoukakuProjectOptions;
 pub use semantic_pass::SEMANTIC_PASS_ORDER;
 pub use semantic_pass::SemanticPass;
 pub use semantic_pass::compile_roukaku_project;
+pub use semantic_pass::compile_roukaku_ui;
 use semantic_pass::trace_pass;
 mod validate_structure;
 

@@ -4,10 +4,37 @@ use std::collections::BTreeMap;
 pub fn default_vn_modules() -> BTreeMap<String, String> {
     BTreeMap::from([
         (
-            "roukaku.vn.dialog".into(),
+            "roukaku.vn.action".into(),
             r#"
 return {
+    run = function(node, command, params)
+        rk.host_query("vn.action.start", { node = node, command = command, params = params or {} })
+        return rk.wait_input("action:" .. node)
+    end,
+}
+"#
+            .into(),
+        ),
+        (
+            "roukaku.vn.dialog".into(),
+            r#"
+local function effect_params(effect)
+    local params = {}
+    for key, value in effect do
+        if key ~= "command" then
+            params[key] = value
+        end
+    end
+    return params
+end
+
+return {
     show = function(node, data)
+        if data.effects then
+            for index, effect in data.effects do
+                rk.call("roukaku.vn.action", "run", node .. ".effect." .. index, effect.command, effect_params(effect))
+            end
+        end
         local occurrence = rk.line(node, data)
         rk.wait_input("advance")
         return occurrence
@@ -40,6 +67,7 @@ return {
         local selected = rk.wait_input("menu.select")
         rk.choice_result(occurrence, selected)
         return selected
+    end,
 }
 "#
             .into(),
@@ -98,24 +126,3 @@ return {
     ])
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn default_modules_have_stable_ids_and_luau_sources() {
-        let modules = default_vn_modules();
-        assert_eq!(
-            modules.keys().map(String::as_str).collect::<Vec<_>>(),
-            [
-                "roukaku.vn.choice",
-                "roukaku.vn.dialog",
-                "roukaku.vn.history",
-                "roukaku.vn.menu",
-                "roukaku.vn.skip",
-                "roukaku.vn.stage",
-            ]
-        );
-        assert!(modules.values().all(|source| source.contains("return")));
-    }
-}

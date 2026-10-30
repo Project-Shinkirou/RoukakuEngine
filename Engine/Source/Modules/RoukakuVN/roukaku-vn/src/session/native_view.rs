@@ -73,15 +73,14 @@ mod tests {
     use super::*;
 
     fn history() -> VnRuntimeState {
-        let compiled = compile_roukaku_project(
-            [RoukakuSource::story("view.roukaku", "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:hello speaker:narrator #@id hello\n")],
-            Default::default(),
-        ).unwrap();
-        let mut runtime = CoreVnRuntime::new(compiled, VnRunConfig::classic("en")).unwrap();
-        runtime
-            .apply(runtime.default_launch_command().unwrap())
-            .unwrap();
-        let mut state = runtime.state().clone();
+        let mut session = super::super::test_support::session(
+            "view",
+            r#"return { paragraphs = { start = function()
+                rk.call("roukaku.vn.dialog", "show", "hello", { key = "hello", speaker = "narrator" })
+            end } }"#,
+        );
+        super::super::test_support::launch(&mut session);
+        let mut state = session.state.clone();
         let entry = state.backlog.last().unwrap().clone();
         state.backlog = (0..4096)
             .map(|index| {
@@ -92,7 +91,7 @@ mod tests {
             .collect();
         state.voice_replay.insert(
             "voice.one".into(),
-            roukaku_vn_core::VoiceReplayEntry {
+            VoiceReplayEntry {
                 voice: "voice.one".into(),
                 line_key: "hello".into(),
                 speaker: Some("narrator".into()),
@@ -101,12 +100,19 @@ mod tests {
         state
             .variables
             .insert("private".into(), BTreeMap::from([("secret".into(), 42)]));
-        state.read_state.insert("hello".into());
+        state.route_flags.insert(
+            "launch".into(),
+            roukaku_vn_package::VnRouteFlag::new(
+                roukaku_vn_package::VnRouteFlagKind::Launch,
+                "launch",
+                "story.main/start",
+            ),
+        );
         state
     }
 
     fn page(state: &mut VnRuntimeState, page: SystemPageKind) {
-        state.system_stack = vec![roukaku_vn_core::VnSystemFrame {
+        state.system_stack = vec![VnSystemFrame {
             return_to: state.cursor.clone().unwrap(),
             return_wait: state.pending_wait.clone(),
             return_choice: state.pending_choice.clone(),

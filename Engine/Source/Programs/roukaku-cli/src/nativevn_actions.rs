@@ -98,31 +98,3 @@ pub(super) fn validate_resources(
     }
     Ok(())
 }
-
-pub(super) fn validate_commands(
-    project: &roukaku_vn_script::CompiledVnProject,
-    bindings: &[PolicyActionBinding],
-) -> Result<(), CliError> {
-    use roukaku_vn_script::{CompiledCommand, POLICY_ACTION_PROVIDER, PresentationCommand};
-    for command in project
-        .story
-        .states
-        .values()
-        .flat_map(|state| &state.scenes)
-        .flat_map(|scene| &scene.commands)
-    {
-        if let CompiledCommand::Presentation {
-            command: PresentationCommand::Extension(extension),
-            ..
-        } = command
-            && extension.provider_id == POLICY_ACTION_PROVIDER
-        {
-            bindings
-                .iter()
-                .find(|b| b.descriptor.command == extension.command)
-                .ok_or("ROUKAKU_VN_POLICY_ACTION_BINDING_MISSING")?
-                .validate_command(extension)?;
-        }
-    }
-    Ok(())
-}

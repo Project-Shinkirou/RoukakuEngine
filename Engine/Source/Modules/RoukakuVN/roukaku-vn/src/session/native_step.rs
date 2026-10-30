@@ -5,7 +5,7 @@ use super::*;
 pub enum NativeVnStepCommand {
     LaunchDefault,
     PollPolicy,
-    Execute(CoreVnPlayerCommand),
+    Execute(VnPlayerCommand),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,10 +15,48 @@ pub struct NativeVnStepInput {
     pub command: NativeVnStepCommand,
 }
 
+/// One sample of a Luau timeline segment property track.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NativeVnPropertySample {
+    pub target: String,
+    pub property: String,
+    pub value: f64,
+}
+
+/// Story output accumulated since the last step result, including entry replay.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(super) struct PendingOutput {
+    pub presentations: Vec<PresentationCommand>,
+    pub audio: Vec<VnAudioCommand>,
+    pub timeline: Vec<VnTimelineTask>,
+    pub properties: Vec<NativeVnPropertySample>,
+    pub coverage_reached: BTreeSet<String>,
+}
+
+impl PendingOutput {
+    pub(super) fn present(&mut self, node: &str, command: StageCommand) {
+        match &command {
+            StageCommand::Audio(cue) => self.audio.push(VnAudioCommand {
+                command_id: node.to_owned(),
+                cue: cue.clone(),
+            }),
+            StageCommand::Timeline(timeline) => self.timeline.push(VnTimelineTask {
+                command_id: match timeline {
+                    TimelineCommand::Start(spec) => spec.id.clone(),
+                    TimelineCommand::Cancel { id, .. } => id.clone(),
+                },
+                command: timeline.clone(),
+            }),
+            _ => {}
+        }
+        self.presentations.push(PresentationCommand::Stage(command));
+    }
+}
+
 impl VnSession {
-    pub fn step(&mut self, input: NativeVnStepInput) -> Result<NativeVnStepOutput, CoreVnError> {
+    pub fn step(&mut self, input: NativeVnStepInput) -> Result<NativeVnStepOutput, VnError> {
         if self.failed {
-            return Err(CoreVnError::diagnostic(
+            return Err(VnError::diagnostic(
                 "ROUKAKU_NATIVE_VN_SESSION_FAILED",
                 "failed session requires a successful restore before another step",
             ));
@@ -33,35 +71,118 @@ impl VnSession {
         );
         self.engine
             .validate_step(input.timing, input.mode)
-            .map_err(|error| CoreVnError::message(error.to_string()))?;
-        let (command, writes) = match input.command {
-            NativeVnStepCommand::PollPolicy => self.poll_policy_action()?,
+            .map_err(|error| VnError::message(error.to_string()))?;
+        let previous_backlog_count = self.state.backlog.len();
+        match input.command {
+            NativeVnStepCommand::PollPolicy => {
+                if let Some((node, writes)) = self.poll_policy_action()? {
+                    self.complete_policy_action(&node, writes)?;
+                }
+            }
             NativeVnStepCommand::Execute(command) => {
-                if matches!(command, CoreVnPlayerCommand::CompleteWait { .. })
+                if matches!(command, VnPlayerCommand::CompleteWait { .. })
                     && self.policy_action_pending()?
                 {
-                    return Err(CoreVnError::diagnostic(
+                    return Err(VnError::diagnostic(
                         "ROUKAKU_VN_POLICY_ACTION_EXTERNAL_COMPLETION",
                         "input cannot complete a policy action",
                     ));
                 }
-                (Some(command), Vec::new())
+                self.apply_command(command)?;
             }
-            NativeVnStepCommand::LaunchDefault => (
-                Some(self.runtime.default_launch_command().ok_or_else(|| {
-                    CoreVnError::diagnostic(
-                        "ROUKAKU_NATIVE_VN_LAUNCH_MISSING",
-                        "compiled story has no launchable state",
-                    )
-                })?),
-                Vec::new(),
-            ),
-        };
-        let output = self.apply_command_at_step(command, &writes, input.timing, input.mode)?;
-        validate_audio_order(&output.presentations, &output.audio)?;
+            NativeVnStepCommand::LaunchDefault => {
+                let entry = self.story.entry.clone();
+                self.launch(entry)?;
+            }
+        }
+        let mut ingress = Vec::new();
+        let policy_completion = self.take_policy_completion();
+        if let Some(completion) = &policy_completion {
+            ingress.push(OrderedTickIngress {
+                sequence: 1,
+                payload: TickIngress::AwaitCompletion(completion.handle.complete(
+                    1,
+                    input.timing.fixed_step,
+                    EventPayload::new("vn.policy.io.completed"),
+                )),
+            });
+        }
+        let tick = self
+            .engine
+            .tick(TickRequest {
+                timing: input.timing,
+                mode: input.mode,
+                ingress,
+            })
+            .map_err(|err| VnError::message(err.to_string()))?;
+        if let Some(diagnostic) = tick.diagnostics.first() {
+            return Err(VnError::diagnostic(
+                diagnostic.code.clone(),
+                diagnostic.message.clone(),
+            ));
+        }
+        if let Some(completion) = policy_completion {
+            self.commit_policy_completion(completion)?;
+        }
+        let output = std::mem::take(&mut self.pending);
+        for id in &output.coverage_reached {
+            self.engine
+                .world_mut()
+                .emit_event(
+                    roukaku_runtime::EventSource::Runtime,
+                    EventPayload {
+                        kind: "vn.route.reached".into(),
+                        data: [(
+                            "id".into(),
+                            roukaku_runtime::BlackboardValue::String(id.clone()),
+                        )]
+                        .into_iter()
+                        .collect(),
+                    },
+                )
+                .map_err(|error| VnError::message(error.to_string()))?;
+        }
+        self.state.revision = self.state.revision.saturating_add(1);
+        self.step_complexity = Some(VnStepComplexityMetrics {
+            schema: "roukaku.vn.step_complexity_metrics.v4".to_string(),
+            previous_backlog_count,
+            appended_backlog_entries: self
+                .state
+                .backlog
+                .len()
+                .saturating_sub(previous_backlog_count),
+        });
         failure_scope.0 = None;
         self.failed = false;
-        Ok(output)
+        Ok(NativeVnStepOutput {
+            fixed_step: input.timing.fixed_step,
+            vn_state: NativeVnStateView::project(&self.state),
+            presentations: output.presentations,
+            audio: output.audio,
+            timeline: output.timeline,
+            properties: output.properties,
+            coverage_reached: output.coverage_reached.into_iter().collect(),
+        })
+    }
+
+    /// Advance Luau timeline segments by presentation time and return their samples.
+    pub fn advance_presentation(
+        &mut self,
+        seconds: f64,
+    ) -> Result<Vec<NativeVnPropertySample>, VnError> {
+        if self.failed {
+            return Err(VnError::diagnostic(
+                "ROUKAKU_NATIVE_VN_SESSION_FAILED",
+                "failed session cannot advance presentation",
+            ));
+        }
+        if let Err(error) = self.authoring.advance_presentation(seconds) {
+            self.failed = true;
+            self.engine.world().task_scope().cancel();
+            return Err(authoring_error(error));
+        }
+        self.apply_story_events()?;
+        Ok(std::mem::take(&mut self.pending.properties))
     }
 }
 
@@ -83,96 +204,7 @@ pub struct NativeVnStepOutput {
     pub vn_state: NativeVnStateView,
     pub presentations: Vec<PresentationCommand>,
     pub audio: Vec<VnAudioCommand>,
-    pub timeline: Vec<roukaku_vn_core::VnTimelineTask>,
+    pub timeline: Vec<VnTimelineTask>,
+    pub properties: Vec<NativeVnPropertySample>,
     pub coverage_reached: Vec<String>,
-}
-
-fn validate_audio_order(
-    presentations: &[PresentationCommand],
-    audio: &[VnAudioCommand],
-) -> Result<(), CoreVnError> {
-    let mut audio = audio.iter();
-    for command in presentations {
-        if let PresentationCommand::Stage(StageCommand::Audio(cue)) = command {
-            let output = audio.next().ok_or_else(|| {
-                CoreVnError::diagnostic(
-                    "ROUKAKU_NATIVE_VN_AUDIO_ORDER_MISSING",
-                    "audio presentation has no matching output",
-                )
-            })?;
-            if &output.cue != cue {
-                return Err(CoreVnError::diagnostic(
-                    "ROUKAKU_NATIVE_VN_AUDIO_ORDER_MISMATCH",
-                    "audio output differs from its presentation",
-                ));
-            }
-        }
-    }
-    if audio.next().is_some() {
-        return Err(CoreVnError::diagnostic(
-            "ROUKAKU_NATIVE_VN_AUDIO_ORDER_EXTRA",
-            "audio output has no matching presentation",
-        ));
-    }
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn typed_audio_matches_interleaved_presentations_and_rejects_missing_extra_or_reordered_cues() {
-        let cue = |asset: &str| roukaku_vn_core::AudioCue {
-            id: asset.into(),
-            bus: VnAudioBus::Bgm,
-            asset: asset.into(),
-            looped: true,
-            fade_ms: 120,
-            sync: VnAudioSync::Fence("music.ready".into()),
-        };
-        let first = cue("music.first");
-        let second = cue("music.second");
-        let presentations = vec![
-            PresentationCommand::Stage(StageCommand::Audio(first.clone())),
-            PresentationCommand::Dialogue {
-                key: "line.one".into(),
-                speaker: None,
-                voice: None,
-                window: None,
-            },
-            PresentationCommand::Stage(StageCommand::Audio(second.clone())),
-        ];
-        let audio = vec![
-            VnAudioCommand {
-                command_id: "first".into(),
-                cue: first,
-            },
-            VnAudioCommand {
-                command_id: "second".into(),
-                cue: second,
-            },
-        ];
-        validate_audio_order(&presentations, &audio).unwrap();
-        assert!(
-            validate_audio_order(&presentations, &audio[..1])
-                .unwrap_err()
-                .to_string()
-                .contains("ORDER_MISSING")
-        );
-        assert!(
-            validate_audio_order(&presentations[..1], &audio)
-                .unwrap_err()
-                .to_string()
-                .contains("ORDER_EXTRA")
-        );
-        let mut reversed = audio;
-        reversed.reverse();
-        assert!(
-            validate_audio_order(&presentations, &reversed)
-                .unwrap_err()
-                .to_string()
-                .contains("ORDER_MISMATCH")
-        );
-    }
 }

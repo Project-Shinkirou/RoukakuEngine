@@ -11,12 +11,12 @@ use roukaku_ui_core::{
 use crate::lower::{ParsedLine, lower_sources_from_cst};
 
 use crate::{
-    CompiledStory, CompiledVnProject, ReadingMode, RoukakuSource, SaveCompletionPolicy,
-    SystemPageKind, SystemUiProfilePolicy, VnError,
+    CompiledStory, CompiledVnProject, CompiledVnUi, ReadingMode, RoukakuSource,
+    SaveCompletionPolicy, SystemPageKind, SystemUiProfilePolicy, VnError,
 };
 
 mod compile_project_ui;
-pub(crate) use compile_project_ui::compile_project_ui;
+pub(crate) use compile_project_ui::{compile_project_ui, compile_ui};
 mod validate_node_bindings;
 use validate_node_bindings::binding_key;
 use validate_node_bindings::parse_binding;

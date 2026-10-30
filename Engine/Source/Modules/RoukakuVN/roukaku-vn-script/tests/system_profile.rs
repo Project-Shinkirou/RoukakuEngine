@@ -87,7 +87,7 @@ fn system_ui_profile_manifest_validates_migration_unlock_and_localization() {
     )
     .unwrap();
     let mut manifest =
-        VnSystemUiProfileManifest::from_compiled(&compiled, vec!["zh-Hans".to_string()]);
+        VnSystemUiProfileManifest::from_ui(&compiled.ui, vec!["zh-Hans".to_string()]);
     manifest.profiles.insert(
         "classic".into(),
         SystemUiProfilePolicy {
@@ -108,14 +108,6 @@ fn system_ui_profile_manifest_validates_migration_unlock_and_localization() {
 
     let report = manifest.validate();
     assert_eq!(report.status, SystemStoryValidationStatus::Pass);
-
-    let mut icon_only_system_ui = manifest.clone();
-    icon_only_system_ui.localization.text_key_count = 0;
-    assert_eq!(
-        icon_only_system_ui.validate().status,
-        SystemStoryValidationStatus::Pass,
-        "a localized system UI may be icon-only and therefore reference no text keys"
-    );
 
     let mut missing_unlock = manifest.clone();
     missing_unlock.unlock_sources.clear();

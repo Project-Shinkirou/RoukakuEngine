@@ -1,5 +1,5 @@
 use roukaku_runtime::{AwaitCompletionHandle, TaskOutcome, TaskScope};
-use roukaku_vn_core::VnError;
+use roukaku_vn_package::VnError;
 use roukaku_vn_policy::{PolicyIoFailure, PolicyIoHost, PolicyIoStatus, PolicyReadText};
 use std::{
     sync::{Arc, mpsc},

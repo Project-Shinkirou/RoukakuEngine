@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    CompiledCommand, CompiledVnProject, ReadingMode, SystemStoryValidationStatus,
-    SystemUiProfilePolicy, SystemUnlockKind,
+    CompiledVnUi, ReadingMode, SystemStoryValidationStatus, SystemUiProfilePolicy,
+    SystemUnlockKind,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -16,7 +16,6 @@ pub struct VnSystemUiProfileManifest {
     pub unlock_sources: Vec<SystemUnlockSourcePolicy>,
     pub localization: SystemLocalizationCoverage,
     pub profiles: BTreeMap<String, SystemUiProfilePolicy>,
-    pub declared_system_action_ids: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -28,7 +27,6 @@ pub struct SystemUnlockSourcePolicy {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct SystemLocalizationCoverage {
     pub locales: Vec<String>,
-    pub text_key_count: usize,
     pub font_fallback_covered: bool,
     pub layout_covered: bool,
 }
@@ -41,16 +39,9 @@ pub struct SystemUiProfileValidationReport {
 }
 
 impl VnSystemUiProfileManifest {
-    pub fn from_compiled(compiled: &CompiledVnProject, locales: Vec<String>) -> Self {
-        let text_key_count = compiled
-            .states
-            .values()
-            .flat_map(|state| &state.scenes)
-            .flat_map(|scene| &scene.commands)
-            .filter(|command| matches!(command, CompiledCommand::Dialogue { .. }))
-            .count();
+    pub fn from_ui(ui: &CompiledVnUi, locales: Vec<String>) -> Self {
         Self {
-            schema: "roukaku.vn.system_ui_profile_manifest.v3".to_string(),
+            schema: "roukaku.vn.system_ui_profile_manifest.v4".to_string(),
             save_schema: "roukaku.vn.save_slot.v2".to_string(),
             unlock_sources: vec![
                 SystemUnlockSourcePolicy {
@@ -64,18 +55,10 @@ impl VnSystemUiProfileManifest {
             ],
             localization: SystemLocalizationCoverage {
                 locales,
-                text_key_count,
                 font_fallback_covered: true,
                 layout_covered: true,
             },
-            profiles: compiled.system_ui_profiles.clone(),
-            declared_system_action_ids: compiled
-                .story
-                .system_story_manifest
-                .actions
-                .keys()
-                .cloned()
-                .collect(),
+            profiles: ui.system_ui_profiles.clone(),
         }
     }
 
@@ -85,7 +68,7 @@ impl VnSystemUiProfileManifest {
             "RoukakuVN system UI profile validation started"
         );
         let mut diagnostics = Vec::new();
-        if self.schema != "roukaku.vn.system_ui_profile_manifest.v3" {
+        if self.schema != "roukaku.vn.system_ui_profile_manifest.v4" {
             diagnostics.push(Diagnostic::blocking(
                 "ROUKAKU_VN_SYSTEM_UI_PROFILE_SCHEMA",
                 "system UI profile manifest schema is invalid",
@@ -157,14 +140,15 @@ impl VnSystemUiProfileManifest {
                     .with_field("profile", profile_id),
                 );
             }
-            if !policy
+            if policy
                 .custom_action_ids
-                .is_subset(&self.declared_system_action_ids)
+                .iter()
+                .any(|action| action.is_empty() || action.len() > 128)
             {
                 diagnostics.push(
                     Diagnostic::blocking(
                         "ROUKAKU_VN_SYSTEM_ACTION_POLICY",
-                        "profile custom actions must be compiled into the system story manifest",
+                        "profile custom action identities must be nonempty and bounded",
                     )
                     .with_field("profile", profile_id),
                 );

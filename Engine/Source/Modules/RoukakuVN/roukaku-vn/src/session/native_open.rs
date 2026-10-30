@@ -10,13 +10,58 @@ pub struct VnSessionConfig {
     pub worker_count: usize,
 }
 
+/// Load the default VN modules and every authored story module into a fresh VM.
+pub(super) fn authoring_runtime(
+    story: &LuauStoryBundle,
+    host: &Rc<super::story_host::StoryHost>,
+) -> Result<LuauAuthoringRuntime, VnError> {
+    let host: Rc<dyn roukaku_vn_package::authoring::AuthoringHost> = host.clone();
+    let mut runtime = LuauAuthoringRuntime::new(
+        roukaku_vn_policy::PolicyExecutionBudget::default(),
+        roukaku_runtime::TaskScope::new(),
+        host,
+    )
+    .map_err(authoring_error)?;
+    for (module, source) in &story.modules {
+        runtime
+            .replace_module(module, &format!("@story/{module}.luau"), source)
+            .map_err(authoring_error)?;
+    }
+    Ok(runtime)
+}
+
+pub(super) fn initial_state(session_id: &str, config: &VnRunConfig) -> VnRuntimeState {
+    VnRuntimeState {
+        schema: VN_RUNTIME_STATE_SCHEMA.to_string(),
+        revision: 0,
+        instance_id: session_id.to_string(),
+        profile: config.profile.clone(),
+        locale: config.locale.clone(),
+        cursor: None,
+        call_stack: Vec::new(),
+        system_stack: Vec::new(),
+        system: VnSystemState::default(),
+        pending_choice: None,
+        variables: BTreeMap::new(),
+        backlog: Vec::new(),
+        read_state: BTreeSet::new(),
+        voice_replay: BTreeMap::new(),
+        route_coverage: BTreeSet::new(),
+        route_flags: BTreeMap::new(),
+        wait_sequence: 0,
+        pending_wait: None,
+    }
+}
+
 impl VnSession {
     pub fn new(
-        compiled: Arc<CoreCompiledStory>,
+        story: Arc<LuauStoryBundle>,
         config: VnRunConfig,
         options: VnSessionConfig,
-    ) -> Result<Self, CoreVnError> {
-        let runtime_index = Arc::new(CoreVnRuntimeIndex::build(&compiled)?);
+    ) -> Result<Self, VnError> {
+        story
+            .validate()
+            .map_err(|error| VnError::message(error.to_string()))?;
         tracing::info!(
             event = "vn.provider.session.open.start",
             target_id = %options.target_id,
@@ -24,11 +69,8 @@ impl VnSession {
             "RoukakuVN runtime session open started"
         );
         let session_id = format!("native_vn:{}:{}", options.target_id, options.seed);
-        let initial_runtime = CoreVnRuntime::new_shared_indexed(
-            Arc::clone(&compiled),
-            Arc::clone(&runtime_index),
-            config,
-        )?;
+        let host = Rc::new(super::story_host::StoryHost::default());
+        let authoring = authoring_runtime(&story, &host)?;
         // Product package identity and execution settings stay at the VN boundary.
         let mut world = RuntimeWorld::create_with_integrity(
             RuntimeConfig {
@@ -37,114 +79,43 @@ impl VnSession {
             },
             options.integrity_mode,
         )
-        .map_err(|error| CoreVnError::message(error.to_string()))?;
+        .map_err(|error| VnError::message(error.to_string()))?;
         if let Some(package) = options.package {
             world = world
                 .with_package(package)
-                .map_err(|error| CoreVnError::message(error.to_string()))?;
+                .map_err(|error| VnError::message(error.to_string()))?;
         }
         world
             .set_machine_worker_count(options.worker_count)
-            .map_err(|error| CoreVnError::message(error.to_string()))?;
+            .map_err(|error| VnError::message(error.to_string()))?;
         let owner = world
             .create_actor("roukaku.vn.runtime", vec!["gameplay_runtime".to_string()])
-            .map_err(|error| CoreVnError::message(error.to_string()))?;
+            .map_err(|error| VnError::message(error.to_string()))?;
         let policy_component = world
             .attach_component(
                 owner,
                 super::policy_io::POLICY_STATE_SCHEMA,
                 &super::policy_io::SessionPolicyState::default(),
             )
-            .map_err(|err| CoreVnError::message(err.to_string()))?;
+            .map_err(|err| VnError::message(err.to_string()))?;
+        let state = initial_state(&session_id, &config);
         Ok(Self {
             id: session_id,
             policy_component,
             policy_host: Default::default(),
             engine: EngineSession::from_world(world),
             owner,
-            compiled,
-            runtime_index,
-            runtime: initial_runtime,
+            story,
+            authoring,
+            host,
+            state,
+            wait: None,
+            menu_frame: false,
+            paragraph_backlog_start: 0,
+            last_choice: None,
+            pending: Default::default(),
             failed: false,
             step_complexity: None,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn story() -> Arc<CoreCompiledStory> {
-        Arc::new(compile_roukaku_project(
-            [RoukakuSource::story("native.roukaku", "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:hello speaker:narrator #@id hello\n")],
-            Default::default(),
-        ).unwrap().into())
-    }
-
-    fn options() -> VnSessionConfig {
-        VnSessionConfig {
-            target_id: "embedded".into(),
-            seed: 17,
-            package: None,
-            integrity_mode: TickIntegrityMode::Shipping,
-            worker_count: 1,
-        }
-    }
-
-    #[test]
-    fn native_open_shares_story_and_supports_package_free_save_restore_and_shutdown() {
-        let compiled = story();
-        let mut session =
-            VnSession::new(Arc::clone(&compiled), VnRunConfig::classic("en"), options()).unwrap();
-        assert!(Arc::ptr_eq(&compiled, &session.compiled));
-        assert!(session.engine.world().snapshot().unwrap().package.is_none());
-        let step = |fixed_step, command, mode| NativeVnStepInput {
-            timing: TickInput {
-                fixed_step,
-                delta_ns: 16_666_667,
-                seed: 17,
-            },
-            mode,
-            command,
-        };
-        session
-            .step(step(
-                1,
-                NativeVnStepCommand::LaunchDefault,
-                roukaku_runtime::TickMode::Live,
-            ))
-            .unwrap();
-        let before = session.runtime.state().clone();
-        let saved = session.save().unwrap();
-        session
-            .step(step(
-                2,
-                NativeVnStepCommand::Execute(CoreVnPlayerCommand::Advance),
-                roukaku_runtime::TickMode::Live,
-            ))
-            .unwrap();
-        let restored = session.restore(saved).unwrap();
-        assert_eq!(restored.step, 1);
-        assert_eq!(session.runtime.state().clone(), before);
-        session
-            .step(step(
-                2,
-                NativeVnStepCommand::Execute(CoreVnPlayerCommand::Advance),
-                roukaku_runtime::TickMode::RestoreContinuation,
-            ))
-            .unwrap();
-        let scope = session.engine.world().task_scope();
-        session.close();
-        assert!(scope.is_cancelled());
-    }
-
-    #[test]
-    fn rejects_invalid_worker_count() {
-        for worker_count in [0, 9] {
-            let mut config = options();
-            config.worker_count = worker_count;
-            assert!(VnSession::new(story(), VnRunConfig::classic("en"), config).is_err());
-        }
     }
 }

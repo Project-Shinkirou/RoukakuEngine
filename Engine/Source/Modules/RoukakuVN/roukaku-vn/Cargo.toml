@@ -7,11 +7,11 @@ version.workspace = true
 [dependencies]
 tokio.workspace = true
 roukaku-vn-policy = { path = "../roukaku-vn-policy" }
+roukaku-vn-package = { path = "../roukaku-vn-package" }
 tracing.workspace = true
 serde.workspace = true
+serde_json.workspace = true
+mlua.workspace = true
 roukaku-core = { path = "../../../Runtime/roukaku-core" }
 roukaku-runtime = { path = "../../../Runtime/roukaku-runtime" }
-roukaku-plugin-abi = { path = "../../../Runtime/roukaku-plugin-abi" }
-roukaku-vn-core = { path = "../roukaku-vn-core" }
-roukaku-vn-presentation = { path = "../roukaku-vn-presentation" }
-roukaku-vn-script = { path = "../roukaku-vn-script" }
+roukaku-text = { path = "../../../Runtime/roukaku-text" }

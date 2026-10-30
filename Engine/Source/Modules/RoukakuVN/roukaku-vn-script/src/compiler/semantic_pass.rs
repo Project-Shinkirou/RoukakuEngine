@@ -226,6 +226,31 @@ where
     compile_bound_sources(sources, &registry)
 }
 
+/// Compile product UI sources. Story behavior is authored in Luau and packaged separately.
+pub fn compile_roukaku_ui<I, S>(
+    sources: I,
+    options: CompileRoukakuProjectOptions,
+) -> Result<CompiledVnUi, VnError>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<RoukakuSource>,
+{
+    let sources: Vec<RoukakuSource> = sources.into_iter().map(Into::into).collect();
+    if sources
+        .iter()
+        .any(|source| source.role != RoukakuSourceRole::Ui)
+    {
+        return Err(VnError::message(
+            "ROUKAKU_VN_UI_SOURCE_ROLE: UI compilation accepts only UI sources",
+        ));
+    }
+    crate::ui_compile::compile_ui(
+        &sources,
+        options.ui_themes,
+        options.ui_controller_sources,
+    )
+}
+
 pub fn compile_roukaku_project<I, S>(
     sources: I,
     options: CompileRoukakuProjectOptions,

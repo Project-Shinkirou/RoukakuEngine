@@ -1,9 +1,11 @@
 use super::*;
+use roukaku_vn_package::{ExtensionFieldKind, ExtensionValue, FixedScalar};
 use roukaku_vn_policy::{
     LuauPolicy, PolicyActionBinding, PolicyActionContinuation, PolicyActionOutcome,
     PolicyExecutionBudget, PolicyIoContext, PolicyIoStatus, PolicyQueryContext,
 };
 
+/// Variable writes committed by a completed action, delivered to the story.
 type VariableWrites = Vec<(String, String, i64)>;
 
 impl VnSession {
@@ -11,8 +13,8 @@ impl VnSession {
     pub fn bind_policy_actions(
         &mut self,
         bindings: Vec<PolicyActionBinding>,
-    ) -> Result<(), CoreVnError> {
-        if self.runtime.state().cursor.is_some() || !self.policy_host.actions.is_empty() {
+    ) -> Result<(), VnError> {
+        if self.state.cursor.is_some() || !self.policy_host.actions.is_empty() {
             return Err(action_error("actions must be bound once before launch"));
         }
         let mut actions = BTreeMap::new();
@@ -25,122 +27,65 @@ impl VnSession {
                 return Err(action_error("duplicate action binding"));
             }
         }
-        for state in self.compiled.states.values() {
-            for command in state.scenes.iter().flat_map(|scene| &scene.commands) {
-                if let CompiledCommand::Presentation {
-                    command: PresentationCommand::Extension(extension),
-                    ..
-                } = command
-                    && extension.provider_id == POLICY_ACTION_PROVIDER
-                {
-                    actions
-                        .get(&extension.command)
-                        .ok_or_else(|| action_error("compiled action has no package binding"))?
-                        .validate_command(extension)?;
-                }
-            }
-        }
         self.policy_host.actions = actions;
         Ok(())
     }
 
     /// True only while gameplay owns the action fence. System-page navigation pauses it.
-    pub fn policy_action_pending(&self) -> Result<bool, CoreVnError> {
-        let state = self.runtime.state();
+    pub fn policy_action_pending(&self) -> Result<bool, VnError> {
+        let Some(wait) = self.state.pending_wait.as_ref() else {
+            return Ok(false);
+        };
         if self.policy_host.actions.is_empty()
-            || !state.system_stack.is_empty()
-            || !state.pending_wait.as_ref().is_some_and(|wait| {
-                wait.kind == VnWaitKind::Fence
-                    && wait.fence.strip_prefix("policy.") == Some(wait.command_id.as_str())
-            })
+            || !self.state.system_stack.is_empty()
+            || wait.kind != VnWaitKind::Fence
+            || wait.fence.strip_prefix("policy.") != Some(wait.command_id.as_str())
         {
             return Ok(false);
         }
         let policy = self.policy_state()?;
-        Ok(policy.action.as_ref().is_some_and(|action| {
-            self.runtime
-                .state()
-                .pending_wait
-                .as_ref()
-                .is_some_and(|wait| wait.command_id == action.source_id)
-                && self.runtime.state().system_stack.is_empty()
-        }))
+        Ok(policy
+            .action
+            .as_ref()
+            .is_some_and(|action| action.source_id == wait.command_id))
     }
 
-    pub(super) fn policy_action_wait_id(&self) -> Result<Option<String>, CoreVnError> {
-        if self.policy_host.actions.is_empty() {
-            return Ok(None);
-        }
-        let policy = self.policy_state()?;
-        let Some(action) = policy.action else {
-            return Ok(None);
-        };
-        let state = self.runtime.state();
-        Ok(state
-            .pending_wait
-            .iter()
-            .chain(
-                state
-                    .system_stack
-                    .iter()
-                    .filter_map(|frame| frame.return_wait.as_ref()),
-            )
-            .find(|wait| wait.command_id == action.source_id)
-            .and_then(|wait| wait.await_id.clone()))
-    }
-
-    pub(super) fn cancel_abandoned_policy_action(
-        &mut self,
-        prior_wait: Option<String>,
-    ) -> Result<(), CoreVnError> {
-        let mut policy = self.policy_state()?;
-        let Some(action) = &policy.action else {
-            return Ok(());
-        };
-        let state = self.runtime.state();
-        let still_owned = state
-            .pending_wait
-            .iter()
-            .chain(
-                state
-                    .system_stack
-                    .iter()
-                    .filter_map(|frame| frame.return_wait.as_ref()),
-            )
-            .any(|wait| wait.command_id == action.source_id && wait.await_id.is_some());
-        if still_owned {
-            return Ok(());
-        }
-        if let Some(id) = prior_wait {
-            let token = roukaku_runtime::AwaitTokenId(
-                roukaku_core::StableId::parse(&id)
-                    .map_err(|_| action_error("invalid abandoned action wait"))?,
-            );
-            self.engine
-                .world_mut()
-                .cancel_await(token)
-                .map_err(|error| CoreVnError::message(error.to_string()))?;
-        }
-        let prefix = format!("a{}.", action.instance);
-        policy
-            .io
-            .requests
-            .retain(|key, _| !key.starts_with(&prefix));
-        policy.action = None;
-        self.sync_policy_awaits(&mut policy)?;
-        self.write_policy(&policy)?;
-        self.dispatch_policy_io(&policy)
-    }
-
+    /// Convert story parameters with the package descriptor, then start the action.
     pub(super) fn queue_policy_action(
         &mut self,
-        command: ExtensionPresentationCommand,
-    ) -> Result<(), CoreVnError> {
-        self.policy_host
+        node: &str,
+        command: &str,
+        params: &serde_json::Value,
+    ) -> Result<(), VnError> {
+        let binding = self
+            .policy_host
             .actions
-            .get(&command.command)
-            .ok_or_else(|| action_error("action has no package binding"))?
-            .validate_command(&command)?;
+            .get(command)
+            .ok_or_else(|| action_error("action has no package binding"))?;
+        let empty = serde_json::Map::new();
+        let params = match params {
+            serde_json::Value::Object(params) => params,
+            serde_json::Value::Null => &empty,
+            // Luau encodes an empty table as an empty array.
+            serde_json::Value::Array(values) if values.is_empty() => &empty,
+            _ => return Err(action_error("action parameters must be a table")),
+        };
+        let descriptor = &binding.descriptor;
+        let mut fields = BTreeMap::new();
+        for (name, value) in params {
+            let field = descriptor
+                .fields
+                .get(name)
+                .ok_or_else(|| action_error("action parameter is not declared"))?;
+            fields.insert(name.clone(), extension_value(field.kind, value)?);
+        }
+        let command = ExtensionPresentationCommand {
+            command: descriptor.command.clone(),
+            provider_id: descriptor.provider_id.clone(),
+            schema: descriptor.schema.clone(),
+            fields,
+        };
+        binding.validate_command(&command)?;
         let mut policy = self.policy_state()?;
         if policy.action.is_some() {
             return Err(action_error("another action is still active"));
@@ -149,16 +94,8 @@ impl VnSession {
             .action_serial
             .checked_add(1)
             .ok_or_else(|| action_error("action identity exhausted"))?;
-        let source_id = self
-            .runtime
-            .state()
-            .pending_wait
-            .as_ref()
-            .ok_or_else(|| action_error("action requires a VN wait"))?
-            .command_id
-            .clone();
         policy.action = Some(PolicyActionContinuation {
-            source_id,
+            source_id: node.to_owned(),
             instance: policy.action_serial,
             command,
             waiting_key: None,
@@ -167,9 +104,10 @@ impl VnSession {
         self.write_policy(&policy)
     }
 
+    /// Runs the bound action once; on completion returns its source node and writes.
     pub(super) fn poll_policy_action(
         &mut self,
-    ) -> Result<(Option<CoreVnPlayerCommand>, VariableWrites), CoreVnError> {
+    ) -> Result<Option<(String, VariableWrites)>, VnError> {
         if !self.policy_action_pending()? {
             return Err(action_error(
                 "policy tick requires its current action fence",
@@ -188,7 +126,7 @@ impl VnSession {
                 .get(&key)
                 .ok_or_else(|| action_error("waiting action request is missing"))?;
             if record.status == PolicyIoStatus::Pending {
-                return Ok((None, Vec::new()));
+                return Ok(None);
             }
         }
         let binding = self
@@ -196,7 +134,7 @@ impl VnSession {
             .actions
             .get(&action.command.command)
             .ok_or_else(|| action_error("missing action binding"))?;
-        policy.state.variables = self.runtime.state().variables.clone();
+        policy.state.variables = self.state.variables.clone();
         let outcome = LuauPolicy::new()?.invoke_action(
             binding,
             &mut action,
@@ -211,7 +149,7 @@ impl VnSession {
         let result = match outcome {
             PolicyActionOutcome::Await { .. } => {
                 policy.action = Some(action);
-                (None, Vec::new())
+                None
             }
             PolicyActionOutcome::Complete => {
                 let prefix = format!("a{}.", action.instance);
@@ -219,32 +157,13 @@ impl VnSession {
                     .io
                     .requests
                     .retain(|key, _| !key.starts_with(&prefix));
-                for mutation in &policy.state.mutation_trace {
-                    if !self
-                        .compiled
-                        .variable_manifest
-                        .scopes
-                        .get(&mutation.scope)
-                        .is_some_and(|scope| scope.keys.contains(&mutation.key))
-                    {
-                        return Err(action_error("action writes an undeclared variable"));
-                    }
-                }
                 let writes = policy
                     .state
                     .mutation_trace
                     .iter()
                     .map(|m| (m.scope.clone(), m.key.clone(), m.value))
                     .collect();
-                let fence = self
-                    .runtime
-                    .state()
-                    .pending_wait
-                    .as_ref()
-                    .unwrap()
-                    .fence
-                    .clone();
-                (Some(CoreVnPlayerCommand::CompleteWait { fence }), writes)
+                Some((action.source_id, writes))
             }
         };
         self.sync_policy_awaits(&mut policy)?;
@@ -252,69 +171,76 @@ impl VnSession {
         self.dispatch_policy_io(&policy)?;
         Ok(result)
     }
+
+    /// Commit action writes to session variables and resume the story with them.
+    pub(super) fn complete_policy_action(
+        &mut self,
+        node: &str,
+        writes: VariableWrites,
+    ) -> Result<(), VnError> {
+        let mut payload = Vec::with_capacity(writes.len());
+        for (scope, key, value) in writes {
+            payload.push(serde_json::json!({ "scope": scope, "key": key, "value": value }));
+            self.state
+                .variables
+                .entry(scope)
+                .or_default()
+                .insert(key, value);
+        }
+        self.resume_action(node, serde_json::Value::Array(payload))
+    }
 }
 
-fn action_error(message: &str) -> CoreVnError {
-    CoreVnError::diagnostic("ROUKAKU_VN_POLICY_ACTION", message)
+fn extension_value(
+    kind: ExtensionFieldKind,
+    value: &serde_json::Value,
+) -> Result<ExtensionValue, VnError> {
+    let invalid = || action_error("action parameter does not match its declared kind");
+    Ok(match kind {
+        ExtensionFieldKind::String => ExtensionValue::String(value.as_str().ok_or_else(invalid)?.into()),
+        ExtensionFieldKind::Symbol => ExtensionValue::Symbol(value.as_str().ok_or_else(invalid)?.into()),
+        ExtensionFieldKind::AssetUri => {
+            ExtensionValue::AssetUri(value.as_str().ok_or_else(invalid)?.into())
+        }
+        ExtensionFieldKind::Boolean => ExtensionValue::Boolean(value.as_bool().ok_or_else(invalid)?),
+        ExtensionFieldKind::Integer => {
+            let number = value.as_f64().ok_or_else(invalid)?;
+            if number.fract() != 0.0 || number.abs() > (1_u64 << 53) as f64 {
+                return Err(invalid());
+            }
+            ExtensionValue::Integer(number as i64)
+        }
+        ExtensionFieldKind::Fixed => {
+            let millionths = (value.as_f64().ok_or_else(invalid)? * 1_000_000.0).round();
+            if !millionths.is_finite() || millionths.abs() > i64::MAX as f64 {
+                return Err(invalid());
+            }
+            ExtensionValue::Fixed(FixedScalar {
+                millionths: millionths as i64,
+            })
+        }
+    })
 }
 
-/// Validate the candidate against the immutable package and its saved VN fence.
+fn action_error(message: &str) -> VnError {
+    VnError::diagnostic("ROUKAKU_VN_POLICY_ACTION", message)
+}
+
+/// Validate a saved continuation against the immutable package bindings.
 pub(super) fn validate_saved_action(
     policy: &super::policy_io::SessionPolicyState,
-    runtime: &VnRuntimeState,
-    compiled: &CompiledStory,
     bindings: &BTreeMap<String, PolicyActionBinding>,
 ) -> Result<(), RuntimeError> {
     let fail = || {
         RuntimeError::message(
-            "ROUKAKU_VN_POLICY_ACTION_RESTORE: continuation does not match the saved story",
+            "ROUKAKU_VN_POLICY_ACTION_RESTORE: continuation does not match the package",
         )
     };
-    let waits = runtime.pending_wait.iter().chain(
-        runtime
-            .system_stack
-            .iter()
-            .filter_map(|frame| frame.return_wait.as_ref()),
-    );
-    let action_sources: std::collections::BTreeSet<_> = compiled
-        .states
-        .values()
-        .flat_map(|state| &state.scenes)
-        .flat_map(|scene| &scene.commands)
-        .filter_map(|command| {
-            if let CompiledCommand::Presentation {
-                id,
-                command: PresentationCommand::Extension(extension),
-            } = command
-                && extension.provider_id == POLICY_ACTION_PROVIDER
-            {
-                return Some(id.as_str());
-            }
-            None
-        })
-        .collect();
-    let policy_waits: Vec<_> = waits
-        .filter(|wait| action_sources.contains(wait.command_id.as_str()))
-        .collect();
     let Some(action) = &policy.action else {
-        return if policy_waits.is_empty() {
-            Ok(())
-        } else {
-            Err(fail())
-        };
+        return Ok(());
     };
     action.validate().map_err(|_| fail())?;
-    if action.instance == 0
-        || action.instance != policy.action_serial
-        || policy_waits.len() != 1
-        || policy_waits[0].command_id != action.source_id
-        || policy_waits[0].fence != format!("policy.{}", action.source_id)
-    {
-        return Err(fail());
-    }
-    let found = compiled.states.values().flat_map(|state| &state.scenes).flat_map(|scene| &scene.commands)
-        .any(|command| matches!(command, CompiledCommand::Presentation { id, command: PresentationCommand::Extension(extension) } if id == &action.source_id && extension == &action.command));
-    if !found {
+    if action.instance == 0 || action.instance != policy.action_serial {
         return Err(fail());
     }
     let binding = bindings.get(&action.command.command).ok_or_else(fail)?;

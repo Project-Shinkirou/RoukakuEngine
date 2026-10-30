@@ -35,10 +35,10 @@ impl VnSession {
         &mut self,
         host: Arc<dyn PolicyIoHost>,
         capabilities: PolicyIoCapabilities,
-    ) -> Result<(), CoreVnError> {
+    ) -> Result<(), VnError> {
         self.ensure_policy_active()?;
         if cfg!(target_arch = "wasm32") {
-            return Err(CoreVnError::diagnostic(
+            return Err(VnError::diagnostic(
                 "ROUKAKU_POLICY_HOST_IO_UNSUPPORTED",
                 "native policy IO workers are unavailable on Web",
             ));
@@ -59,7 +59,7 @@ impl VnSession {
         &mut self,
         source: &str,
         budget: PolicyExecutionBudget,
-    ) -> Result<bool, CoreVnError> {
+    ) -> Result<bool, VnError> {
         self.ensure_policy_active()?;
         let mut policy = self.policy_state()?;
         let result = LuauPolicy::new()?.eval_bool_with_host(
@@ -82,38 +82,38 @@ impl VnSession {
         Ok(result)
     }
 
-    pub fn policy_snapshot(&self) -> Result<VnPolicyState, CoreVnError> {
+    pub fn policy_snapshot(&self) -> Result<VnPolicyState, VnError> {
         Ok(self.policy_state()?.state)
     }
-    pub fn policy_io_snapshot(&self) -> Result<PolicyIoState, CoreVnError> {
+    pub fn policy_io_snapshot(&self) -> Result<PolicyIoState, VnError> {
         Ok(self.policy_state()?.io)
     }
 
-    fn ensure_policy_active(&self) -> Result<(), CoreVnError> {
+    fn ensure_policy_active(&self) -> Result<(), VnError> {
         if self.failed || self.engine.world().task_scope().is_cancelled() {
-            return Err(CoreVnError::diagnostic(
+            return Err(VnError::diagnostic(
                 "ROUKAKU_NATIVE_VN_SESSION_FAILED",
                 "policy requires an active session",
             ));
         }
         Ok(())
     }
-    pub(super) fn policy_state(&self) -> Result<SessionPolicyState, CoreVnError> {
+    pub(super) fn policy_state(&self) -> Result<SessionPolicyState, VnError> {
         self.engine
             .world()
             .read_component(self.policy_component)
-            .map_err(|error| CoreVnError::message(error.to_string()))
+            .map_err(|error| VnError::message(error.to_string()))
     }
-    pub(super) fn write_policy(&mut self, policy: &SessionPolicyState) -> Result<(), CoreVnError> {
+    pub(super) fn write_policy(&mut self, policy: &SessionPolicyState) -> Result<(), VnError> {
         self.engine
             .world_mut()
             .replace_component(self.policy_component, policy)
-            .map_err(|error| CoreVnError::message(error.to_string()))
+            .map_err(|error| VnError::message(error.to_string()))
     }
     pub(super) fn dispatch_policy_io(
         &mut self,
         policy: &SessionPolicyState,
-    ) -> Result<(), CoreVnError> {
+    ) -> Result<(), VnError> {
         let state = &policy.io;
         if self.policy_host.worker.as_ref().is_some_and(|worker| {
             !state.requests.values().any(|record| {
@@ -134,14 +134,14 @@ impl VnSession {
             return Ok(());
         };
         let host = self.policy_host.host.as_ref().ok_or_else(|| {
-            CoreVnError::diagnostic("ROUKAKU_POLICY_HOST_IO_DENIED", "session has no IO host")
+            VnError::diagnostic("ROUKAKU_POLICY_HOST_IO_DENIED", "session has no IO host")
         })?;
         let scope = self.engine.world().task_scope().child();
         let handle = self
             .engine
             .world_mut()
             .await_handle(policy.awaits[&record.request.id], &scope)
-            .map_err(|error| CoreVnError::message(error.to_string()))?;
+            .map_err(|error| VnError::message(error.to_string()))?;
         self.policy_host.worker = Some(PolicyIoWorker::start(
             Arc::clone(host),
             record.request.clone(),
@@ -153,7 +153,7 @@ impl VnSession {
     pub(super) fn sync_policy_awaits(
         &mut self,
         policy: &mut SessionPolicyState,
-    ) -> Result<(), CoreVnError> {
+    ) -> Result<(), VnError> {
         let pending: std::collections::BTreeSet<_> = policy
             .io
             .requests
@@ -166,7 +166,7 @@ impl VnSession {
                 self.engine
                     .world_mut()
                     .cancel_await(policy.awaits.remove(&id).unwrap())
-                    .map_err(|error| CoreVnError::message(error.to_string()))?;
+                    .map_err(|error| VnError::message(error.to_string()))?;
             }
         }
         for id in pending {
@@ -177,7 +177,7 @@ impl VnSession {
                         .create_host_await(roukaku_runtime::AwaitKind::Custom(
                             "vn.policy.read_text".into(),
                         ))
-                        .map_err(|error| CoreVnError::message(error.to_string()))?,
+                        .map_err(|error| VnError::message(error.to_string()))?,
                 );
             }
         }
@@ -190,7 +190,7 @@ impl VnSession {
     pub(super) fn commit_policy_completion(
         &mut self,
         completion: Completion,
-    ) -> Result<(), CoreVnError> {
+    ) -> Result<(), VnError> {
         let mut policy = self.policy_state()?;
         if completion.handle.status() == roukaku_runtime::TaskStatus::Completed
             && !completion.scope.is_cancelled()

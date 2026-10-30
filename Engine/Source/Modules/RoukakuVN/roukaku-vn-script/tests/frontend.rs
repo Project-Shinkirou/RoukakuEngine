@@ -108,7 +108,7 @@ fn select_items_are_a_typed_widget_property_not_a_repeat_binding() {
             .with_ui_controller_source("config", test_controller_source()),
     )
     .expect("select items should compile without repeat item_key");
-    let select = &compiled.ui_blueprints.views["ui.config"].root.children[0];
+    let select = &compiled.ui.ui_blueprints.views["ui.config"].root.children[0];
     assert!(select.repeat.is_none());
     assert!(select.properties.contains_key("items"));
 }
@@ -156,9 +156,9 @@ roukaku.ui.controller.register("quick", {
     )
     .expect("quick panel contracts should compile");
 
-    assert!(compiled.ui_blueprints.views.contains_key("ui.quick"));
+    assert!(compiled.ui.ui_blueprints.views.contains_key("ui.quick"));
     assert_eq!(
-        compiled.ui_bindings.system_page_bindings["quick_panel"].view_id,
+        compiled.ui.ui_bindings.system_page_bindings["quick_panel"].view_id,
         "ui.quick"
     );
 }
@@ -169,66 +169,9 @@ fn tsuinosora_classic_and_modern_ui_template_compiles_as_one_project() {
         include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/classic.roukaku");
     const MODERN_UI: &str =
         include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/modern.roukaku");
-    const SYSTEM_STORY: &str = include_str!(
-        "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Scripts/system.roukaku"
-    );
     const CONTROLLERS: &str = include_str!(
         "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Controllers/tsui_ui.luau"
     );
-    const CLASSIC_TEST_TARGETS: &str = r#"
-story k12 #@id story.fixture.k12
-state k12 #@id director.k.0015
-story k13 #@id story.fixture.k13
-state k13 #@id director.k.0126
-story k14 #@id story.fixture.k14
-state k14 #@id director.k.0249
-story k15 #@id story.fixture.k15
-state k15 #@id director.k.0312
-story k16 #@id story.fixture.k16
-state k16 #@id director.k.0387
-story k1701 #@id story.fixture.k1701
-state k1701 #@id director.k.0456
-story k1801 #@id story.fixture.k1801
-state k1801 #@id director.k.0543
-story t13 #@id story.fixture.t13
-state t13 #@id director.t.0018
-story t14 #@id story.fixture.t14
-state t14 #@id director.t.0111
-story t15 #@id story.fixture.t15
-state t15 #@id director.t.0216
-story t16 #@id story.fixture.t16
-state t16 #@id director.t.0309
-story t17 #@id story.fixture.t17
-state t17 #@id director.t.0408
-story t17_18 #@id story.fixture.t17_18
-state t17_18 #@id director.t.0453
-story t19 #@id story.fixture.t19
-state t19 #@id director.t.0498
-story y13 #@id story.fixture.y13
-state y13 #@id director.y.0020
-story y14 #@id story.fixture.y14
-state y14 #@id director.y.0246
-story y15 #@id story.fixture.y15
-state y15 #@id director.y.0405
-story y16 #@id story.fixture.y16
-state y16 #@id director.y.0524
-story y17 #@id story.fixture.y17
-state y17 #@id director.y.0667
-story y17_18 #@id story.fixture.y17_18
-state y17_18 #@id director.y.0775
-story y18_19 #@id story.fixture.y18_19
-state y18_19 #@id director.y.0922
-story y20 #@id story.fixture.y20
-state y20 #@id director.y.1030
-story z09 #@id story.fixture.z09
-state z09 #@id director.z.0015
-story z10 #@id story.fixture.z10
-state z10 #@id director.z.0060
-story z11 #@id story.fixture.z11
-state z11 #@id director.z.0087
-story z12 #@id story.fixture.z12
-state z12 #@id director.z.0126
-"#;
     const CLASSIC_THEME: &str =
         include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/Themes/classic.json");
     const MODERN_THEME: &str =
@@ -262,13 +205,8 @@ state z12 #@id director.z.0126
         options = options.with_ui_controller_source(id, CONTROLLERS);
     }
 
-    let compiled = compile_roukaku_project(
+    let compiled = roukaku_vn_script::compile_roukaku_ui(
         [
-            roukaku_vn_script::RoukakuSource::story("system.roukaku", SYSTEM_STORY),
-            roukaku_vn_script::RoukakuSource::story(
-                "classic-test-targets.roukaku",
-                CLASSIC_TEST_TARGETS,
-            ),
             roukaku_vn_script::RoukakuSource::ui("classic.roukaku", CLASSIC_UI),
             roukaku_vn_script::RoukakuSource::ui("modern.roukaku", MODERN_UI),
         ],

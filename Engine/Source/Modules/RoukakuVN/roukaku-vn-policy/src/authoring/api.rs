@@ -425,27 +425,27 @@ pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
 
 fn stage_command(action: &str, data: serde_json::Value) -> mlua::Result<StageCommand> {
     let variant = match action {
-        "preload" => "Preload",
-        "stage" => "Configure",
-        "layer" => "DeclareLayer",
-        "background" => "Background",
-        "show" => "Show",
-        "hide" => "Hide",
-        "clear_layer" => "ClearLayer",
-        "layer_visibility" => "SetLayerVisibility",
-        "backdrop" => "Backdrop",
-        "shade" => "Shade",
-        "skip_allowed" => "SetSkipAllowed",
-        "move" => "Move",
-        "camera" => "Camera",
-        "movie" => "Movie",
-        "voice" | "bgm" | "se" | "movie_audio" => "Audio",
-        "audio" => "AudioControl",
-        "audio_bus_enabled" => "SetAudioBusEnabled",
-        "transition" => "Transition",
-        "shake" => "Shake",
-        "timeline" => "Timeline",
-        "effect" => "Effect",
+        "preload" => "preload",
+        "stage" => "configure",
+        "layer" => "declare_layer",
+        "background" => "background",
+        "show" => "show",
+        "hide" => "hide",
+        "clear_layer" => "clear_layer",
+        "layer_visibility" => "set_layer_visibility",
+        "backdrop" => "backdrop",
+        "shade" => "shade",
+        "skip_allowed" => "set_skip_allowed",
+        "move" => "move",
+        "camera" => "camera",
+        "movie" => "movie",
+        "voice" | "bgm" | "se" | "movie_audio" => "audio",
+        "audio" => "audio_control",
+        "audio_bus_enabled" => "set_audio_bus_enabled",
+        "transition" => "transition",
+        "shake" => "shake",
+        "timeline" => "timeline",
+        "effect" => "effect",
         _ => return Err(mlua::Error::runtime("unknown VN stage action")),
     };
     let mut tagged = serde_json::Map::new();
@@ -487,9 +487,12 @@ fn record(lua: &Lua, context: &Context, node: String, content: NodeContent) -> m
         source_revision,
     });
     let result = lua.to_value(&occurrence)?;
-    shared.records.push(NodeRecord {
+    let record = NodeRecord {
         occurrence,
         content,
-    });
+    };
+    shared.records.push(record.clone());
+    drop(shared);
+    context.host.node_recorded(&record)?;
     Ok(result)
 }

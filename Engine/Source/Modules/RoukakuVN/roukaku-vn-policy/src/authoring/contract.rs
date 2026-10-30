@@ -166,6 +166,16 @@ pub trait AuthoringHost: TextLayoutProvider {
     fn display_text(&self, id: &str, layout: Arc<TextLayoutResult>) -> mlua::Result<()>;
     fn set_property(&self, target: &str, property: &str, value: f64) -> mlua::Result<()>;
     fn release_segment(&self, id: u64) -> mlua::Result<()>;
+    /// Called before a paragraph coroutine first runs, including `rk.enter` transitions.
+    fn paragraph_started(&self, paragraph: &ParagraphId) -> mlua::Result<()> {
+        let _ = paragraph;
+        Ok(())
+    }
+    /// Line and choice records reach the host in story order, interleaved with presentation.
+    fn node_recorded(&self, record: &NodeRecord) -> mlua::Result<()> {
+        let _ = record;
+        Ok(())
+    }
     fn present(&self, node: &str, command: &crate::StageCommand) -> mlua::Result<()> {
         let _ = (node, command);
         Err(mlua::Error::runtime(

@@ -20,6 +20,7 @@ pub use runtime_state::CommandManifestEntry;
 pub use runtime_state::CompiledCommand;
 pub use runtime_state::CompiledStory;
 pub use runtime_state::CompiledVnProject;
+pub use runtime_state::CompiledVnUi;
 pub use runtime_state::MutationOp;
 pub use runtime_state::ReadingMode;
 pub use runtime_state::RoukakuSource;
