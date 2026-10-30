@@ -55,6 +55,10 @@ impl VnSession {
         self.host.set_system_actions(actions);
     }
 
+    /// Fence identities with callbacks still registered in this session.
+    pub fn callback_fences(&self) -> roukaku_vn_policy::authoring::CallbackFences<'_> {
+        self.authoring.callback_fences()
+    }
     /// Consume the owned session and cancel all world-scoped work before returning.
     pub fn close(self) {
         drop(self);

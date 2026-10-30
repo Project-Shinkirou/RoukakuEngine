@@ -50,6 +50,39 @@ fn dialogue_keys(output: &NativeVnStepOutput) -> Vec<String> {
 }
 
 #[test]
+fn callback_fence_runs_while_story_waits_on_another_fence() {
+    let source = r#"
+return {
+  paragraphs = {
+    start = function()
+      rk.on_fence("voice.ready", "story.main", "on_ready", {})
+      rk.call("roukaku.vn.stage", "wait", "advance.wait", "advance")
+    end,
+  },
+  on_ready = function()
+    rk.set_property("camera.main", "zoom", 1.15)
+  end,
+}
+"#;
+    let mut session = session("callback-fence", source);
+    launch(&mut session);
+    assert_eq!(session.state.pending_wait.as_ref().unwrap().fence, "advance");
+
+    let completed = execute(
+        &mut session,
+        2,
+        VnPlayerCommand::CompleteWait {
+            fence: "voice.ready".into(),
+        },
+    )
+    .unwrap();
+
+    assert_eq!(session.state.pending_wait.as_ref().unwrap().fence, "advance");
+    assert!(!session.callback_fences().contains("voice.ready"));
+    assert_eq!(completed.properties.last().unwrap().value, 1.15);
+}
+
+#[test]
 fn choice_branches_and_paragraph_entry_reach_the_next_paragraph() {
     let mut session = session("branch", BRANCHING);
     let first = launch(&mut session);

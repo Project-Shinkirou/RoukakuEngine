@@ -390,4 +390,10 @@ impl NativeVnHostCommandSource {
             .as_ref()
             .and_then(|state| state.pending_wait.as_ref())
     }
+    /// Outstanding callback fences, including those unrelated to the story wait.
+    pub fn callback_fences(
+        &self,
+    ) -> Result<roukaku_vn_policy::authoring::CallbackFences<'_>, NativeVnHostError> {
+        self.host.callback_fences().map_err(Into::into)
+    }
 }

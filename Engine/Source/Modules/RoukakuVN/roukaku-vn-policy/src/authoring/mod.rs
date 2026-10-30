@@ -51,6 +51,21 @@ struct FenceCallback {
     args: serde_json::Value,
 }
 
+/// Read-only view of the paragraph's outstanding callback fence identities.
+pub struct CallbackFences<'a> {
+    shared: std::cell::Ref<'a, Shared>,
+}
+
+impl CallbackFences<'_> {
+    pub fn contains(&self, fence: &str) -> bool {
+        self.shared.fence_callbacks.contains_key(fence)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &str> {
+        self.shared.fence_callbacks.keys().map(String::as_str)
+    }
+}
+
 struct Shared {
     root: TaskScope,
     scope: TaskScope,
@@ -482,6 +497,13 @@ impl LuauAuthoringRuntime {
             return Err(error);
         }
         Ok(callbacks.len())
+    }
+
+    /// Fence identities with callbacks that have not yet been signalled.
+    pub fn callback_fences(&self) -> CallbackFences<'_> {
+        CallbackFences {
+            shared: self.context.shared.borrow(),
+        }
     }
     pub fn status(&self) -> StoryStatus {
         self.status.clone()

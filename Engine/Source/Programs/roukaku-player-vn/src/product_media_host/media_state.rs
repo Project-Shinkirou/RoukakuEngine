@@ -448,9 +448,17 @@ impl NativeVnProductMediaHost {
                         .saturating_add(audio_sample.completion_ns);
                 })?;
             }
-            if let Some(fence) = source.pending_wait().map(|wait| wait.fence.clone())
-                && self.completed_signals.remove(&fence)
-            {
+            let fence = {
+                let callback_fences = source
+                    .callback_fences()
+                    .map_err(|error| media_error("player.media.callback_fences", error))?;
+                let waited_fence = source.pending_wait().map(|wait| wait.fence.as_str());
+                take_completed_fence(
+                    &mut self.completed_signals,
+                    callback_fences.iter().chain(waited_fence.into_iter()),
+                )
+            };
+            if let Some(fence) = fence {
                 let present = source
                     .complete_wait(fence)
                     .map_err(|error| media_error("player.media.complete_wait", error))?;
@@ -505,5 +513,36 @@ impl NativeVnProductMediaHost {
         self.restored_videos.clear();
         self.close_pending_video_streams(source, executor).await?;
         self.audio.shutdown(source, executor).await
+    }
+}
+
+fn take_completed_fence<'a>(
+    completed: &mut BTreeSet<String>,
+    mut fences: impl Iterator<Item = &'a str>,
+) -> Option<String> {
+    fences.find_map(|fence| completed.take(fence))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn completion_forwarding_includes_each_registered_callback_fence_once() {
+        let callbacks = ["voice.ready"];
+        let mut completed = BTreeSet::from([
+            "voice.ready".to_owned(),
+            "advance".to_owned(),
+            "unrelated".to_owned(),
+        ]);
+        let mut forwarded = Vec::new();
+        while let Some(fence) = take_completed_fence(
+            &mut completed,
+            callbacks.into_iter().chain(std::iter::once("advance")),
+        ) {
+            forwarded.push(fence);
+        }
+        assert_eq!(forwarded, ["voice.ready", "advance"]);
+        assert_eq!(completed, BTreeSet::from(["unrelated".to_owned()]));
     }
 }

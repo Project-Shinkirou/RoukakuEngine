@@ -216,6 +216,15 @@ impl NativeVnRuntimeHost {
         }
         result
     }
+    pub(super) fn callback_fences(
+        &self,
+    ) -> Result<roukaku_vn_policy::authoring::CallbackFences<'_>, VnHostError> {
+        self.runtime
+            .as_ref()
+            .ok_or_else(|| VnHostError::new("ROUKAKU_RUNTIME_HOST_SESSION", "session is not open"))
+            .map(|runtime| runtime.callback_fences())
+    }
+
 
     pub(super) fn save(&mut self) -> Result<SaveBlob, VnHostError> {
         self.validate_session(self.session.as_ref().ok_or_else(|| {
