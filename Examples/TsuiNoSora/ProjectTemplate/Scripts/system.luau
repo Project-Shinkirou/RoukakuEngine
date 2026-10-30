@@ -130,47 +130,42 @@ end
 actions["tsui.classic.test.jump.t19"] = function()
     rk.enter("director.t", "0498")
 end
+local function show_page(node: string, kind: string)
+    while true do
+        local selected = rk.call("roukaku.vn.menu", "show", node, {kind = kind, policy = "tsui.policy.ui"})
+        local action = actions[selected]
+        if not action then return end
+        action()
+    end
+end
+
 
 paragraphs["title"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.title", {kind = "title", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.title", "title")
 end
 
 paragraphs["quick_panel"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.quick_panel", {kind = "quick_panel", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.quick_panel", "quick_panel")
 end
 
 paragraphs["save"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.save", {kind = "save", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.save", "save")
 end
 
 paragraphs["load"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.load", {kind = "load", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.load", "load")
 end
 
 paragraphs["config"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.config", {kind = "config", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.config", "config")
 end
 
 paragraphs["backlog"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.backlog", {kind = "backlog", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.backlog", "backlog")
 end
 
 paragraphs["custom"] = function()
-    local selected = rk.call("roukaku.vn.menu", "show", "page.custom", {kind = "custom", policy = "tsui.policy.ui"})
-    local action = actions[selected]
-    if action then action() end
+    show_page("page.custom", "custom")
 end
 
 return { paragraphs = paragraphs, actions = actions }
