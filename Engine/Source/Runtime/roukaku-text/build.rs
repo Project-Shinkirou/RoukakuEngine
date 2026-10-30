@@ -15,7 +15,7 @@ fn main() {
         let root = env::var_os("ROUKAKU_TEXT_VCPKG_ROOT")
             .map(PathBuf::from)
             .unwrap_or_else(|| native_triplet::install_root(&manifest_root(), triplet));
-        let base = root.join(triplet);
+        let base = root;
         let pkgconfig = [base.join("lib/pkgconfig"), base.join("share/pkgconfig")];
         if target.contains("windows") {
             let pkgconf_root = manifest_root().join(".work/vcpkg/downloads/tools/msys2");

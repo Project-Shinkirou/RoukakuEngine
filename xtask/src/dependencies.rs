@@ -104,7 +104,7 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
             "GITHUB_ENV",
             &format!("ROUKAKU_TEXT_VCPKG_ROOT={}", install_root.display()),
         )?;
-        let base = install_root.join(triplet);
+        let base = install_root.clone();
         for directory in ["bin", "debug/bin"] {
             env_file("GITHUB_PATH", &base.join(directory).display().to_string())?;
         }
