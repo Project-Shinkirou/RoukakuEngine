@@ -49,7 +49,11 @@ fn output(rate: u32, dropped: Arc<AtomicBool>) -> OpenedAudioOutput {
 #[tokio::test]
 async fn cancelled_open_and_shutdown_keep_responses_until_endpoint_is_closed() {
     let mut source = support::source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line speaker:hero #@id line.one\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line", speaker = "hero", window = "main"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let (client, mut backend, _) = host_channel(
         PlatformHostProfile::windows_release("nativevn-game", "com.example.game"),
@@ -100,7 +104,11 @@ async fn cancelled_open_and_shutdown_keep_responses_until_endpoint_is_closed() {
 #[tokio::test]
 async fn resuming_open_uses_original_response_and_failed_close_remains_retryable() {
     let mut source = support::source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line speaker:hero #@id line.one\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line", speaker = "hero", window = "main"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let (client, mut backend, _) = host_channel(
         PlatformHostProfile::windows_release("nativevn-game", "com.example.game"),

@@ -9,7 +9,11 @@ use roukaku_vn_core::VnRunConfig;
 
 #[test]
 fn system_activation_captures_before_presentation_and_not_inside_system_ui() {
-    let story = "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n\nstory system #@id story.system\nstate save #@id state.system.save\n  scene save #@id scene.system.save\n    system_page kind:save #@id page.save\nstate popup #@id state.system.popup\n  scene popup #@id scene.system.popup\n    system_page kind:quick_panel #@id page.popup\n";
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#;
     let ui = TEST_UI
         .replace("vn.request_exit", "vn.open_system page:save")
         .replace("quick_slot:\"\"", "quick_slot:\"slot.01\"");
@@ -70,7 +74,11 @@ fn system_activation_captures_before_presentation_and_not_inside_system_ui() {
 #[test]
 fn ordinary_gameplay_input_does_not_read_back_the_gpu() {
     let bytes = product_package_with_request(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
         |_| {},
     );
     let package = PackageReader::open(&bytes).unwrap();

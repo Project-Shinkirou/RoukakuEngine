@@ -1,11 +1,12 @@
 use super::*;
 
 pub(super) const STORY: &str = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    text key:line.one speaker:hero #@id line.one
-    text key:line.two speaker:hero #@id line.two
+local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+    rk.call("roukaku.vn.dialog", "show", "line.two", {key = "line.two", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }
 "#;
 
 pub(super) fn product_package() -> Vec<u8> {
@@ -75,17 +76,11 @@ pub(super) fn typed_ui_exit_request_stays_host_owned_and_observable() {
 
 #[test]
 pub(super) fn secondary_pointer_opens_system_ui_without_advancing_dialogue() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    text key:line.one speaker:hero #@id line.one
-
-story system #@id story.system
-state popup #@id state.system.popup
-  scene popup #@id scene.system.popup
-    system_page kind:quick_panel #@id page.popup
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#;
     let mut source = source_for(story);
     source.launch().expect("launch");
     let wait_before = source
@@ -104,7 +99,7 @@ state popup #@id state.system.popup
 
     assert_eq!(
         source.pending_wait().expect("system page wait").command_id,
-        "page.popup"
+        "system.1"
     );
     assert_ne!(source.pending_wait().unwrap().command_id, wait_before);
     assert!(
@@ -139,27 +134,11 @@ state popup #@id state.system.popup
 
 #[test]
 pub(super) fn secondary_pointer_round_trips_the_same_choice_occurrence() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    choice key:line.one #@id choice.prompt
-      option key:line.one target:first #@id option.first
-      option key:line.one target:second #@id option.second
-
-state first #@id state.first
-  scene first #@id scene.first
-    input_wait #@id wait.first
-
-state second #@id state.second
-  scene second #@id scene.second
-    input_wait #@id wait.second
-
-story system #@id story.system
-state popup #@id state.system.popup
-  scene popup #@id scene.system.popup
-    system_page kind:quick_panel #@id page.popup
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.choice", "select", "choice.prompt", {{id = "option.first", text = "line.one"}, {id = "option.second", text = "line.one"}}, {key = "line.one"})
+end
+return { paragraphs = paragraphs }"#;
     let mut source = source_for(story);
     source.launch().expect("launch");
     let choice_wait = source.pending_wait().expect("choice wait").clone();
@@ -178,7 +157,7 @@ state popup #@id state.system.popup
         .expect("secondary pointer dispatch");
     assert_eq!(
         source.pending_wait().expect("system page wait").command_id,
-        "page.popup"
+        "system.1"
     );
 
     source
@@ -202,17 +181,11 @@ state popup #@id state.system.popup
 
 #[test]
 pub(super) fn product_observation_reports_system_ui_without_exposing_content() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    text key:line.one speaker:hero #@id line.one
-
-story system #@id story.system
-state popup #@id state.system.popup
-  scene popup #@id scene.system.popup
-    system_page kind:quick_panel #@id page.popup
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#;
     let mut source = source_for(story);
     source.launch().expect("launch");
 
@@ -251,23 +224,17 @@ state popup #@id state.system.popup
 
 #[test]
 pub(super) fn secondary_pointer_opens_system_ui_while_story_wait_has_no_ui_surface() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    wait fence:opening.audio.end #@id wait.opening.audio
-    text key:line.one speaker:hero #@id line.one
-
-story system #@id story.system
-state popup #@id state.system.popup
-  scene popup #@id scene.system.popup
-    system_page kind:quick_panel #@id page.popup
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "wait", "wait.opening.audio", "opening.audio.end")
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#;
     let mut source = source_for(story);
     source.launch().expect("launch");
     assert_eq!(
         source.pending_wait().expect("opening wait").command_id,
-        "wait.opening.audio"
+        "opening.audio.end"
     );
 
     source
@@ -288,18 +255,17 @@ state popup #@id state.system.popup
 
 #[test]
 pub(super) fn primary_pointer_advances_input_wait_without_fabricating_message_ui() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    input_wait #@id wait.input
-    text key:line.one speaker:hero #@id line.one
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.wait_input("input")
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#;
     let mut source = source_for(story);
     source.launch().expect("launch");
     assert_eq!(
         source.pending_wait().expect("input wait").command_id,
-        "wait.input"
+        "input"
     );
     assert!(source.ui_semantics().is_none());
 

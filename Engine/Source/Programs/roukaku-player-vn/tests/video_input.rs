@@ -5,13 +5,24 @@ use roukaku_player_vn::NativeVnHostCommandSource;
 use roukaku_ui_core::{UiButtonState, UiInputEventKind, UiPoint, UiPointerButton};
 
 fn video_source(skippable: bool, wait: bool) -> NativeVnHostCommandSource {
-    let ending = if wait {
-        "end:wait fence:movie.end"
+    let end_policy = if wait {
+        "wait"
     } else {
-        "end:continue"
+        "continue"
+    };
+    let wait_call = if wait {
+        "    rk.call(\"roukaku.vn.stage\", \"wait\", \"wait.movie\", \"movie.end\")\n"
+    } else {
+        ""
     };
     support::source_for_video(&format!(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    stage viewport:320x180 safe_area:16:9 #@id stage.main\n    layer id:video kind:video z:100 blend:normal clip:stage #@id layer.video\n    skip_allowed allowed:{skippable} #@id skip.policy\n    movie layer:video asset:asset:/video/intro loop:true {ending} fallback:asset:/video/intro-fallback interrupt:reject #@id movie.intro\n    text key:line.after #@id line.after\n\nstory system #@id story.system\nstate popup #@id state.system.popup\n  scene popup #@id scene.system.popup\n    system_page kind:quick_panel #@id page.popup\n"
+        r#"local paragraphs = {{}}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "skip_allowed", "skip.policy", {{allowed = {skippable}}})
+    rk.call("roukaku.vn.stage", "movie", "movie.intro", {{layer = "video", asset = "asset:/video/intro", loop_mode = "loop", ["end"] = "{end_policy}", fence = "movie.end", fallback = "asset:/video/intro-fallback", interrupt = "reject"}})
+    {wait_call}    rk.call("roukaku.vn.dialog", "show", "line.after", {{key = "line.after"}})
+end
+return {{ paragraphs = paragraphs }}"#
     ))
 }
 

@@ -20,8 +20,7 @@ use roukaku_ui_core::{
     UiButtonState, UiInputEventKind, UiInsets, UiPoint, UiPointerButton, UiViewport, ValidateUi,
 };
 
-use roukaku_vn_core::{RoukakuSource, VnRunConfig, compile_roukaku_project};
-
+use roukaku_vn_core::VnRunConfig;
 use roukaku_vn_package::package_sections_for_project;
 
 #[path = "support/glyph_lifecycle.rs"]

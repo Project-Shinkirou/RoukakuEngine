@@ -63,19 +63,14 @@ fn dialogue_wait_precedes_text_reveal_and_first_click_only_reveals() {
 
 #[test]
 fn repeated_physical_advances_keep_glyph_uploads_ordered() {
-    let mut story = String::from(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n",
-    );
+    let mut story = String::from("local paragraphs = {}\nparagraphs.start = function()\n");
     for index in 0..150 {
-        let window = if index % 3 == 0 {
-            " window:alternate"
-        } else {
-            ""
-        };
+        let window = if index % 3 == 0 { "alternate" } else { "main" };
         story.push_str(&format!(
-            "    text key:line.{index} speaker:hero{window} #@id line.{index}\n"
+            "    rk.call(\"roukaku.vn.dialog\", \"show\", \"line.{index}\", {{key = \"line.one\", speaker = \"hero\", window = \"{window}\"}})\n"
         ));
     }
+    story.push_str("end\nreturn { paragraphs = paragraphs }");
     let mut ui = TEST_UI.replace(
         "value:$model.text_key",
         "value:$model.text_key visible_graphemes:$model.visible_graphemes",

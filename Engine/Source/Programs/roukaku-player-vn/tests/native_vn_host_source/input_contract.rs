@@ -272,13 +272,12 @@ pub(super) fn native_vn_source_builds_atomic_platform_save_transaction() {
 
 #[test]
 pub(super) fn native_vn_source_completes_wait_through_product_context() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    wait fence:voice.end #@id wait.voice
-    text key:line.after #@id line.after
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "wait", "wait.voice", "voice.end")
+    rk.call("roukaku.vn.dialog", "show", "line.after", {key = "line.after"})
+end
+return { paragraphs = paragraphs }"#;
     let bytes = product_package_for(story);
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package_with_execution(
@@ -308,12 +307,11 @@ state start #@id state.start
 
 #[test]
 pub(super) fn native_vn_source_exposes_validated_timeline_tasks_to_player() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    timeline id:intro target:camera property:x keyframes:0=0,120=1 join:block fence:timeline.intro.complete budget_ms:2 #@id timeline.intro
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "timeline", "intro", {start = {id = "intro", join = "block", tracks = {{easing = "linear", target = "camera", property = "x", keyframes = {{time_ms = 0, value = {millionths = 0}}, {time_ms = 120, value = {millionths = 1000000}}}}}, fence = "timeline.intro.complete", budget_us = 2000}})
+end
+return { paragraphs = paragraphs }"#;
     let mut source = source_for(story);
 
     source.launch().unwrap();
@@ -328,13 +326,13 @@ state start #@id state.start
 
 #[test]
 pub(super) fn packaged_native_vn_source_exposes_hash_validated_audio_requests() {
-    let story = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    bgm asset:asset:/voice/hero/0001 #@id bgm.hero.0001
-    text key:line.after #@id line.after
-"#;
+    let story = r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "preload", "preload.voice", {asset = "asset:/voice/hero/0001"})
+    rk.call("roukaku.vn.stage", "bgm", "bgm.hero.0001", {id = "bgm.hero.0001", bus = "bgm", asset = "asset:/voice/hero/0001", looped = true, fade_ms = 0, sync = "none"})
+    rk.call("roukaku.vn.dialog", "show", "line.after", {key = "line.after"})
+end
+return { paragraphs = paragraphs }"#;
     let encoded = b"ID3\x04\x00\x00\x00\x00\x00\x00fixture".to_vec();
     let encoded_hash = Hash256::from_sha256(&encoded);
     let bytes = product_package_with_request(story, |request| {
@@ -414,12 +412,11 @@ state start #@id state.start
 #[test]
 pub(super) fn packaged_native_vn_source_routes_typed_audio_control_to_product_audio_owner() {
     let mut source = source_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    audio action:pause target:bgm.main #@id audio.pause
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "audio", "audio.pause", {id = "bgm.main", action = "pause", target = "bgm.main"})
+end
+return { paragraphs = paragraphs }"#,
     );
 
     source.launch().unwrap();
@@ -436,13 +433,13 @@ state start #@id state.start
 
 #[test]
 pub(super) fn packaged_player_rejects_headless_presentation_binding() {
-    let compiled = compile_roukaku_project(
-        [RoukakuSource::story("main.roukaku", STORY)],
-        Default::default(),
+    let project = luau_project(STORY, TEST_UI, test_compile_options());
+    let sections = package_sections_for_project(
+        &project,
+        &["classic".to_string()],
+        "nativevn-game",
     )
     .unwrap();
-    let sections =
-        package_sections_for_project(&compiled, &["classic".to_string()], "nativevn-game").unwrap();
     let request = roukaku_package::PackageBuildRequest::fixture(
         "com.example.player-binding",
         "classic",

@@ -55,7 +55,11 @@ impl AudioOutputLane for ProductAudioTestLane {
 
 pub(super) fn source() -> NativeVnHostCommandSource {
     support::source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line speaker:hero #@id line.one\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line", speaker = "hero"})
+end
+return { paragraphs = paragraphs }"#,
     )
 }
 
@@ -77,7 +81,12 @@ pub(super) fn assert_endpoint_consumed_is_monotonic(
 pub(super) async fn shared_product_media_host_completes_timeline_fence_and_presents_runtime_result()
 {
     let mut source = support::source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    timeline id:intro target:camera property:x keyframes:0=0,120=1 join:block fence:timeline.intro.complete budget_ms:2 #@id timeline.intro\n    text key:line.after #@id line.after\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "timeline", "intro", {start = {id = "intro", join = "block", tracks = {{easing = "linear", target = "camera", property = "x", keyframes = {{time_ms = 0, value = {millionths = 0}}, {time_ms = 120, value = {millionths = 1000000}}}}}, fence = "timeline.intro.complete", budget_us = 2000}})
+    rk.call("roukaku.vn.dialog", "show", "line.after", {key = "line.after"})
+end
+return { paragraphs = paragraphs }"#,
     );
     source.launch().unwrap();
 
@@ -124,7 +133,11 @@ pub(super) async fn shared_product_media_host_completes_timeline_fence_and_prese
 pub(super) async fn product_media_host_restores_uncommitted_timeline_tasks_after_capacity_failure()
 {
     let mut source = support::source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    timeline id:intro target:camera property:x keyframes:0=0,120=1 join:block fence:timeline.intro.complete budget_ms:2 #@id timeline.intro\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "timeline", "intro", {start = {id = "intro", join = "block", tracks = {{easing = "linear", target = "camera", property = "x", keyframes = {{time_ms = 0, value = {millionths = 0}}, {time_ms = 120, value = {millionths = 1000000}}}}}, fence = "timeline.intro.complete", budget_us = 2000}})
+end
+return { paragraphs = paragraphs }"#,
     );
     source.launch().unwrap();
     let profile = PlatformHostProfile::windows_release("nativevn-game", "com.example.game");
@@ -146,7 +159,12 @@ pub(super) async fn product_media_host_restores_uncommitted_timeline_tasks_after
 #[tokio::test]
 pub(super) async fn product_media_host_presents_every_video_frame_and_restores_by_asset_identity() {
     let mut source = support::source_for_video(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    stage viewport:320x180 safe_area:16:9 #@id stage.main\n    layer id:video kind:video z:100 blend:normal clip:stage #@id layer.video\n    movie layer:video asset:asset:/video/intro loop:true end:wait fence:movie.intro.end fallback:asset:/video/intro-fallback interrupt:reject #@id movie.intro\n    text key:line.after #@id line.after\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "movie", "movie.intro", {layer = "video", asset = "asset:/video/intro", loop_mode = "loop", ["end"] = "wait", fence = "movie.intro.end", fallback = "asset:/video/intro-fallback", interrupt = "reject"})
+    rk.call("roukaku.vn.dialog", "show", "line.after", {key = "line.after"})
+end
+return { paragraphs = paragraphs }"#,
     );
     source.launch().unwrap();
     let first = vec![1, 2, 3, 255];

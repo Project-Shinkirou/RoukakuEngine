@@ -110,15 +110,14 @@ pub(super) fn packaged_native_vn_source_shapes_localized_text_into_retained_scen
 #[test]
 pub(super) fn packaged_native_vn_stage_uses_product_director_and_package_texture() {
     let bytes = product_package_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    stage viewport:640x360 safe_area:16:9 #@id stage.main
-    layer id:bg kind:background z:0 blend:normal clip:stage #@id layer.bg
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.main
-    text key:line.one speaker:hero #@id line.one
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "stage", "stage.main", {viewport = {width = 640, height = 360}, safe_area = {width = 16, height = 9}})
+    rk.call("roukaku.vn.stage", "layer", "layer.bg", {id = "bg", kind = "background", z = 0, blend = "normal", clip = "stage"})
+    rk.call("roukaku.vn.stage", "background", "background.main", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -196,19 +195,17 @@ state start #@id state.start
 #[test]
 pub(super) fn packaged_native_vn_stage_composes_a_typed_director_transition() {
     let bytes = product_package_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene first #@id scene.first
-    stage viewport:640x360 safe_area:16:9 #@id stage.main
-    layer id:bg kind:background z:0 blend:normal clip:stage #@id layer.bg
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.first
-    text key:line.one speaker:hero #@id line.one
-  scene second #@id scene.second
-    transition preset:director_puppet_1 duration:250 descriptor:director.puppet.1 #@id transition.wipe
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.second
-    text key:line.two speaker:hero #@id line.two
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "stage", "stage.main", {viewport = {width = 640, height = 360}, safe_area = {width = 16, height = 9}})
+    rk.call("roukaku.vn.stage", "layer", "layer.bg", {id = "bg", kind = "background", z = 0, blend = "normal", clip = "stage"})
+    rk.call("roukaku.vn.stage", "background", "background.first", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+    rk.call("roukaku.vn.stage", "transition", "transition.wipe", {preset = "director_puppet_1", duration_ms = 250, descriptor = "director.puppet.1"})
+    rk.call("roukaku.vn.stage", "background", "background.second", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.two", {key = "line.two", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -235,19 +232,17 @@ state start #@id state.start
 #[test]
 pub(super) fn packaged_native_vn_stage_restores_a_director_transition_snapshot() {
     let bytes = product_package_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene first #@id scene.first
-    stage viewport:640x360 safe_area:16:9 #@id stage.main
-    layer id:bg kind:background z:0 blend:normal clip:stage #@id layer.bg
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.first
-    text key:line.one speaker:hero #@id line.one
-  scene second #@id scene.second
-    transition preset:director_puppet_9 duration:250 descriptor:director.puppet.9 #@id transition.center
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.second
-    text key:line.two speaker:hero #@id line.two
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "stage", "stage.main", {viewport = {width = 640, height = 360}, safe_area = {width = 16, height = 9}})
+    rk.call("roukaku.vn.stage", "layer", "layer.bg", {id = "bg", kind = "background", z = 0, blend = "normal", clip = "stage"})
+    rk.call("roukaku.vn.stage", "background", "background.first", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+    rk.call("roukaku.vn.stage", "transition", "transition.center", {preset = "director_puppet_9", duration_ms = 250, descriptor = "director.puppet.9"})
+    rk.call("roukaku.vn.stage", "background", "background.second", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.two", {key = "line.two", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -279,13 +274,12 @@ state start #@id state.start
 #[test]
 pub(super) fn packaged_native_vn_preload_does_not_create_an_unbounded_gpu_residency_lease() {
     let bytes = product_package_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    preload asset:asset:/background/apartment-night #@id preload.background
-    text key:line.one speaker:hero #@id line.one
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "preload", "preload.background", {asset = "asset:/background/apartment-night"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -342,13 +336,12 @@ pub(super) fn package_open_blocks_undeclared_localization() {
 #[test]
 pub(super) fn package_open_accepts_movie_for_product_media_execution() {
     let bytes = product_package_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    movie layer:video asset:asset:/movie/unsupported end:continue interrupt:reject #@id movie.unsupported
-    text key:line.one speaker:hero #@id line.one
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "movie", "movie.unsupported", {layer = "video", asset = "asset:/movie/unsupported", ["end"] = "continue", interrupt = "reject"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -370,13 +363,12 @@ state start #@id state.start
 #[test]
 pub(super) fn package_open_blocks_undeclared_presentation_preset_before_provider_creation() {
     let bytes = product_package_for(
-        r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    background asset:asset:/background/missing layer:bg preset:not_packaged duration:100 interrupt:replace_from_current #@id background.policy
-    text key:line.one speaker:hero #@id line.one
-"#,
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "background", "background.policy", {asset = "asset:/background/missing", layer = "bg", preset = "not_packaged", duration_ms = 100, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero", window = "message"})
+end
+return { paragraphs = paragraphs }"#,
     );
     let package = PackageReader::open(&bytes).unwrap();
     let error = match NativeVnHostCommandSource::from_package(

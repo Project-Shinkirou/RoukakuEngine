@@ -9,7 +9,12 @@ mod support;
 
 fn source() -> NativeVnHostCommandSource {
     let mut source = support::source_for_video(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    stage viewport:320x180 safe_area:16:9 #@id stage.main\n    layer id:video kind:video z:100 blend:normal clip:stage #@id layer.video\n    movie layer:video asset:asset:/video/intro loop:true end:wait fence:movie.intro.end fallback:asset:/video/intro-fallback interrupt:reject #@id movie.intro\n    text key:line.after #@id line.after\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "movie", "movie.intro", {layer = "video", asset = "asset:/video/intro", loop_mode = "loop", ["end"] = "wait", fallback = "asset:/video/intro-fallback", interrupt = "reject"})
+    rk.call("roukaku.vn.dialog", "show", "line.after", {key = "line.after", window = "main"})
+end
+return { paragraphs = paragraphs }"#,
     );
     source.launch().unwrap();
     source

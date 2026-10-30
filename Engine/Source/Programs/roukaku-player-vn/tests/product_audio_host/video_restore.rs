@@ -207,7 +207,12 @@ pub(super) async fn shared_product_audio_host_owns_format_queue_control_and_clea
 pub(super) fn video_frame_commands_carry_current_pixels_and_dimensions() {
     use roukaku_media_core::{SceneCommand, TextureFrame};
     let mut source = support::source_for_video(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    stage viewport:320x180 safe_area:16:9 #@id stage.main\n    layer id:video kind:video z:100 blend:normal clip:stage #@id layer.video\n    movie layer:video asset:asset:/video/intro loop:true end:wait fence:movie.intro.end fallback:asset:/video/intro-fallback interrupt:reject #@id movie.intro\n    text key:line.after #@id line.after\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.stage", "movie", "movie.intro", {layer = "video", asset = "asset:/video/intro", loop_mode = "loop", ["end"] = "wait", fence = "movie.intro.end", fallback = "asset:/video/intro-fallback", interrupt = "reject"})
+    rk.call("roukaku.vn.dialog", "show", "line.after", {key = "line.after"})
+end
+return { paragraphs = paragraphs }"#,
     );
     source.launch().unwrap();
     let request = source.take_video_requests().remove(0);
@@ -238,7 +243,11 @@ pub(super) fn video_frame_commands_carry_current_pixels_and_dimensions() {
 pub(super) async fn cold_product_restore_prepares_packaged_pcm_and_preserves_saved_cursor() {
     use roukaku_audio_kira::{AudioAssetRevision, AudioBusState, AudioVoiceState};
     let mut source = support::source_for_audio(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line speaker:hero #@id line.one\n",
+        r#"local paragraphs = {}
+paragraphs.start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line", speaker = "hero"})
+end
+return { paragraphs = paragraphs }"#,
     );
     source.launch().unwrap();
     source
