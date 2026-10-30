@@ -14,6 +14,7 @@ use std::{
 };
 
 use mlua::{Function, Lua, LuaSerdeExt, Table, Thread, Value, thread::ThreadStatus};
+use roukaku_core::Hash256;
 use roukaku_policy::{PolicyExecutionBudget, SandboxedLuau};
 use roukaku_runtime::TaskScope;
 
@@ -33,6 +34,13 @@ fn live_id() -> mlua::Result<u64> {
         })
         .map_err(|_| mlua::Error::runtime("authoring live identity exhausted"))
 }
+pub(super) fn source_revision(
+    paragraph: &ParagraphId,
+    modules: &BTreeMap<String, String>,
+) -> mlua::Result<String> {
+    let bytes = postcard::to_allocvec(&(paragraph, modules)).map_err(mlua::Error::external)?;
+    Ok(Hash256::from_sha256(&bytes).to_string())
+}
 
 struct Shared {
     root: TaskScope,
@@ -42,6 +50,14 @@ struct Shared {
     visits: BTreeMap<String, u64>,
     records: Vec<NodeRecord>,
     recoverable: RecoverableState,
+    entry_checkpoint: RecoverableState,
+    module_revisions: BTreeMap<String, String>,
+    checkpoints: Vec<ReplayCheckpoint>,
+    replay: Vec<ReplayEvent>,
+    replay_source: Vec<ReplayEvent>,
+    replay_cursor: usize,
+    rng_state: u64,
+    replaying: bool,
     segments: BTreeMap<u64, timeline::Segment>,
     active_segments: BTreeSet<u64>,
     cancelling: bool,
@@ -187,6 +203,14 @@ impl LuauAuthoringRuntime {
                 visits: BTreeMap::new(),
                 records: Vec::new(),
                 recoverable: RecoverableState::default(),
+                entry_checkpoint: RecoverableState::default(),
+                module_revisions: BTreeMap::new(),
+                replay: Vec::new(),
+                checkpoints: Vec::new(),
+                replay_source: Vec::new(),
+                replay_cursor: 0,
+                rng_state: 0x9e3779b97f4a7c15,
+                replaying: false,
                 segments: BTreeMap::new(),
                 active_segments: BTreeSet::new(),
                 cancelling: false,
@@ -238,7 +262,10 @@ impl LuauAuthoringRuntime {
             .set_name(source_name)
             .set_environment(environment)
             .eval()?;
-        self.context.shared.borrow().budget.borrow().check()?;
+        self.context.shared.borrow_mut().module_revisions.insert(
+            module.to_owned(),
+            Hash256::from_sha256(source.as_bytes()).to_string(),
+        );
         self.context.modules.set(module, exports)
     }
 
@@ -269,6 +296,13 @@ impl LuauAuthoringRuntime {
             shared.story_thread = Some(thread.to_pointer() as usize);
             shared.visits.clear();
             shared.records.clear();
+            shared.entry_checkpoint = shared.recoverable.clone();
+            shared.replay.clear();
+            shared.checkpoints.clear();
+            shared.replay_cursor = 0;
+            if !shared.replaying {
+                shared.replay_source.clear();
+            }
         }
         self.thread = Some(thread);
         self.status = StoryStatus::Idle;
@@ -336,6 +370,29 @@ impl LuauAuthoringRuntime {
             self.context.shared.borrow().limits.snapshot_depth,
         )?;
         self.context.shared.borrow_mut().pending = None;
+        {
+            let mut shared = self.context.shared.borrow_mut();
+            if shared.replaying {
+                match shared.replay_source.get(shared.replay_cursor) {
+                    Some(ReplayEvent::Input {
+                        action: expected_action,
+                        payload: expected_payload,
+                    }) if expected_action == action && expected_payload == &payload => {
+                        shared.replay_cursor += 1;
+                        shared.replay.push(ReplayEvent::Input {
+                            action: action.to_owned(),
+                            payload: payload.clone(),
+                        });
+                    }
+                    _ => return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+                }
+            } else {
+                shared.replay.push(ReplayEvent::Input {
+                    action: action.to_owned(),
+                    payload: payload.clone(),
+                });
+            }
+        }
         self.resume(input)?;
         Ok(true)
     }
@@ -350,6 +407,153 @@ impl LuauAuthoringRuntime {
 
     pub fn recoverable_state(&self) -> RecoverableState {
         self.context.shared.borrow().recoverable.clone()
+    }
+    /// Captures paragraph-entry state, never the current mid-paragraph state.
+    pub fn save_paragraph(&self) -> mlua::Result<ParagraphSave> {
+        let shared = self.context.shared.borrow();
+        let paragraph = shared
+            .paragraph
+            .clone()
+            .ok_or_else(|| mlua::Error::runtime("no active paragraph to save"))?;
+        if !shared.module_revisions.contains_key(&paragraph.module) {
+            return Err(mlua::Error::runtime("paragraph source revision is missing"));
+        }
+        let source_revision = source_revision(&paragraph, &shared.module_revisions)?;
+        Ok(ParagraphSave {
+            schema: "roukaku.vn.paragraph_entry_save.v1".into(),
+            paragraph,
+            source_revision,
+            entry_state: shared.entry_checkpoint.clone(),
+            scene_state: shared.entry_checkpoint.scene.clone(),
+            replay: shared.replay.clone(),
+        })
+    }
+
+    /// Restarts at entry and replays recorded inputs. A source change fences
+    /// replay and restarts the current source from the saved entry checkpoint.
+    pub fn load_paragraph(&mut self, save: ParagraphSave) -> mlua::Result<ParagraphLoadOutcome> {
+        if save.schema != "roukaku.vn.paragraph_entry_save.v1" {
+            return Err(mlua::Error::runtime("ROUKAKU_VN_SAVE_FORMAT_UNSUPPORTED"));
+        }
+        if save.scene_state != save.entry_state.scene {
+            return Err(mlua::Error::runtime("ROUKAKU_VN_SAVE_ENTRY_SCENE_INVALID"));
+        }
+        let shared = self.context.shared.borrow();
+        if !shared.module_revisions.contains_key(&save.paragraph.module) {
+            return Err(mlua::Error::runtime("paragraph source revision is missing"));
+        }
+        let current_revision = source_revision(&save.paragraph, &shared.module_revisions)?;
+        drop(shared);
+        let mismatch = current_revision != save.source_revision;
+        self.cancel()?;
+        self.restore_registered_state(save.entry_state)?;
+        {
+            let mut shared = self.context.shared.borrow_mut();
+            shared.replaying = !mismatch;
+            shared.replay_source = if mismatch {
+                Vec::new()
+            } else {
+                save.replay.clone()
+            };
+            shared.replay_cursor = 0;
+        }
+        self.start_paragraph(save.paragraph)?;
+        if mismatch {
+            return Ok(ParagraphLoadOutcome::RevisionMismatchRestarted {
+                diagnostic: "ROUKAKU_VN_SOURCE_REVISION_MISMATCH: paragraph restarted from entry"
+                    .into(),
+            });
+        }
+        loop {
+            let next = {
+                let shared = self.context.shared.borrow();
+                shared.replay_source.get(shared.replay_cursor).cloned()
+            };
+            match next {
+                None => break,
+                Some(ReplayEvent::Input { action, payload }) => {
+                    let wait = match self.status() {
+                        StoryStatus::Waiting(wait) if wait.action == action => wait,
+                        _ => return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+                    };
+                    if !self.input(wait.token, &action, payload)? {
+                        return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_INPUT_REJECTED"));
+                    }
+                }
+                Some(
+                    ReplayEvent::RandomDraw { .. }
+                    | ReplayEvent::HostResult { .. }
+                    | ReplayEvent::SideEffect { .. },
+                ) => {
+                    return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED"));
+                }
+            }
+        }
+        self.context.shared.borrow_mut().replaying = false;
+        Ok(ParagraphLoadOutcome::Replayed)
+    }
+    /// Returns the recorded host result during replay, or journals the live result.
+    pub fn host_result(
+        &mut self,
+        operation: &str,
+        live_result: serde_json::Value,
+    ) -> mlua::Result<serde_json::Value> {
+        self.context.active()?;
+        if operation.is_empty() {
+            return Err(mlua::Error::runtime(
+                "host replay operation must be nonempty",
+            ));
+        }
+        let bytes = json_bytes(
+            &live_result,
+            0,
+            self.context.shared.borrow().limits.snapshot_depth,
+        )?;
+        self.context.charge(bytes.saturating_add(operation.len()))?;
+        let mut shared = self.context.shared.borrow_mut();
+        if shared.replaying {
+            match shared.replay_source.get(shared.replay_cursor) {
+                Some(ReplayEvent::HostResult {
+                    operation: expected,
+                    result,
+                }) if expected == operation => {
+                    let result = result.clone();
+                    shared.replay_cursor += 1;
+                    shared.replay.push(ReplayEvent::HostResult {
+                        operation: operation.to_owned(),
+                        result: result.clone(),
+                    });
+                    Ok(result)
+                }
+                _ => Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+            }
+        } else {
+            shared.replay.push(ReplayEvent::HostResult {
+                operation: operation.to_owned(),
+                result: live_result.clone(),
+            });
+            Ok(live_result)
+        }
+    }
+    /// Replays from the paragraph entry through the selected line or choice.
+    pub fn rollback_to(
+        &mut self,
+        occurrence: &NodeOccurrence,
+    ) -> mlua::Result<ParagraphLoadOutcome> {
+        let save = {
+            let shared = self.context.shared.borrow();
+            let checkpoint = shared
+                .checkpoints
+                .iter()
+                .find(|checkpoint| &checkpoint.occurrence == occurrence)
+                .cloned()
+                .ok_or_else(|| mlua::Error::runtime("ROUKAKU_VN_REPLAY_CHECKPOINT_MISSING"))?;
+            let mut save = self.save_paragraph()?;
+            save.replay.truncate(checkpoint.event_index);
+            save.source_revision = checkpoint.source_revision;
+            save
+        };
+        self.load_paragraph(save)
     }
 
     /// Installs explicit registered state while no coroutine is live. A caller

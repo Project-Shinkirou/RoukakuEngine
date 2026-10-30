@@ -5,7 +5,7 @@ use roukaku_text::{TextLayoutMeasurement, TextLayoutRequest};
 
 use super::{
     ChoiceOption, Context, FunctionRef, InputWait, NodeContent, NodeOccurrence, NodeRecord,
-    SegmentStatus, TimelineDeclaration, timeline,
+    ReplayCheckpoint, SegmentStatus, TimelineDeclaration, source_revision, timeline,
 };
 
 pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
@@ -45,6 +45,95 @@ pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
         });
         Ok(())
     });
+    bind!("random_u64", |_lua: &Lua, context: &Context, ()| {
+        context.active()?;
+        context.charge(64)?;
+        let mut shared = context.shared.borrow_mut();
+        let value = if shared.replaying {
+            match shared.replay_source.get(shared.replay_cursor) {
+                Some(super::ReplayEvent::RandomDraw { value }) => {
+                    let value = *value;
+                    shared.replay_cursor += 1;
+                    value
+                }
+                _ => return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+            }
+        } else {
+            let mut state = shared.rng_state;
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            shared.rng_state = state;
+            state & ((1_u64 << 53) - 1)
+        };
+        shared.replay.push(super::ReplayEvent::RandomDraw { value });
+        Ok(value as i64)
+    });
+    bind!("once", |_lua: &Lua, context: &Context, id: String| {
+        context.active()?;
+        if id.is_empty() {
+            return Err(mlua::Error::runtime(
+                "side-effect identity must be nonempty",
+            ));
+        }
+        context.charge(id.len().saturating_add(64))?;
+        let mut shared = context.shared.borrow_mut();
+        if shared.replaying {
+            match shared.replay_source.get(shared.replay_cursor) {
+                Some(super::ReplayEvent::SideEffect { id: expected }) if expected == &id => {
+                    shared.replay_cursor += 1;
+                    shared.replay.push(super::ReplayEvent::SideEffect { id });
+                    Ok(false)
+                }
+                _ => Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+            }
+        } else {
+            shared.replay.push(super::ReplayEvent::SideEffect { id });
+            Ok(true)
+        }
+    });
+    bind!(
+        "host_query",
+        |lua: &Lua, context: &Context, (operation, args): (String, Value)| {
+            context.active()?;
+            if operation.is_empty() {
+                return Err(mlua::Error::runtime(
+                    "host query operation must be nonempty",
+                ));
+            }
+            let args: serde_json::Value = context.data(lua, args)?;
+            let recorded = {
+                let mut shared = context.shared.borrow_mut();
+                if shared.replaying {
+                    match shared.replay_source.get(shared.replay_cursor) {
+                        Some(super::ReplayEvent::HostResult {
+                            operation: expected,
+                            result,
+                        }) if expected == &operation => {
+                            let result = result.clone();
+                            shared.replay_cursor += 1;
+                            Some(result)
+                        }
+                        _ => return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+                    }
+                } else {
+                    None
+                }
+            };
+            let result = match recorded {
+                Some(result) => result,
+                None => context.host.query(&operation, args)?,
+            };
+            let lua_result = lua.to_value(&result)?;
+            let result: serde_json::Value = context.data(lua, lua_result.clone())?;
+            context
+                .shared
+                .borrow_mut()
+                .replay
+                .push(super::ReplayEvent::HostResult { operation, result });
+            Ok(lua_result)
+        }
+    );
     bind!("line", |lua: &Lua,
                    context: &Context,
                    (node, data): (String, Value)| {
@@ -252,6 +341,13 @@ fn record(lua: &Lua, context: &Context, node: String, content: NodeContent) -> m
         node,
         visit: *visit,
     };
+    let event_index = shared.replay.len();
+    let source_revision = source_revision(&occurrence.paragraph, &shared.module_revisions)?;
+    shared.checkpoints.push(ReplayCheckpoint {
+        occurrence: occurrence.clone(),
+        event_index,
+        source_revision,
+    });
     let result = lua.to_value(&occurrence)?;
     shared.records.push(NodeRecord {
         occurrence,

@@ -197,6 +197,184 @@ fn paragraph_lines_choices_and_waits_advance_only_on_matching_input() {
 }
 
 #[test]
+fn paragraph_save_reenters_entry_and_replays_to_the_saved_line() {
+    let source = r#"return {paragraphs={intro=function()
+        rk.register_state("variables", "count", 0)
+        rk.set_state("variables", "count", rk.get_state("variables", "count") + 1)
+        local draw = rk.random_u64()
+        rk.line("first", {value=rk.get_state("variables", "count"), random=draw})
+        rk.wait_input("advance")
+        rk.line("second", {value=rk.get_state("variables", "count")})
+        rk.wait_input("advance")
+    end}}"#;
+    let host = Presentation::new();
+    let mut live = runtime(Rc::clone(&host));
+    live.replace_module("story", "@story/intro.luau", source)
+        .unwrap();
+    live.start_paragraph(paragraph()).unwrap();
+    let wait = waiting(&live);
+    live.input(wait.token, "advance", json!(null)).unwrap();
+    let saved = live.save_paragraph().unwrap();
+    assert_eq!(saved.entry_state.variables.get("count"), None);
+    assert_eq!(saved.replay.len(), 2);
+
+    let mut loaded = runtime(host);
+    loaded
+        .replace_module("story", "@story/intro.luau", source)
+        .unwrap();
+    assert_eq!(
+        loaded.load_paragraph(saved).unwrap(),
+        ParagraphLoadOutcome::Replayed
+    );
+    assert_eq!(loaded.records(), live.records());
+    assert_eq!(loaded.recoverable_state().variables["count"], json!(1));
+    assert_eq!(waiting(&loaded).action, "advance");
+}
+
+#[test]
+fn unsupported_cursor_save_schema_is_rejected() {
+    let host = Presentation::new();
+    let mut runtime = runtime(host);
+    runtime
+        .replace_module(
+            "story",
+            "@story/intro.luau",
+            "return {paragraphs={intro=function() rk.wait_input('next') end}}",
+        )
+        .unwrap();
+    assert!(runtime.save_paragraph().is_err());
+    runtime.start_paragraph(paragraph()).unwrap();
+    let mut save = runtime.save_paragraph().unwrap();
+    save.schema = "roukaku.vn.mid_cursor_save.v1".into();
+    assert!(
+        runtime
+            .load_paragraph(save)
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_VN_SAVE_FORMAT_UNSUPPORTED")
+    );
+}
+#[test]
+fn revision_mismatch_restarts_from_entry_and_reports_diagnostic() {
+    let host = Presentation::new();
+    let mut runtime = runtime(host);
+    runtime
+        .replace_module(
+            "story",
+            "@story/intro.luau",
+            "return {paragraphs={intro=function() rk.line('a', {}) rk.wait_input('next') end}}",
+        )
+        .unwrap();
+    runtime.start_paragraph(paragraph()).unwrap();
+    let saved = runtime.save_paragraph().unwrap();
+    runtime
+        .replace_module(
+            "story",
+            "@story/intro.luau",
+            "return {paragraphs={intro=function() rk.line('b', {}) rk.wait_input('next') end}}",
+        )
+        .unwrap();
+    assert!(matches!(
+        runtime.load_paragraph(saved).unwrap(),
+        ParagraphLoadOutcome::RevisionMismatchRestarted { diagnostic }
+            if diagnostic.contains("ROUKAKU_VN_SOURCE_REVISION_MISMATCH")
+    ));
+    assert_eq!(runtime.records()[0].occurrence.node, "b");
+}
+
+#[test]
+fn paragraph_replay_deduplicates_guarded_one_shot_effects() {
+    let source = r#"return {paragraphs={intro=function()
+        if rk.once("voice:intro") then
+            rk.set_property("audio", "voice_started", 1)
+        end
+        rk.line("intro", {})
+        rk.wait_input("advance")
+    end}}"#;
+    let original_host = Presentation::new();
+    let mut original = runtime(Rc::clone(&original_host));
+    original
+        .replace_module("story", "@story/intro.luau", source)
+        .unwrap();
+    original.start_paragraph(paragraph()).unwrap();
+    assert_eq!(original_host.property("audio", "voice_started"), 1.0);
+    let save = original.save_paragraph().unwrap();
+
+    let replay_host = Presentation::new();
+    let mut replayed = runtime(Rc::clone(&replay_host));
+    replayed
+        .replace_module("story", "@story/intro.luau", source)
+        .unwrap();
+    replayed.load_paragraph(save).unwrap();
+    assert!(
+        !replay_host
+            .properties
+            .borrow()
+            .contains_key(&("audio".to_owned(), "voice_started".to_owned(),))
+    );
+    assert_eq!(replayed.records()[0].occurrence.node, "intro");
+}
+#[test]
+fn rollback_replays_choice_inputs_to_selected_occurrence() {
+    let host = Presentation::new();
+    let mut runtime = runtime(host);
+    runtime
+        .replace_module(
+            "story",
+            "@story/intro.luau",
+            r#"return {paragraphs={intro=function()
+                rk.line("line", {})
+                rk.wait_input("advance")
+                local choice = rk.choice("route", {{id="left",text="Left"},{id="right",text="Right"}})
+                local selected = rk.wait_input("choose")
+                rk.choice_result(choice, selected)
+                rk.line("end", {selected=selected})
+                rk.wait_input("advance")
+            end}}"#,
+        )
+        .unwrap();
+    runtime.start_paragraph(paragraph()).unwrap();
+    let wait = waiting(&runtime);
+    runtime.input(wait.token, "advance", json!(null)).unwrap();
+    let choice_occurrence = runtime.records()[1].occurrence.clone();
+    let wait = waiting(&runtime);
+    runtime.input(wait.token, "choose", json!("right")).unwrap();
+    let wait = waiting(&runtime);
+    runtime.input(wait.token, "advance", json!(null)).unwrap();
+    runtime.rollback_to(&choice_occurrence).unwrap();
+    assert!(matches!(
+        &runtime.records()[1].content,
+        NodeContent::Choice { selected: None, .. }
+    ));
+    assert_eq!(waiting(&runtime).action, "choose");
+}
+
+#[test]
+fn stale_history_checkpoint_restarts_instead_of_resuming_changed_source() {
+    let mut runtime = runtime(Presentation::new());
+    runtime
+        .replace_module(
+            "story",
+            "@story/intro.luau",
+            "return {paragraphs={intro=function() rk.line('old', {}) rk.wait_input('advance') end}}",
+        )
+        .unwrap();
+    runtime.start_paragraph(paragraph()).unwrap();
+    let occurrence = runtime.records()[0].occurrence.clone();
+    runtime
+        .replace_module(
+            "story",
+            "@story/intro.luau",
+            "return {paragraphs={intro=function() rk.line('new', {}) rk.wait_input('advance') end}}",
+        )
+        .unwrap();
+    assert!(matches!(
+        runtime.rollback_to(&occurrence).unwrap(),
+        ParagraphLoadOutcome::RevisionMismatchRestarted { .. }
+    ));
+    assert_eq!(runtime.records()[0].occurrence.node, "new");
+}
+#[test]
 fn multitrack_waits_keep_animating_and_complete_results_once() {
     let host = Presentation::new();
     let mut runtime = runtime(Rc::clone(&host));

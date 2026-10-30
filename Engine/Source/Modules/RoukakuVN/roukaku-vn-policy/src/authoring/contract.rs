@@ -123,6 +123,39 @@ impl RecoverableState {
         }
     }
 }
+/// Versioned paragraph-entry save. The live Luau stack and cursor are never serialized.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParagraphSave {
+    pub schema: String,
+    pub paragraph: ParagraphId,
+    pub source_revision: String,
+    pub entry_state: RecoverableState,
+    pub scene_state: BTreeMap<String, Value>,
+    pub replay: Vec<ReplayEvent>,
+}
+
+/// Deterministic inputs consumed after the entry checkpoint.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ReplayEvent {
+    Input { action: String, payload: Value },
+    HostResult { operation: String, result: Value },
+    SideEffect { id: String },
+    RandomDraw { value: u64 },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ParagraphLoadOutcome {
+    Replayed,
+    RevisionMismatchRestarted { diagnostic: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReplayCheckpoint {
+    pub occurrence: NodeOccurrence,
+    pub event_index: usize,
+    pub source_revision: String,
+}
 
 /// Project presentation adapter. Display receives the actual shared layout,
 /// including source/cluster mapping and glyph resources, not a second measurement.
@@ -131,4 +164,11 @@ pub trait AuthoringHost: TextLayoutProvider {
     fn set_property(&self, target: &str, property: &str, value: f64) -> mlua::Result<()>;
     /// Stop/release resources owned by a segment, for either terminal outcome.
     fn release_segment(&self, id: u64) -> mlua::Result<()>;
+    /// Query results are journaled so replay never calls external systems twice.
+    fn query(&self, operation: &str, args: Value) -> mlua::Result<Value> {
+        let _ = (operation, args);
+        Err(mlua::Error::runtime(
+            "authoring host query is not supported",
+        ))
+    }
 }

@@ -41,6 +41,12 @@ Keep stable `#@id` annotations for diagnostics, source maps, Editor selection, a
 
 Graph and Timeline modify these same sources, not a second runtime graph. VN Core owns story variables, choices, backlog, read state, and save semantics.
 
+## Paragraph saves and history rollback
+
+Luau saves store the paragraph identity, source revision, entry variables and scene state, plus the input log needed to replay the visible line. Loading runs the paragraph from its entry checkpoint and replays those inputs; it never restores a mid-paragraph variable set with a cursor. History rollback targets a recorded line or choice occurrence and restarts the paragraph to that checkpoint.
+
+When the source revision differs, the runtime restarts the paragraph from entry and reports `ROUKAKU_VN_SOURCE_REVISION_MISMATCH`. Saves with an unsupported schema are rejected with `ROUKAKU_VN_SAVE_FORMAT_UNSUPPORTED`; older cursor-based save files are not migrated.
+
 ## UI and Luau
 
 In `UI/flagship.roukaku`, `ui_view` defines widget trees, while `ui_bind` binds a profile's message, choice, or system page to a view, controller, policy, and theme. Widgets read `$model` data and send typed actions such as `vn.advance` and `vn.choose`.

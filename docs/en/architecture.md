@@ -32,7 +32,7 @@ These are product behavior and must survive refactoring:
 - **Budgets:** host profiles validate nonzero queue, frame, audio, PCM-cache, and package-read limits. Presentation, decode requests, saves, and package range reads check applicable sizes at entry. Containers separately bound section counts, table size, and decoded lengths. Cook batches bound nodes and input bytes. These protect distinct failure boundaries; they are not a universal memory quota.
 - **Paths:** project assets and sections use validated relative paths. Bundling validates destination paths, and scenario references reject invalid relative paths. Editor asset import checks that resolved directories remain inside the project and rejects duplicate paths and asset IDs. Path validation does not grant arbitrary disk access.
 - **Cancellation:** tasks carry an owner, scope, and handle. Completion from cancelled, finished, or different-World contexts is rejected. Session shutdown cancels owned work; restoring state replaces the task context so late results cannot commit. Cook uses a shared cancellation token. Switching Editor projects invalidates old compiler, import, Agent, and preview work.
-- **Save integrity:** saves contain explicit runtime and VN state, not native handles or execution stacks. Loading decodes and validates a candidate before replacing the live World. Invalid containers or state leave live state unchanged. Successful restoration also rebuilds task context. Ignoring errors would break this boundary.
+- **Save integrity:** Luau paragraph saves contain entry variables, entry scene state, paragraph identity, source revision, and a replay journal; they never contain a mid-paragraph cursor or coroutine stack. Loads restart the paragraph and replay logged inputs. A revision mismatch restarts at entry and reports `ROUKAKU_VN_SOURCE_REVISION_MISMATCH`. Replay checkpoints identify line and choice occurrences; owner task scopes invalidate stale asynchronous completions.
 
 ## Packages and formats
 
@@ -66,7 +66,7 @@ return {
 }
 ```
 
-`start_paragraph(ParagraphId { module, entry })` resolves `exports.paragraphs[entry]` as a function or `{ run = function }`. This pair is the stable restart/load identity. Restart cancels old owned segments and input, starts a fresh child scope/coroutine, and resets node visits. Installing entry-state and choosing when to replay are the save/replay consumer's responsibilities.
+`start_paragraph(ParagraphId { module, entry })` resolves `exports.paragraphs[entry]` as a function or `{ run = function }`. This pair is the stable restart/load identity. Restart cancels old owned segments and input, starts a fresh child scope/coroutine, and resets node visits. Paragraph saves capture the entry checkpoint and source revision; loading re-enters this identity and replays recorded inputs to the saved visible line. A source revision mismatch restarts at entry with a diagnostic.
 
 `rk.wait_input(action: string): any` suspends only the story coroutine. The host sees `StoryStatus::Waiting(InputWait { token: u64, action: String })`; `input(token, action, json_payload)` resumes only a matching live wait. Unrelated or late input returns `false`. Live tokens remain distinct across paragraph restarts and runtime replacement. A wait may originate only from the active story coroutine. Presentation keeps advancing through `advance_presentation(seconds)` while the story waits. No host thread, audio clock or renderer waits for input.
 
@@ -83,6 +83,8 @@ return {
 | `rk.display_text(id, request)` | Uses the same layout provider and returns the same measurement. `AuthoringHost::display_text` receives `Arc<TextLayoutResult>` with glyph resources and source/cluster mapping for drawing. |
 | `rk.register_state(scope, key, initial)` | Registers a nonempty state key and returns its existing value, or the initial value on first registration. Repeating a registration preserves recovered data. |
 | `rk.get_state(scope, key)` / `rk.set_state(scope, key, value)` | Read/write registered keys; unknown keys fail. Scopes are `"variables"`, `"scene"` and `"extensions"`. |
+| `rk.random_u64()` | Returns a deterministic 53-bit draw and records it in the paragraph replay journal. |
+| `rk.once(id)` | Returns `true` during live execution and `false` when replay consumes the same one-shot effect identity. Use it only to guard external effects such as audio or voice playback. |
 
 Visits are one-based counters **per source node within a paragraph invocation**. Loop visits have distinct identities, while replaying the same path from the same entry reproduces them. Restart creates fresh live wait/segment tokens even when logical node identities repeat. Replacing dialogue UI cannot remove these records; history/replay consumers read `records()`.
 

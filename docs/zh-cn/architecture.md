@@ -32,7 +32,7 @@ RoukakuVN 内部，`roukaku-vn-script` 编译 `.roukaku` 并生成 source map；
 - **预算**：host profile 校验非零队列、帧、音频、PCM cache 和包读取限额；呈现、解码请求、存档读写和包 range 读取在入口检查相应大小。容器另限制 section 数量、表大小和解码后长度；Cook batch 也检查节点和输入字节预算。它们有各自的故障边界，不是一项通用“无限内存保护”。
 - **路径**：项目资源与 section 使用校验后的相对路径；bundle 校验路径后写入，场景引用拒绝非法相对路径。Editor 资源导入检查实际目录仍位于工程内，拒绝重名路径和 asset ID。路径校验不授予任意磁盘访问权限。
 - **取消**：任务绑定 owner、scope 和句柄。已取消、已完成或属于另一 World 代次的 completion 会被拒绝。关闭会话取消所属任务；恢复用新的任务上下文替换旧上下文，迟到结果不能提交。Cook 使用共享取消 token；Editor 工程切换取消旧编译、导入、Agent 和预览工作。
-- **存档完整性**：保存显式运行和 VN 状态，不保存原生句柄或执行栈。读取先解码并校验候选状态，再替换 live World；容器损坏或状态校验失败保留当前状态。成功恢复同时重建任务上下文。不要通过忽略错误来跳过这一边界。
+- **存档完整性**：Luau 段落存档保存入口变量、入口场景、段落身份、源码修订和重演日志，不保存段落中途的游标或协程栈。读档会重新进入段落并重演已记录输入。源码修订不匹配时从段落入口重启，并报告 `ROUKAKU_VN_SOURCE_REVISION_MISMATCH`。回溯检查点标识台词和选择节点；任务作用域会使旧异步完成失效。
 
 ## 包与格式
 
@@ -66,7 +66,7 @@ return {
 }
 ```
 
-`start_paragraph(ParagraphId { module, entry })` 从 `exports.paragraphs[entry]` 解析函数或 `{ run = function }`。这对标识是段落重启和读档的稳定边界。重启取消旧片段与输入，创建新的子作用域和协程，并清空节点访问计数。何时安装入口状态、何时重演，由存档/重演层决定。
+`start_paragraph(ParagraphId { module, entry })` 将 `exports.paragraphs[entry]` 解析为函数或 `{ run = function }`。这组标识是段落重启和读档的稳定身份。重启会取消旧片段和输入，创建新的子作用域与协程，并清空节点访问计数。段落存档记录入口检查点和源码修订；读档会重新进入该段并重演已记录输入，回到存档时的可见台词。源码修订不匹配时从入口重启并报告诊断。
 
 `rk.wait_input(action: string): any` 只挂起剧情协程。宿主取得 `StoryStatus::Waiting(InputWait { token: u64, action: String })`，以 `input(token, action, json_payload)` 恢复匹配的 live wait。不相关输入和迟到输入返回 `false`。段落重启或运行时替换后，live token 仍不会重复；只有当前剧情协程可以发起等待。等待期间宿主仍调用 `advance_presentation(seconds)` 推进演出，不阻塞宿主线程、音频时钟或渲染器。
 
@@ -83,6 +83,8 @@ return {
 | `rk.display_text(id, request)` | 使用同一排版 provider，返回同类测量值；`AuthoringHost::display_text` 接收包含字形资源及 source/cluster 映射的 `Arc<TextLayoutResult>`，直接用于绘制。 |
 | `rk.register_state(scope, key, initial)` | 注册非空状态键；已有值时返回已有值，首次注册才写入初值。重复注册不覆盖恢复的数据。 |
 | `rk.get_state(scope, key)` / `rk.set_state(scope, key, value)` | 读写已注册键，未注册的键报错。scope 为 `"variables"`、`"scene"` 或 `"extensions"`。 |
+| `rk.random_u64()` | 返回确定性的 53 位随机值，并将结果写入段落重演日志。 |
+| `rk.once(id)` | 正常执行时返回 `true`；重演消费相同的一次性效果身份时返回 `false`。仅用它包住音频、语音等外部一次性效果。 |
 
 visit 是**段落本次执行中，每个源码节点各自从 1 开始的访问次数**。循环中的多次访问各有身份；从同一入口重演相同路径时会生成相同身份。重启后逻辑节点身份可以重复，live wait/segment token 则重新分配。节点记录由机制持有，替换对话 UI 不会丢失这些记录；历史和重演层通过 `records()` 读取。
 

@@ -41,6 +41,12 @@ state experience_read #@id state.experience_read
 
 Graph 和 Timeline 修改同一源码，作者不需要维护第二份运行时图。剧情变量、选择、backlog、已读与存读档由 VN Core 持有。
 
+## 段落存档与历史回溯
+
+Luau 存档记录段落身份、源码修订、入口变量和场景状态，以及重演至当前台词所需的输入日志。读档从段落入口重新运行，再重放这些输入；不会把段落中途变量和游标拼在一起恢复。历史回溯使用台词或选择节点的访问身份作为目标，从入口受控重演到对应检查点。
+
+源码修订不匹配时，运行时从入口重启段落并报告 `ROUKAKU_VN_SOURCE_REVISION_MISMATCH`。不支持的存档 schema 会以 `ROUKAKU_VN_SAVE_FORMAT_UNSUPPORTED` 拒绝；旧游标存档不迁移。
+
 ## UI 与 Luau
 
 `UI/flagship.roukaku` 中的 `ui_view` 定义控件树，`ui_bind` 按 profile 将 message、choice 或 system page 绑定到 view、controller、policy 和 theme。控件读取 `$model` 数据，通过 `vn.advance`、`vn.choose` 等 typed action 发出请求。

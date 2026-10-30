@@ -41,6 +41,12 @@ state experience_read #@id state.experience_read
 
 Graph と Timeline は同じソースを編集するため、作者が別のランタイムグラフを管理する必要はありません。シナリオの変数、選択肢、backlog、既読状態、セーブ／ロードは VN Core が保持します。
 
+## 段落セーブと履歴ロールバック
+
+Luau のセーブには、段落 ID、ソース revision、入口時の変数とシーン状態、保存した台詞まで再生するための入力ログを記録します。ロード時は段落を入口から実行し、入力ログを再生します。段落途中の変数とカーソルを組み合わせて復元することはありません。履歴ロールバックは台詞または選択ノードの occurrence を指定し、入口から制御された再実行で checkpoint に戻ります。
+
+ソース revision が一致しない場合、ランタイムは段落を入口から再開し、`ROUKAKU_VN_SOURCE_REVISION_MISMATCH` を報告します。未対応の save schema は `ROUKAKU_VN_SAVE_FORMAT_UNSUPPORTED` で拒否し、旧カーソル形式のセーブデータは移行しません。
+
 ## UI と Luau
 
 `UI/flagship.roukaku` では、`ui_view` がウィジェットツリーを定義し、`ui_bind` が profile ごとに message、choice、system page を view、controller、policy、theme にバインドします。ウィジェットは `$model` のデータを読み取り、`vn.advance` や `vn.choose` などの型付き action で要求を送ります。
