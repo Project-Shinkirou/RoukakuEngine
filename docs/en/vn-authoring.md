@@ -6,7 +6,7 @@ sidebar: { order: 5 }
 
 # VN authoring
 
-Use `Examples/NativeVN` as the public reference project. Story and UI sources use `.roukaku`, controllers use `.luau`, and themes use JSON/YAML. Cook compiles these inputs into a product package. Runtime executes compiled story data, not `.roukaku` source text.
+Use `Examples/NativeVN` as the public reference project. UI layouts use `*.screen.jsonc`, styles use `*.style.jsonc`, and controllers use `.luau`. Cook validates the JSONC sources and builds the existing runtime blueprints and theme manifests. Story `.roukaku` authoring is separate from the UI format.
 
 ## Project entry point
 
@@ -43,7 +43,46 @@ Graph and Timeline modify these same sources, not a second runtime graph. VN Cor
 
 ## UI and Luau
 
-In `UI/flagship.roukaku`, `ui_view` defines widget trees, while `ui_bind` binds a profile's message, choice, or system page to a view, controller, policy, and theme. Widgets read `$model` data and send typed actions such as `vn.advance` and `vn.choose`.
+`UI/flagship.screen.jsonc` contains `views`, `bindings`, and `policies`. Every control requires `id` and `kind`; nested controls belong in `children`. `bindings` selects a view, controller, policy, and theme for each profile's message, choice, or system page. `policies` declares save slots, allowed pages, reading modes, and custom actions. Widgets read `$model`, `$item`, `$event`, and `$state` bindings and emit typed actions such as `vn.advance` and `vn.choose`.
+
+Both document roots require `$schema`. The engine publishes `Engine/Schemas/ui-screen.v1.json` and `Engine/Schemas/ui-style.v1.json`. JSONC accepts line/block comments and trailing commas; comments, whitespace, and member order do not change runtime behavior. Schema and semantic diagnostics include the source file, line, and column. `anchor` cannot coexist with any `position_*` property; the compiler reports `ROUKAKU_UI_POSITION_CONFLICT`.
+
+```jsonc
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [{
+    "id": "ui.title",
+    "model": "roukaku.vn.ui_model.title.v1",
+    "theme": "theme.classic",
+    "root": {
+      "id": "root", "kind": "screen",
+      "children": [{
+        "id": "start", "kind": "button", "style": "primary",
+        "text": "l10n:system.new_game",
+        "events": [{"event": "activate", "action": "vn.invoke_system_action",
+                    "arguments": {"action_id": "nativevn.story.start"}}],
+      }],
+    },
+  }],
+}
+```
+
+```jsonc
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-style.v1.json",
+  "$id": "theme.classic",
+  ":root": {"text.body": {"color": [245, 245, 248, 255]}},
+  "button": {"min_height": 48},
+  ".primary": {"min_height": 56},
+  "#start": {"font_size": 24},
+}
+```
+
+Style files map selectors to property objects. `$id` identifies the runtime theme, `$parent` optionally names its parent, `:root` defines typed tokens, and `:high-contrast` overrides tokens for high contrast. Selector precedence is widget kind, classes in the control's `style` string (left to right), `#id`, then inline properties. Use `theme:token.name`, `l10n:key`, and `asset:asset:/id` expressions to reference tokens, localized text, and assets. The example is a screen/style fragment; use the checked-in project's bindings and policies for a runnable project.
+
+`id` is the editor identity within a view. Optional `source_id` is an opaque runtime identity; converted examples preserve their original identities so existing blueprint hashes remain unchanged. It is not a source-file locator. Diagnostics use the JSONC file and token span.
+
+Cook discovers only `.screen.jsonc` under `nativevn.ui_sources` and `.style.jsonc` under `nativevn.ui_themes`. It caches compiled blueprints through the existing Cook artifact store, keyed by source paths/bytes, sidecars, schema versions, controller/policy inputs, and target/profile. UI `.roukaku` and JSON/YAML theme intake have been removed.
 
 The product's Luau global is **`roukaku`**. The sample controller registers handlers with `roukaku.ui.controller.register(...)` and forwards UI actions with `roukaku.ui.effect.forward(action)`. `nativevn.ui_controllers` collects these files; controllers do not use the `.roukaku` extension. Policies likewise use the mechanisms exposed through `roukaku` for commands and mutations. Changing private Lua tables does not change authoritative VN state.
 

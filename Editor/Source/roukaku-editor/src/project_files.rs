@@ -1,8 +1,5 @@
 use roukaku_vn_editor::{CompileRoukakuProjectOptions, RoukakuSource};
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 pub(crate) struct ProjectFiles {
     pub sources: Vec<RoukakuSource>,
@@ -29,7 +26,11 @@ pub(crate) fn load(manifest: &Path) -> anyhow::Result<ProjectFiles> {
     };
     for (field, default, ui) in [("sources", "Scripts", false), ("ui_sources", "UI", true)] {
         for path in paths(root, vn, field, default)? {
-            if path.extension().and_then(|e| e.to_str()) != Some("roukaku") {
+            if !(if ui {
+                path.to_string_lossy().ends_with(".screen.jsonc")
+            } else {
+                path.extension().and_then(|e| e.to_str()) == Some("roukaku")
+            }) {
                 continue;
             }
             let relative = relative(root, &path)?;
@@ -46,39 +47,12 @@ pub(crate) fn load(manifest: &Path) -> anyhow::Result<ProjectFiles> {
         "Project contains no Roukaku source"
     );
     for path in paths(root, vn, "ui_themes", "Themes")? {
-        if !matches!(
-            path.extension().and_then(|e| e.to_str()),
-            Some("json" | "yaml" | "yml")
-        ) {
+        if !path.to_string_lossy().ends_with(".style.jsonc") {
             continue;
         }
-        #[derive(serde::Deserialize)]
-        struct ThemeSource {
-            schema: String,
-            id: String,
-            #[serde(default)]
-            parent: Option<String>,
-            tokens: BTreeMap<String, roukaku_ui_core::UiThemeValue>,
-            #[serde(default)]
-            high_contrast_tokens: BTreeMap<String, roukaku_ui_core::UiThemeValue>,
-        }
         let text = std::fs::read_to_string(&path)?;
-        let source: ThemeSource =
-            if path.extension().and_then(|extension| extension.to_str()) == Some("json") {
-                serde_json::from_str(&text)?
-            } else {
-                serde_yaml::from_str(&text)?
-            };
-        result.options = result
-            .options
-            .with_ui_theme(roukaku_ui_core::UiThemeManifest {
-                schema: source.schema,
-                id: source.id,
-                parent: source.parent,
-                tokens: source.tokens,
-                high_contrast_tokens: source.high_contrast_tokens,
-                revision: 1,
-            });
+        let style = roukaku_vn_editor::compile_ui_style(&relative(root, &path)?, &text)?;
+        result.options = result.options.with_ui_style(style);
     }
     let controllers = paths(root, vn, "ui_controllers", "Controllers")?;
     if !controllers.is_empty() {

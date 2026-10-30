@@ -15,9 +15,11 @@ use roukaku_vn_package::{
     PLAYER_LOCALE_CONFIG_SCHEMA, PlayerLocaleConfig, package_sections_for_project,
 };
 use roukaku_vn_policy::LuauUiControllerHost;
-use roukaku_vn_script::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_project};
+use roukaku_vn_script::{CompileRoukakuProjectOptions, RoukakuSource};
 
 use super::*;
+
+mod ui_cache;
 
 pub(crate) fn cook_platform_profiles(
     project: &serde_yaml::Value,
@@ -110,7 +112,7 @@ pub(crate) fn cook_nativevn_sections(
     }
     let ui_source_paths = nativevn_source_paths(project, project_dir, "ui_sources", "UI")?;
     if ui_source_paths.is_empty() {
-        return Err("nativevn project must declare at least one UI .roukaku source".into());
+        return Err("nativevn project must declare at least one UI .screen.jsonc source".into());
     }
     for source in ui_source_paths {
         let source_text = fs::read_to_string(project_dir.join(&source))?;
@@ -124,38 +126,16 @@ pub(crate) fn cook_nativevn_sections(
         return Err("nativevn project must declare at least one UI theme manifest".into());
     }
     let mut compile_options = CompileRoukakuProjectOptions::default();
+    let mut ui_inputs = BTreeMap::new();
     for theme_path in theme_paths {
         let text = fs::read_to_string(project_dir.join(&theme_path))?;
-        #[derive(serde::Deserialize)]
-        struct UiThemeSource {
-            schema: String,
-            id: String,
-            #[serde(default)]
-            parent: Option<String>,
-            tokens: std::collections::BTreeMap<String, roukaku_ui_core::UiThemeValue>,
-            #[serde(default)]
-            high_contrast_tokens: std::collections::BTreeMap<String, roukaku_ui_core::UiThemeValue>,
-        }
-        let source: UiThemeSource = match theme_path.extension().and_then(std::ffi::OsStr::to_str) {
-            Some("json") => serde_json::from_str(&text)?,
-            Some("yaml" | "yml") => serde_yaml::from_str(&text)?,
-            _ => {
-                return Err(format!(
-                    "ROUKAKU_UI_THEME_FORMAT: {} must use .json, .yaml, or .yml",
-                    normalize_relative_path(&theme_path)
-                )
-                .into());
-            }
-        };
-        let theme = roukaku_ui_core::UiThemeManifest {
-            schema: source.schema,
-            id: source.id,
-            parent: source.parent,
-            tokens: source.tokens,
-            high_contrast_tokens: source.high_contrast_tokens,
-            revision: 1,
-        };
-        compile_options = compile_options.with_ui_theme(theme);
+        ui_inputs.insert(
+            normalize_relative_path(&theme_path),
+            Hash256::from_sha256(text.as_bytes()),
+        );
+        let style =
+            roukaku_vn_script::compile_ui_style(&normalize_relative_path(&theme_path), &text)?;
+        compile_options = compile_options.with_ui_style(style);
     }
     let controller_paths = nativevn_controller_paths(project, project_dir)?;
     if controller_paths.is_empty() {
@@ -164,6 +144,10 @@ pub(crate) fn cook_nativevn_sections(
     let mut controller_host = LuauUiControllerHost::with_default_budget()?;
     for controller_path in controller_paths {
         let source = fs::read_to_string(project_dir.join(&controller_path))?;
+        ui_inputs.insert(
+            normalize_relative_path(&controller_path),
+            Hash256::from_sha256(source.as_bytes()),
+        );
         controller_host.register_source(source)?;
     }
     for manifest in controller_host.manifests() {
@@ -174,10 +158,21 @@ pub(crate) fn cook_nativevn_sections(
             compile_options.with_ui_controller_source(manifest.id.clone(), source.to_string());
     }
     let policy_actions = nativevn_actions::load(project, project_dir, cancellation)?;
+    ui_inputs.insert(
+        "policy-actions".to_string(),
+        Hash256::from_sha256(&serde_json::to_vec(&policy_actions)?),
+    );
     for binding in &policy_actions {
         compile_options = compile_options.bind_extension(binding.descriptor.clone());
     }
-    let compiled = compile_roukaku_project(sources, compile_options)?;
+    let compiled = ui_cache::compile(
+        project,
+        project_dir,
+        &format!("{target}/{profile}"),
+        sources,
+        compile_options,
+        ui_inputs,
+    )?;
     nativevn_actions::validate_commands(&compiled, &policy_actions)?;
     let mut profiles = string_list(
         project

@@ -1,11 +1,23 @@
 use super::*;
 
+fn reveal_ui() -> serde_json::Value {
+    let mut ui: serde_json::Value = serde_json::from_str(TEST_UI).unwrap();
+    for view in ui["views"].as_array_mut().unwrap() {
+        if let Some(body) = view["root"]["children"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|node| node["id"] == "body")
+        {
+            body["visible_graphemes"] = serde_json::json!("$model.visible_graphemes");
+        }
+    }
+    ui
+}
+
 #[test]
 fn dialogue_wait_precedes_text_reveal_and_first_click_only_reveals() {
-    let ui = TEST_UI.replace(
-        "value:$model.text_key",
-        "value:$model.text_key visible_graphemes:$model.visible_graphemes",
-    );
+    let ui = serde_json::to_string(&reveal_ui()).unwrap();
     let bytes = product_package_with_ui_and_request(STORY, &ui, test_compile_options(), |_| {});
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -76,18 +88,67 @@ fn repeated_physical_advances_keep_glyph_uploads_ordered() {
             "    text key:line.{index} speaker:hero{window} #@id line.{index}\n"
         ));
     }
-    let mut ui = TEST_UI.replace(
-        "value:$model.text_key",
-        "value:$model.text_key visible_graphemes:$model.visible_graphemes",
-    );
-    ui.push_str(r#"
-ui_bind profile:classic surface:alternate view:ui.test.alternate controller:test.alternate policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.alternate
-ui_view ui.test.alternate model:roukaku.vn.ui_model.message.v2 theme:roukaku.vn.theme.classic #@id ui.test.alternate
-  screen id:root
-    panel id:advance fill:true
-      on activate -> vn.advance
-    text id:body value:$model.text_key visible_graphemes:$model.visible_graphemes font_size:25
-"#);
+    let mut ui = reveal_ui();
+    let extra: serde_json::Value = serde_json::from_str(
+        r#"{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.test.alternate",
+      "source_id": "ui.test.alternate",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "test-ui.roukaku/root",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "test-ui.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "body",
+            "kind": "text",
+            "source_id": "test-ui.roukaku/body",
+            "value": "$model.text_key",
+            "visible_graphemes": "$model.visible_graphemes",
+            "font_size": 25
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind.alternate",
+      "profile": "classic",
+      "surface": "alternate",
+      "view": "ui.test.alternate",
+      "controller": "test.alternate",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    }
+  ],
+  "policies": []
+}"#,
+    )
+    .unwrap();
+    for key in ["views", "bindings"] {
+        ui[key]
+            .as_array_mut()
+            .unwrap()
+            .extend(extra[key].as_array().unwrap().iter().cloned());
+    }
+    let ui = serde_json::to_string(&ui).unwrap();
     let options = test_compile_options().with_ui_controller_source(
         "test.alternate",
         r#"
@@ -198,10 +259,19 @@ roukaku.ui.controller.register("test.alternate", {
 
 #[test]
 fn presentation_reveal_invalidates_cached_scroll_text_without_runtime_step() {
-    let ui = TEST_UI.replace("    text id:body value:$model.text_key", r#"    row id:dialogue position_x:56 position_y:484 min_width:688 max_width:688 max_height:80 gap:18 clip_children:true
-      text id:speaker_text value:$model.speaker_key min_width:92 max_width:92 max_height:72 font_size:20 max_lines:2
-      scroll id:body_scroll min_width:578 max_width:578 min_height:72 max_height:72 clip_children:true
-        text id:body value:$model.text_key visible_graphemes:$model.visible_graphemes max_width:562 font_size:22 max_lines:64 text_padding:0"#);
+    let mut ui: serde_json::Value = serde_json::from_str(TEST_UI).unwrap();
+    let children = ui["views"][0]["root"]["children"].as_array_mut().unwrap();
+    let body = children
+        .iter_mut()
+        .find(|node| node["id"] == "body")
+        .unwrap();
+    *body = serde_json::json!({"id":"dialogue","kind":"row","position_x":56,"position_y":484,"min_width":688,"max_width":688,"max_height":80,"gap":18,"clip_children":true,"children":[
+        {"id":"speaker_text","kind":"text","value":"$model.speaker_key","min_width":92,"max_width":92,"max_height":72,"font_size":20,"max_lines":2},
+        {"id":"body_scroll","kind":"scroll","min_width":578,"max_width":578,"min_height":72,"max_height":72,"clip_children":true,"children":[
+            {"id":"body","kind":"text","value":"$model.text_key","visible_graphemes":"$model.visible_graphemes","max_width":562,"font_size":22,"max_lines":64,"text_padding":0}
+        ]}
+    ]});
+    let ui = serde_json::to_string(&ui).unwrap();
     let bytes = product_package_with_ui_and_request(STORY, &ui, test_compile_options(), |_| {});
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(

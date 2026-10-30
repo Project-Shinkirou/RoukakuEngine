@@ -113,12 +113,12 @@ def _builtin_modern_ui_feature() -> tuple[dict | None, list[dict]]:
     template_root = repository_root / "Examples" / "TsuiNoSora" / "ProjectTemplate"
     required_files = {
         "classic": [
-            "UI/classic.roukaku",
-            "Themes/classic.json",
+            "UI/classic.screen.jsonc",
+            "Themes/classic.style.jsonc",
         ],
         "modern": [
-            "UI/modern.roukaku",
-            "Themes/modern.json",
+            "UI/modern.screen.jsonc",
+            "Themes/modern.style.jsonc",
             "Controllers/tsui_ui.luau",
             "Scripts/system.roukaku",
             "Localization/ja.system.json",
@@ -166,7 +166,7 @@ def _builtin_modern_ui_feature() -> tuple[dict | None, list[dict]]:
             ):
                 raise ValueError(f"{profile_id} does not preserve the shared 800x600 authority contract")
 
-        modern_source = (template_root / "UI" / "modern.roukaku").read_text(encoding="utf-8")
+        modern_source = (template_root / "UI" / "modern.screen.jsonc").read_text(encoding="utf-8")
         for view_id in (
             "ui.tsui.modern.title",
             "ui.tsui.modern.quick_panel",
@@ -177,7 +177,7 @@ def _builtin_modern_ui_feature() -> tuple[dict | None, list[dict]]:
         ):
             if view_id not in modern_source:
                 raise ValueError(f"required modern UI view is missing: {view_id}")
-        classic_source = (template_root / "UI" / "classic.roukaku").read_text(encoding="utf-8")
+        classic_source = (template_root / "UI" / "classic.screen.jsonc").read_text(encoding="utf-8")
         for view_id in (
             "ui.tsui.classic.message",
             "ui.tsui.classic.title",

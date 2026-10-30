@@ -206,7 +206,11 @@ pub(crate) fn nativevn_source_paths(
         let relative = PathBuf::from(&source);
         let absolute = project_dir.join(&relative);
         if absolute.is_dir() {
-            collect_roukaku_sources(project_dir, &absolute, &mut paths)?;
+            if field == "ui_sources" {
+                collect_sources_with_suffix(project_dir, &absolute, ".screen.jsonc", &mut paths)?;
+            } else {
+                collect_roukaku_sources(project_dir, &absolute, &mut paths)?;
+            }
         } else {
             paths.push(relative);
         }
@@ -233,7 +237,7 @@ pub(crate) fn nativevn_theme_paths(
         let relative = validate_project_relative_path(&source)?;
         let absolute = project_dir.join(&relative);
         if absolute.is_dir() {
-            collect_ui_theme_sources(project_dir, &absolute, &mut paths)?;
+            collect_sources_with_suffix(project_dir, &absolute, ".style.jsonc", &mut paths)?;
         } else {
             paths.push(relative);
         }
@@ -295,9 +299,10 @@ pub(crate) fn collect_sources_with_extension(
     Ok(())
 }
 
-pub(crate) fn collect_ui_theme_sources(
+pub(crate) fn collect_sources_with_suffix(
     root: &std::path::Path,
     dir: &std::path::Path,
+    suffix: &str,
     out: &mut Vec<PathBuf>,
 ) -> Result<(), CliError> {
     let mut entries = fs::read_dir(dir)?.collect::<Result<Vec<_>, _>>()?;
@@ -305,11 +310,12 @@ pub(crate) fn collect_ui_theme_sources(
     for entry in entries {
         let path = entry.path();
         if path.is_dir() {
-            collect_ui_theme_sources(root, &path, out)?;
-        } else if matches!(
-            path.extension().and_then(|ext| ext.to_str()),
-            Some("json" | "yaml" | "yml")
-        ) {
+            collect_sources_with_suffix(root, &path, suffix, out)?;
+        } else if path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.ends_with(suffix))
+        {
             out.push(path.strip_prefix(root)?.to_path_buf());
         }
     }

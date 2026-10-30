@@ -232,10 +232,10 @@ def build_localization() -> None:
 
 def build_ui() -> None:
     required = [
-        PACK / "UI" / "flagship.roukaku",
+        PACK / "UI" / "flagship.screen.jsonc",
         PACK / "Controllers" / "standard_ui.luau",
-        PACK / "Themes" / "classic.json",
-        PACK / "Themes" / "modern.json",
+        PACK / "Themes" / "classic.style.jsonc",
+        PACK / "Themes" / "modern.style.jsonc",
         PACK / "Scripts" / "system.roukaku",
     ]
     missing = [path.relative_to(PACK).as_posix() for path in required if not path.is_file()]

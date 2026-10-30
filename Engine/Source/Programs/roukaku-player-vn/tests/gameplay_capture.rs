@@ -10,9 +10,16 @@ use roukaku_vn_core::VnRunConfig;
 #[test]
 fn system_activation_captures_before_presentation_and_not_inside_system_ui() {
     let story = "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n\nstory system #@id story.system\nstate save #@id state.system.save\n  scene save #@id scene.system.save\n    system_page kind:save #@id page.save\nstate popup #@id state.system.popup\n  scene popup #@id scene.system.popup\n    system_page kind:quick_panel #@id page.popup\n";
-    let ui = TEST_UI
-        .replace("vn.request_exit", "vn.open_system page:save")
-        .replace("quick_slot:\"\"", "quick_slot:\"slot.01\"");
+    let mut ui: serde_json::Value = serde_json::from_str(TEST_UI).unwrap();
+    ui["policies"][0]["quick_slot"] = "slot.01".into();
+    let exit = ui["views"][0]["root"]["children"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|node| node["id"] == "exit")
+        .unwrap();
+    exit["events"][0] = serde_json::json!({"event":"activate", "action":"vn.open_system", "arguments":{"page":"save"}});
+    let ui = serde_json::to_string(&ui).unwrap();
     let bytes = product_package_with_ui_and_request(story, &ui, test_compile_options(), |_| {});
     let package = PackageReader::open(&bytes).unwrap();
     for event in [

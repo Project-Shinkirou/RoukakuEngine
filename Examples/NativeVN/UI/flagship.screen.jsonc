@@ -1,0 +1,1765 @@
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.message.classic",
+      "source_id": "ui.message.classic",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.clear",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/flagship.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "message_panel",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/message_panel",
+            "background": "theme:panel.message",
+            "min_height": 260,
+            "fill_width": true,
+            "anchor": "bottom",
+            "children": [
+              {
+                "id": "speaker",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/speaker",
+                "value": "$model.speaker_key",
+                "font_size": 24,
+                "max_lines": 1
+              },
+              {
+                "id": "body",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/body",
+                "value": "$model.text_key",
+                "visible_graphemes": "$model.visible_graphemes",
+                "font_size": 30,
+                "max_lines": 5
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.choice.classic",
+      "source_id": "ui.choice.classic",
+      "model": "roukaku.vn.ui_model.choice.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.dim",
+        "children": [
+          {
+            "id": "choices",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/choices",
+            "background": "theme:panel.message",
+            "children": [
+              {
+                "id": "prompt",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/prompt",
+                "value": "$model.prompt_key"
+              },
+              {
+                "id": "options",
+                "kind": "virtual_list",
+                "source_id": "UI/flagship.roukaku/options",
+                "items": "$model.options",
+                "item_key": "option_id",
+                "overscan": 2,
+                "item_extent": 64,
+                "children": [
+                  {
+                    "id": "option",
+                    "kind": "button",
+                    "source_id": "UI/flagship.roukaku/option",
+                    "min_height": 60,
+                    "value": "$item.text_key",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.choose",
+                        "arguments": {
+                          "option_id": "$item.option_id"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.title",
+      "source_id": "ui.system.title",
+      "model": "roukaku.vn.ui_model.title.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "backdrop",
+            "kind": "image",
+            "source_id": "UI/flagship.roukaku/backdrop",
+            "asset": "theme:system.backdrop",
+            "min_width": 1280,
+            "min_height": 720
+          },
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "title",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/title",
+                "value": "l10n:system.title"
+              },
+              {
+                "id": "new_game",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/new_game",
+                "min_height": 56,
+                "text": "l10n:system.new_game",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.invoke_system_action",
+                    "arguments": {
+                      "action_id": "nativevn.story.start"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "experience",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/experience",
+                "min_height": 56,
+                "text": "l10n:system.experience",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.invoke_system_action",
+                    "arguments": {
+                      "action_id": "nativevn.experience.open"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "continue",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/continue",
+                "min_height": 56,
+                "text": "l10n:system.continue",
+                "enabled": "$model.can_continue",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              },
+              {
+                "id": "config",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/config",
+                "min_height": 56,
+                "text": "l10n:system.config",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "config"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "save",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/save",
+                "min_height": 56,
+                "text": "l10n:system.save",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "save"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "load",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/load",
+                "min_height": 56,
+                "text": "l10n:system.load",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "load"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.save",
+      "source_id": "ui.system.save",
+      "model": "roukaku.vn.ui_model.save.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "slots",
+                "kind": "virtual_grid",
+                "source_id": "UI/flagship.roukaku/slots",
+                "items": "$model.slots",
+                "item_key": "slot_id",
+                "columns": 3,
+                "overscan": 2,
+                "item_extent": 320,
+                "viewport_extent": 640,
+                "min_height": 640,
+                "max_height": 640,
+                "fill_width": true,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "slot",
+                    "kind": "column",
+                    "source_id": "UI/flagship.roukaku/slot",
+                    "min_height": 320,
+                    "background": "theme:panel.button",
+                    "children": [
+                      {
+                        "id": "thumbnail",
+                        "kind": "image",
+                        "source_id": "UI/flagship.roukaku/thumbnail",
+                        "asset": "$item.thumbnail_asset",
+                        "visible": "$item.has_thumbnail",
+                        "min_width": 280,
+                        "max_width": 400,
+                        "min_height": 120,
+                        "max_height": 120
+                      },
+                      {
+                        "id": "slot_id",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/slot_id",
+                        "value": "$item.slot_id"
+                      },
+                      {
+                        "id": "title",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/title",
+                        "value": "$item.title_key"
+                      },
+                      {
+                        "id": "timestamp",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/timestamp",
+                        "value": "$item.timestamp_text"
+                      },
+                      {
+                        "id": "playtime",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/playtime",
+                        "value": "$item.playtime_text"
+                      },
+                      {
+                        "id": "write",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/write",
+                        "min_height": 48,
+                        "text": "l10n:system.save",
+                        "enabled": "$item.can_write",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.request_save",
+                            "arguments": {
+                              "slot_id": "$item.slot_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.load",
+      "source_id": "ui.system.load",
+      "model": "roukaku.vn.ui_model.load.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "slots",
+                "kind": "virtual_grid",
+                "source_id": "UI/flagship.roukaku/slots",
+                "items": "$model.slots",
+                "item_key": "slot_id",
+                "columns": 3,
+                "overscan": 2,
+                "item_extent": 320,
+                "viewport_extent": 640,
+                "min_height": 640,
+                "max_height": 640,
+                "fill_width": true,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "slot",
+                    "kind": "column",
+                    "source_id": "UI/flagship.roukaku/slot",
+                    "min_height": 320,
+                    "background": "theme:panel.button",
+                    "children": [
+                      {
+                        "id": "thumbnail",
+                        "kind": "image",
+                        "source_id": "UI/flagship.roukaku/thumbnail",
+                        "asset": "$item.thumbnail_asset",
+                        "visible": "$item.has_thumbnail",
+                        "min_width": 280,
+                        "max_width": 400,
+                        "min_height": 120,
+                        "max_height": 120
+                      },
+                      {
+                        "id": "slot_id",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/slot_id",
+                        "value": "$item.slot_id"
+                      },
+                      {
+                        "id": "title",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/title",
+                        "value": "$item.title_key"
+                      },
+                      {
+                        "id": "timestamp",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/timestamp",
+                        "value": "$item.timestamp_text"
+                      },
+                      {
+                        "id": "playtime",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/playtime",
+                        "value": "$item.playtime_text"
+                      },
+                      {
+                        "id": "read",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/read",
+                        "min_height": 48,
+                        "text": "l10n:system.load",
+                        "enabled": "$item.can_load",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.request_load",
+                            "arguments": {
+                              "slot_id": "$item.slot_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.config",
+      "source_id": "ui.system.config",
+      "model": "roukaku.vn.ui_model.config.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "title",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/title",
+                "value": "l10n:system.config"
+              },
+              {
+                "id": "master_label",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/master_label",
+                "value": "l10n:system.config.master_volume"
+              },
+              {
+                "id": "master",
+                "kind": "slider",
+                "source_id": "UI/flagship.roukaku/master",
+                "min_height": 56,
+                "value": "$model.master_volume",
+                "min": 0,
+                "max": 100,
+                "step": 1,
+                "events": [
+                  {
+                    "event": "change",
+                    "action": "vn.set_config",
+                    "arguments": {
+                      "key": "audio.master",
+                      "value": "$event.value"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "speed_label",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/speed_label",
+                "value": "l10n:system.config.text_speed"
+              },
+              {
+                "id": "text_speed",
+                "kind": "slider",
+                "source_id": "UI/flagship.roukaku/text_speed",
+                "min_height": 56,
+                "value": "$model.text_speed",
+                "min": 0,
+                "max": 100,
+                "step": 1,
+                "events": [
+                  {
+                    "event": "change",
+                    "action": "vn.set_config",
+                    "arguments": {
+                      "key": "text.speed",
+                      "value": "$event.value"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "auto_label",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/auto_label",
+                "value": "l10n:system.config.auto_delay"
+              },
+              {
+                "id": "auto_delay",
+                "kind": "slider",
+                "source_id": "UI/flagship.roukaku/auto_delay",
+                "min_height": 56,
+                "value": "$model.auto_delay_ms",
+                "min": 100,
+                "max": 10000,
+                "step": 100,
+                "events": [
+                  {
+                    "event": "change",
+                    "action": "vn.set_config",
+                    "arguments": {
+                      "key": "auto.delay_ms",
+                      "value": "$event.value"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "high_contrast",
+                "kind": "toggle",
+                "source_id": "UI/flagship.roukaku/high_contrast",
+                "min_height": 56,
+                "value": "$model.high_contrast",
+                "label_key": "l10n:system.config.high_contrast",
+                "events": [
+                  {
+                    "event": "change",
+                    "action": "vn.set_config",
+                    "arguments": {
+                      "key": "display.high_contrast",
+                      "value": "$event.value"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "locale",
+                "kind": "select",
+                "source_id": "UI/flagship.roukaku/locale",
+                "min_height": 56,
+                "value": "$model.locale",
+                "items": "$model.available_locales",
+                "events": [
+                  {
+                    "event": "change",
+                    "action": "vn.set_config",
+                    "arguments": {
+                      "key": "display.language",
+                      "value": "$event.value"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "player_name",
+                "kind": "text_input",
+                "source_id": "UI/flagship.roukaku/player_name",
+                "min_height": 56,
+                "value": "$model.player_name.value",
+                "multiline": "$model.player_name.multiline",
+                "max_graphemes": "$model.player_name.max_graphemes",
+                "character_policy": "$model.player_name.character_policy",
+                "events": [
+                  {
+                    "event": "submit",
+                    "action": "vn.submit_text",
+                    "arguments": {
+                      "input_id": "$model.player_name.input_id",
+                      "value": "$event.value"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.backlog",
+      "source_id": "ui.system.backlog",
+      "model": "roukaku.vn.ui_model.backlog.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "entries",
+                "kind": "virtual_list",
+                "source_id": "UI/flagship.roukaku/entries",
+                "items": "$model.entries",
+                "item_key": "command_id",
+                "overscan": 8,
+                "item_extent": 72,
+                "children": [
+                  {
+                    "id": "entry",
+                    "kind": "row",
+                    "source_id": "UI/flagship.roukaku/entry",
+                    "min_height": 68,
+                    "children": [
+                      {
+                        "id": "speaker",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/speaker",
+                        "value": "$item.speaker_key"
+                      },
+                      {
+                        "id": "body",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/body",
+                        "value": "$item.text_key"
+                      },
+                      {
+                        "id": "voice",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/voice",
+                        "min_width": 96,
+                        "visible": "$item.has_voice",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.replay_voice",
+                            "arguments": {
+                              "voice_id": "$item.voice_id"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "jump",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/jump",
+                        "min_width": 96,
+                        "visible": "$item.can_jump",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.request_backlog_jump",
+                            "arguments": {
+                              "command_id": "$item.command_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.gallery",
+      "source_id": "ui.system.gallery",
+      "model": "roukaku.vn.ui_model.gallery.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "items",
+                "kind": "virtual_grid",
+                "source_id": "UI/flagship.roukaku/items",
+                "items": "$model.items",
+                "item_key": "item_id",
+                "columns": 4,
+                "overscan": 2,
+                "item_extent": 180,
+                "children": [
+                  {
+                    "id": "item",
+                    "kind": "column",
+                    "source_id": "UI/flagship.roukaku/item",
+                    "min_height": 168,
+                    "background": "theme:panel.button",
+                    "children": [
+                      {
+                        "id": "thumbnail",
+                        "kind": "image",
+                        "source_id": "UI/flagship.roukaku/thumbnail",
+                        "asset": "$item.thumbnail_asset",
+                        "visible": "$item.has_thumbnail",
+                        "min_width": 240,
+                        "min_height": 112
+                      },
+                      {
+                        "id": "preview",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/preview",
+                        "min_height": 52,
+                        "value": "$item.label_key",
+                        "enabled": "$item.unlocked",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.preview_gallery",
+                            "arguments": {
+                              "item_id": "$item.item_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.replay",
+      "source_id": "ui.system.replay",
+      "model": "roukaku.vn.ui_model.replay.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "items",
+                "kind": "virtual_list",
+                "source_id": "UI/flagship.roukaku/items",
+                "items": "$model.items",
+                "item_key": "item_id",
+                "overscan": 4,
+                "item_extent": 64,
+                "children": [
+                  {
+                    "id": "item",
+                    "kind": "button",
+                    "source_id": "UI/flagship.roukaku/item",
+                    "min_height": 60,
+                    "value": "$item.label_key",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.start_replay",
+                        "arguments": {
+                          "replay_id": "$item.item_id"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.voice_replay",
+      "source_id": "ui.system.voice_replay",
+      "model": "roukaku.vn.ui_model.voice_replay.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "items",
+                "kind": "virtual_list",
+                "source_id": "UI/flagship.roukaku/items",
+                "items": "$model.entries",
+                "item_key": "command_id",
+                "overscan": 4,
+                "item_extent": 64,
+                "children": [
+                  {
+                    "id": "item",
+                    "kind": "button",
+                    "source_id": "UI/flagship.roukaku/item",
+                    "min_height": 60,
+                    "value": "$item.text_key",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.replay_voice",
+                        "arguments": {
+                          "voice_id": "$item.voice_id"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.route_chart",
+      "source_id": "ui.system.route_chart",
+      "model": "roukaku.vn.ui_model.route_chart.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "chart",
+            "kind": "canvas",
+            "source_id": "UI/flagship.roukaku/chart",
+            "min_height": 800
+          },
+          {
+            "id": "nodes",
+            "kind": "virtual_grid",
+            "source_id": "UI/flagship.roukaku/nodes",
+            "items": "$model.nodes",
+            "item_key": "node_id",
+            "columns": 4,
+            "overscan": 2,
+            "item_extent": 72,
+            "children": [
+              {
+                "id": "node",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/node",
+                "min_height": 64,
+                "value": "$item.label_key",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.request_route_jump",
+                    "arguments": {
+                      "node_id": "$item.node_id"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "back",
+            "kind": "button",
+            "source_id": "UI/flagship.roukaku/back",
+            "min_height": 56,
+            "text": "l10n:system.back",
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.return_system"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.localization",
+      "source_id": "ui.system.localization",
+      "model": "roukaku.vn.ui_model.localization_preview.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.system",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "children": [
+              {
+                "id": "locale",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/locale",
+                "value": "$model.locale"
+              },
+              {
+                "id": "entries",
+                "kind": "virtual_list",
+                "source_id": "UI/flagship.roukaku/entries",
+                "items": "$model.entries",
+                "item_key": "entry_id",
+                "overscan": 4,
+                "item_extent": 180,
+                "children": [
+                  {
+                    "id": "entry",
+                    "kind": "row",
+                    "source_id": "UI/flagship.roukaku/entry",
+                    "min_height": 172,
+                    "children": [
+                      {
+                        "id": "horizontal",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/horizontal",
+                        "value": "$item.text_key",
+                        "direction": "left_to_right"
+                      },
+                      {
+                        "id": "vertical",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/vertical",
+                        "value": "$item.text_key",
+                        "direction": "vertical_right_to_left"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.message.modern",
+      "source_id": "ui.message.modern",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "roukaku.vn.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.clear",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/flagship.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "message_panel",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/message_panel",
+            "background": "theme:panel.message",
+            "min_height": 280,
+            "fill_width": true,
+            "anchor": "bottom",
+            "children": [
+              {
+                "id": "content",
+                "kind": "column",
+                "source_id": "UI/flagship.roukaku/content",
+                "children": [
+                  {
+                    "id": "header",
+                    "kind": "row",
+                    "source_id": "UI/flagship.roukaku/header",
+                    "children": [
+                      {
+                        "id": "speaker",
+                        "kind": "text",
+                        "source_id": "UI/flagship.roukaku/speaker",
+                        "value": "$model.speaker_key",
+                        "font_size": 28
+                      }
+                    ]
+                  },
+                  {
+                    "id": "body",
+                    "kind": "text",
+                    "source_id": "UI/flagship.roukaku/body",
+                    "value": "$model.text_key",
+                    "visible_graphemes": "$model.visible_graphemes",
+                    "font_size": 32,
+                    "max_lines": 5
+                  },
+                  {
+                    "id": "commands",
+                    "kind": "row",
+                    "source_id": "UI/flagship.roukaku/commands",
+                    "children": [
+                      {
+                        "id": "backlog",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/backlog",
+                        "min_height": 48,
+                        "text": "l10n:system.backlog",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.open_system",
+                            "arguments": {
+                              "page": "backlog"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "save",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/save",
+                        "min_height": 48,
+                        "text": "l10n:system.save",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.open_system",
+                            "arguments": {
+                              "page": "save"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "load",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/load",
+                        "min_height": 48,
+                        "text": "l10n:system.load",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.open_system",
+                            "arguments": {
+                              "page": "load"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "config",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/config",
+                        "min_height": 48,
+                        "text": "l10n:system.config",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.open_system",
+                            "arguments": {
+                              "page": "config"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.choice.modern",
+      "source_id": "ui.choice.modern",
+      "model": "roukaku.vn.ui_model.choice.v1",
+      "theme": "roukaku.vn.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.dim",
+        "children": [
+          {
+            "id": "choice_panel",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/choice_panel",
+            "background": "theme:panel.message",
+            "min_width": 760,
+            "anchor": "center",
+            "children": [
+              {
+                "id": "choices",
+                "kind": "column",
+                "source_id": "UI/flagship.roukaku/choices",
+                "fill_width": true,
+                "children": [
+                  {
+                    "id": "prompt",
+                    "kind": "text",
+                    "source_id": "UI/flagship.roukaku/prompt",
+                    "value": "$model.prompt_key",
+                    "font_size": 30
+                  },
+                  {
+                    "id": "options",
+                    "kind": "virtual_list",
+                    "source_id": "UI/flagship.roukaku/options",
+                    "items": "$model.options",
+                    "item_key": "option_id",
+                    "overscan": 2,
+                    "item_extent": 72,
+                    "children": [
+                      {
+                        "id": "option",
+                        "kind": "button",
+                        "source_id": "UI/flagship.roukaku/option",
+                        "min_height": 68,
+                        "fill_width": true,
+                        "value": "$item.text_key",
+                        "enabled": "$item.enabled",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.choose",
+                            "arguments": {
+                              "option_id": "$item.option_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.system.quick_panel",
+      "source_id": "ui.system.quick_panel",
+      "model": "roukaku.vn.ui_model.quick_panel.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/flagship.roukaku/root",
+        "background": "theme:surface.dim",
+        "children": [
+          {
+            "id": "content",
+            "kind": "column",
+            "source_id": "UI/flagship.roukaku/content",
+            "background": "theme:panel.message",
+            "children": [
+              {
+                "id": "title",
+                "kind": "text",
+                "source_id": "UI/flagship.roukaku/title",
+                "value": "l10n:system.quick_panel"
+              },
+              {
+                "id": "back",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/back",
+                "min_height": 56,
+                "text": "l10n:system.back",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.return_system"
+                  }
+                ]
+              },
+              {
+                "id": "save",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/save",
+                "min_height": 56,
+                "text": "l10n:system.save",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "save"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "load",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/load",
+                "min_height": 56,
+                "text": "l10n:system.load",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "load"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "config",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/config",
+                "min_height": 56,
+                "text": "l10n:system.config",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "config"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "backlog",
+                "kind": "button",
+                "source_id": "UI/flagship.roukaku/backlog",
+                "min_height": 56,
+                "text": "l10n:system.backlog",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.open_system",
+                    "arguments": {
+                      "page": "backlog"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "ui.bind.quick_panel.modern",
+      "profile": "advanced-vn",
+      "system_page": "quick_panel",
+      "view": "ui.system.quick_panel",
+      "controller": "system.quick.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.quick_panel.classic",
+      "profile": "classic",
+      "system_page": "quick_panel",
+      "view": "ui.system.quick_panel",
+      "controller": "system.quick",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.message.classic",
+      "profile": "classic",
+      "surface": "message",
+      "view": "ui.message.classic",
+      "controller": "message.classic",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.choice.classic",
+      "profile": "classic",
+      "surface": "choice",
+      "view": "ui.choice.classic",
+      "controller": "choice.classic",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.title.classic",
+      "profile": "classic",
+      "system_page": "title",
+      "view": "ui.system.title",
+      "controller": "system.standard",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.save.classic",
+      "profile": "classic",
+      "system_page": "save",
+      "view": "ui.system.save",
+      "controller": "system.save",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.load.classic",
+      "profile": "classic",
+      "system_page": "load",
+      "view": "ui.system.load",
+      "controller": "system.load",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.config.classic",
+      "profile": "classic",
+      "system_page": "config",
+      "view": "ui.system.config",
+      "controller": "system.config",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.backlog.classic",
+      "profile": "classic",
+      "system_page": "backlog",
+      "view": "ui.system.backlog",
+      "controller": "system.backlog",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.gallery.classic",
+      "profile": "classic",
+      "system_page": "gallery",
+      "view": "ui.system.gallery",
+      "controller": "system.gallery",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.replay.classic",
+      "profile": "classic",
+      "system_page": "replay",
+      "view": "ui.system.replay",
+      "controller": "system.replay",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.voice.classic",
+      "profile": "classic",
+      "system_page": "voice_replay",
+      "view": "ui.system.voice_replay",
+      "controller": "system.voice",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.route.classic",
+      "profile": "classic",
+      "system_page": "route_chart",
+      "view": "ui.system.route_chart",
+      "controller": "system.route",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.localization.classic",
+      "profile": "classic",
+      "system_page": "localization_preview",
+      "view": "ui.system.localization",
+      "controller": "system.localization",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.title.modern",
+      "profile": "advanced-vn",
+      "system_page": "title",
+      "view": "ui.system.title",
+      "controller": "system.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.save.modern",
+      "profile": "advanced-vn",
+      "system_page": "save",
+      "view": "ui.system.save",
+      "controller": "system.save.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.load.modern",
+      "profile": "advanced-vn",
+      "system_page": "load",
+      "view": "ui.system.load",
+      "controller": "system.load.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.config.modern",
+      "profile": "advanced-vn",
+      "system_page": "config",
+      "view": "ui.system.config",
+      "controller": "system.config.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.backlog.modern",
+      "profile": "advanced-vn",
+      "system_page": "backlog",
+      "view": "ui.system.backlog",
+      "controller": "system.backlog.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.gallery.modern",
+      "profile": "advanced-vn",
+      "system_page": "gallery",
+      "view": "ui.system.gallery",
+      "controller": "system.gallery.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.replay.modern",
+      "profile": "advanced-vn",
+      "system_page": "replay",
+      "view": "ui.system.replay",
+      "controller": "system.replay.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.voice.modern",
+      "profile": "advanced-vn",
+      "system_page": "voice_replay",
+      "view": "ui.system.voice_replay",
+      "controller": "system.voice.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.route.modern",
+      "profile": "advanced-vn",
+      "system_page": "route_chart",
+      "view": "ui.system.route_chart",
+      "controller": "system.route.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.localization.modern",
+      "profile": "advanced-vn",
+      "system_page": "localization_preview",
+      "view": "ui.system.localization",
+      "controller": "system.localization.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.message.modern",
+      "profile": "advanced-vn",
+      "surface": "message",
+      "view": "ui.message.modern",
+      "controller": "message.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.choice.modern",
+      "profile": "advanced-vn",
+      "surface": "choice",
+      "view": "ui.choice.modern",
+      "controller": "choice.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    },
+    {
+      "id": "ui.bind.main.classic",
+      "profile": "classic",
+      "surface": "main",
+      "view": "ui.message.classic",
+      "controller": "message.classic",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "ui.bind.main.modern",
+      "profile": "advanced-vn",
+      "surface": "main",
+      "view": "ui.message.modern",
+      "controller": "message.modern",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.modern"
+    }
+  ],
+  "policies": [
+    {
+      "id": "ui.policy.flagship.advanced",
+      "profile": "advanced-vn",
+      "save_slots": [
+        "slot.quick",
+        "slot.01",
+        "slot.02",
+        "slot.03",
+        "slot.04",
+        "slot.05",
+        "slot.06",
+        "slot.07",
+        "slot.08",
+        "slot.09",
+        "slot.10",
+        "slot.11",
+        "slot.12",
+        "slot.13",
+        "slot.14",
+        "slot.15",
+        "slot.16",
+        "slot.17",
+        "slot.18",
+        "slot.19",
+        "slot.20",
+        "slot.21",
+        "slot.22",
+        "slot.23",
+        "slot.24"
+      ],
+      "quick_slot": "slot.quick",
+      "allowed_pages": [
+        "title",
+        "quick_panel",
+        "save",
+        "load",
+        "config",
+        "backlog",
+        "gallery",
+        "replay",
+        "voice_replay",
+        "route_chart",
+        "localization_preview"
+      ],
+      "reading_modes": [
+        "manual",
+        "fast_forward"
+      ],
+      "audio_toggle": true,
+      "save_completion": "stay",
+      "custom_actions": [
+        "nativevn.story.start",
+        "nativevn.experience.open"
+      ]
+    },
+    {
+      "id": "ui.policy.flagship.classic",
+      "profile": "classic",
+      "save_slots": [
+        "slot.quick",
+        "slot.01",
+        "slot.02",
+        "slot.03",
+        "slot.04",
+        "slot.05",
+        "slot.06",
+        "slot.07",
+        "slot.08",
+        "slot.09",
+        "slot.10",
+        "slot.11",
+        "slot.12",
+        "slot.13",
+        "slot.14",
+        "slot.15",
+        "slot.16",
+        "slot.17",
+        "slot.18",
+        "slot.19",
+        "slot.20",
+        "slot.21",
+        "slot.22",
+        "slot.23",
+        "slot.24"
+      ],
+      "quick_slot": "slot.quick",
+      "allowed_pages": [
+        "title",
+        "quick_panel",
+        "save",
+        "load",
+        "config",
+        "backlog",
+        "gallery",
+        "replay",
+        "voice_replay",
+        "route_chart",
+        "localization_preview"
+      ],
+      "reading_modes": [
+        "manual",
+        "fast_forward"
+      ],
+      "audio_toggle": true,
+      "save_completion": "stay",
+      "custom_actions": [
+        "nativevn.story.start",
+        "nativevn.experience.open"
+      ]
+    }
+  ]
+}

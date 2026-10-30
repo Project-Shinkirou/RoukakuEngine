@@ -27,5 +27,6 @@ pub use standard_commands::*;
 pub use syntax::*;
 pub use system_ui::*;
 pub use types::*;
+pub use ui_compile::{CompiledUiStyle, UI_SCREEN_SCHEMA, UI_STYLE_SCHEMA, compile_ui_style};
 mod preview;
 pub use preview::*;

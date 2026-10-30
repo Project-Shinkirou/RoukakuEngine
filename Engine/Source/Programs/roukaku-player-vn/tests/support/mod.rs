@@ -16,36 +16,7 @@ use roukaku_vn_core::{
 };
 use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
 
-const TEST_UI: &str = r#"
-ui_policy profile:classic save_slots:"slot.quick,slot.01" quick_slot:slot.quick allowed_pages:"quick_panel,title,save,load,config,backlog,gallery,replay,voice_replay,route_chart,localization_preview" reading_modes:"manual" audio_toggle:true save_completion:stay custom_actions:"" #@id ui.policy.test.classic
-ui_bind profile:classic surface:message view:ui.test.message controller:test.message policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.message
-ui_bind profile:classic surface:choice view:ui.test.choice controller:test.choice policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.choice
-ui_bind profile:classic system_page:quick_panel view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.quick_panel
-ui_bind profile:classic system_page:title view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.title
-ui_bind profile:classic system_page:save view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.save
-ui_bind profile:classic system_page:load view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.load
-ui_bind profile:classic system_page:config view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.config
-ui_bind profile:classic system_page:backlog view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.backlog
-ui_bind profile:classic system_page:gallery view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.gallery
-ui_bind profile:classic system_page:replay view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.replay
-ui_bind profile:classic system_page:voice_replay view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.voice
-ui_bind profile:classic system_page:route_chart view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.route
-ui_bind profile:classic system_page:localization_preview view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.localization
-ui_view ui.test.message model:roukaku.vn.ui_model.message.v2 theme:roukaku.vn.theme.classic #@id ui.test.message
-  screen id:root
-    panel id:advance fill:true
-      on activate -> vn.advance
-    text id:body value:$model.text_key
-ui_view ui.test.choice model:roukaku.vn.ui_model.choice.v1 theme:roukaku.vn.theme.classic #@id ui.test.choice
-  screen id:root
-    virtual_list id:options items:$model.options item_key:option_id overscan:2 item_extent:48
-      button id:option min_height:44 value:$item.text_key
-        on activate -> vn.choose option_id:$item.option_id
-ui_view ui.test.system model:roukaku.vn.ui_model.system.v1 theme:roukaku.vn.theme.classic #@id ui.test.system
-  screen id:root
-    button id:back min_height:48
-      on activate -> vn.return_system
-"#;
+const TEST_UI: &str = include_str!("../fixtures/shared.screen.jsonc");
 
 #[allow(dead_code)]
 pub fn source_for(story: &str) -> NativeVnHostCommandSource {
@@ -85,7 +56,7 @@ fn product_package_with_video(story: &str, video: Option<Vec<u8>>, audio: bool) 
     let compiled = compile_roukaku_project(
         [
             RoukakuSource::story("main.roukaku", story),
-            RoukakuSource::ui("test-ui.roukaku", TEST_UI),
+            RoukakuSource::ui("test-ui.screen.jsonc", TEST_UI),
         ],
         test_compile_options(),
     )

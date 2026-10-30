@@ -88,20 +88,57 @@ fn semantic_hash_ignores_trivia_and_implicit_command_source_spans() {
 #[test]
 fn select_items_are_a_typed_widget_property_not_a_repeat_binding() {
     let story = "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one #@id line.one\n";
-    let ui = concat!(
-        "ui_bind surface:message view:ui.config controller:config policy:standard ",
-        "theme:theme.classic #@id bind.config\n",
-        "ui_view ui.config model:roukaku.vn.ui_model.config.v1 ",
-        "theme:theme.classic #@id ui.config\n",
-        "  screen id:root\n",
-        "    select id:locale value:$model.locale items:$model.available_locales\n",
-        "      on change -> vn.set_config key:display.language value:$event.value\n",
-    );
+    let ui = r#"{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.config",
+      "source_id": "ui.config",
+      "model": "roukaku.vn.ui_model.config.v1",
+      "theme": "theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "ui.screen.jsonc/root",
+        "children": [
+          {
+            "id": "locale",
+            "kind": "select",
+            "source_id": "ui.screen.jsonc/locale",
+            "value": "$model.locale",
+            "items": "$model.available_locales",
+            "events": [
+              {
+                "event": "change",
+                "action": "vn.set_config",
+                "arguments": {
+                  "key": "display.language",
+                  "value": "$event.value"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind.config",
+      "surface": "message",
+      "view": "ui.config",
+      "controller": "config",
+      "policy": "standard",
+      "theme": "theme.classic"
+    }
+  ],
+  "policies": []
+}"#;
 
     let compiled = compile_roukaku_project(
         [
             roukaku_vn_script::RoukakuSource::story("story.roukaku", story),
-            roukaku_vn_script::RoukakuSource::ui("ui.roukaku", ui),
+            roukaku_vn_script::RoukakuSource::ui("ui.screen.jsonc", ui),
         ],
         CompileRoukakuProjectOptions::default()
             .with_ui_theme(test_theme())
@@ -121,17 +158,64 @@ fn quick_panel_system_page_and_actions_compile_as_typed_ui_contracts() {
         "  scene quick #@id scene.quick\n",
         "    system_page kind:quick_panel #@id page.quick\n",
     );
-    let ui = concat!(
-        "ui_bind system_page:quick_panel view:ui.quick controller:quick policy:standard ",
-        "theme:theme.classic #@id bind.quick\n",
-        "ui_view ui.quick model:roukaku.vn.ui_model.quick_panel.v1 ",
-        "theme:theme.classic #@id ui.quick\n",
-        "  screen id:root\n",
-        "    toggle id:auto checked:$model.auto_enabled\n",
-        "      on change -> vn.set_auto enabled:$event.value\n",
-        "    button id:skip\n",
-        "      on activate -> vn.set_skip mode:\"read\"\n",
-    );
+    let ui = r#"{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.quick",
+      "source_id": "ui.quick",
+      "model": "roukaku.vn.ui_model.quick_panel.v1",
+      "theme": "theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "ui.screen.jsonc/root",
+        "children": [
+          {
+            "id": "auto",
+            "kind": "toggle",
+            "source_id": "ui.screen.jsonc/auto",
+            "checked": "$model.auto_enabled",
+            "events": [
+              {
+                "event": "change",
+                "action": "vn.set_auto",
+                "arguments": {
+                  "enabled": "$event.value"
+                }
+              }
+            ]
+          },
+          {
+            "id": "skip",
+            "kind": "button",
+            "source_id": "ui.screen.jsonc/skip",
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.set_skip",
+                "arguments": {
+                  "mode": "read"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind.quick",
+      "system_page": "quick_panel",
+      "view": "ui.quick",
+      "controller": "quick",
+      "policy": "standard",
+      "theme": "theme.classic"
+    }
+  ],
+  "policies": []
+}"#;
     let controller = r#"
 roukaku.ui.controller.register("quick", {
   schema = "roukaku.vn.ui_controller.v1",
@@ -148,7 +232,7 @@ roukaku.ui.controller.register("quick", {
     let compiled = compile_roukaku_project(
         [
             roukaku_vn_script::RoukakuSource::story("system.roukaku", story),
-            roukaku_vn_script::RoukakuSource::ui("quick.roukaku", ui),
+            roukaku_vn_script::RoukakuSource::ui("quick.screen.jsonc", ui),
         ],
         CompileRoukakuProjectOptions::default()
             .with_ui_theme(test_theme())
@@ -165,10 +249,12 @@ roukaku.ui.controller.register("quick", {
 
 #[test]
 fn tsuinosora_classic_and_modern_ui_template_compiles_as_one_project() {
-    const CLASSIC_UI: &str =
-        include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/classic.roukaku");
-    const MODERN_UI: &str =
-        include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/modern.roukaku");
+    const CLASSIC_UI: &str = include_str!(
+        "../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/classic.screen.jsonc"
+    );
+    const MODERN_UI: &str = include_str!(
+        "../../../../../../Examples/TsuiNoSora/ProjectTemplate/UI/modern.screen.jsonc"
+    );
     const SYSTEM_STORY: &str = include_str!(
         "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Scripts/system.roukaku"
     );
@@ -229,14 +315,20 @@ state z11 #@id director.z.0087
 story z12 #@id story.fixture.z12
 state z12 #@id director.z.0126
 "#;
-    const CLASSIC_THEME: &str =
-        include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/Themes/classic.json");
-    const MODERN_THEME: &str =
-        include_str!("../../../../../../Examples/TsuiNoSora/ProjectTemplate/Themes/modern.json");
+    const CLASSIC_THEME: &str = include_str!(
+        "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Themes/classic.style.jsonc"
+    );
+    const MODERN_THEME: &str = include_str!(
+        "../../../../../../Examples/TsuiNoSora/ProjectTemplate/Themes/modern.style.jsonc"
+    );
 
     let mut options = CompileRoukakuProjectOptions::default()
-        .with_ui_theme(theme_from_source(CLASSIC_THEME))
-        .with_ui_theme(theme_from_source(MODERN_THEME));
+        .with_ui_style(
+            roukaku_vn_script::compile_ui_style("classic.style.jsonc", CLASSIC_THEME).unwrap(),
+        )
+        .with_ui_style(
+            roukaku_vn_script::compile_ui_style("modern.style.jsonc", MODERN_THEME).unwrap(),
+        );
     for id in [
         "tsui.message.classic",
         "tsui.monologue.classic",
@@ -269,8 +361,8 @@ state z12 #@id director.z.0126
                 "classic-test-targets.roukaku",
                 CLASSIC_TEST_TARGETS,
             ),
-            roukaku_vn_script::RoukakuSource::ui("classic.roukaku", CLASSIC_UI),
-            roukaku_vn_script::RoukakuSource::ui("modern.roukaku", MODERN_UI),
+            roukaku_vn_script::RoukakuSource::ui("classic.screen.jsonc", CLASSIC_UI),
+            roukaku_vn_script::RoukakuSource::ui("modern.screen.jsonc", MODERN_UI),
         ],
         options,
     )
@@ -316,28 +408,6 @@ state z12 #@id director.z.0126
         .expect("modern system UI policy");
     assert_eq!(modern.save_slot_ids.len(), 25);
     assert_eq!(modern.quick_slot_id.as_deref(), Some("slot.quick"));
-}
-
-fn theme_from_source(source: &str) -> UiThemeManifest {
-    let value: serde_json::Value = serde_json::from_str(source).expect("theme JSON");
-    let object = value.as_object().expect("theme object");
-    UiThemeManifest {
-        schema: object["schema"].as_str().unwrap().to_string(),
-        id: object["id"].as_str().unwrap().to_string(),
-        parent: object
-            .get("parent")
-            .and_then(serde_json::Value::as_str)
-            .map(str::to_string),
-        tokens: serde_json::from_value(object["tokens"].clone()).expect("theme tokens"),
-        high_contrast_tokens: serde_json::from_value(
-            object
-                .get("high_contrast_tokens")
-                .cloned()
-                .unwrap_or_else(|| serde_json::json!({})),
-        )
-        .expect("high contrast tokens"),
-        revision: 1,
-    }
 }
 
 fn test_theme() -> UiThemeManifest {
@@ -463,21 +533,24 @@ fn formatter_is_idempotent_and_preserves_semantics() {
 }
 
 #[test]
-fn dynamic_ui_component_authoring_is_rejected() {
-    for ui in [
-        "ui_component obsolete.widget #@id obsolete.widget\n",
-        "ui_view ui.test model:roukaku.vn.ui_model.config.v1 theme:theme.classic #@id ui.test\n  component_slot id:root component:obsolete.widget\n",
-        "ui_view ui.test model:roukaku.vn.ui_model.config.v1 theme:theme.classic #@id ui.test\n  screen id:root component:obsolete.widget\n",
+fn unknown_widgets_and_properties_are_rejected_by_schema() {
+    for root in [
+        serde_json::json!({"id":"root", "kind":"component_slot"}),
+        serde_json::json!({"id":"root", "kind":"screen", "component":"obsolete.widget"}),
     ] {
-        assert!(
-            compile_roukaku_project(
-                [
-                    RoukakuSource::story("story.roukaku", SOURCE),
-                    RoukakuSource::ui("ui.roukaku", ui)
-                ],
-                CompileRoukakuProjectOptions::default().with_ui_theme(test_theme()),
-            )
-            .is_err()
-        );
+        let ui = serde_json::json!({"$schema":"ui-screen.v1.json", "views":[{"id":"test", "model":"roukaku.vn.ui_model.config.v1", "theme":"theme.classic", "root":root}]}).to_string();
+        let error = compile_roukaku_project(
+            [
+                RoukakuSource::story("story.roukaku", SOURCE),
+                RoukakuSource::ui("ui.screen.jsonc", ui),
+            ],
+            CompileRoukakuProjectOptions::default().with_ui_theme(test_theme()),
+        )
+        .unwrap_err();
+        let roukaku_vn_script::VnError::Diagnostic(diagnostic) = error else {
+            panic!("expected schema diagnostic")
+        };
+        assert_eq!(diagnostic.code, "ROUKAKU_UI_SCHEMA");
+        assert!(diagnostic.source.is_some());
     }
 }

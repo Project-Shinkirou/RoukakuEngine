@@ -1,0 +1,1372 @@
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.tsui.modern.message",
+      "source_id": "ui.tsui.modern.message",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/modern.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/modern.roukaku/dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "dialogue",
+            "kind": "row",
+            "source_id": "UI/modern.roukaku/dialogue",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "speaker_text",
+                "kind": "text",
+                "source_id": "UI/modern.roukaku/speaker_text",
+                "value": "$model.speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/modern.roukaku/body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "body",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/body",
+                    "value": "$model.text_key",
+                    "visible_graphemes": "$model.visible_graphemes",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.monologue",
+      "source_id": "ui.tsui.modern.monologue",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/modern.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "body",
+            "kind": "text",
+            "source_id": "UI/modern.roukaku/body",
+            "value": "$model.text_key",
+            "visible_graphemes": "$model.visible_graphemes",
+            "position_x": 23,
+            "position_y": 42,
+            "min_width": 754,
+            "min_height": 424,
+            "font_size": 22,
+            "max_lines": 20,
+            "text_align": "center",
+            "vertical_align": "center",
+            "text_color": "theme:text.monologue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.choice",
+      "source_id": "ui.tsui.modern.choice",
+      "model": "roukaku.vn.ui_model.choice.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "children": [
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "anchor": "center",
+            "background": "theme:accent.gold",
+            "min_width": 604,
+            "padding": 2,
+            "children": [
+              {
+                "id": "choices",
+                "kind": "column",
+                "source_id": "UI/modern.roukaku/choices",
+                "background": "theme:surface.paper",
+                "min_width": 600,
+                "padding": 20,
+                "gap": 10,
+                "children": [
+                  {
+                    "id": "prompt",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/prompt",
+                    "value": "$model.prompt_key",
+                    "font_size": 22
+                  },
+                  {
+                    "id": "options",
+                    "kind": "virtual_list",
+                    "source_id": "UI/modern.roukaku/options",
+                    "items": "$model.options",
+                    "item_key": "option_id",
+                    "overscan": 2,
+                    "item_extent": 56,
+                    "gap": 8,
+                    "children": [
+                      {
+                        "id": "option",
+                        "kind": "button",
+                        "source_id": "UI/modern.roukaku/option",
+                        "min_height": 48,
+                        "value": "$item.text_key",
+                        "enabled": "$item.enabled",
+                        "background": "theme:surface.button",
+                        "text_color": "theme:text.on_dark",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.choose",
+                            "arguments": {
+                              "option_id": "$item.option_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.quick_panel",
+      "source_id": "ui.tsui.modern.quick_panel",
+      "model": "roukaku.vn.ui_model.quick_panel.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "modal",
+        "source_id": "UI/modern.roukaku/root",
+        "background": "theme:surface.dim",
+        "children": [
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "anchor": "center",
+            "background": "theme:accent.gold",
+            "min_width": 754,
+            "padding": 2,
+            "children": [
+              {
+                "id": "commands",
+                "kind": "row",
+                "source_id": "UI/modern.roukaku/commands",
+                "background": "theme:surface.paper",
+                "min_width": 750,
+                "min_height": 72,
+                "padding": 10,
+                "gap": 5,
+                "children": [
+                  {
+                    "id": "save",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/save",
+                    "text": "l10n:system.save",
+                    "min_width": 94,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.open_system",
+                        "arguments": {
+                          "page": "save"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "load",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/load",
+                    "text": "l10n:system.load",
+                    "min_width": 94,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.open_system",
+                        "arguments": {
+                          "page": "load"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "backlog",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/backlog",
+                    "text": "l10n:system.backlog",
+                    "min_width": 104,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.open_system",
+                        "arguments": {
+                          "page": "backlog"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "auto",
+                    "kind": "toggle",
+                    "source_id": "UI/modern.roukaku/auto",
+                    "label_key": "l10n:system.auto",
+                    "value": "$model.auto_enabled",
+                    "min_width": 104,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "change",
+                        "action": "vn.set_auto",
+                        "arguments": {
+                          "enabled": "$event.value"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "skip_all",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/skip_all",
+                    "text": "l10n:system.skip_all",
+                    "min_width": 94,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.set_skip",
+                        "arguments": {
+                          "mode": "all"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "config",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/config",
+                    "text": "l10n:system.config",
+                    "min_width": 104,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.open_system",
+                        "arguments": {
+                          "page": "config"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "return",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/return",
+                    "text": "l10n:system.back",
+                    "min_width": 94,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.title",
+      "source_id": "ui.tsui.modern.title",
+      "model": "roukaku.vn.ui_model.title.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "background": "theme:surface.sky",
+        "children": [
+          {
+            "id": "sky_frame",
+            "kind": "image",
+            "source_id": "UI/modern.roukaku/sky_frame",
+            "asset": "theme:sky.frame",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "position_x": 492,
+            "position_y": 288,
+            "background": "theme:accent.gold",
+            "min_width": 284,
+            "padding": 2,
+            "children": [
+              {
+                "id": "menu",
+                "kind": "column",
+                "source_id": "UI/modern.roukaku/menu",
+                "background": "theme:surface.paper",
+                "min_width": 280,
+                "padding": 12,
+                "gap": 7,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/title",
+                    "value": "l10n:system.title",
+                    "font_size": 24,
+                    "text_color": "theme:text.gold"
+                  },
+                  {
+                    "id": "continue",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/continue",
+                    "text": "l10n:system.continue",
+                    "enabled": "$model.can_continue",
+                    "min_height": 46,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "load",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/load",
+                    "text": "l10n:system.load",
+                    "min_height": 46,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.open_system",
+                        "arguments": {
+                          "page": "load"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "config",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/config",
+                    "text": "l10n:system.config",
+                    "min_height": 46,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.open_system",
+                        "arguments": {
+                          "page": "config"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "exit",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/exit",
+                    "text": "l10n:system.quit",
+                    "min_height": 46,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.request_exit"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.save",
+      "source_id": "ui.tsui.modern.save",
+      "model": "roukaku.vn.ui_model.save.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "background": "theme:surface.sky",
+        "children": [
+          {
+            "id": "sky_frame",
+            "kind": "image",
+            "source_id": "UI/modern.roukaku/sky_frame",
+            "asset": "theme:sky.frame",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "position_x": 23,
+            "position_y": 29,
+            "position_right": 23,
+            "position_bottom": 29,
+            "background": "theme:accent.gold",
+            "min_width": 754,
+            "min_height": 542,
+            "padding": 2,
+            "children": [
+              {
+                "id": "content",
+                "kind": "column",
+                "source_id": "UI/modern.roukaku/content",
+                "background": "theme:surface.paper",
+                "min_width": 714,
+                "min_height": 484,
+                "padding": 18,
+                "gap": 10,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/title",
+                    "value": "l10n:system.save",
+                    "font_size": 26
+                  },
+                  {
+                    "id": "slots",
+                    "kind": "virtual_grid",
+                    "source_id": "UI/modern.roukaku/slots",
+                    "items": "$model.slots",
+                    "item_key": "slot_id",
+                    "columns": 3,
+                    "overscan": 0,
+                    "item_extent": 196,
+                    "viewport_extent": 390,
+                    "min_height": 390,
+                    "gap": 8,
+                    "children": [
+                      {
+                        "id": "slot",
+                        "kind": "column",
+                        "source_id": "UI/modern.roukaku/slot",
+                        "background": "theme:surface.card",
+                        "min_width": 226,
+                        "min_height": 184,
+                        "padding": 6,
+                        "gap": 1,
+                        "children": [
+                          {
+                            "id": "preview",
+                            "kind": "stack",
+                            "source_id": "UI/modern.roukaku/preview",
+                            "min_width": 214,
+                            "min_height": 64,
+                            "children": [
+                              {
+                                "id": "empty_preview",
+                                "kind": "image",
+                                "source_id": "UI/modern.roukaku/empty_preview",
+                                "asset": "theme:sky.frame",
+                                "min_width": 214,
+                                "min_height": 64
+                              },
+                              {
+                                "id": "thumbnail",
+                                "kind": "image",
+                                "source_id": "UI/modern.roukaku/thumbnail",
+                                "asset": "$item.thumbnail_asset",
+                                "visible": "$item.has_thumbnail",
+                                "min_width": 214,
+                                "min_height": 64
+                              }
+                            ]
+                          },
+                          {
+                            "id": "number",
+                            "kind": "text",
+                            "source_id": "UI/modern.roukaku/number",
+                            "value": "$item.slot_id",
+                            "font_size": 16,
+                            "max_lines": 1
+                          },
+                          {
+                            "id": "metadata",
+                            "kind": "text",
+                            "source_id": "UI/modern.roukaku/metadata",
+                            "value": "$item.metadata_text",
+                            "font_size": 12,
+                            "max_lines": 1
+                          },
+                          {
+                            "id": "write",
+                            "kind": "button",
+                            "source_id": "UI/modern.roukaku/write",
+                            "value": "$item.slot_id",
+                            "enabled": "$item.can_write",
+                            "min_height": 32,
+                            "background": "theme:surface.button",
+                            "text_color": "theme:text.on_dark",
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.request_save",
+                                "arguments": {
+                                  "slot_id": "$item.slot_id"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_height": 42,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.save_confirm",
+      "source_id": "ui.tsui.modern.save_confirm",
+      "model": "roukaku.vn.ui_model.system.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "confirm",
+        "kind": "modal",
+        "source_id": "UI/modern.roukaku/confirm",
+        "background": "theme:surface.dim",
+        "children": [
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "anchor": "center",
+            "background": "theme:accent.gold",
+            "padding": 2,
+            "children": [
+              {
+                "id": "content",
+                "kind": "column",
+                "source_id": "UI/modern.roukaku/content",
+                "background": "theme:surface.paper",
+                "min_width": 460,
+                "padding": 20,
+                "gap": 14,
+                "children": [
+                  {
+                    "id": "message",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/message",
+                    "value": "l10n:ui.save.confirm_overwrite",
+                    "font_size": 20
+                  },
+                  {
+                    "id": "actions",
+                    "kind": "row",
+                    "source_id": "UI/modern.roukaku/actions",
+                    "gap": 10,
+                    "children": [
+                      {
+                        "id": "cancel",
+                        "kind": "button",
+                        "source_id": "UI/modern.roukaku/cancel",
+                        "text": "l10n:ui.common.cancel",
+                        "min_height": 44,
+                        "background": "theme:surface.button_alt",
+                        "text_color": "theme:text.on_dark",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "ui.close_modal"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "accept",
+                        "kind": "button",
+                        "source_id": "UI/modern.roukaku/accept",
+                        "text": "l10n:ui.common.confirm",
+                        "min_height": 44,
+                        "background": "theme:surface.button",
+                        "text_color": "theme:text.on_dark",
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.request_save_confirmed",
+                            "arguments": {
+                              "slot_id": "$model.slot_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.load",
+      "source_id": "ui.tsui.modern.load",
+      "model": "roukaku.vn.ui_model.load.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "background": "theme:surface.sky",
+        "children": [
+          {
+            "id": "sky_frame",
+            "kind": "image",
+            "source_id": "UI/modern.roukaku/sky_frame",
+            "asset": "theme:sky.frame",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "position_x": 23,
+            "position_y": 29,
+            "position_right": 23,
+            "position_bottom": 29,
+            "background": "theme:accent.gold",
+            "min_width": 754,
+            "min_height": 542,
+            "padding": 2,
+            "children": [
+              {
+                "id": "content",
+                "kind": "column",
+                "source_id": "UI/modern.roukaku/content",
+                "background": "theme:surface.paper",
+                "min_width": 714,
+                "min_height": 484,
+                "padding": 18,
+                "gap": 10,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/title",
+                    "value": "l10n:system.load",
+                    "font_size": 26
+                  },
+                  {
+                    "id": "slots",
+                    "kind": "virtual_grid",
+                    "source_id": "UI/modern.roukaku/slots",
+                    "items": "$model.slots",
+                    "item_key": "slot_id",
+                    "columns": 3,
+                    "overscan": 0,
+                    "item_extent": 196,
+                    "viewport_extent": 390,
+                    "min_height": 390,
+                    "gap": 8,
+                    "children": [
+                      {
+                        "id": "slot",
+                        "kind": "column",
+                        "source_id": "UI/modern.roukaku/slot",
+                        "background": "theme:surface.card",
+                        "min_width": 226,
+                        "min_height": 184,
+                        "padding": 6,
+                        "gap": 1,
+                        "children": [
+                          {
+                            "id": "preview",
+                            "kind": "stack",
+                            "source_id": "UI/modern.roukaku/preview",
+                            "min_width": 214,
+                            "min_height": 64,
+                            "children": [
+                              {
+                                "id": "empty_preview",
+                                "kind": "image",
+                                "source_id": "UI/modern.roukaku/empty_preview",
+                                "asset": "theme:sky.frame",
+                                "min_width": 214,
+                                "min_height": 64
+                              },
+                              {
+                                "id": "thumbnail",
+                                "kind": "image",
+                                "source_id": "UI/modern.roukaku/thumbnail",
+                                "asset": "$item.thumbnail_asset",
+                                "visible": "$item.has_thumbnail",
+                                "min_width": 214,
+                                "min_height": 64
+                              }
+                            ]
+                          },
+                          {
+                            "id": "number",
+                            "kind": "text",
+                            "source_id": "UI/modern.roukaku/number",
+                            "value": "$item.slot_id",
+                            "font_size": 16,
+                            "max_lines": 1
+                          },
+                          {
+                            "id": "metadata",
+                            "kind": "text",
+                            "source_id": "UI/modern.roukaku/metadata",
+                            "value": "$item.metadata_text",
+                            "font_size": 12,
+                            "max_lines": 1
+                          },
+                          {
+                            "id": "read",
+                            "kind": "button",
+                            "source_id": "UI/modern.roukaku/read",
+                            "value": "$item.slot_id",
+                            "enabled": "$item.can_load",
+                            "min_height": 32,
+                            "background": "theme:surface.button",
+                            "text_color": "theme:text.on_dark",
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.request_load",
+                                "arguments": {
+                                  "slot_id": "$item.slot_id"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_height": 42,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.config",
+      "source_id": "ui.tsui.modern.config",
+      "model": "roukaku.vn.ui_model.config.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "background": "theme:surface.sky",
+        "children": [
+          {
+            "id": "sky_frame",
+            "kind": "image",
+            "source_id": "UI/modern.roukaku/sky_frame",
+            "asset": "theme:sky.frame",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "position_x": 23,
+            "position_y": 29,
+            "position_right": 23,
+            "position_bottom": 29,
+            "background": "theme:accent.gold",
+            "min_width": 754,
+            "min_height": 542,
+            "padding": 2,
+            "children": [
+              {
+                "id": "content",
+                "kind": "scroll",
+                "source_id": "UI/modern.roukaku/content",
+                "background": "theme:surface.paper",
+                "min_width": 718,
+                "min_height": 538,
+                "max_height": 538,
+                "padding": 16,
+                "gap": 5,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/title",
+                    "value": "l10n:system.config",
+                    "font_size": 26
+                  },
+                  {
+                    "id": "master_label",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/master_label",
+                    "value": "l10n:system.config.master_volume",
+                    "font_size": 18
+                  },
+                  {
+                    "id": "master",
+                    "kind": "slider",
+                    "source_id": "UI/modern.roukaku/master",
+                    "value": "$model.master_volume",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "min_height": 42,
+                    "background": "theme:surface.button",
+                    "events": [
+                      {
+                        "event": "change",
+                        "action": "vn.set_config",
+                        "arguments": {
+                          "key": "audio.master",
+                          "value": "$event.value"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "speed_label",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/speed_label",
+                    "value": "l10n:system.config.text_speed",
+                    "font_size": 18
+                  },
+                  {
+                    "id": "text_speed",
+                    "kind": "slider",
+                    "source_id": "UI/modern.roukaku/text_speed",
+                    "value": "$model.text_speed",
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "min_height": 42,
+                    "background": "theme:surface.button",
+                    "events": [
+                      {
+                        "event": "change",
+                        "action": "vn.set_config",
+                        "arguments": {
+                          "key": "text.speed",
+                          "value": "$event.value"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "auto_label",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/auto_label",
+                    "value": "l10n:system.config.auto_delay",
+                    "font_size": 18
+                  },
+                  {
+                    "id": "auto_delay",
+                    "kind": "slider",
+                    "source_id": "UI/modern.roukaku/auto_delay",
+                    "value": "$model.auto_delay_ms",
+                    "min": 100,
+                    "max": 10000,
+                    "step": 100,
+                    "min_height": 42,
+                    "background": "theme:surface.button",
+                    "events": [
+                      {
+                        "event": "change",
+                        "action": "vn.set_config",
+                        "arguments": {
+                          "key": "auto.delay_ms",
+                          "value": "$event.value"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "contrast",
+                    "kind": "toggle",
+                    "source_id": "UI/modern.roukaku/contrast",
+                    "value": "$model.high_contrast",
+                    "label_key": "l10n:system.config.high_contrast",
+                    "min_height": 42,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "indicator_color": "theme:accent.gold",
+                    "indicator_off_color": "theme:surface.speaker",
+                    "events": [
+                      {
+                        "event": "change",
+                        "action": "vn.set_config",
+                        "arguments": {
+                          "key": "display.high_contrast",
+                          "value": "$event.value"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "locale_label",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/locale_label",
+                    "value": "l10n:system.config.language",
+                    "font_size": 18
+                  },
+                  {
+                    "id": "locale",
+                    "kind": "select",
+                    "source_id": "UI/modern.roukaku/locale",
+                    "value": "$model.locale",
+                    "items": "$model.available_locales",
+                    "min_height": 42,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "change",
+                        "action": "vn.set_config",
+                        "arguments": {
+                          "key": "display.language",
+                          "value": "$event.value"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_height": 42,
+                    "background": "theme:surface.button",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.modern.backlog",
+      "source_id": "ui.tsui.modern.backlog",
+      "model": "roukaku.vn.ui_model.backlog.v1",
+      "theme": "tsui.theme.modern",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/modern.roukaku/root",
+        "background": "theme:surface.sky",
+        "children": [
+          {
+            "id": "sky_frame",
+            "kind": "image",
+            "source_id": "UI/modern.roukaku/sky_frame",
+            "asset": "theme:sky.frame",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "gold",
+            "kind": "column",
+            "source_id": "UI/modern.roukaku/gold",
+            "position_x": 23,
+            "position_y": 29,
+            "position_right": 23,
+            "position_bottom": 29,
+            "background": "theme:accent.gold",
+            "min_width": 754,
+            "min_height": 542,
+            "padding": 2,
+            "children": [
+              {
+                "id": "content",
+                "kind": "column",
+                "source_id": "UI/modern.roukaku/content",
+                "background": "theme:surface.paper",
+                "min_width": 714,
+                "min_height": 484,
+                "padding": 18,
+                "gap": 10,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/modern.roukaku/title",
+                    "value": "l10n:system.backlog",
+                    "font_size": 26
+                  },
+                  {
+                    "id": "entries",
+                    "kind": "virtual_list",
+                    "source_id": "UI/modern.roukaku/entries",
+                    "items": "$model.entries",
+                    "item_key": "command_id",
+                    "overscan": 2,
+                    "item_extent": 92,
+                    "viewport_extent": 390,
+                    "min_height": 390,
+                    "gap": 7,
+                    "children": [
+                      {
+                        "id": "entry",
+                        "kind": "row",
+                        "source_id": "UI/modern.roukaku/entry",
+                        "min_height": 86,
+                        "background": "theme:surface.card",
+                        "padding": 8,
+                        "gap": 10,
+                        "children": [
+                          {
+                            "id": "speaker",
+                            "kind": "panel",
+                            "source_id": "UI/modern.roukaku/speaker",
+                            "min_width": 124,
+                            "min_height": 66,
+                            "background": "theme:surface.speaker",
+                            "padding": 7,
+                            "children": [
+                              {
+                                "id": "speaker_text",
+                                "kind": "text",
+                                "source_id": "UI/modern.roukaku/speaker_text",
+                                "value": "$item.speaker_key",
+                                "font_size": 17,
+                                "max_lines": 2
+                              }
+                            ]
+                          },
+                          {
+                            "id": "body",
+                            "kind": "text",
+                            "source_id": "UI/modern.roukaku/body",
+                            "value": "$item.text_key",
+                            "font_size": 18,
+                            "max_lines": 3
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/modern.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_height": 42,
+                    "background": "theme:surface.button_alt",
+                    "text_color": "theme:text.on_dark",
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "ui.bind.tsui.modern.message",
+      "profile": "modern",
+      "surface": "message",
+      "view": "ui.tsui.modern.message",
+      "controller": "tsui.message.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.dialogue",
+      "profile": "modern",
+      "surface": "tsui.surface.dialogue",
+      "view": "ui.tsui.modern.message",
+      "controller": "tsui.message.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.monologue",
+      "profile": "modern",
+      "surface": "tsui.surface.monologue",
+      "view": "ui.tsui.modern.monologue",
+      "controller": "tsui.monologue.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.opening_staggered",
+      "profile": "modern",
+      "surface": "tsui.surface.opening.staggered",
+      "view": "ui.tsui.modern.monologue",
+      "controller": "tsui.monologue.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.opening_centered",
+      "profile": "modern",
+      "surface": "tsui.surface.opening.centered",
+      "view": "ui.tsui.modern.monologue",
+      "controller": "tsui.monologue.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.choice",
+      "profile": "modern",
+      "surface": "choice",
+      "view": "ui.tsui.modern.choice",
+      "controller": "tsui.choice.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.title",
+      "profile": "modern",
+      "system_page": "title",
+      "view": "ui.tsui.modern.title",
+      "controller": "tsui.system.title.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.quick_panel",
+      "profile": "modern",
+      "system_page": "quick_panel",
+      "view": "ui.tsui.modern.quick_panel",
+      "controller": "tsui.system.quick_panel.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.save",
+      "profile": "modern",
+      "system_page": "save",
+      "view": "ui.tsui.modern.save",
+      "controller": "tsui.system.save.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.load",
+      "profile": "modern",
+      "system_page": "load",
+      "view": "ui.tsui.modern.load",
+      "controller": "tsui.system.load.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.config",
+      "profile": "modern",
+      "system_page": "config",
+      "view": "ui.tsui.modern.config",
+      "controller": "tsui.system.config.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    },
+    {
+      "id": "ui.bind.tsui.modern.backlog",
+      "profile": "modern",
+      "system_page": "backlog",
+      "view": "ui.tsui.modern.backlog",
+      "controller": "tsui.system.backlog.modern",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.modern"
+    }
+  ],
+  "policies": [
+    {
+      "id": "ui.policy.tsui.modern",
+      "profile": "modern",
+      "save_slots": [
+        "slot.quick",
+        "slot.01",
+        "slot.02",
+        "slot.03",
+        "slot.04",
+        "slot.05",
+        "slot.06",
+        "slot.07",
+        "slot.08",
+        "slot.09",
+        "slot.10",
+        "slot.11",
+        "slot.12",
+        "slot.13",
+        "slot.14",
+        "slot.15",
+        "slot.16",
+        "slot.17",
+        "slot.18",
+        "slot.19",
+        "slot.20",
+        "slot.21",
+        "slot.22",
+        "slot.23",
+        "slot.24"
+      ],
+      "quick_slot": "slot.quick",
+      "allowed_pages": [
+        "title",
+        "quick_panel",
+        "save",
+        "load",
+        "config",
+        "backlog"
+      ],
+      "reading_modes": [
+        "manual",
+        "fast_forward"
+      ],
+      "audio_toggle": true,
+      "save_completion": "stay",
+      "custom_actions": []
+    }
+  ]
+}

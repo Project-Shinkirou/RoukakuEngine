@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+import json
 import re
 import shutil
 import tempfile
@@ -60,14 +61,12 @@ class ProjectRefreshTests(unittest.TestCase):
                 if line.strip().startswith("text "):
                     match = re.search(r"\bwindow:([\w.-]+)", line)
                     windows.add(match.group(1) if match else "message")
-        profiles = set()
+        ui = json.loads((project.PACK / "UI/flagship.screen.jsonc").read_text(encoding="utf-8"))
+        profiles = {policy["profile"] for policy in ui["policies"]}
         surfaces = {}
-        for line in (project.PACK / "UI/flagship.roukaku").read_text(encoding="utf-8").splitlines():
-            attrs = dict(re.findall(r"([a-z_]+):([\w.-]+)", line))
-            if line.startswith("ui_policy "):
-                profiles.add(attrs["profile"])
-            if line.startswith("ui_bind ") and "surface" in attrs:
-                surfaces.setdefault(attrs.get("profile"), set()).add(attrs["surface"])
+        for binding in ui["bindings"]:
+            if "surface" in binding:
+                surfaces.setdefault(binding.get("profile"), set()).add(binding["surface"])
         self.assertTrue(windows)
         self.assertTrue(profiles)
         for profile in profiles:
@@ -75,11 +74,16 @@ class ProjectRefreshTests(unittest.TestCase):
             self.assertFalse(missing, f"{profile}: unbound dialogue windows {sorted(missing)}")
 
     def test_message_views_bind_authoritative_reveal_progress(self):
-        source = (project.PACK / "UI/flagship.roukaku").read_text(encoding="utf-8")
-        bodies = [line for line in source.splitlines() if "text id:body value:$model.text_key" in line]
-        self.assertEqual(len(bodies), 2)
-        for body in bodies:
-            self.assertIn("visible_graphemes:$model.visible_graphemes", body)
+        ui = json.loads((project.PACK / "UI/flagship.screen.jsonc").read_text(encoding="utf-8"))
+        def bodies(node):
+            if node.get("kind") == "text" and node.get("value") == "$model.text_key":
+                yield node
+            for child in node.get("children", []):
+                yield from bodies(child)
+        nodes = [body for view in ui["views"] for body in bodies(view["root"])]
+        self.assertEqual(len(nodes), 2)
+        for body in nodes:
+            self.assertEqual(body["visible_graphemes"], "$model.visible_graphemes")
 
     def test_refresh_preserves_authored_roukaku_and_controller_bytes(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -88,10 +92,10 @@ class ProjectRefreshTests(unittest.TestCase):
                 "Scripts/main.roukaku": b"# author comment\nstory custom #@id stable.story\n",
                 "Scripts/system.roukaku": b"# system actions remain authored\n",
                 "Scripts/experience.roukaku": b"# independently authored layered performance\n",
-                "UI/flagship.roukaku": b"# authored view\n",
+                "UI/flagship.screen.jsonc": b"// authored view\n",
                 "Controllers/standard_ui.luau": b"-- authored controller\n",
-                "Themes/classic.json": b"{}\n",
-                "Themes/modern.json": b"{}\n",
+                "Themes/classic.style.jsonc": b"{}\n",
+                "Themes/modern.style.jsonc": b"{}\n",
             }
             for name, content in authored.items():
                 path = root / name

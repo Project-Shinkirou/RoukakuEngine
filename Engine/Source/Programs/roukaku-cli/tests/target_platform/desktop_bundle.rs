@@ -100,26 +100,39 @@ pub(super) fn write_nativevn_minimal_fixture(root: &Path, case_dir: &Path) -> Pa
         nativevn_minimal_story(),
     )
     .unwrap();
-    let flagship_ui = fs::read_to_string(root.join("Examples/NativeVN/UI/flagship.roukaku"))
-        .expect("checked-in flagship UI fixture")
-        .lines()
-        .flat_map(|line| {
-            let mut bindings = vec![line.to_string()];
-            if line.starts_with("ui_bind profile:classic ") {
-                bindings.push(
-                    line.replacen("profile:classic", "profile:minimal", 1)
-                        .replacen("#@id ", "#@id minimal.", 1),
-                );
-            }
-            bindings
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+    let mut flagship_ui: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("Examples/NativeVN/UI/flagship.screen.jsonc"))
+            .expect("checked-in flagship UI fixture"),
+    )
+    .unwrap();
+    let mut minimal = Vec::new();
+    for binding in flagship_ui["bindings"].as_array().unwrap() {
+        if binding["profile"] == "classic" {
+            let mut binding = binding.clone();
+            binding["profile"] = "minimal".into();
+            binding["id"] = format!("minimal.{}", binding["id"].as_str().unwrap()).into();
+            minimal.push(binding);
+        }
+    }
+    flagship_ui["bindings"]
+        .as_array_mut()
+        .unwrap()
+        .extend(minimal);
+    let mut policy = flagship_ui["policies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|policy| policy["profile"] == "classic")
+        .unwrap()
+        .clone();
+    policy["profile"] = "minimal".into();
+    policy["id"] = "ui.policy.minimal".into();
+    policy["custom_actions"] = serde_json::json!([]);
+    policy["reading_modes"] = serde_json::json!(["manual"]);
+    flagship_ui["policies"].as_array_mut().unwrap().push(policy);
     fs::write(
-        case_dir.join("UI/flagship.roukaku"),
-        format!(
-            "ui_policy profile:minimal save_slots:\"slot.quick,slot.01,slot.02,slot.03,slot.04,slot.05,slot.06,slot.07,slot.08\" quick_slot:slot.quick allowed_pages:\"title,save,load,config,backlog,gallery,replay,voice_replay,route_chart,localization_preview\" reading_modes:\"manual\" audio_toggle:true save_completion:stay custom_actions:\"\" #@id ui.policy.minimal\n{flagship_ui}"
-        ),
+        case_dir.join("UI/flagship.screen.jsonc"),
+        serde_json::to_vec_pretty(&flagship_ui).unwrap(),
     )
     .unwrap();
     fs::copy(
@@ -127,7 +140,7 @@ pub(super) fn write_nativevn_minimal_fixture(root: &Path, case_dir: &Path) -> Pa
         case_dir.join("Controllers/standard_ui.luau"),
     )
     .unwrap();
-    for theme in ["classic.json", "modern.json"] {
+    for theme in ["classic.style.jsonc", "modern.style.jsonc"] {
         fs::copy(
             root.join("Examples/NativeVN/Themes").join(theme),
             case_dir.join("Themes").join(theme),

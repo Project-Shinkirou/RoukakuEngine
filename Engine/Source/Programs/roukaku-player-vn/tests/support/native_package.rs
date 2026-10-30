@@ -12,31 +12,7 @@ use roukaku_plugin_abi::{
 use roukaku_vn_core::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_project};
 use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
 
-pub(crate) const TEST_UI: &str = r#"
-ui_policy profile:classic save_slots:"slot.01" quick_slot:"" allowed_pages:"quick_panel,save,load,config" reading_modes:"manual" audio_toggle:false save_completion:stay custom_actions:"" #@id ui.policy.test.classic
-ui_bind profile:classic surface:message view:ui.test.message controller:test.message policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.message
-ui_bind profile:classic surface:choice view:ui.test.choice controller:test.choice policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.choice
-ui_bind profile:classic system_page:quick_panel view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.quick_panel
-ui_bind profile:classic system_page:save view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.save
-ui_bind profile:classic system_page:load view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.load
-ui_bind profile:classic system_page:config view:ui.test.system controller:test.system policy:roukaku.policy.standard theme:roukaku.vn.theme.classic #@id bind.config
-ui_view ui.test.message model:roukaku.vn.ui_model.message.v2 theme:roukaku.vn.theme.classic #@id ui.test.message
-  screen id:root
-    panel id:advance fill:true
-      on activate -> vn.advance
-    button id:exit min_width:48 min_height:48
-      on activate -> vn.request_exit
-    text id:body value:$model.text_key
-ui_view ui.test.choice model:roukaku.vn.ui_model.choice.v1 theme:roukaku.vn.theme.classic #@id ui.test.choice
-  screen id:root
-    virtual_list id:options items:$model.options item_key:option_id overscan:2 item_extent:48
-      button id:option min_height:44 value:$item.text_key
-        on activate -> vn.choose option_id:$item.option_id
-ui_view ui.test.system model:roukaku.vn.ui_model.system.v1 theme:roukaku.vn.theme.classic #@id ui.test.system
-  screen id:root
-    button id:back min_height:48
-      on activate -> vn.return_system
-"#;
+pub(crate) const TEST_UI: &str = include_str!("../fixtures/package.screen.jsonc");
 
 pub(crate) fn product_package_with_request(
     story: &str,
@@ -54,7 +30,7 @@ pub(crate) fn product_package_with_ui_and_request(
     let compiled = compile_roukaku_project(
         [
             RoukakuSource::story("main.roukaku", story),
-            RoukakuSource::ui("test-ui.roukaku", ui),
+            RoukakuSource::ui("test-ui.screen.jsonc", ui),
         ],
         options,
     )

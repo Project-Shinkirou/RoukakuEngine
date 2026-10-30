@@ -47,18 +47,16 @@ class TsuiNoSoraFontManifestTests(unittest.TestCase):
             with mock.patch("tsuinosora_nativevn_font._copy_tsuinosora_ui_font"):
                 _copy_tsuinosora_ui_template(root, output)
             for profile in ("classic", "modern"):
-                source = (output / f"UI/{profile}.roukaku").read_text(encoding="utf-8")
-                bodies = []
-                selected = False
-                for line in source.splitlines():
-                    if line.startswith("ui_view "):
-                        view = line.split()[1]
-                        selected = view.endswith((".message", ".monologue"))
-                    if selected and "text id:body value:$model.text_key" in line:
-                        bodies.append(line)
-                self.assertEqual(len(bodies), 2)
-                for body in bodies:
-                    self.assertIn("visible_graphemes:$model.visible_graphemes", body)
+                source = json.loads((output / f"UI/{profile}.screen.jsonc").read_text(encoding="utf-8"))
+                def bodies(node):
+                    if node.get("kind") == "text" and node.get("value") == "$model.text_key":
+                        yield node
+                    for child in node.get("children", []):
+                        yield from bodies(child)
+                nodes = [body for view in source["views"] if view["id"].endswith((".message", ".monologue")) for body in bodies(view["root"])]
+                self.assertEqual(len(nodes), 2)
+                for body in nodes:
+                    self.assertEqual(body["visible_graphemes"], "$model.visible_graphemes")
 
     def test_cmap_coverage_reports_only_real_glyphs(self):
         requested = {ord("A"), ord("◆"), ord("僕"), ord("汉"), 0x10FFFF}
@@ -79,8 +77,8 @@ class TsuiNoSoraFontManifestTests(unittest.TestCase):
             (nativevn_root / "Localization" / "ja.json").write_text(
                 '{"strings":{"line":"僕◆汉　"}}', encoding="utf-8"
             )
-            (nativevn_root / "UI" / "classic.roukaku").write_text(
-                'view fixture { text "A" }', encoding="utf-8"
+            (nativevn_root / "UI" / "classic.screen.jsonc").write_text(
+                '{"$schema":"ui-screen.v1.json","views":[{"id":"fixture","model":"roukaku.vn.ui_model.system.v1","theme":"theme.test","root":{"id":"body","kind":"text","text":"A"}}]}', encoding="utf-8"
             )
 
             _copy_tsuinosora_ui_font(self.repository_root, nativevn_root)

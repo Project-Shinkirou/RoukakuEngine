@@ -1,129 +1,10 @@
 use super::*;
 
-pub(super) fn validate_widget_properties(line: &ParsedLine) -> Result<(), VnError> {
-    const COMMON: &[&str] = &[
-        "id",
-        "visible",
-        "enabled",
-        "min_width",
-        "min_height",
-        "max_width",
-        "max_height",
-        "fill",
-        "fill_width",
-        "fill_height",
-        "clip_children",
-        "background",
-        "text_color",
-        "text_padding",
-        "grow",
-        "anchor",
-        "position_x",
-        "position_y",
-        "position_right",
-        "position_bottom",
-        "align",
-        "cross_align",
-        "gap",
-        "padding",
-        "style",
-    ];
-    const REPEAT: &[&str] = &[
-        "items",
-        "item_key",
-        "overscan",
-        "item_extent",
-        "viewport_extent",
-    ];
-    let widget_properties: &[&str] = match line.keyword.as_str() {
-        "text" => &[
-            "text",
-            "value",
-            "text_key",
-            "direction",
-            "text_align",
-            "vertical_align",
-            "max_lines",
-            "font_size",
-            "visible_graphemes",
-        ],
-        "button" => &[
-            "text",
-            "value",
-            "text_key",
-            "label_key",
-            "selected",
-            "direction",
-            "max_lines",
-            "font_size",
-        ],
-        "slider" => &["value", "min", "max", "step", "label_key"],
-        "toggle" => &[
-            "checked",
-            "label_key",
-            "value",
-            "indicator_color",
-            "indicator_off_color",
-        ],
-        "select" => &["value", "items", "label_key", "item_key"],
-        "text_input" => &[
-            "value",
-            "multiline",
-            "max_graphemes",
-            "character_policy",
-            "direction",
-            "max_lines",
-            "font_size",
-        ],
-        "image" => &["asset", "texture", "fit", "opacity"],
-        "nine_slice" => &["asset", "texture", "opacity"],
-        "virtual_list" => REPEAT,
-        "virtual_grid" => &[
-            "items",
-            "item_key",
-            "overscan",
-            "item_extent",
-            "viewport_extent",
-            "columns",
-        ],
-        "canvas" => &["nodes", "edges"],
-        "screen" | "row" | "column" | "stack" | "panel" | "scroll" | "modal"
-        | "semantic_region" | "spacer" => &[],
-        _ => &[],
-    };
-    if let Some((name, _)) = line.attrs.iter().find(|(name, _)| {
-        !COMMON.contains(&name.as_str()) && !widget_properties.contains(&name.as_str())
-    }) {
-        return Err(diagnostic(
-            line,
-            "ROUKAKU_UI_WIDGET_PROPERTY_UNKNOWN",
-            &format!("widget {} does not declare property {name}", line.keyword),
-        ));
-    }
-    if matches!(line.keyword.as_str(), "image" | "nine_slice")
-        && line.attr("asset").is_none()
-        && line.attr("texture").is_none()
-    {
-        return Err(diagnostic(
-            line,
-            "ROUKAKU_UI_WIDGET_ASSET_REQUIRED",
-            &format!("widget {} requires asset or texture", line.keyword),
-        ));
-    }
-    if matches!(line.keyword.as_str(), "virtual_list" | "virtual_grid")
-        && (line.attr("items").is_none() || line.attr("item_key").is_none())
-    {
-        return Err(diagnostic(
-            line,
-            "ROUKAKU_UI_WIDGET_REPEAT_REQUIRED",
-            &format!("widget {} requires items and item_key", line.keyword),
-        ));
-    }
-    Ok(())
-}
-
-pub(super) fn validate_widget_event(widget: &str, line: &ParsedLine) -> Result<(), VnError> {
-    let event = line.args.first().map(String::as_str).unwrap_or_default();
+pub(super) fn validate_widget_event(
+    widget: &str,
+    event: &str,
+    ctx: &Context<'_>,
+) -> Result<(), VnError> {
     let allowed: &[&str] = match widget {
         "button" | "panel" | "semantic_region" | "image" | "nine_slice" => &["activate"],
         "slider" | "toggle" | "select" => &["change", "activate"],
@@ -135,8 +16,7 @@ pub(super) fn validate_widget_event(widget: &str, line: &ParsedLine) -> Result<(
     if allowed.contains(&event) {
         Ok(())
     } else {
-        Err(diagnostic(
-            line,
+        Err(ctx.error(
             "ROUKAKU_UI_WIDGET_EVENT_UNSUPPORTED",
             &format!("widget {widget} does not expose event {event}"),
         ))
@@ -144,9 +24,9 @@ pub(super) fn validate_widget_event(widget: &str, line: &ParsedLine) -> Result<(
 }
 
 pub(super) fn validate_action(
-    line: &ParsedLine,
+    ctx: &Context<'_>,
     action: &str,
-    arguments: &BTreeMap<String, String>,
+    arguments: &BTreeMap<String, UiValueExpr>,
 ) -> Result<(), VnError> {
     let required: &[&str] = match action {
         "vn.advance" | "vn.return_system" | "vn.request_exit" | "ui.close_modal" => &[],
@@ -171,16 +51,11 @@ pub(super) fn validate_action(
         "ui.open_modal" => &["view_id"],
         "ui.set_state" => &["key", "value"],
         _ => {
-            return Err(diagnostic(
-                line,
-                "ROUKAKU_UI_ACTION_UNKNOWN",
-                "action is not registered",
-            ));
+            return Err(ctx.error("ROUKAKU_UI_ACTION_UNKNOWN", "action is not registered"));
         }
     };
     if let Some(missing) = required.iter().find(|name| !arguments.contains_key(**name)) {
-        return Err(diagnostic(
-            line,
+        return Err(ctx.error(
             "ROUKAKU_UI_ACTION_ARGUMENT_MISSING",
             &format!("action {action} requires argument {missing}"),
         ));
@@ -193,8 +68,7 @@ pub(super) fn validate_action(
         .keys()
         .find(|name| !required.contains(&name.as_str()) && !optional.contains(&name.as_str()))
     {
-        return Err(diagnostic(
-            line,
+        return Err(ctx.error(
             "ROUKAKU_UI_ACTION_ARGUMENT_UNKNOWN",
             &format!("action {action} does not declare argument {unexpected}"),
         ));
@@ -256,43 +130,6 @@ pub(super) fn hash_project(
         controller_sources,
         system_ui_profiles,
     ))?))
-}
-
-pub(super) fn required_argument<'a>(
-    line: &'a ParsedLine,
-    index: usize,
-    field: &str,
-) -> Result<&'a str, VnError> {
-    line.args.get(index).map(String::as_str).ok_or_else(|| {
-        diagnostic(
-            line,
-            "ROUKAKU_UI_ARGUMENT_MISSING",
-            &format!("missing {field}"),
-        )
-    })
-}
-
-pub(super) fn required_attr<'a>(line: &'a ParsedLine, key: &str) -> Result<&'a str, VnError> {
-    line.attr(key).ok_or_else(|| {
-        diagnostic(
-            line,
-            "ROUKAKU_UI_ATTRIBUTE_MISSING",
-            &format!("missing required attribute {key}"),
-        )
-    })
-}
-
-pub(super) fn diagnostic(line: &ParsedLine, code: &str, message: &str) -> VnError {
-    VnError::Diagnostic(
-        roukaku_core::Diagnostic::blocking(code, message)
-            .with_source(SourceRef {
-                source: line.source.clone(),
-                line: line.line as u32,
-                column: line.column as u32,
-                length: line.keyword.len() as u32,
-            })
-            .with_field("keyword", &line.keyword),
-    )
 }
 
 pub(super) fn ui_error(error: roukaku_ui_core::UiValidationError) -> VnError {

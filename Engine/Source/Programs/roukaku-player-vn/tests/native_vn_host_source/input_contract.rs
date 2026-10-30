@@ -122,7 +122,9 @@ pub(super) fn native_vn_source_rejects_catalog_slot_identity_mismatch() {
 
 #[test]
 pub(super) fn unavailable_catalog_slot_is_protected_while_other_slots_remain_playable() {
-    let ui = TEST_UI.replace("save_slots:\"slot.01\"", "save_slots:\"slot.01,slot.02\"");
+    let mut ui: serde_json::Value = serde_json::from_str(TEST_UI).unwrap();
+    ui["policies"][0]["save_slots"] = serde_json::json!(["slot.01", "slot.02"]);
+    let ui = serde_json::to_string(&ui).unwrap();
     let bytes = product_package_with_ui_and_request(STORY, &ui, test_compile_options(), |_| {});
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(
@@ -180,9 +182,10 @@ pub(super) fn unavailable_catalog_slot_is_protected_while_other_slots_remain_pla
 
 #[test]
 pub(super) fn quick_keys_follow_declared_slot_and_reject_repeat_empty_and_protected_requests() {
-    let ui = TEST_UI
-        .replace("save_slots:\"slot.01\"", "save_slots:\"slot.01,slot.02\"")
-        .replace("quick_slot:\"\"", "quick_slot:\"slot.02\"");
+    let mut ui: serde_json::Value = serde_json::from_str(TEST_UI).unwrap();
+    ui["policies"][0]["save_slots"] = serde_json::json!(["slot.01", "slot.02"]);
+    ui["policies"][0]["quick_slot"] = "slot.02".into();
+    let ui = serde_json::to_string(&ui).unwrap();
     let bytes = product_package_with_ui_and_request(STORY, &ui, test_compile_options(), |_| {});
     let package = PackageReader::open(&bytes).unwrap();
     let mut source = NativeVnHostCommandSource::from_package(

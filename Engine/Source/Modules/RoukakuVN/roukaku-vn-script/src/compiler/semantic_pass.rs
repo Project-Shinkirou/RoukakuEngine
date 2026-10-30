@@ -173,6 +173,7 @@ impl SourceLineIndex {
 pub struct CompileRoukakuProjectOptions {
     pub(super) extension_bindings: Vec<ExtensionCommandDescriptor>,
     pub(super) ui_themes: Vec<roukaku_ui_core::UiThemeManifest>,
+    pub(super) ui_styles: Vec<crate::CompiledUiStyle>,
     pub(super) ui_controller_sources: BTreeMap<String, String>,
 }
 
@@ -184,6 +185,11 @@ impl CompileRoukakuProjectOptions {
 
     pub fn with_ui_theme(mut self, theme: roukaku_ui_core::UiThemeManifest) -> Self {
         self.ui_themes.push(theme);
+        self
+    }
+
+    pub fn with_ui_style(mut self, style: crate::CompiledUiStyle) -> Self {
+        self.ui_styles.push(style);
         self
     }
 
@@ -252,8 +258,15 @@ where
     }
     let ui_themes = options.ui_themes.clone();
     let ui_controller_sources = options.ui_controller_sources.clone();
+    let ui_styles = options.ui_styles.clone();
     let story = compile_story_sources_with_options(story_sources, options)?;
-    crate::ui_compile::compile_project_ui(story, &ui_sources, ui_themes, ui_controller_sources)
+    crate::ui_compile::compile_project_ui(
+        story,
+        &ui_sources,
+        ui_themes,
+        ui_styles,
+        ui_controller_sources,
+    )
 }
 
 #[derive(Default)]

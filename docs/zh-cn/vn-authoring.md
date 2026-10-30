@@ -6,7 +6,7 @@ sidebar: { order: 5 }
 
 # VN 创作
 
-公开参考工程是 `Examples/NativeVN`。剧情和 UI 的作者源为 `.roukaku`，controller 使用 `.luau`，主题使用 JSON/YAML。Cook 读取这些文件并生成产品包；运行时执行编译后的剧情，不直接解释 `.roukaku` 文本。
+公开参考工程是 `Examples/NativeVN`。UI 布局使用 `*.screen.jsonc`，样式使用 `*.style.jsonc`，controller 使用 `.luau`。Cook 校验 JSONC 源文件，生成现有的运行时 blueprint 和主题 manifest。剧情 `.roukaku` 与 UI 格式独立。
 
 ## 项目入口
 
@@ -43,7 +43,46 @@ Graph 和 Timeline 修改同一源码，作者不需要维护第二份运行时�
 
 ## UI 与 Luau
 
-`UI/flagship.roukaku` 中的 `ui_view` 定义控件树，`ui_bind` 按 profile 将 message、choice 或 system page 绑定到 view、controller、policy 和 theme。控件读取 `$model` 数据，通过 `vn.advance`、`vn.choose` 等 typed action 发出请求。
+`UI/flagship.screen.jsonc` 包含 `views`、`bindings` 和 `policies`。每个控件必须有 `id`、`kind`，子控件放在 `children` 数组中。`bindings` 按 profile 将 message、choice 或 system page 绑定到 view、controller、policy 和 theme；`policies` 声明存档槽、允许打开的页面、阅读模式和自定义 action。控件读取 `$model`、`$item`、`$event`、`$state`，通过 `vn.advance`、`vn.choose` 等类型化 action 发出请求。
+
+两类文档的根对象都必须带 `$schema`。引擎发布 `Engine/Schemas/ui-screen.v1.json` 和 `Engine/Schemas/ui-style.v1.json`。JSONC 支持行注释、块注释和尾逗号，注释、空白和属性顺序不影响运行行为。schema 与语义诊断包含文件名、行、列。`anchor` 与任何 `position_*` 属性互斥，冲突时报 `ROUKAKU_UI_POSITION_CONFLICT`。
+
+```jsonc
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [{
+    "id": "ui.title",
+    "model": "roukaku.vn.ui_model.title.v1",
+    "theme": "theme.classic",
+    "root": {
+      "id": "root", "kind": "screen",
+      "children": [{
+        "id": "start", "kind": "button", "style": "primary",
+        "text": "l10n:system.new_game",
+        "events": [{"event": "activate", "action": "vn.invoke_system_action",
+                    "arguments": {"action_id": "nativevn.story.start"}}],
+      }],
+    },
+  }],
+}
+```
+
+```jsonc
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-style.v1.json",
+  "$id": "theme.classic",
+  ":root": {"text.body": {"color": [245, 245, 248, 255]}},
+  "button": {"min_height": 48},
+  ".primary": {"min_height": 56},
+  "#start": {"font_size": 24},
+}
+```
+
+样式文件是“选择器 → 属性对象”的映射。`$id` 指定运行时主题 ID，`$parent` 可指定父主题，`:root` 定义类型化 token，`:high-contrast` 提供高对比度 token。覆盖顺序为控件种类、控件 `style` 中从左到右的类、`#id`、控件内联属性。`theme:token.name`、`l10n:key`、`asset:asset:/id` 分别引用主题 token、本地化文案和资源。上述示例只展示布局与样式；完整工程还需参考已提交示例的 bindings 和 policies。
+
+`id` 是控件在 view 内的编辑器身份。可选的 `source_id` 是不透明的运行时身份；转换后的示例保留原值，使 blueprint hash 不变。它不是源文件路径，诊断位置使用 JSONC 文件名和 token 范围。
+
+Cook 在 `nativevn.ui_sources` 目录下只收集 `.screen.jsonc`，在 `nativevn.ui_themes` 下只收集 `.style.jsonc`。编译后的 blueprint 复用现有 Cook 缓存，缓存键包含源路径及内容、sidecar、schema 版本、controller/policy 输入和 target/profile。UI `.roukaku` 入口与 JSON/YAML 主题读取路径已删除。
 
 Luau 的产品全局名是 **`roukaku`**。示例 controller 使用 `roukaku.ui.controller.register(...)` 注册处理器，用 `roukaku.ui.effect.forward(action)` 转交 UI action。Controller 文件由 `nativevn.ui_controllers` 收集；它们不是 `.roukaku` 文件。策略也通过 `roukaku` 暴露的机制处理命令和状态修改，不能靠修改私有 Lua table 改写 VN 权威状态。
 

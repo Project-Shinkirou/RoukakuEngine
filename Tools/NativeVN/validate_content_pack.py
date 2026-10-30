@@ -20,7 +20,7 @@ from typing import Any, Iterable
 from common import Diagnostics, SAFE_ID, ToolFailure, display_path, iter_files, load_json, sha256_file
 
 
-TEXT_EXTENSIONS = {".json", ".md", ".txt", ".yaml", ".yml", ".toml", ".csv", ".py"}
+TEXT_EXTENSIONS = {".jsonc", ".json", ".md", ".txt", ".yaml", ".yml", ".toml", ".csv", ".py"}
 ABSOLUTE_PATH_PATTERNS = (
     re.compile(r"(?<![A-Za-z0-9_])[A-Za-z]:[\\/](?:[^\s\"'<>]+)"),
     re.compile(r"(?<![:A-Za-z0-9_])/(?:Users|home|mnt|Volumes|var/tmp|private/tmp)/[^\s\"'<>]+"),
@@ -115,7 +115,7 @@ class ContentPackValidator:
             (self.root / "Visual" / "Video" / "rain-signal-loop.webm", "NATIVEVN_VIDEO_WEBM_MISSING"),
             (self.root / "project.yaml", "NATIVEVN_PROJECT_DESCRIPTOR_MISSING"),
             (self.root / "Scripts" / "main.roukaku", "NATIVEVN_STORY_SOURCE_MISSING"),
-            (self.root / "UI" / "flagship.roukaku", "NATIVEVN_UI_SOURCE_MISSING"),
+            (self.root / "UI" / "flagship.screen.jsonc", "NATIVEVN_UI_SOURCE_MISSING"),
             (self.root / "Localization" / "zh-Hans.json", "NATIVEVN_RUNTIME_LOCALIZATION_MISSING"),
             (self.root / "Localization" / "en.json", "NATIVEVN_RUNTIME_LOCALIZATION_MISSING"),
             (self.root / "Manifests" / "voice-release.json", "NATIVEVN_RELEASE_VOICE_MANIFEST_MISSING"),

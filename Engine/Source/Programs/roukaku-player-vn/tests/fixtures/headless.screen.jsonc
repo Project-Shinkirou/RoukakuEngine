@@ -1,0 +1,240 @@
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.test.message",
+      "source_id": "ui.test.message",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "test-ui.roukaku/root",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "test-ui.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "body",
+            "kind": "text",
+            "source_id": "test-ui.roukaku/body",
+            "value": "$model.text_key"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.test.choice",
+      "source_id": "ui.test.choice",
+      "model": "roukaku.vn.ui_model.choice.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "test-ui.roukaku/root",
+        "children": [
+          {
+            "id": "options",
+            "kind": "virtual_list",
+            "source_id": "test-ui.roukaku/options",
+            "items": "$model.options",
+            "item_key": "option_id",
+            "overscan": 2,
+            "item_extent": 48,
+            "children": [
+              {
+                "id": "option",
+                "kind": "button",
+                "source_id": "test-ui.roukaku/option",
+                "min_height": 44,
+                "value": "$item.text_key",
+                "events": [
+                  {
+                    "event": "activate",
+                    "action": "vn.choose",
+                    "arguments": {
+                      "option_id": "$item.option_id"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.test.system",
+      "source_id": "ui.test.system",
+      "model": "roukaku.vn.ui_model.system.v1",
+      "theme": "roukaku.vn.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "test-ui.roukaku/root",
+        "children": [
+          {
+            "id": "back",
+            "kind": "button",
+            "source_id": "test-ui.roukaku/back",
+            "min_height": 48,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.return_system"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind.message",
+      "profile": "classic",
+      "surface": "message",
+      "view": "ui.test.message",
+      "controller": "test.message",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.choice",
+      "profile": "classic",
+      "surface": "choice",
+      "view": "ui.test.choice",
+      "controller": "test.choice",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.title",
+      "profile": "classic",
+      "system_page": "title",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.save",
+      "profile": "classic",
+      "system_page": "save",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.load",
+      "profile": "classic",
+      "system_page": "load",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.config",
+      "profile": "classic",
+      "system_page": "config",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.backlog",
+      "profile": "classic",
+      "system_page": "backlog",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.gallery",
+      "profile": "classic",
+      "system_page": "gallery",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.replay",
+      "profile": "classic",
+      "system_page": "replay",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.voice",
+      "profile": "classic",
+      "system_page": "voice_replay",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.route",
+      "profile": "classic",
+      "system_page": "route_chart",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    },
+    {
+      "id": "bind.localization",
+      "profile": "classic",
+      "system_page": "localization_preview",
+      "view": "ui.test.system",
+      "controller": "test.system",
+      "policy": "roukaku.policy.standard",
+      "theme": "roukaku.vn.theme.classic"
+    }
+  ],
+  "policies": [
+    {
+      "id": "ui.policy.test.classic",
+      "profile": "classic",
+      "save_slots": [
+        "slot.quick",
+        "slot.01"
+      ],
+      "quick_slot": "slot.quick",
+      "allowed_pages": [
+        "title",
+        "save",
+        "load",
+        "config",
+        "backlog",
+        "gallery",
+        "replay",
+        "voice_replay",
+        "route_chart",
+        "localization_preview"
+      ],
+      "reading_modes": [
+        "manual"
+      ],
+      "audio_toggle": true,
+      "save_completion": "stay",
+      "custom_actions": []
+    }
+  ]
+}

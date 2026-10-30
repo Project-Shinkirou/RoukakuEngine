@@ -6,7 +6,7 @@ sidebar: { order: 5 }
 
 # VN 制作
 
-公開リファレンスプロジェクトは `Examples/NativeVN` です。シナリオと UI の作者ソースは `.roukaku`、controller は `.luau`、テーマは JSON/YAML を使います。Cook はこれらのファイルを読み込んで製品パッケージを生成します。ランタイムが実行するのはコンパイル済みのシナリオで、`.roukaku` のテキストを直接解釈することはありません。
+公開リファレンスは `Examples/NativeVN` です。UI レイアウトは `*.screen.jsonc`、スタイルは `*.style.jsonc`、controller は `.luau` を使います。Cook は JSONC を検証し、既存のランタイム blueprint とテーマ manifest を生成します。シナリオの `.roukaku` は UI の形式とは別です。
 
 ## プロジェクトのエントリーポイント
 
@@ -43,7 +43,46 @@ Graph と Timeline は同じソースを編集するため、作者が別のラ�
 
 ## UI と Luau
 
-`UI/flagship.roukaku` では、`ui_view` がウィジェットツリーを定義し、`ui_bind` が profile ごとに message、choice、system page を view、controller、policy、theme にバインドします。ウィジェットは `$model` のデータを読み取り、`vn.advance` や `vn.choose` などの型付き action で要求を送ります。
+`UI/flagship.screen.jsonc` は `views`、`bindings`、`policies` を含みます。各コントロールには `id` と `kind` が必須で、子は `children` 配列に置きます。`bindings` は profile ごとに message、choice、system page を view、controller、policy、theme に結び付けます。`policies` はセーブスロット、許可するページ、読み進め方、カスタム action を宣言します。ウィジェットは `$model`、`$item`、`$event`、`$state` を読み、`vn.advance` や `vn.choose` などの型付き action を送ります。
+
+両形式のルートには `$schema` が必要です。エンジンは `Engine/Schemas/ui-screen.v1.json` と `Engine/Schemas/ui-style.v1.json` を公開します。JSONC では行コメント、ブロックコメント、末尾カンマを使えます。コメント、空白、プロパティの順序は実行結果に影響しません。schema と意味検証の診断にはファイル名・行・列が付きます。`anchor` と `position_*` は併用できず、競合時には `ROUKAKU_UI_POSITION_CONFLICT` を報告します。
+
+```jsonc
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [{
+    "id": "ui.title",
+    "model": "roukaku.vn.ui_model.title.v1",
+    "theme": "theme.classic",
+    "root": {
+      "id": "root", "kind": "screen",
+      "children": [{
+        "id": "start", "kind": "button", "style": "primary",
+        "text": "l10n:system.new_game",
+        "events": [{"event": "activate", "action": "vn.invoke_system_action",
+                    "arguments": {"action_id": "nativevn.story.start"}}],
+      }],
+    },
+  }],
+}
+```
+
+```jsonc
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-style.v1.json",
+  "$id": "theme.classic",
+  ":root": {"text.body": {"color": [245, 245, 248, 255]}},
+  "button": {"min_height": 48},
+  ".primary": {"min_height": 56},
+  "#start": {"font_size": 24},
+}
+```
+
+スタイルは「セレクター → プロパティオブジェクト」のマップです。`$id` はランタイムのテーマ ID、`$parent` は任意の親テーマ、`:root` は型付き token、`:high-contrast` はハイコントラスト用 token を表します。優先順位はウィジェットの kind、`style` に並べたクラス（左から右）、`#id`、インライン指定の順です。`theme:token.name`、`l10n:key`、`asset:asset:/id` でテーマ token、翻訳、アセットを参照します。上の例はレイアウトとスタイルの断片です。実行可能なプロジェクトでは、リポジトリ内のサンプルの bindings と policies も参照してください。
+
+`id` は view 内の編集上の識別子です。任意の `source_id` は不透明なランタイム識別子で、変換したサンプルは元の値を保ち、blueprint hash を維持します。ファイルの参照先ではありません。診断には JSONC ファイルと token の範囲を使います。
+
+Cook は `nativevn.ui_sources` から `.screen.jsonc`、`nativevn.ui_themes` から `.style.jsonc` だけを収集します。既存の Cook artifact キャッシュを再利用し、ソースのパスと内容、sidecar、schema バージョン、controller/policy 入力、target/profile をキーに含めます。UI `.roukaku` と JSON/YAML テーマの読み込み経路は削除されました。
 
 Luau における製品のグローバル名は **`roukaku`** です。サンプルの controller は `roukaku.ui.controller.register(...)` でハンドラーを登録し、`roukaku.ui.effect.forward(action)` で UI action を転送します。controller ファイルは `nativevn.ui_controllers` が収集し、`.roukaku` ファイルではありません。ポリシーも `roukaku` が公開する機構を通じてコマンドと状態変更を扱います。プライベートな Lua テーブルを変更しても、VN の正式な状態は変わりません。
 

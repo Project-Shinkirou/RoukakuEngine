@@ -22722,16 +22722,16 @@
       "release_eligible": true
     },
     {
-      "id": "prov.themes.classic.json",
+      "id": "prov.themes.classic.style.jsonc",
       "role": "story_reference",
       "artifact": {
-        "relative_path": "Themes/classic.json"
+        "relative_path": "Themes/classic.style.jsonc"
       },
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "0bb89aec17e103eac018e57224cf0ba1395b8bd5a6549cd951bc91aa35579818",
-      "byte_size": 1022,
+      "sha256": "62e7f8aa7ec6a0b7baac7d85ad99903d016427ac7fce1cb6817214f715b39885",
+      "byte_size": 1053,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/json"
@@ -22751,16 +22751,16 @@
       "release_eligible": true
     },
     {
-      "id": "prov.themes.modern.json",
+      "id": "prov.themes.modern.style.jsonc",
       "role": "story_reference",
       "artifact": {
-        "relative_path": "Themes/modern.json"
+        "relative_path": "Themes/modern.style.jsonc"
       },
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "bd228e3b7f17dc551787ccc6c2aa64d0025041acc7b07ee4c5317bd3f9bdae98",
-      "byte_size": 1399,
+      "sha256": "53231c3ac6212b9107f060fd5400175285616c83d3ada3e4071740d8194e50bb",
+      "byte_size": 1430,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/json"
@@ -22780,16 +22780,16 @@
       "release_eligible": true
     },
     {
-      "id": "prov.ui.flagship.roukaku",
+      "id": "prov.ui.flagship.screen.jsonc",
       "role": "ui_icon",
       "artifact": {
-        "relative_path": "UI/flagship.roukaku"
+        "relative_path": "UI/flagship.screen.jsonc"
       },
       "scene_id": "global",
       "route_id": "route_common",
       "line_id": "global",
-      "sha256": "44dd02c68d4c8844e10a3fcf243f8bd44a00b96bba0870f18e84e8e0d626a346",
-      "byte_size": 18429,
+      "sha256": "b4891ffecacfe7f0d07e1b969f591b8b1622802e159a0af2c954cf3deb10dc18",
+      "byte_size": 56415,
       "media_attributes": {
         "kind": "data",
         "mime_type": "application/octet-stream"

@@ -1,7 +1,7 @@
 {
-  "schema": "roukaku.ui_theme_manifest.v1",
-  "id": "roukaku.vn.theme.classic",
-  "tokens": {
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-style.v1.json",
+  "$id": "roukaku.vn.theme.classic",
+  ":root": {
     "surface.clear": {
       "color": [
         0,
@@ -54,7 +54,7 @@
       ]
     }
   },
-  "high_contrast_tokens": {
+  ":high-contrast": {
     "surface.system": {
       "color": [
         0,

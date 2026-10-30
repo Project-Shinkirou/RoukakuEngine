@@ -31,10 +31,14 @@ mod tests {
 
     #[test]
     fn retained_text_uses_the_same_ancestor_clip_as_its_yakui_container() {
-        let ui = test_native_package::TEST_UI.replace(
-            "text id:body value:$model.text_key",
-            "column id:clipper min_width:100 max_width:100 min_height:40 max_height:40 clip_children:true\n      text id:body value:$model.text_key",
-        );
+        let mut ui: serde_json::Value = serde_json::from_str(test_native_package::TEST_UI).unwrap();
+        let children = ui["views"][0]["root"]["children"].as_array_mut().unwrap();
+        let body = children
+            .iter_mut()
+            .find(|node| node["id"] == "body")
+            .unwrap();
+        *body = serde_json::json!({"id":"clipper", "kind":"column", "min_width":100, "max_width":100, "min_height":40, "max_height":40, "clip_children":true, "children":[body.clone()]});
+        let ui = serde_json::to_string(&ui).unwrap();
         let bytes = test_native_package::product_package_with_ui_and_request(
             "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
             &ui,

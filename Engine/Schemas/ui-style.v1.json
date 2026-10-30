@@ -1,0 +1,640 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-shinkirou.github.io/schemas/ui-style.v1.json",
+  "title": "Roukaku UI styles v1",
+  "type": "object",
+  "required": [
+    "$schema",
+    "$id",
+    ":root"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "pattern": "(^|/)ui-style\\.v1\\.json$"
+    },
+    "$id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "$parent": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    ":root": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/token"
+      }
+    },
+    ":high-contrast": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/token"
+      }
+    }
+  },
+  "patternProperties": {
+    "^(#[A-Za-z0-9_.-]+|\\.[A-Za-z0-9_.-]+|screen|row|column|stack|panel|scroll|modal|semantic_region|spacer|text|button|slider|toggle|select|text_input|image|nine_slice|virtual_list|virtual_grid|canvas)$": {
+      "type": "object",
+      "properties": {
+        "fill": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "visible_graphemes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "fill_height": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "opacity": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "gap": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "direction": {
+          "type": "string"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "vertical_align": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "min_width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "padding": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "max_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "viewport_extent": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "texture": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string"
+        },
+        "fit": {
+          "type": "string"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "anchor": {
+          "type": "string"
+        },
+        "text_align": {
+          "type": "string"
+        },
+        "nodes": {
+          "type": "string"
+        },
+        "position_y": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "item_extent": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "background": {
+          "type": "string"
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "visible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "edges": {
+          "type": "string"
+        },
+        "character_policy": {
+          "type": "string"
+        },
+        "min_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "indicator_off_color": {
+          "type": "string"
+        },
+        "multiline": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "grow": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "asset": {
+          "type": "string"
+        },
+        "position_x": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "checked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "cross_align": {
+          "type": "string"
+        },
+        "max_lines": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "overscan": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "clip_children": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "fill_width": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "text_padding": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "position_bottom": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "position_right": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "indicator_color": {
+          "type": "string"
+        },
+        "max_width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "columns": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "max_graphemes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "text_color": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "token": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "color"
+          ],
+          "properties": {
+            "color": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "number"
+          ],
+          "properties": {
+            "number": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "asset"
+          ],
+          "properties": {
+            "asset": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "insets"
+          ],
+          "properties": {
+            "insets": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "nine_slice"
+          ],
+          "properties": {
+            "nine_slice": {
+              "type": "object",
+              "required": [
+                "asset",
+                "border"
+              ],
+              "properties": {
+                "asset": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "border": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "motion"
+          ],
+          "properties": {
+            "motion": {
+              "type": "object",
+              "required": [
+                "duration_ms",
+                "easing",
+                "reduced_motion_duration_ms"
+              ],
+              "properties": {
+                "duration_ms": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4294967295
+                },
+                "easing": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "reduced_motion_duration_ms": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4294967295
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

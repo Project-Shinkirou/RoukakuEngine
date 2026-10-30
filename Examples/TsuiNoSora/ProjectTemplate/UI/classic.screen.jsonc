@@ -1,0 +1,2918 @@
+{
+  "$schema": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "views": [
+    {
+      "id": "ui.tsui.classic.message",
+      "source_id": "ui.tsui.classic.message",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/classic.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "dialogue",
+            "kind": "row",
+            "source_id": "UI/classic.roukaku/dialogue",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "speaker_text",
+                "kind": "text",
+                "source_id": "UI/classic.roukaku/speaker_text",
+                "value": "$model.speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "body",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/body",
+                    "value": "$model.text_key",
+                    "visible_graphemes": "$model.visible_graphemes",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.monologue",
+      "source_id": "ui.tsui.classic.monologue",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/classic.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "body",
+            "kind": "text",
+            "source_id": "UI/classic.roukaku/body",
+            "value": "$model.text_key",
+            "visible_graphemes": "$model.visible_graphemes",
+            "position_x": 120,
+            "position_y": 68,
+            "min_width": 544,
+            "min_height": 120,
+            "max_width": 544,
+            "max_height": 120,
+            "font_size": 22,
+            "max_lines": 5,
+            "text_align": "start",
+            "vertical_align": "start",
+            "text_color": "theme:text.monologue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.opening_staggered",
+      "source_id": "ui.tsui.classic.opening_staggered",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "background": "theme:surface.opening_black",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/classic.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "body",
+            "kind": "text",
+            "source_id": "UI/classic.roukaku/body",
+            "value": "$model.text_key",
+            "position_x": 282,
+            "position_y": 245,
+            "min_width": 390,
+            "min_height": 142,
+            "max_width": 390,
+            "font_size": 24,
+            "max_lines": 6,
+            "text_align": "start",
+            "vertical_align": "center",
+            "text_color": "theme:text.monologue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.opening_centered",
+      "source_id": "ui.tsui.classic.opening_centered",
+      "model": "roukaku.vn.ui_model.message.v2",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "background": "theme:surface.opening_black",
+        "children": [
+          {
+            "id": "advance",
+            "kind": "panel",
+            "source_id": "UI/classic.roukaku/advance",
+            "fill": true,
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.advance"
+              }
+            ]
+          },
+          {
+            "id": "body",
+            "kind": "text",
+            "source_id": "UI/classic.roukaku/body",
+            "value": "$model.text_key",
+            "position_x": 160,
+            "position_y": 252,
+            "min_width": 480,
+            "min_height": 96,
+            "max_width": 480,
+            "max_height": 96,
+            "font_size": 24,
+            "max_lines": 3,
+            "text_align": "center",
+            "vertical_align": "center",
+            "text_color": "theme:text.monologue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.choice",
+      "source_id": "ui.tsui.classic.choice",
+      "model": "roukaku.vn.ui_model.choice.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "choices",
+            "kind": "column",
+            "source_id": "UI/classic.roukaku/choices",
+            "position_x": 153,
+            "position_y": 110,
+            "min_width": 300,
+            "max_width": 300,
+            "gap": 4,
+            "children": [
+              {
+                "id": "options",
+                "kind": "virtual_list",
+                "source_id": "UI/classic.roukaku/options",
+                "items": "$model.options",
+                "item_key": "option_id",
+                "overscan": 2,
+                "item_extent": 40,
+                "gap": 1,
+                "children": [
+                  {
+                    "id": "option",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/option",
+                    "min_width": 300,
+                    "max_width": 300,
+                    "min_height": 40,
+                    "max_height": 40,
+                    "padding": 0,
+                    "background": "theme:surface.clear",
+                    "text_color": "theme:text.system",
+                    "children": [
+                      {
+                        "id": "line",
+                        "kind": "row",
+                        "source_id": "UI/classic.roukaku/line",
+                        "min_width": 300,
+                        "max_width": 300,
+                        "gap": 0,
+                        "children": [
+                          {
+                            "id": "diamond",
+                            "kind": "text",
+                            "source_id": "UI/classic.roukaku/diamond",
+                            "text": "◆",
+                            "font_size": 22,
+                            "text_padding": 0,
+                            "text_color": "theme:text.system"
+                          },
+                          {
+                            "id": "body",
+                            "kind": "text",
+                            "source_id": "UI/classic.roukaku/body",
+                            "value": "$item.text_key",
+                            "min_width": 268,
+                            "max_width": 268,
+                            "font_size": 20,
+                            "max_lines": 1,
+                            "text_padding": 1,
+                            "text_color": "theme:text.system"
+                          }
+                        ]
+                      }
+                    ],
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.choose",
+                        "arguments": {
+                          "option_id": "$item.option_id"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.title",
+      "source_id": "ui.tsui.classic.title",
+      "model": "roukaku.vn.ui_model.title.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "background": "theme:surface.sky",
+        "children": [
+          {
+            "id": "frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/frame",
+            "asset": "theme:frame.classic",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "hidden_test",
+            "kind": "button",
+            "source_id": "UI/classic.roukaku/hidden_test",
+            "position_x": 0,
+            "position_y": 0,
+            "min_width": 64,
+            "min_height": 64,
+            "background": "theme:surface.clear",
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.invoke_system_action",
+                "arguments": {
+                  "action_id": "tsui.classic.test.open"
+                }
+              }
+            ]
+          },
+          {
+            "id": "start",
+            "kind": "button",
+            "source_id": "UI/classic.roukaku/start",
+            "enabled": "$model.can_continue",
+            "position_x": 564,
+            "position_y": 344,
+            "min_width": 208,
+            "min_height": 64,
+            "background": "theme:surface.clear",
+            "children": [
+              {
+                "id": "start_image",
+                "kind": "image",
+                "source_id": "UI/classic.roukaku/start_image",
+                "asset": "theme:menu.start",
+                "min_width": 208,
+                "min_height": 64
+              }
+            ],
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.return_system"
+              }
+            ]
+          },
+          {
+            "id": "load",
+            "kind": "button",
+            "source_id": "UI/classic.roukaku/load",
+            "position_x": 564,
+            "position_y": 432,
+            "min_width": 208,
+            "min_height": 64,
+            "background": "theme:surface.clear",
+            "children": [
+              {
+                "id": "load_image",
+                "kind": "image",
+                "source_id": "UI/classic.roukaku/load_image",
+                "asset": "theme:menu.continue",
+                "min_width": 208,
+                "min_height": 64
+              }
+            ],
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.open_system",
+                "arguments": {
+                  "page": "load"
+                }
+              }
+            ]
+          },
+          {
+            "id": "exit",
+            "kind": "button",
+            "source_id": "UI/classic.roukaku/exit",
+            "position_x": 564,
+            "position_y": 520,
+            "min_width": 208,
+            "min_height": 64,
+            "background": "theme:surface.clear",
+            "children": [
+              {
+                "id": "exit_image",
+                "kind": "image",
+                "source_id": "UI/classic.roukaku/exit_image",
+                "asset": "theme:menu.exit",
+                "min_width": 208,
+                "min_height": 64
+              }
+            ],
+            "events": [
+              {
+                "event": "activate",
+                "action": "vn.request_exit"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.popup",
+      "source_id": "ui.tsui.classic.popup",
+      "model": "roukaku.vn.ui_model.quick_panel.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "underlay_title_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_frame",
+            "asset": "theme:frame.classic",
+            "visible": "$model.underlay_title",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "underlay_title_start",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_start",
+            "asset": "theme:menu.start",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 344,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_load",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_load",
+            "asset": "theme:menu.continue",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 432,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_exit",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_exit",
+            "asset": "theme:menu.exit",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 520,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "visible": "$model.underlay_message",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "underlay_dialogue",
+            "kind": "row",
+            "source_id": "UI/classic.roukaku/underlay_dialogue",
+            "visible": "$model.underlay_message",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "underlay_speaker",
+                "kind": "text",
+                "source_id": "UI/classic.roukaku/underlay_speaker",
+                "value": "$model.underlay_speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "underlay_body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/underlay_body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "underlay_body",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/underlay_body",
+                    "value": "$model.underlay_text_key",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "window",
+            "kind": "column",
+            "source_id": "UI/classic.roukaku/window",
+            "position_x": 232,
+            "position_y": 190,
+            "background": "theme:system.border",
+            "min_width": 336,
+            "min_height": 242,
+            "max_width": 336,
+            "max_height": 242,
+            "padding": 2,
+            "gap": 0,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "titlebar",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/titlebar",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 31,
+                "max_height": 31,
+                "padding": 4,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/title",
+                    "value": "l10n:system.quick_panel",
+                    "font_size": 11,
+                    "text_color": "theme:text.system_dark",
+                    "text_padding": 1
+                  }
+                ]
+              },
+              {
+                "id": "tabs",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/tabs",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 23,
+                "max_height": 23,
+                "gap": 0,
+                "padding": 2,
+                "children": [
+                  {
+                    "id": "config",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/config",
+                    "text": "l10n:system.config",
+                    "min_width": 54,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab_active",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "config"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "save",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/save",
+                    "text": "l10n:system.save",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "save"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "load",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/load",
+                    "text": "l10n:system.load",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "load"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "exit",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/exit",
+                    "text": "l10n:system.back",
+                    "min_width": 42,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "content",
+                "kind": "column",
+                "source_id": "UI/classic.roukaku/content",
+                "background": "theme:system.body",
+                "min_width": 332,
+                "min_height": 184,
+                "max_height": 184,
+                "padding": 8,
+                "gap": 4,
+                "children": [
+                  {
+                    "id": "hide",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/hide",
+                    "text": "l10n:system.text_hidden",
+                    "min_width": 316,
+                    "min_height": 22,
+                    "max_height": 22,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.set_reading_mode",
+                        "arguments": {
+                          "mode": "hidden"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "fast",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/fast",
+                    "text": "l10n:system.fast_forward",
+                    "min_width": 316,
+                    "min_height": 22,
+                    "max_height": 22,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.set_reading_mode",
+                        "arguments": {
+                          "mode": "fast_forward"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_width": 316,
+                    "min_height": 22,
+                    "max_height": 22,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.save",
+      "source_id": "ui.tsui.classic.save",
+      "model": "roukaku.vn.ui_model.save.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "underlay_title_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_frame",
+            "asset": "theme:frame.classic",
+            "visible": "$model.underlay_title",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "underlay_title_start",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_start",
+            "asset": "theme:menu.start",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 344,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_load",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_load",
+            "asset": "theme:menu.continue",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 432,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_exit",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_exit",
+            "asset": "theme:menu.exit",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 520,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "visible": "$model.underlay_message",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "underlay_dialogue",
+            "kind": "row",
+            "source_id": "UI/classic.roukaku/underlay_dialogue",
+            "visible": "$model.underlay_message",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "underlay_speaker",
+                "kind": "text",
+                "source_id": "UI/classic.roukaku/underlay_speaker",
+                "value": "$model.underlay_speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "underlay_body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/underlay_body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "underlay_body",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/underlay_body",
+                    "value": "$model.underlay_text_key",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "window",
+            "kind": "column",
+            "source_id": "UI/classic.roukaku/window",
+            "position_x": 232,
+            "position_y": 190,
+            "background": "theme:system.border",
+            "min_width": 336,
+            "min_height": 242,
+            "max_width": 336,
+            "max_height": 242,
+            "padding": 2,
+            "gap": 0,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "titlebar",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/titlebar",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 31,
+                "max_height": 31,
+                "padding": 4,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/title",
+                    "value": "l10n:system.save",
+                    "font_size": 11,
+                    "text_color": "theme:text.system_dark",
+                    "text_padding": 1
+                  }
+                ]
+              },
+              {
+                "id": "tabs",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/tabs",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 23,
+                "max_height": 23,
+                "gap": 0,
+                "padding": 2,
+                "children": [
+                  {
+                    "id": "config",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/config",
+                    "text": "l10n:system.config",
+                    "min_width": 54,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "config"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "save",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/save",
+                    "text": "l10n:system.save",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab_active",
+                    "font_size": 11,
+                    "text_padding": 1
+                  },
+                  {
+                    "id": "load",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/load",
+                    "text": "l10n:system.load",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "load"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "exit",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/exit",
+                    "text": "l10n:system.back",
+                    "min_width": 42,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "body",
+                "kind": "column",
+                "source_id": "UI/classic.roukaku/body",
+                "background": "theme:system.body",
+                "padding": 6,
+                "gap": 2,
+                "min_width": 332,
+                "min_height": 184,
+                "max_height": 184,
+                "children": [
+                  {
+                    "id": "slots",
+                    "kind": "virtual_list",
+                    "source_id": "UI/classic.roukaku/slots",
+                    "items": "$model.slots",
+                    "item_key": "slot_id",
+                    "overscan": 0,
+                    "item_extent": 18,
+                    "viewport_extent": 144,
+                    "min_width": 248,
+                    "min_height": 144,
+                    "max_height": 144,
+                    "gap": 0,
+                    "cross_align": "start",
+                    "children": [
+                      {
+                        "id": "slot",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/slot",
+                        "min_width": 248,
+                        "min_height": 18,
+                        "max_height": 18,
+                        "enabled": "$item.can_write",
+                        "background": "theme:system.row",
+                        "text_color": "theme:text.system_dark",
+                        "children": [
+                          {
+                            "id": "summary",
+                            "kind": "row",
+                            "source_id": "UI/classic.roukaku/summary",
+                            "min_width": 244,
+                            "max_width": 244,
+                            "gap": 4,
+                            "children": [
+                              {
+                                "id": "number",
+                                "kind": "text",
+                                "source_id": "UI/classic.roukaku/number",
+                                "value": "$item.slot_id",
+                                "min_width": 58,
+                                "max_width": 58,
+                                "font_size": 11,
+                                "text_padding": 1,
+                                "text_align": "start"
+                              },
+                              {
+                                "id": "metadata",
+                                "kind": "text",
+                                "source_id": "UI/classic.roukaku/metadata",
+                                "value": "$item.metadata_text",
+                                "min_width": 178,
+                                "max_width": 178,
+                                "font_size": 10,
+                                "text_padding": 1,
+                                "text_align": "start",
+                                "max_lines": 1
+                              }
+                            ]
+                          }
+                        ],
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.request_save",
+                            "arguments": {
+                              "slot_id": "$item.slot_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_width": 60,
+                    "min_height": 18,
+                    "max_height": 18,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.load",
+      "source_id": "ui.tsui.classic.load",
+      "model": "roukaku.vn.ui_model.load.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "underlay_title_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_frame",
+            "asset": "theme:frame.classic",
+            "visible": "$model.underlay_title",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "underlay_title_start",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_start",
+            "asset": "theme:menu.start",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 344,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_load",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_load",
+            "asset": "theme:menu.continue",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 432,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_exit",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_exit",
+            "asset": "theme:menu.exit",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 520,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "visible": "$model.underlay_message",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "underlay_dialogue",
+            "kind": "row",
+            "source_id": "UI/classic.roukaku/underlay_dialogue",
+            "visible": "$model.underlay_message",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "underlay_speaker",
+                "kind": "text",
+                "source_id": "UI/classic.roukaku/underlay_speaker",
+                "value": "$model.underlay_speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "underlay_body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/underlay_body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "underlay_body",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/underlay_body",
+                    "value": "$model.underlay_text_key",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "window",
+            "kind": "column",
+            "source_id": "UI/classic.roukaku/window",
+            "position_x": 232,
+            "position_y": 190,
+            "background": "theme:system.border",
+            "min_width": 336,
+            "min_height": 242,
+            "max_width": 336,
+            "max_height": 242,
+            "padding": 2,
+            "gap": 0,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "titlebar",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/titlebar",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 31,
+                "max_height": 31,
+                "padding": 4,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/title",
+                    "value": "l10n:system.load",
+                    "font_size": 11,
+                    "text_color": "theme:text.system_dark",
+                    "text_padding": 1
+                  }
+                ]
+              },
+              {
+                "id": "tabs",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/tabs",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 23,
+                "max_height": 23,
+                "gap": 0,
+                "padding": 2,
+                "children": [
+                  {
+                    "id": "config",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/config",
+                    "text": "l10n:system.config",
+                    "min_width": 54,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "config"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "save",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/save",
+                    "text": "l10n:system.save",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "save"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "load",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/load",
+                    "text": "l10n:system.load",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab_active",
+                    "font_size": 11,
+                    "text_padding": 1
+                  },
+                  {
+                    "id": "exit",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/exit",
+                    "text": "l10n:system.back",
+                    "min_width": 42,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "body",
+                "kind": "column",
+                "source_id": "UI/classic.roukaku/body",
+                "background": "theme:system.body",
+                "padding": 6,
+                "gap": 2,
+                "min_width": 332,
+                "min_height": 184,
+                "max_height": 184,
+                "children": [
+                  {
+                    "id": "slots",
+                    "kind": "virtual_list",
+                    "source_id": "UI/classic.roukaku/slots",
+                    "items": "$model.slots",
+                    "item_key": "slot_id",
+                    "overscan": 0,
+                    "item_extent": 18,
+                    "viewport_extent": 144,
+                    "min_width": 248,
+                    "min_height": 144,
+                    "max_height": 144,
+                    "gap": 0,
+                    "cross_align": "start",
+                    "children": [
+                      {
+                        "id": "slot",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/slot",
+                        "min_width": 248,
+                        "min_height": 18,
+                        "max_height": 18,
+                        "enabled": "$item.can_load",
+                        "background": "theme:system.row",
+                        "text_color": "theme:text.system_dark",
+                        "children": [
+                          {
+                            "id": "summary",
+                            "kind": "row",
+                            "source_id": "UI/classic.roukaku/summary",
+                            "min_width": 244,
+                            "max_width": 244,
+                            "gap": 4,
+                            "children": [
+                              {
+                                "id": "number",
+                                "kind": "text",
+                                "source_id": "UI/classic.roukaku/number",
+                                "value": "$item.slot_id",
+                                "min_width": 58,
+                                "max_width": 58,
+                                "font_size": 11,
+                                "text_padding": 1,
+                                "text_align": "start"
+                              },
+                              {
+                                "id": "metadata",
+                                "kind": "text",
+                                "source_id": "UI/classic.roukaku/metadata",
+                                "value": "$item.metadata_text",
+                                "min_width": 178,
+                                "max_width": 178,
+                                "font_size": 10,
+                                "text_padding": 1,
+                                "text_align": "start",
+                                "max_lines": 1
+                              }
+                            ]
+                          }
+                        ],
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.request_load",
+                            "arguments": {
+                              "slot_id": "$item.slot_id"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_width": 60,
+                    "min_height": 18,
+                    "max_height": 18,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.config",
+      "source_id": "ui.tsui.classic.config",
+      "model": "roukaku.vn.ui_model.config.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "underlay_title_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_frame",
+            "asset": "theme:frame.classic",
+            "visible": "$model.underlay_title",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "underlay_title_start",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_start",
+            "asset": "theme:menu.start",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 344,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_load",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_load",
+            "asset": "theme:menu.continue",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 432,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_exit",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_exit",
+            "asset": "theme:menu.exit",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 520,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "visible": "$model.underlay_message",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "underlay_dialogue",
+            "kind": "row",
+            "source_id": "UI/classic.roukaku/underlay_dialogue",
+            "visible": "$model.underlay_message",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "underlay_speaker",
+                "kind": "text",
+                "source_id": "UI/classic.roukaku/underlay_speaker",
+                "value": "$model.underlay_speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "underlay_body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/underlay_body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "underlay_body",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/underlay_body",
+                    "value": "$model.underlay_text_key",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "window",
+            "kind": "column",
+            "source_id": "UI/classic.roukaku/window",
+            "position_x": 232,
+            "position_y": 190,
+            "background": "theme:system.border",
+            "min_width": 336,
+            "min_height": 242,
+            "max_width": 336,
+            "max_height": 242,
+            "padding": 2,
+            "gap": 0,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "titlebar",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/titlebar",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 31,
+                "max_height": 31,
+                "padding": 4,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/title",
+                    "value": "l10n:system.config",
+                    "font_size": 11,
+                    "text_color": "theme:text.system_dark",
+                    "text_padding": 1
+                  }
+                ]
+              },
+              {
+                "id": "tabs",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/tabs",
+                "background": "theme:system.chrome",
+                "min_width": 332,
+                "min_height": 23,
+                "max_height": 23,
+                "gap": 0,
+                "padding": 2,
+                "children": [
+                  {
+                    "id": "config",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/config",
+                    "text": "l10n:system.config",
+                    "min_width": 54,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab_active",
+                    "font_size": 11,
+                    "text_padding": 1
+                  },
+                  {
+                    "id": "save",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/save",
+                    "text": "l10n:system.save",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "save"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "load",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/load",
+                    "text": "l10n:system.load",
+                    "min_width": 46,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.switch_system",
+                        "arguments": {
+                          "page": "load"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "exit",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/exit",
+                    "text": "l10n:system.back",
+                    "min_width": 42,
+                    "min_height": 19,
+                    "max_height": 19,
+                    "background": "theme:system.tab",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "body",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/body",
+                "background": "theme:system.body",
+                "padding": 8,
+                "gap": 4,
+                "min_width": 332,
+                "min_height": 184,
+                "max_height": 184,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "reading_modes",
+                    "kind": "row",
+                    "source_id": "UI/classic.roukaku/reading_modes",
+                    "min_height": 22,
+                    "max_height": 22,
+                    "gap": 4,
+                    "children": [
+                      {
+                        "id": "hidden",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/hidden",
+                        "selected": "$model.reading_hidden",
+                        "text": "l10n:system.text_hidden",
+                        "min_width": 96,
+                        "min_height": 22,
+                        "max_height": 22,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.set_reading_mode",
+                            "arguments": {
+                              "mode": "hidden"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "manual",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/manual",
+                        "selected": "$model.reading_manual",
+                        "text": "l10n:system.text_manual",
+                        "min_width": 96,
+                        "min_height": 22,
+                        "max_height": 22,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.set_reading_mode",
+                            "arguments": {
+                              "mode": "manual"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "fast",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/fast",
+                        "selected": "$model.reading_fast_forward",
+                        "text": "l10n:system.fast_forward",
+                        "min_width": 96,
+                        "min_height": 22,
+                        "max_height": 22,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.set_reading_mode",
+                            "arguments": {
+                              "mode": "fast_forward"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "audio",
+                    "kind": "row",
+                    "source_id": "UI/classic.roukaku/audio",
+                    "min_height": 22,
+                    "max_height": 22,
+                    "gap": 4,
+                    "children": [
+                      {
+                        "id": "audio_on",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/audio_on",
+                        "selected": "$model.audio_enabled",
+                        "text": "l10n:system.audio_on",
+                        "min_width": 148,
+                        "min_height": 22,
+                        "max_height": 22,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.set_audio_enabled",
+                            "arguments": {
+                              "enabled": true
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "audio_off",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/audio_off",
+                        "selected": "$model.audio_disabled",
+                        "text": "l10n:system.audio_off",
+                        "min_width": 148,
+                        "min_height": 22,
+                        "max_height": 22,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.set_audio_enabled",
+                            "arguments": {
+                              "enabled": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_width": 60,
+                    "min_height": 18,
+                    "max_height": 18,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui.tsui.classic.test",
+      "source_id": "ui.tsui.classic.test",
+      "model": "roukaku.vn.ui_model.title.v1",
+      "theme": "tsui.theme.classic",
+      "root": {
+        "id": "root",
+        "kind": "screen",
+        "source_id": "UI/classic.roukaku/root",
+        "children": [
+          {
+            "id": "underlay_title_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_frame",
+            "asset": "theme:frame.classic",
+            "visible": "$model.underlay_title",
+            "min_width": 800,
+            "min_height": 600
+          },
+          {
+            "id": "underlay_title_start",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_start",
+            "asset": "theme:menu.start",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 344,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_load",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_load",
+            "asset": "theme:menu.continue",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 432,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_title_exit",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_title_exit",
+            "asset": "theme:menu.exit",
+            "visible": "$model.underlay_title",
+            "position_x": 564,
+            "position_y": 520,
+            "min_width": 208,
+            "min_height": 64
+          },
+          {
+            "id": "underlay_dialogue_frame",
+            "kind": "image",
+            "source_id": "UI/classic.roukaku/underlay_dialogue_frame",
+            "asset": "theme:dialogue.frame",
+            "visible": "$model.underlay_message",
+            "min_width": 754,
+            "min_height": 82,
+            "position_x": 23,
+            "position_y": 483
+          },
+          {
+            "id": "underlay_dialogue",
+            "kind": "row",
+            "source_id": "UI/classic.roukaku/underlay_dialogue",
+            "visible": "$model.underlay_message",
+            "position_x": 56,
+            "position_y": 484,
+            "min_width": 688,
+            "max_width": 688,
+            "max_height": 80,
+            "gap": 18,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "underlay_speaker",
+                "kind": "text",
+                "source_id": "UI/classic.roukaku/underlay_speaker",
+                "value": "$model.underlay_speaker_key",
+                "min_width": 92,
+                "max_width": 92,
+                "max_height": 72,
+                "font_size": 20,
+                "max_lines": 2
+              },
+              {
+                "id": "underlay_body_scroll",
+                "kind": "scroll",
+                "source_id": "UI/classic.roukaku/underlay_body_scroll",
+                "min_width": 578,
+                "max_width": 578,
+                "min_height": 72,
+                "max_height": 72,
+                "clip_children": true,
+                "children": [
+                  {
+                    "id": "underlay_body",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/underlay_body",
+                    "value": "$model.underlay_text_key",
+                    "max_width": 562,
+                    "font_size": 22,
+                    "max_lines": 64,
+                    "text_padding": 0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "window",
+            "kind": "column",
+            "source_id": "UI/classic.roukaku/window",
+            "position_x": 232,
+            "position_y": 166,
+            "background": "theme:system.border",
+            "min_width": 336,
+            "min_height": 242,
+            "max_width": 336,
+            "max_height": 242,
+            "padding": 2,
+            "gap": 0,
+            "clip_children": true,
+            "children": [
+              {
+                "id": "tabs",
+                "kind": "row",
+                "source_id": "UI/classic.roukaku/tabs",
+                "background": "theme:system.chrome",
+                "min_height": 22,
+                "padding": 2,
+                "children": [
+                  {
+                    "id": "title",
+                    "kind": "text",
+                    "source_id": "UI/classic.roukaku/title",
+                    "value": "l10n:system.test_menu",
+                    "font_size": 13,
+                    "text_color": "theme:text.system_dark",
+                    "text_padding": 1
+                  }
+                ]
+              },
+              {
+                "id": "body",
+                "kind": "column",
+                "source_id": "UI/classic.roukaku/body",
+                "background": "theme:system.body",
+                "padding": 4,
+                "gap": 1,
+                "min_height": 210,
+                "children": [
+                  {
+                    "id": "flags",
+                    "kind": "row",
+                    "source_id": "UI/classic.roukaku/flags",
+                    "gap": 2,
+                    "children": [
+                      {
+                        "id": "mode_ayana",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/mode_ayana",
+                        "text": "l10n:system.test.mode_ayana",
+                        "min_width": 76,
+                        "min_height": 18,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.invoke_system_action",
+                            "arguments": {
+                              "action_id": "tsui.classic.test.mode.ayana"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "mode_kotomi",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/mode_kotomi",
+                        "text": "l10n:system.test.mode_kotomi",
+                        "min_width": 76,
+                        "min_height": 18,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.invoke_system_action",
+                            "arguments": {
+                              "action_id": "tsui.classic.test.mode.kotomi"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "panty_off",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/panty_off",
+                        "text": "l10n:system.test.panty_off",
+                        "min_width": 76,
+                        "min_height": 18,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.invoke_system_action",
+                            "arguments": {
+                              "action_id": "tsui.classic.test.panty.off"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "id": "panty_on",
+                        "kind": "button",
+                        "source_id": "UI/classic.roukaku/panty_on",
+                        "text": "l10n:system.test.panty_on",
+                        "min_width": 76,
+                        "min_height": 18,
+                        "background": "theme:system.button",
+                        "text_color": "theme:text.system_dark",
+                        "font_size": 11,
+                        "text_padding": 1,
+                        "events": [
+                          {
+                            "event": "activate",
+                            "action": "vn.invoke_system_action",
+                            "arguments": {
+                              "action_id": "tsui.classic.test.panty.on"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "routes",
+                    "kind": "row",
+                    "source_id": "UI/classic.roukaku/routes",
+                    "gap": 4,
+                    "children": [
+                      {
+                        "id": "y",
+                        "kind": "column",
+                        "source_id": "UI/classic.roukaku/y",
+                        "gap": 2,
+                        "cross_align": "start",
+                        "children": [
+                          {
+                            "id": "y_title",
+                            "kind": "text",
+                            "source_id": "UI/classic.roukaku/y_title",
+                            "value": "l10n:system.test.route_y",
+                            "min_width": 76,
+                            "min_height": 14,
+                            "font_size": 11,
+                            "text_color": "theme:text.system_dark",
+                            "text_padding": 1
+                          },
+                          {
+                            "id": "y13",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y13",
+                            "text": "l10n:system.test.y13",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y13"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y14",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y14",
+                            "text": "l10n:system.test.y14",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y14"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y15",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y15",
+                            "text": "l10n:system.test.y15",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y15"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y16",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y16",
+                            "text": "l10n:system.test.y16",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y16"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y17",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y17",
+                            "text": "l10n:system.test.y17",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y17"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y17_18",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y17_18",
+                            "text": "l10n:system.test.y17_18",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y17_18"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y18_19",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y18_19",
+                            "text": "l10n:system.test.y18_19",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y18_19"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "y20",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/y20",
+                            "text": "l10n:system.test.y20",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.y20"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": "k",
+                        "kind": "column",
+                        "source_id": "UI/classic.roukaku/k",
+                        "gap": 2,
+                        "cross_align": "start",
+                        "children": [
+                          {
+                            "id": "k_title",
+                            "kind": "text",
+                            "source_id": "UI/classic.roukaku/k_title",
+                            "value": "l10n:system.test.route_k",
+                            "min_width": 76,
+                            "min_height": 14,
+                            "font_size": 11,
+                            "text_color": "theme:text.system_dark",
+                            "text_padding": 1
+                          },
+                          {
+                            "id": "k12",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k12",
+                            "text": "l10n:system.test.k12",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k12"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "k13",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k13",
+                            "text": "l10n:system.test.k13",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k13"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "k14",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k14",
+                            "text": "l10n:system.test.k14",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k14"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "k15",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k15",
+                            "text": "l10n:system.test.k15",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k15"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "k16",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k16",
+                            "text": "l10n:system.test.k16",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k16"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "k1701",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k1701",
+                            "text": "l10n:system.test.k1701",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k1701"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "k1801",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/k1801",
+                            "text": "l10n:system.test.k1801",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.k1801"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": "z",
+                        "kind": "column",
+                        "source_id": "UI/classic.roukaku/z",
+                        "gap": 2,
+                        "cross_align": "start",
+                        "children": [
+                          {
+                            "id": "z_title",
+                            "kind": "text",
+                            "source_id": "UI/classic.roukaku/z_title",
+                            "value": "l10n:system.test.route_z",
+                            "min_width": 76,
+                            "min_height": 14,
+                            "font_size": 11,
+                            "text_color": "theme:text.system_dark",
+                            "text_padding": 1
+                          },
+                          {
+                            "id": "z09",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/z09",
+                            "text": "l10n:system.test.z09",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.z09"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "z10",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/z10",
+                            "text": "l10n:system.test.z10",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.z10"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "z11",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/z11",
+                            "text": "l10n:system.test.z11",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.z11"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "z12",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/z12",
+                            "text": "l10n:system.test.z12",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.z12"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": "t",
+                        "kind": "column",
+                        "source_id": "UI/classic.roukaku/t",
+                        "gap": 2,
+                        "cross_align": "start",
+                        "children": [
+                          {
+                            "id": "t_title",
+                            "kind": "text",
+                            "source_id": "UI/classic.roukaku/t_title",
+                            "value": "l10n:system.test.route_t",
+                            "min_width": 76,
+                            "min_height": 14,
+                            "font_size": 11,
+                            "text_color": "theme:text.system_dark",
+                            "text_padding": 1
+                          },
+                          {
+                            "id": "t13",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t13",
+                            "text": "l10n:system.test.t13",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t13"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "t14",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t14",
+                            "text": "l10n:system.test.t14",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t14"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "t15",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t15",
+                            "text": "l10n:system.test.t15",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t15"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "t16",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t16",
+                            "text": "l10n:system.test.t16",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t16"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "t17",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t17",
+                            "text": "l10n:system.test.t17",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t17"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "t17_18",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t17_18",
+                            "text": "l10n:system.test.t17_18",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t17_18"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "id": "t19",
+                            "kind": "button",
+                            "source_id": "UI/classic.roukaku/t19",
+                            "text": "l10n:system.test.t19",
+                            "min_width": 76,
+                            "min_height": 16,
+                            "background": "theme:system.button",
+                            "text_color": "theme:text.system_dark",
+                            "font_size": 11,
+                            "text_padding": 1,
+                            "events": [
+                              {
+                                "event": "activate",
+                                "action": "vn.invoke_system_action",
+                                "arguments": {
+                                  "action_id": "tsui.classic.test.jump.t19"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "back",
+                    "kind": "button",
+                    "source_id": "UI/classic.roukaku/back",
+                    "text": "l10n:system.back",
+                    "min_height": 24,
+                    "background": "theme:system.button",
+                    "text_color": "theme:text.system_dark",
+                    "font_size": 11,
+                    "text_padding": 1,
+                    "events": [
+                      {
+                        "event": "activate",
+                        "action": "vn.return_system"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "ui.bind.tsui.classic.message",
+      "profile": "classic",
+      "surface": "message",
+      "view": "ui.tsui.classic.message",
+      "controller": "tsui.message.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.dialogue",
+      "profile": "classic",
+      "surface": "tsui.surface.dialogue",
+      "view": "ui.tsui.classic.message",
+      "controller": "tsui.message.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.monologue",
+      "profile": "classic",
+      "surface": "tsui.surface.monologue",
+      "view": "ui.tsui.classic.monologue",
+      "controller": "tsui.monologue.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.opening_staggered",
+      "profile": "classic",
+      "surface": "tsui.surface.opening.staggered",
+      "view": "ui.tsui.classic.opening_staggered",
+      "controller": "tsui.opening.staggered.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.opening_centered",
+      "profile": "classic",
+      "surface": "tsui.surface.opening.centered",
+      "view": "ui.tsui.classic.opening_centered",
+      "controller": "tsui.opening.centered.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.choice",
+      "profile": "classic",
+      "surface": "choice",
+      "view": "ui.tsui.classic.choice",
+      "controller": "tsui.choice.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.title",
+      "profile": "classic",
+      "system_page": "title",
+      "view": "ui.tsui.classic.title",
+      "controller": "tsui.system.title.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.popup",
+      "profile": "classic",
+      "system_page": "quick_panel",
+      "view": "ui.tsui.classic.popup",
+      "controller": "tsui.system.popup.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.save",
+      "profile": "classic",
+      "system_page": "save",
+      "view": "ui.tsui.classic.save",
+      "controller": "tsui.system.save.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.load",
+      "profile": "classic",
+      "system_page": "load",
+      "view": "ui.tsui.classic.load",
+      "controller": "tsui.system.load.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.config",
+      "profile": "classic",
+      "system_page": "config",
+      "view": "ui.tsui.classic.config",
+      "controller": "tsui.system.config.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    },
+    {
+      "id": "ui.bind.tsui.classic.test",
+      "profile": "classic",
+      "system_page": "custom",
+      "view": "ui.tsui.classic.test",
+      "controller": "tsui.system.test.classic",
+      "policy": "tsui.policy.ui",
+      "theme": "tsui.theme.classic"
+    }
+  ],
+  "policies": [
+    {
+      "id": "ui.policy.tsui.classic",
+      "profile": "classic",
+      "save_slots": [
+        "slot.01",
+        "slot.02",
+        "slot.03",
+        "slot.04",
+        "slot.05",
+        "slot.06",
+        "slot.07",
+        "slot.08"
+      ],
+      "quick_slot": null,
+      "allowed_pages": [
+        "title",
+        "quick_panel",
+        "save",
+        "load",
+        "config",
+        "custom"
+      ],
+      "reading_modes": [
+        "hidden",
+        "manual",
+        "fast_forward"
+      ],
+      "audio_toggle": true,
+      "save_completion": "return_system",
+      "custom_actions": [
+        "tsui.classic.test.open",
+        "tsui.classic.test.mode.ayana",
+        "tsui.classic.test.mode.kotomi",
+        "tsui.classic.test.panty.off",
+        "tsui.classic.test.panty.on",
+        "tsui.classic.test.jump.y13",
+        "tsui.classic.test.jump.y14",
+        "tsui.classic.test.jump.y15",
+        "tsui.classic.test.jump.y16",
+        "tsui.classic.test.jump.y17",
+        "tsui.classic.test.jump.y17_18",
+        "tsui.classic.test.jump.y18_19",
+        "tsui.classic.test.jump.y20",
+        "tsui.classic.test.jump.k12",
+        "tsui.classic.test.jump.k13",
+        "tsui.classic.test.jump.k14",
+        "tsui.classic.test.jump.k15",
+        "tsui.classic.test.jump.k16",
+        "tsui.classic.test.jump.k1701",
+        "tsui.classic.test.jump.k1801",
+        "tsui.classic.test.jump.z09",
+        "tsui.classic.test.jump.z10",
+        "tsui.classic.test.jump.z11",
+        "tsui.classic.test.jump.z12",
+        "tsui.classic.test.jump.t13",
+        "tsui.classic.test.jump.t14",
+        "tsui.classic.test.jump.t15",
+        "tsui.classic.test.jump.t16",
+        "tsui.classic.test.jump.t17",
+        "tsui.classic.test.jump.t17_18",
+        "tsui.classic.test.jump.t19"
+      ]
+    }
+  ]
+}

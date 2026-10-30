@@ -156,10 +156,12 @@ mod tests {
     }
 
     fn source() -> NativeVnHostCommandSource {
+        let mut ui: serde_json::Value = serde_json::from_str(test_native_package::TEST_UI).unwrap();
+        ui["policies"][0]["save_slots"] = serde_json::json!(["slot.01", "slot.02"]);
+        let ui = serde_json::to_string(&ui).unwrap();
         let bytes = test_native_package::product_package_with_ui_and_request(
             "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\nstory system #@id story.system\nstate save #@id state.system.save\n  scene save #@id scene.system.save\n    system_page kind:save policy:roukaku.policy.standard #@id page.save\n",
-            &test_native_package::TEST_UI
-                .replace("save_slots:\"slot.01\"", "save_slots:\"slot.01,slot.02\""),
+            &ui,
             test_native_package::test_compile_options(),
             |_| {},
         );

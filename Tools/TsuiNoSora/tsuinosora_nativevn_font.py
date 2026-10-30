@@ -51,13 +51,13 @@ def _copy_tsuinosora_ui_template(work_root: Path, nativevn_root: Path) -> None:
 
         sky_frame_id = unique_stage_asset("sky")
         dialogue_frame_id = unique_stage_asset("dialogue_frame")
-        for theme_name in ("classic.json", "modern.json"):
+        for theme_name in ("classic.style.jsonc", "modern.style.jsonc"):
             theme_path = nativevn_root / "Themes" / theme_name
             theme = _read_json(theme_path)
-            theme.setdefault("tokens", {})["sky.frame"] = {
+            theme.setdefault(":root", {})["sky.frame"] = {
                 "asset": f"asset:/{sky_frame_id}"
             }
-            theme.setdefault("tokens", {})["dialogue.frame"] = {
+            theme.setdefault(":root", {})["dialogue.frame"] = {
                 "asset": f"asset:/{dialogue_frame_id}"
             }
             _write_json(theme_path, theme)
@@ -168,7 +168,7 @@ def _collect_tsuinosora_ui_codepoints(nativevn_root: Path) -> set[int]:
         for root in roots
         if root.is_dir()
         for path in root.rglob("*")
-        if path.is_file() and path.suffix.lower() in {".json", ".roukaku", ".luau"}
+        if path.is_file() and path.suffix.lower() in {".json", ".jsonc", ".roukaku", ".luau"}
     )
     if not files:
         raise FileNotFoundError("TsuiNoSora UI font coverage has no textual project inputs")

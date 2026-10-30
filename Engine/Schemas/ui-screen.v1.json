@@ -1,0 +1,1817 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-shinkirou.github.io/schemas/ui-screen.v1.json",
+  "title": "Roukaku UI screens v1",
+  "type": "object",
+  "required": [
+    "$schema"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "pattern": "(^|/)ui-screen\\.v1\\.json$"
+    },
+    "views": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/view"
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "view",
+          "controller",
+          "policy",
+          "theme"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "surface": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "system_page": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "view": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "controller": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "policy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "theme": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "command"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "surface"
+                  ]
+                },
+                {
+                  "required": [
+                    "system_page"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "surface"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "command"
+                  ]
+                },
+                {
+                  "required": [
+                    "system_page"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "system_page"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "command"
+                  ]
+                },
+                {
+                  "required": [
+                    "surface"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "profile"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "command"
+                  ]
+                },
+                {
+                  "required": [
+                    "surface"
+                  ]
+                },
+                {
+                  "required": [
+                    "system_page"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "policies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "profile",
+          "save_slots",
+          "allowed_pages",
+          "reading_modes",
+          "audio_toggle",
+          "save_completion"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.-]+$"
+          },
+          "save_slots": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.-]+$"
+            }
+          },
+          "quick_slot": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allowed_pages": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "title",
+                "quick_panel",
+                "save",
+                "load",
+                "config",
+                "backlog",
+                "gallery",
+                "replay",
+                "voice_replay",
+                "route_chart",
+                "localization_preview",
+                "custom"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "reading_modes": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "hidden",
+                "manual",
+                "fast_forward"
+              ]
+            },
+            "contains": {
+              "const": "manual"
+            },
+            "uniqueItems": true
+          },
+          "audio_toggle": {
+            "type": "boolean"
+          },
+          "save_completion": {
+            "enum": [
+              "stay",
+              "return_system"
+            ]
+          },
+          "custom_actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.-]+$"
+            },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "control": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind"
+      ],
+      "properties": {
+        "fill": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "visible_graphemes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "fill_height": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "opacity": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "gap": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "direction": {
+          "type": "string"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "vertical_align": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "min_width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "padding": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "max_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "viewport_extent": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "texture": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string"
+        },
+        "fit": {
+          "type": "string"
+        },
+        "font_size": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "anchor": {
+          "type": "string"
+        },
+        "text_align": {
+          "type": "string"
+        },
+        "nodes": {
+          "type": "string"
+        },
+        "position_y": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "style": {
+          "type": "string"
+        },
+        "item_extent": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "background": {
+          "type": "string"
+        },
+        "label_key": {
+          "type": "string"
+        },
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "visible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "edges": {
+          "type": "string"
+        },
+        "character_policy": {
+          "type": "string"
+        },
+        "min_height": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "indicator_off_color": {
+          "type": "string"
+        },
+        "multiline": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "grow": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "asset": {
+          "type": "string"
+        },
+        "position_x": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "checked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "cross_align": {
+          "type": "string"
+        },
+        "item_key": {
+          "type": "string"
+        },
+        "max_lines": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "overscan": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "text_key": {
+          "type": "string"
+        },
+        "clip_children": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "fill_width": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "items": {
+          "type": "string"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "text_padding": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "position_bottom": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "position_right": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "indicator_color": {
+          "type": "string"
+        },
+        "max_width": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "columns": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "max_graphemes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^(\\$(model|item|event|state)\\.|theme:)"
+            }
+          ]
+        },
+        "text_color": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "kind": {
+          "enum": [
+            "screen",
+            "row",
+            "column",
+            "stack",
+            "panel",
+            "scroll",
+            "modal",
+            "semantic_region",
+            "spacer",
+            "text",
+            "button",
+            "slider",
+            "toggle",
+            "select",
+            "text_input",
+            "image",
+            "nine_slice",
+            "virtual_list",
+            "virtual_grid",
+            "canvas"
+          ]
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/control"
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "screen"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "row"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "column"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "stack"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "panel"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "scroll"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "modal"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "semantic_region"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "spacer"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "text",
+                "value",
+                "text_key",
+                "direction",
+                "text_align",
+                "vertical_align",
+                "max_lines",
+                "font_size",
+                "visible_graphemes"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "button"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "text",
+                "value",
+                "text_key",
+                "label_key",
+                "selected",
+                "direction",
+                "max_lines",
+                "font_size"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "slider"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "value",
+                "min",
+                "max",
+                "step",
+                "label_key"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "toggle"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "checked",
+                "label_key",
+                "value",
+                "indicator_color",
+                "indicator_off_color"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "select"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "value",
+                "items",
+                "label_key",
+                "item_key"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "text_input"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "value",
+                "multiline",
+                "max_graphemes",
+                "character_policy",
+                "direction",
+                "max_lines",
+                "font_size"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "image"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "asset",
+                "texture",
+                "fit",
+                "opacity"
+              ]
+            },
+            "anyOf": [
+              {
+                "required": [
+                  "asset"
+                ]
+              },
+              {
+                "required": [
+                  "texture"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "nine_slice"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "asset",
+                "texture",
+                "opacity"
+              ]
+            },
+            "anyOf": [
+              {
+                "required": [
+                  "asset"
+                ]
+              },
+              {
+                "required": [
+                  "texture"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "virtual_list"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "items",
+                "item_key",
+                "overscan",
+                "item_extent",
+                "viewport_extent"
+              ]
+            },
+            "required": [
+              "items",
+              "item_key"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "virtual_grid"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "items",
+                "item_key",
+                "overscan",
+                "item_extent",
+                "viewport_extent",
+                "columns"
+              ]
+            },
+            "required": [
+              "items",
+              "item_key"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "canvas"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "enum": [
+                "id",
+                "kind",
+                "source_id",
+                "children",
+                "events",
+                "visible",
+                "enabled",
+                "min_width",
+                "min_height",
+                "max_width",
+                "max_height",
+                "fill",
+                "fill_width",
+                "fill_height",
+                "clip_children",
+                "background",
+                "text_color",
+                "text_padding",
+                "grow",
+                "anchor",
+                "position_x",
+                "position_y",
+                "position_right",
+                "position_bottom",
+                "align",
+                "cross_align",
+                "gap",
+                "padding",
+                "style",
+                "nodes",
+                "edges"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "event": {
+      "type": "object",
+      "required": [
+        "event",
+        "action"
+      ],
+      "properties": {
+        "event": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "arguments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "view": {
+      "type": "object",
+      "required": [
+        "id",
+        "model",
+        "theme",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "theme": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "root": {
+          "$ref": "#/$defs/control"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

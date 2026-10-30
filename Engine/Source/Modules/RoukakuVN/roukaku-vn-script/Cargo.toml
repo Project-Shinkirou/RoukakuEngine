@@ -11,6 +11,8 @@ blake3.workspace = true
 hex.workspace = true
 indexmap.workspace = true
 logos.workspace = true
+jsonc-parser = { version = "=0.34.0", features = ["serde_json"] }
+jsonschema = { version = "=0.37.1", default-features = false }
 miette.workspace = true
 postcard.workspace = true
 rowan.workspace = true
