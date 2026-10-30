@@ -115,3 +115,142 @@ fn mounted_asset_resolver_reads_catalog_assets_with_source_identity() {
         Hash256::from_sha256(b"opening revision")
     );
 }
+
+fn package_with_overlay_layer(layer_id: &str, priority: i32, bytes: &[u8]) -> PackageReader {
+    let section = SectionPayload::raw(
+        "asset.background.opening",
+        "roukaku.cooked_asset.v1",
+        bytes.to_vec(),
+    );
+    let mut request = PackageBuildRequest::fixture(
+        format!("com.example.overlay.{}", layer_id.replace('.', "-")),
+        "classic",
+        vec![section],
+    );
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&request.asset_vfs_manifest).unwrap();
+    manifest["layers"][0]["layer_id"] = layer_id.into();
+    manifest["layers"][0]["priority"] = priority.into();
+    manifest["entries"][0]["layer_id"] = layer_id.into();
+    request.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
+    PackageReader::open(PackageBuilder::build(request).unwrap().as_bytes()).unwrap()
+}
+
+fn base_package() -> PackageReader {
+    let section = SectionPayload::raw(
+        "asset.background.opening",
+        "roukaku.cooked_asset.v1",
+        b"base".to_vec(),
+    );
+    PackageReader::open(
+        PackageBuilder::build(PackageBuildRequest::fixture(
+            "com.example.nativevn",
+            "classic",
+            vec![section],
+        ))
+        .unwrap()
+        .as_bytes(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn mounted_overlay_overrides_and_removal_restores_base() {
+    let base = base_package();
+    let overlay = package_with_overlay_layer("overlay.high", 10, b"overlay");
+    let mut resolver = roukaku_package::MountedAssetResolver::new(&base).unwrap();
+    resolver.mount_overlay("high", &overlay).unwrap();
+    let replaced = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap();
+    assert_eq!(replaced.bytes.as_ref(), b"overlay");
+    assert_eq!(replaced.identity.source_mount, "overlay.high");
+    resolver.unmount_overlay("high").unwrap();
+    let restored = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap();
+    assert_eq!(restored.bytes.as_ref(), b"base");
+    assert_eq!(restored.identity.source_mount, "package.base");
+}
+
+#[test]
+fn same_priority_overlay_is_reported_as_ambiguous() {
+    let base = base_package();
+    let overlay = package_with_overlay_layer("overlay.equal", 0, b"overlay");
+    let mut resolver = roukaku_package::MountedAssetResolver::new(&base).unwrap();
+    resolver.mount_overlay("equal", &overlay).unwrap();
+    let error = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap_err();
+    assert!(error.to_string().contains("ROUKAKU_VFS_RESOLVE_AMBIGUOUS"));
+}
+
+#[test]
+fn overlay_whiteout_hides_base_asset() {
+    let base = base_package();
+    let mut overlay =
+        PackageBuildRequest::fixture("com.example.overlay.whiteout", "classic", vec![]);
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&overlay.asset_vfs_manifest).unwrap();
+    manifest["layers"][0]["layer_id"] = "overlay.whiteout".into();
+    manifest["layers"][0]["priority"] = 10.into();
+    manifest["whiteouts"] = serde_json::json!([{
+        "vfs_uri": "package:/asset/background/opening",
+        "layer_id": "overlay.whiteout",
+        "base_hash": Hash256::from_sha256(b"base").to_string(),
+        "allowlist_id": "test.allowlist",
+        "reason": "test removal",
+        "targets": [],
+        "profiles": []
+    }]);
+    overlay.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
+    let overlay = PackageReader::open(PackageBuilder::build(overlay).unwrap().as_bytes()).unwrap();
+    let mut resolver = roukaku_package::MountedAssetResolver::new(&base).unwrap();
+    resolver.mount_overlay("whiteout", &overlay).unwrap();
+    let error = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap_err();
+    assert!(error.to_string().contains("ROUKAKU_VFS_ASSET_WHITEOUT"));
+}
+
+#[test]
+fn local_catalog_source_requires_authorized_alias_and_bounded_content() {
+    let payload = b"authorized local asset";
+    let mut request = PackageBuildRequest::fixture(
+        "com.example.localmount",
+        "classic",
+        vec![SectionPayload::raw(
+            "asset.background.opening",
+            "roukaku.cooked_asset.v1",
+            payload.to_vec(),
+        )],
+    );
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&request.asset_vfs_manifest).unwrap();
+    manifest["layers"][0]["source"] =
+        serde_json::json!({"kind":"local_authorized", "alias":"project"});
+    manifest["entries"][0]["source"] =
+        serde_json::json!({"kind":"local_authorized", "alias":"project"});
+    request.asset_vfs_manifest = serde_json::to_vec(&manifest).unwrap();
+    let package = PackageReader::open(PackageBuilder::build(request).unwrap().as_bytes()).unwrap();
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(directory.path().join("asset/background")).unwrap();
+    std::fs::write(directory.path().join("asset/background/opening"), payload).unwrap();
+    let mut resolver = roukaku_package::MountedAssetResolver::new(&package).unwrap();
+    let denied = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap_err();
+    assert!(
+        denied
+            .to_string()
+            .contains("ROUKAKU_VFS_LOCAL_UNAUTHORIZED")
+    );
+    resolver
+        .authorize_directory("project", directory.path())
+        .unwrap();
+    let resolved = resolver
+        .resolve_asset("asset:/background/opening", 1024)
+        .unwrap();
+    assert_eq!(resolved.bytes.as_ref(), payload);
+    assert_eq!(resolved.identity.source_mount, "package.base");
+}
