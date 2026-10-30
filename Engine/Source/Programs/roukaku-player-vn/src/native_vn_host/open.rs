@@ -314,12 +314,7 @@ impl NativeVnHostCommandSource {
                 )));
             }
             fonts.push(roukaku_media::PackagedFont {
-                asset_id: format!(
-                    "{}:{}:{}",
-                    font.asset_id.len(),
-                    font.asset_id,
-                    resolved.identity.source_mount
-                ),
+                asset_id: font.asset_id,
                 family: font.family,
                 face_index: font.face_index,
                 hash: resolved.identity.content_revision,
