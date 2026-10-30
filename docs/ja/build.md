@@ -87,6 +87,8 @@ FFmpeg を用意した後は、出力された `VCPKG_ROOT`、`VCPKG_DEFAULT_TRI
 
 対応する vcpkg triplet は、Windows MSVC が `x64-windows-static-md-dynbidi`、Linux x64 が `x64-linux`、Android arm64/x64 が `arm64-android-dynbidi` / `x64-android-dynbidi`、macOS arm64/x64 が `arm64-osx` / `x64-osx`、iOS arm64 実機が `arm64-ios`、iOS arm64/x64 シミュレーターが `arm64-ios-simulator` / `x64-ios` です。Android は NDK のターゲットコンパイラーと pkg-config メタデータを、Apple は対応 SDK を使います。OHOS と emscripten も同じ FT2 bridge にツールチェーンを接続します。
 
+Windows ホストでは `ANDROID_NDK_HOME` を設定し、`cargo xtask deps --target aarch64-linux-android --text --subtitle` で Android の文字依存を準備します。同梱の GLib overlay は GDB 自動ロードファイルに相対ライブラリディレクトリを使い、インストールパスへの Windows ドライブ文字の混入を防ぎます。生成された `share/gdb` は保持し、手動で削除・修復しないでください。各インストールルートのターゲットファイルは `<triplet>/` 配下にあり、`lib/pkgconfig` と `share/{libass,pango}/vcpkg.spdx.json` もここに配置されます。
+
 
 ## 動画再生と音声同期
 

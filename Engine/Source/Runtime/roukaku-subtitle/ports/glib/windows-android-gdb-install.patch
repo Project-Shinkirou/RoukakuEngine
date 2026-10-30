@@ -1,0 +1,16 @@
+diff --git a/glib/meson.build b/glib/meson.build
+--- a/glib/meson.build
++++ b/glib/meson.build
+@@ -578,6 +578,12 @@ endif
+ # XXX: We add a leading './' because glib_libdir is an absolute path and we
+ # need it to be a relative path so that join_paths appends it to the end.
+ gdb_install_dir = join_paths(glib_datadir, 'gdb', 'auto-load', './' + glib_libdir)
++if build_machine.system() == 'windows' and host_system == 'android'
++  # The build-host drive letter is not a valid directory component on Windows
++  # and is not part of the Android runtime path. vcpkg supplies --libdir lib.
++  gdb_install_dir = join_paths(glib_datadir, 'gdb', 'auto-load', get_option('libdir'))
++endif
++
+ 
+ configure_file(
+   input: 'libglib-gdb.py.in',

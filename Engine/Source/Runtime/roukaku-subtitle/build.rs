@@ -4,7 +4,38 @@ use std::{env, path::PathBuf};
 
 fn main() {
     println!("cargo:rerun-if-changed=src/bridge.c");
+    println!("cargo:rerun-if-changed=../roukaku-text/native_triplet.rs");
     println!("cargo:rerun-if-env-changed=ROUKAKU_SUBTITLE_VCPKG_ROOT");
+    let target = env::var("TARGET").unwrap();
+    if cfg!(windows) {
+        let triplet = native_triplet::triplet(&target).expect("supported native target");
+        let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(4)
+            .unwrap()
+            .to_path_buf();
+        let root = env::var_os("ROUKAKU_SUBTITLE_VCPKG_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| native_triplet::install_root(&workspace, triplet));
+        let tools = workspace.join(".work/vcpkg/downloads/tools/msys2");
+        let pkgconf = std::fs::read_dir(tools)
+            .expect("vcpkg pkg-config tools")
+            .filter_map(Result::ok)
+            .map(|entry| entry.path().join("mingw64/bin/pkg-config.exe"))
+            .find(|path| path.is_file())
+            .expect("vcpkg pkg-config executable");
+        unsafe {
+            env::set_var("PKG_CONFIG", pkgconf);
+            env::set_var(
+                "PKG_CONFIG_PATH",
+                env::join_paths([
+                    root.join(triplet).join("lib/pkgconfig"),
+                    root.join(triplet).join("share/pkgconfig"),
+                ])
+                .unwrap(),
+            );
+        }
+    }
     let windows = env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows";
     let (includes, metadata) = if windows {
         assert_eq!(
@@ -19,37 +50,6 @@ fn main() {
                 .any(|feature| feature == "crt-static"),
             "roukaku-subtitle requires the MD CRT (no +crt-static)"
         );
-        let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .ancestors()
-            .nth(4)
-            .unwrap()
-            .to_path_buf();
-        let root = env::var_os("ROUKAKU_SUBTITLE_VCPKG_ROOT")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                native_triplet::install_root(
-                    &workspace,
-                    native_triplet::triplet(&env::var("TARGET").unwrap()).unwrap(),
-                )
-            });
-        let tools = workspace.join(".work/vcpkg/downloads/tools/msys2");
-        let pkgconf = std::fs::read_dir(tools)
-            .expect("vcpkg pkg-config tools")
-            .filter_map(Result::ok)
-            .map(|entry| entry.path().join("usr/bin/pkg-config.exe"))
-            .find(|path| path.is_file())
-            .expect("vcpkg pkg-config executable");
-        unsafe {
-            env::set_var("PKG_CONFIG", pkgconf);
-            env::set_var(
-                "PKG_CONFIG_PATH",
-                env::join_paths([
-                    root.join("x64-windows-static-md-dynbidi/lib/pkgconfig"),
-                    root.join("x64-windows-static-md-dynbidi/share/pkgconfig"),
-                ])
-                .unwrap(),
-            );
-        }
         let lib = pkg_config::Config::new()
             .exactly_version("0.17.5")
             .statik(true)
@@ -61,6 +61,7 @@ fn main() {
         // provide a no-op renderer for a missing native dependency.
         let lib = pkg_config::Config::new()
             .exactly_version("0.17.5")
+            .statik(target.ends_with("android"))
             .probe("libass")
             .expect("roukaku-subtitle requires native libass exactly 0.17.5");
         // Let pkg-config emit its complete platform metadata, including

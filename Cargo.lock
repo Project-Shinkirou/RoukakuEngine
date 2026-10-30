@@ -5261,6 +5261,7 @@ dependencies = [
  "accesskit_winit",
  "cpal",
  "gilrs",
+ "image",
  "pollster 1.0.1",
  "postcard",
  "rfd",

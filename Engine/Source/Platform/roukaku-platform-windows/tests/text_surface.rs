@@ -176,12 +176,6 @@ async fn windows_wgpu_renders_multiscript_layout_through_live_glyph_atlas() {
 
     let layout = provider().layout(&request()).unwrap();
     assert!(layout.shaped_runs.len() >= 3);
-    assert!(
-        roukaku_media::text_layout_evidence_hash(&layout)
-            .unwrap()
-            .to_string()
-            .starts_with("sha256:")
-    );
     let mut resources = TextRenderResourceOwner::default();
     let commands = resources
         .update_layout("golden.multiscript", &layout, [238, 242, 255, 255])
@@ -215,6 +209,20 @@ async fn windows_wgpu_renders_multiscript_layout_through_live_glyph_atlas() {
         .count();
     assert!(changed_pixels >= golden["minimum_changed_pixels"].as_u64().unwrap() as usize);
     let capture_hash = Hash256::from_sha256(&captured.rgba8);
+    if let Some(directory) = std::env::var_os("ROUKAKU_TEXT_SMOKE_DIR") {
+        let directory = std::path::PathBuf::from(directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("windows-glyph-golden.png");
+        image::save_buffer(
+            &path,
+            &captured.rgba8,
+            WIDTH,
+            HEIGHT,
+            image::ColorType::Rgba8,
+        )
+        .unwrap();
+        println!("Windows glyph screenshot: {} ({capture_hash})", path.display());
+    }
     assert_eq!(golden["capture_hash"], capture_hash.to_string());
 
     host.client

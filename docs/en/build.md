@@ -109,6 +109,8 @@ Text and subtitles share the pinned native stack. `cargo xtask deps --target <tr
 
 Prepared target → vcpkg triplets: Windows MSVC → `x64-windows-static-md-dynbidi`; Linux x64 → `x64-linux`; Android arm64/x64 → `arm64-android-dynbidi` / `x64-android-dynbidi`; macOS arm64/x64 → `arm64-osx` / `x64-osx`; iOS device arm64 → `arm64-ios`; iOS simulator arm64/x64 → `arm64-ios-simulator` / `x64-ios`. Android uses the NDK target compiler and target pkg-config metadata; Apple preparation requires the matching SDK. OHOS and emscripten add their toolchains to this same FT2 bridge.
 
+On a Windows host, prepare Android text dependencies with `cargo xtask deps --target aarch64-linux-android --text --subtitle` after setting `ANDROID_NDK_HOME`. The bundled GLib overlay uses a relative library directory for GDB auto-load files, avoiding a Windows drive letter inside the install path. Keep the generated `share/gdb` files; no manual deletion or install-tree repair is needed. Each install root contains its target files under `<triplet>/`, including `lib/pkgconfig` and `share/{libass,pango}/vcpkg.spdx.json`.
+
 
 ## Movie playback and synchronization
 

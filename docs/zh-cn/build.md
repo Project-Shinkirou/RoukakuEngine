@@ -102,6 +102,8 @@ $env:PATH = "$env:ROUKAKU_TEXT_VCPKG_ROOT/x64-windows-static-md-dynbidi/bin;$env
 
 目标与 vcpkg triplet 的对应关系为：Windows MSVC → `x64-windows-static-md-dynbidi`；Linux x64 → `x64-linux`；Android arm64/x64 → `arm64-android-dynbidi` / `x64-android-dynbidi`；macOS arm64/x64 → `arm64-osx` / `x64-osx`；iOS arm64 真机 → `arm64-ios`；iOS arm64/x64 模拟器 → `arm64-ios-simulator` / `x64-ios`。Android 使用 NDK 目标编译器和目标 pkg-config 元数据，Apple 构建需要对应 SDK。OHOS 与 emscripten 后续在同一 FT2 bridge 上接入工具链。
 
+在 Windows 主机上，设置 `ANDROID_NDK_HOME` 后运行 `cargo xtask deps --target aarch64-linux-android --text --subtitle`，准备 Android 文字依赖。内置 GLib overlay 为 GDB 自动加载文件使用相对库目录，避免将 Windows 盘符嵌入安装路径。保留生成的 `share/gdb` 文件，无需手动删除或修补安装树。各安装根目录的目标文件位于 `<triplet>/` 下，包括 `lib/pkgconfig` 和 `share/{libass,pango}/vcpkg.spdx.json`。
+
 
 ## 视频播放与音画同步
 

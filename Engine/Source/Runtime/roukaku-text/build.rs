@@ -15,20 +15,20 @@ fn main() {
         let root = env::var_os("ROUKAKU_TEXT_VCPKG_ROOT")
             .map(PathBuf::from)
             .unwrap_or_else(|| native_triplet::install_root(&manifest_root(), triplet));
-        let base = root;
+        let base = root.join(triplet);
         let pkgconfig = [base.join("lib/pkgconfig"), base.join("share/pkgconfig")];
-        if target.contains("windows") {
+        unsafe { env::set_var("PKG_CONFIG_PATH", env::join_paths(&pkgconfig).unwrap()) };
+        if cfg!(windows) {
             let pkgconf_root = manifest_root().join(".work/vcpkg/downloads/tools/msys2");
             let pkgconf = fs::read_dir(pkgconf_root)
                 .expect("vcpkg MSYS package tools are available")
                 .filter_map(Result::ok)
-                .map(|entry| entry.path().join("usr/bin/pkg-config.exe"))
+                .map(|entry| entry.path().join("mingw64/bin/pkg-config.exe"))
                 .find(|path| path.is_file())
                 .expect("vcpkg pkg-config executable is available");
-            unsafe {
-                env::set_var("PKG_CONFIG", pkgconf);
-                env::set_var("PKG_CONFIG_PATH", env::join_paths(&pkgconfig).unwrap());
-            }
+            unsafe { env::set_var("PKG_CONFIG", pkgconf) };
+        }
+        if target.contains("windows") {
             let lib = pkg_config::Config::new()
                 .statik(true)
                 .probe("pangoft2")
@@ -51,7 +51,6 @@ fn main() {
                 metadata.push(format!("cargo:rustc-link-lib={system}"));
             }
         } else {
-            unsafe { env::set_var("PKG_CONFIG_PATH", env::join_paths(&pkgconfig).unwrap()) };
             let lib = pkg_config::Config::new()
                 .statik(true)
                 .probe("pangoft2")

@@ -82,6 +82,7 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
                 .current_dir(root)
                 .arg("install")
                 .arg(format!("--x-manifest-root={}", manifest.display()))
+                .arg(format!("--overlay-ports={}", manifest.join("ports").display()))
                 .arg(format!(
                     "--overlay-triplets={}",
                     manifest.join("triplets").display()
@@ -104,7 +105,7 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
             "GITHUB_ENV",
             &format!("ROUKAKU_TEXT_VCPKG_ROOT={}", install_root.display()),
         )?;
-        let base = install_root.clone();
+        let base = install_root.join(triplet);
         for directory in ["bin", "debug/bin"] {
             env_file("GITHUB_PATH", &base.join(directory).display().to_string())?;
         }
@@ -119,11 +120,11 @@ pub fn run(root: &Path, options: &Options) -> Result<()> {
                 std::env::join_paths(pkg)?.to_string_lossy()
             ),
         )?;
-        if options.target.contains("windows") {
+        if cfg!(windows) {
             let pkgconf_root = vcpkg.join("downloads/tools/msys2");
             let pkgconf = fs::read_dir(pkgconf_root)?
                 .filter_map(std::result::Result::ok)
-                .map(|entry| entry.path().join("usr/bin/pkg-config.exe"))
+                .map(|entry| entry.path().join("mingw64/bin/pkg-config.exe"))
                 .find(|path| path.is_file())
                 .ok_or_else(|| anyhow::anyhow!("vcpkg pkg-config executable is missing"))?;
             env_file("GITHUB_ENV", &format!("PKG_CONFIG={}", pkgconf.display()))?;
