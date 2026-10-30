@@ -27,7 +27,17 @@ impl ProductPerformanceObserver for TestPerformanceObserver {
 #[tokio::test]
 async fn real_native_vn_package_accepts_physical_input_and_produces_cpu_frame() {
     let package = roukaku_player_vn::headless_test_fixture::product_package(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line speaker:hero #@id line.one\n    choice key:choice.next #@id choice.next\n      option key:choice.end -> ending #@id choice.end\nstate ending #@id state.ending\n  scene room #@id scene.ending\n    text key:line.after speaker:hero #@id line.ending\n    system_page kind:backlog policy:roukaku.policy.standard #@id page.backlog\n",
+        r#"return { paragraphs = {
+    start = function()
+        rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line", speaker = "hero"})
+        rk.call("roukaku.vn.choice", "select", "choice.next", {{id = "choice.end", text = "choice.end"}}, {key = "choice.next"})
+        rk.enter("story.main", "ending")
+    end,
+    ending = function()
+        rk.call("roukaku.vn.dialog", "show", "line.ending", {key = "line.after", speaker = "hero"})
+        rk.call("roukaku.vn.menu", "show", "page.backlog", {kind = "backlog", policy = "roukaku.policy.standard"})
+    end,
+} }"#,
     );
     let package_hash = roukaku_core::Hash256::from_sha256(&package).to_string();
     let root = tempfile::tempdir().unwrap();

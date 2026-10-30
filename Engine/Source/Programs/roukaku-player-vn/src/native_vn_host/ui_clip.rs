@@ -36,7 +36,7 @@ mod tests {
             "column id:clipper min_width:100 max_width:100 min_height:40 max_height:40 clip_children:true\n      text id:body value:$model.text_key",
         );
         let bytes = test_native_package::product_package_with_ui_and_request(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+            r#"return { paragraphs = { start = function() rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"}) end } }"#,
             &ui,
             test_native_package::test_compile_options(),
             |_| {},

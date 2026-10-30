@@ -16,7 +16,7 @@ impl Fixture {
         let host = roukaku_headless_test::HeadlessTestContext::start().unwrap();
         let root = tempfile::tempdir().unwrap();
         let package_bytes = roukaku_player_vn::headless_test_fixture::product_package(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line speaker:hero #@id line.one\n",
+            r#"return { paragraphs = { start = function() rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line", speaker = "hero"}) end } }"#,
         );
         let package_hash = roukaku_core::Hash256::from_sha256(&package_bytes).to_string();
         let build_identity = roukaku_headless_test::headless_build_identity_path().unwrap();

@@ -4,7 +4,10 @@ use crate::test_native_package as native_package;
 #[test]
 fn input_action_preserves_resized_glyph_uploads() {
     let bytes = native_package::product_package_with_request(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n    text key:line.two speaker:hero #@id line.two\n",
+        r#"return { paragraphs = { start = function()
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"})
+    rk.call("roukaku.vn.dialog", "show", "line.two", {key = "line.two", speaker = "hero"})
+end } }"#,
         |_| {},
     );
     let package = roukaku_package::PackageReader::open(&bytes).unwrap();
@@ -75,13 +78,12 @@ fn input_action_preserves_resized_glyph_uploads() {
 }
 
 const STORY: &str = r#"
-story main #@id story.main
-state start #@id state.start
-  scene room #@id scene.room
-    stage viewport:320x180 safe_area:16:9 #@id stage.main
-    layer id:bg kind:background z:0 blend:normal clip:stage #@id layer.bg
-    background asset:asset:/background/apartment-night layer:bg duration:1000 interrupt:replace_from_current #@id background.main
-    text key:line.one speaker:hero #@id line.one
+return { paragraphs = { start = function()
+    rk.call("roukaku.vn.stage", "stage", "stage.main", {viewport = {width = 320, height = 180}, safe_area = {width = 16, height = 9}})
+    rk.call("roukaku.vn.stage", "layer", "layer.bg", {id = "bg", kind = "background", z = 0, blend = "normal", clip = "stage"})
+    rk.call("roukaku.vn.stage", "background", "background.main", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 1000, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"})
+end } }
 "#;
 
 fn source() -> NativeVnHostCommandSource {
@@ -107,17 +109,15 @@ fn source_for(story: &str) -> NativeVnHostCommandSource {
 fn invalid_transition_asset_restore_keeps_live_world_and_work() {
     let mut source = source_for(
         r#"
-story main #@id story.main
-state start #@id state.start
-  scene first #@id scene.first
-    stage viewport:320x180 safe_area:16:9 #@id stage.main
-    layer id:bg kind:background z:0 blend:normal clip:stage #@id layer.bg
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.first
-    text key:line.one speaker:hero #@id line.one
-  scene second #@id scene.second
-    transition preset:director_puppet_9 duration:250 descriptor:director.puppet.9 #@id transition.center
-    background asset:asset:/background/apartment-night layer:bg duration:0 interrupt:replace_from_current #@id background.second
-    text key:line.two speaker:hero #@id line.two
+return { paragraphs = { start = function()
+    rk.call("roukaku.vn.stage", "stage", "stage.main", {viewport = {width = 320, height = 180}, safe_area = {width = 16, height = 9}})
+    rk.call("roukaku.vn.stage", "layer", "layer.bg", {id = "bg", kind = "background", z = 0, blend = "normal", clip = "stage"})
+    rk.call("roukaku.vn.stage", "background", "background.first", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"})
+    rk.call("roukaku.vn.stage", "transition", "transition.center", {preset = "director_puppet_9", duration_ms = 250, descriptor = "director.puppet.9"})
+    rk.call("roukaku.vn.stage", "background", "background.second", {asset = "asset:/background/apartment-night", layer = "bg", duration_ms = 0, interrupt = "replace_from_current"})
+    rk.call("roukaku.vn.dialog", "show", "line.two", {key = "line.two", speaker = "hero"})
+end } }
 "#,
     );
     for _ in 0..2 {
@@ -287,7 +287,7 @@ fn only_failure_of_the_awaited_fence_ends_the_player_session() {
 #[test]
 fn video_work_cannot_cross_replacement_restore_or_source_lifetime() {
     let mut source = source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+        r#"return { paragraphs = { start = function() rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"}) end } }"#,
     );
     source
         .cache_gameplay_surface(320, 180, vec![0x40; 320 * 180 * 4])
@@ -380,7 +380,7 @@ fn video_work_cannot_cross_replacement_restore_or_source_lifetime() {
     assert!(fresh.is_cancelled());
     source.shutdown().unwrap();
     let source = source_for(
-        "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+        r#"return { paragraphs = { start = function() rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"}) end } }"#,
     );
     let scope = source.media_scope.child();
     drop(source);

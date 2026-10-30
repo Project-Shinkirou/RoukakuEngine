@@ -332,7 +332,7 @@ mod tests {
 
     fn source() -> NativeVnHostCommandSource {
         let bytes = crate::test_native_package::product_package_with_request(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:line.one speaker:hero #@id line.one\n",
+            r#"return { paragraphs = { start = function() rk.call("roukaku.vn.dialog", "show", "line.one", {key = "line.one", speaker = "hero"}) end } }"#,
             |_| {},
         );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();

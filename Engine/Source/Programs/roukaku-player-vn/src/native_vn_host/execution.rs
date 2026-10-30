@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn package_open_rejects_invalid_worker_counts() {
         let bytes = crate::test_native_package::product_package_with_request(
-            "story main #@id story.main\nstate start #@id state.start\n  scene room #@id scene.room\n    text key:hello speaker:hero #@id hello\n",
+            r#"return { paragraphs = { start = function() rk.call("roukaku.vn.dialog", "show", "hello", {key = "hello", speaker = "hero"}) end } }"#,
             |_| {},
         );
         let package = roukaku_package::PackageReader::open(&bytes).unwrap();
