@@ -20,15 +20,12 @@ use roukaku_plugin_abi::{PluginExtensionRegistrySnapshot, ProviderPolicy};
 use roukaku_target::{TargetKind, TargetManifest, TargetValidationStatus, validate_manifest};
 use roukaku_vn::VnHostLimits;
 use roukaku_vn_package::{
-    VnAdvancedPresentationManifest, VnCommercialBaselineManifest, VnExtensionManifest,
-    VnProfileManifest, VnStandardCommandManifest, decode_compiled_project,
+    VnExtensionManifest, VnProfileManifest, VnStandardCommandManifest, decode_vn_project,
     load_player_locale_config, load_presentation_provider_manifest,
 };
 use roukaku_vn_policy::{VnPolicyBundleManifest, VnPolicyBundleSourceCache};
 
-use roukaku_vn_script::{
-    SystemStoryManifest, SystemStoryValidationStatus, VnSystemUiProfileManifest,
-};
+use roukaku_vn_script::{SystemStoryValidationStatus, VnSystemUiProfileManifest};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

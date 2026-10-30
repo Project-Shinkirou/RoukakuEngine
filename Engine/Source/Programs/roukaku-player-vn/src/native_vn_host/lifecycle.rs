@@ -218,9 +218,11 @@ impl NativeVnHostCommandSource {
         let runtime_view = output.vn_state;
         self.runtime_backlog_count = runtime_view.backlog_count;
         self.runtime_state = Some(runtime_view.into_display_state());
+        if let Some(route) = output.completed_route {
+            self.terminal_routes.insert(route);
+        }
         self.ensure_text_region()?;
-        self.schedule_current_image_prefetch()?;
-        self.queue_current_story_audio_preloads()?;
+        self.pin_current_image_working_set()?;
         let runtime_state = self.runtime_state.as_ref().ok_or_else(|| {
             NativeVnHostError::RuntimeEvidence(
                 "ROUKAKU_PLAYER_VN_STATE_MISSING: runtime state trace is required".into(),
@@ -258,11 +260,7 @@ impl NativeVnHostCommandSource {
                 })
                 .unwrap_or_default(),
             terminal_route_ids: if runtime_state.cursor.is_none() {
-                runtime_state
-                    .route_coverage
-                    .intersection(&self.terminal_routes)
-                    .cloned()
-                    .collect()
+                self.terminal_routes.clone()
             } else {
                 Default::default()
             },
@@ -271,9 +269,22 @@ impl NativeVnHostCommandSource {
             self.pending_timeline.push(player_timeline_task(task)?);
         }
         let mut live_audio_cues = output.audio.into_iter();
+        let mut properties = output.properties.into_iter().peekable();
         let mut ordered_outputs = Vec::new();
         let mut presentation_count = 0_usize;
         for command in output.presentations {
+            while let Some(sample) =
+                properties.next_if(|sample| sample.presentation_index <= presentation_count)
+            {
+                ordered_outputs.push(NativeVnOrderedRuntimeOutput::Property(sample));
+            }
+            validate_presentation_command(
+                &command,
+                &self.asset_store,
+                &self.presentation_manifest,
+                &self.ui_profile,
+                &self.extensions,
+            )?;
             presentation_count = presentation_count.saturating_add(1);
             if matches!(&command, PresentationCommand::Stage(StageCommand::Audio(_))) {
                 let cue = live_audio_cues.next().ok_or_else(|| {
@@ -321,6 +332,7 @@ impl NativeVnHostCommandSource {
             }
             ordered_outputs.push(NativeVnOrderedRuntimeOutput::Presentation(command));
         }
+        ordered_outputs.extend(properties.map(NativeVnOrderedRuntimeOutput::Property));
         if live_audio_cues.next().is_some() {
             return Err(NativeVnHostError::RuntimeEvidence(
                 "ROUKAKU_PLAYER_VN_AUDIO_LIVE_EXTRA: live audio cue has no stage audio presentation"

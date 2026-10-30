@@ -125,9 +125,13 @@ fn story_menu_is_a_system_page_resolved_by_profile_actions_and_fences() {
     let mut session = session("menu", MENU);
     session.bind_system_actions(BTreeSet::from(["game.start".to_string()]));
     let title = launch(&mut session);
-    assert!(title.presentations.contains(&PresentationCommand::SystemPage {
-        page: SystemPageKind::Title
-    }));
+    assert!(
+        title
+            .presentations
+            .contains(&PresentationCommand::SystemPage {
+                page: SystemPageKind::Title
+            })
+    );
     assert_eq!(session.state.system_stack.len(), 1);
     assert_eq!(session.state.system_stack[0].page, SystemPageKind::Title);
     assert!(session.state.pending_choice.is_none());
@@ -163,10 +167,16 @@ fn story_menu_is_a_system_page_resolved_by_profile_actions_and_fences() {
         PresentationCommand::Stage(StageCommand::Background { .. })
     )));
     let wait = session.state.pending_wait.clone().unwrap();
-    assert_eq!((wait.kind, wait.fence.as_str()), (VnWaitKind::Fence, "bg.ready"));
+    assert_eq!(
+        (wait.kind, wait.fence.as_str()),
+        (VnWaitKind::Fence, "bg.ready")
+    );
     // Input never completes a fence wait; only its fence does.
     execute(&mut session, 5, VnPlayerCommand::Advance).unwrap();
-    assert_eq!(session.state.pending_wait.as_ref().unwrap().fence, "bg.ready");
+    assert_eq!(
+        session.state.pending_wait.as_ref().unwrap().fence,
+        "bg.ready"
+    );
     let line = execute(
         &mut session,
         6,
@@ -261,6 +271,9 @@ fn luau_segments_emit_property_samples_over_presentation_time() {
     assert_eq!(first.properties[0].value, 0.0);
     let samples = session.advance_presentation(0.5).unwrap();
     let sample = samples.last().unwrap();
-    assert_eq!((sample.target.as_str(), sample.property.as_str()), ("hero", "opacity"));
+    assert_eq!(
+        (sample.target.as_str(), sample.property.as_str()),
+        ("hero", "opacity")
+    );
     assert!((sample.value - 0.5).abs() < 1e-9);
 }

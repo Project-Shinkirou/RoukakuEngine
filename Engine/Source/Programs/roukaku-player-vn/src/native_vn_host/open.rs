@@ -103,7 +103,7 @@ impl NativeVnHostCommandSource {
                 product_context.profile()
             )));
         }
-        let compiled = decode_compiled_project(package)
+        let project = decode_vn_project(package)
             .map_err(|err| NativeVnHostError::Package(err.to_string()))?;
         let system_ui_manifest = package
             .container()
@@ -130,13 +130,6 @@ impl NativeVnHostCommandSource {
         let presentation_manifest =
             load_presentation_provider_manifest(package, &config.profile)
                 .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
-        validate_story_presentation(
-            &compiled,
-            &asset_store,
-            &presentation_manifest,
-            &config.profile,
-            &extensions,
-        )?;
         let locale_config = load_player_locale_config(package)
             .map_err(|error| NativeVnHostError::Localization(error.to_string()))?;
         if locale_config
@@ -179,13 +172,11 @@ impl NativeVnHostCommandSource {
             .into_iter()
             .map(|font| font.family)
             .collect::<Vec<_>>();
-        validate_story_text(&compiled, &localization, &text_provider, &font_families)?;
-        text_provider.clear_layout_cache()?;
         let max_glyph_cache_bytes = usize::try_from(max_glyph_cache_bytes).map_err(|_| {
             NativeVnHostError::Asset("ROUKAKU_PLAYER_GLYPH_CACHE_BUDGET_PLATFORM_OVERFLOW".into())
         })?;
         Self::open(
-            compiled,
+            project,
             config,
             width,
             height,
@@ -216,7 +207,7 @@ impl NativeVnHostCommandSource {
     }
 
     pub(super) fn open(
-        compiled: CompiledVnProject,
+        project: roukaku_vn_package::VnProject,
         config: VnRunConfig,
         width: u32,
         height: u32,
@@ -228,17 +219,12 @@ impl NativeVnHostCommandSource {
             cache_budget,
             execution: runtime_execution,
         } = runtime_options;
-        if compiled.story.story_manifest.stories.is_empty() {
-            return Err(NativeVnHostError::EmptyStory);
-        }
-        let terminal_routes = compiled
-            .story
-            .route_graph
-            .nodes
-            .iter()
-            .filter(|node| node.terminal)
-            .map(|node| node.id.clone())
-            .collect();
+        let roukaku_vn_package::VnProject {
+            project_hash,
+            story,
+            ui,
+            ..
+        } = project;
         let stage_director = ProductStageDirector::new(
             binding.presentation.manifest.clone(),
             binding.product_context.profile(),
@@ -247,7 +233,7 @@ impl NativeVnHostCommandSource {
         .map_err(stage_director_error)?;
         let product_context = &binding.product_context;
         let ui_profile = config.profile.clone();
-        if compiled.themes.is_empty() {
+        if ui.themes.is_empty() {
             return Err(NativeVnHostError::Package(
                 "ROUKAKU_PLAYER_UI_THEME_MISSING: compiled project has no packaged UI theme".into(),
             ));
@@ -266,13 +252,13 @@ impl NativeVnHostCommandSource {
             locale: Arc::clone(&ui_text_locale),
             frame_layouts: Mutex::new(BTreeMap::new()),
         });
-        let ui_renderer = BlueprintYakuiRenderer::new(compiled.ui_blueprints.clone())?
+        let ui_renderer = BlueprintYakuiRenderer::new(ui.ui_blueprints.clone())?
             .with_image_resource_provider(binding.presentation.asset_store.clone())
             .with_text_measurer(ui_text_measurer.clone());
-        let ui_backend = RoukakuYakuiBackend::new(ui_renderer, compiled.project_hash)?;
+        let ui_backend = RoukakuYakuiBackend::new(ui_renderer, project_hash)?;
         let mut ui_controller_host = LuauUiControllerHost::with_default_budget()
             .map_err(|error| NativeVnHostError::Package(error.to_string()))?;
-        let mut unique_controller_sources = compiled
+        let mut unique_controller_sources = ui
             .controller_sources
             .values()
             .cloned()
@@ -286,7 +272,7 @@ impl NativeVnHostCommandSource {
             .manifests()
             .map(|manifest| manifest.id.clone())
             .collect::<BTreeSet<_>>();
-        if registered_controller_ids != compiled.controller_ids {
+        if registered_controller_ids != ui.controller_ids {
             return Err(NativeVnHostError::Package(
                 "ROUKAKU_PLAYER_UI_CONTROLLER_SET: packaged controller source set does not match bindings"
                     .into(),
@@ -294,9 +280,8 @@ impl NativeVnHostCommandSource {
         }
         let limits = VnHostLimits::new();
         let mut host = NativeVnRuntimeHost::new(product_context, limits)?;
-        let story = Arc::new(compiled.story);
         let open = match host.open(
-            Arc::clone(&story),
+            Arc::new(story),
             config,
             roukaku_vn::VnSessionConfig {
                 target_id: product_context.target().into(),
@@ -308,6 +293,10 @@ impl NativeVnHostCommandSource {
                 }),
                 integrity_mode: runtime_execution.integrity_mode,
                 worker_count: runtime_execution.worker_count,
+            },
+            NativeVnSessionBindings {
+                text_layout: binding.presentation.text_provider.clone(),
+                system_actions: binding.system_ui_policy.custom_action_ids.clone(),
             },
         ) {
             Ok(session_id) => session_id,
@@ -327,9 +316,7 @@ impl NativeVnHostCommandSource {
             .keys()
             .cloned()
             .collect();
-        let ui_view_localization_keys = blueprint_view_localization_keys(&compiled.ui_blueprints);
-        let image_prefetch_windows =
-            image_prefetch_windows(&story, &binding.presentation.asset_store)?;
+        let ui_view_localization_keys = blueprint_view_localization_keys(&ui.ui_blueprints);
         let image_prefetcher =
             PackageImagePrefetcher::start(Arc::clone(&binding.presentation.asset_store))?;
         Ok(Self {
@@ -375,7 +362,6 @@ impl NativeVnHostCommandSource {
             texture_dimensions: BTreeMap::new(),
             asset_store: binding.presentation.asset_store,
             image_prefetcher,
-            image_prefetch_windows,
             image_prefetch_inflight: BTreeSet::new(),
             image_prefetch_failure: None,
             live_texture_ids: BTreeSet::new(),
@@ -395,26 +381,25 @@ impl NativeVnHostCommandSource {
             scene_draw: Vec::new(),
             director_transition_snapshot: None,
             last_step_evidence: None,
-            terminal_routes,
+            terminal_routes: BTreeSet::new(),
             pending_timeline: Vec::new(),
             pending_audio: Vec::new(),
             pending_audio_preloads: Vec::new(),
-            audio_preload_story_ids: BTreeSet::new(),
             pending_video: Vec::new(),
             pending_stage_completions: Vec::new(),
             next_media_resource_id: 10_000,
             stage_director,
+            presentation_manifest: binding.presentation.manifest,
             presentation_failed: false,
-            compiled_project_hash: compiled.project_hash,
+            project_hash,
             media_scope: roukaku_runtime::TaskScope::new(),
             video_scopes: BTreeMap::new(),
-            story,
-            ui_blueprints: compiled.ui_blueprints,
+            ui_blueprints: ui.ui_blueprints,
             ui_view_localization_keys,
-            ui_bindings: compiled.ui_bindings,
+            ui_bindings: ui.ui_bindings,
             ui_backend,
             ui_backend_started: false,
-            ui_themes: compiled
+            ui_themes: ui
                 .themes
                 .into_iter()
                 .map(|(id, theme)| (id, Arc::new(theme)))

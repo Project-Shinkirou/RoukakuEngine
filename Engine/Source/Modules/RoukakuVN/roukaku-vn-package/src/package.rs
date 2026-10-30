@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     CompiledVnUi, LuauStoryBundle, VN_PRESENTATION_PROVIDER_MANIFEST_SCHEMA, VnExtensionManifest,
     VnPolicyBundleManifest, VnPolicyBundleSourceCache, VnPresentationProviderManifest,
-    VnProfileManifest, VnStandardCommandManifest, VnSystemUiProfileManifest, load_luau_story_bundle,
+    VnProfileManifest, VnStandardCommandManifest, VnSystemUiProfileManifest,
+    load_luau_story_bundle,
 };
 
 pub const VN_PROJECT_SCHEMA: &str = "roukaku.vn.project.v6";

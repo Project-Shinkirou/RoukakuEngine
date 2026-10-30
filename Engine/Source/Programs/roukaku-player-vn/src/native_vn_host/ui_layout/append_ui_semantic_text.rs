@@ -346,7 +346,7 @@ pub(in super::super) fn non_negative_coord(
     Ok(value.round() as u32)
 }
 
-pub(in super::super) struct TextRequestSpec<'a> {
+struct TextRequestSpec<'a> {
     pub(super) key: &'a str,
     pub(super) text: &'a str,
     pub(super) locale: &'a str,
@@ -357,7 +357,7 @@ pub(in super::super) struct TextRequestSpec<'a> {
     pub(super) direction: TextDirection,
 }
 
-pub(in super::super) fn text_request(spec: TextRequestSpec<'_>) -> TextLayoutRequest {
+fn text_request(spec: TextRequestSpec<'_>) -> TextLayoutRequest {
     let line_height = spec.font_size * 1.3;
     TextLayoutRequest {
         key: spec.key.to_string(),

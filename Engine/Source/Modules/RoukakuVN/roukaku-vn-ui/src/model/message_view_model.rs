@@ -264,7 +264,8 @@ impl SystemPageViewModel {
 pub struct VnUiModelContext<'a> {
     pub runtime: &'a VnRuntimeState,
     pub text_reveal: Option<&'a VnTextRevealState>,
-    pub story: &'a CompiledStory,
+    /// Paragraph route ids at which the story completed in this session.
+    pub terminal_routes: &'a BTreeSet<String>,
     pub save_slots: &'a [SaveSlotViewModel],
     pub localization_keys: &'a [String],
 }

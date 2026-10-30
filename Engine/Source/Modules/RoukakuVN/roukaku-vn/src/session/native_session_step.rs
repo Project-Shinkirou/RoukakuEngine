@@ -58,10 +58,7 @@ impl VnSession {
     }
 
     /// Apply buffered story events, then project the coroutine status into display waits.
-    pub(super) fn after_story(
-        &mut self,
-        status: mlua::Result<StoryStatus>,
-    ) -> Result<(), VnError> {
+    pub(super) fn after_story(&mut self, status: mlua::Result<StoryStatus>) -> Result<(), VnError> {
         self.apply_story_events()?;
         let status = status.map_err(authoring_error)?;
         self.wait = None;
@@ -74,7 +71,12 @@ impl VnSession {
         match status {
             StoryStatus::Waiting(wait) => self.project_wait(wait),
             StoryStatus::Completed => {
-                self.state.cursor = None;
+                self.pending.completed_route = self.state.cursor.take().map(|cursor| {
+                    paragraph_route_id(&ParagraphId {
+                        module: cursor.story_id,
+                        entry: cursor.state_id,
+                    })
+                });
                 self.state.system_stack.clear();
                 Ok(())
             }
@@ -124,7 +126,10 @@ impl VnSession {
                 self.menu_frame = true;
                 (VnWaitKind::SystemPage, wait.action.clone(), menu.choice_id)
             }
-            action => match (action.strip_prefix("stage:"), action.strip_prefix("action:")) {
+            action => match (
+                action.strip_prefix("stage:"),
+                action.strip_prefix("action:"),
+            ) {
                 (Some(fence), _) => (VnWaitKind::Fence, fence.to_owned(), fence.to_owned()),
                 (_, Some(node)) => (VnWaitKind::Fence, format!("policy.{node}"), node.to_owned()),
                 _ => (VnWaitKind::Input, action.to_owned(), action.to_owned()),
@@ -161,7 +166,8 @@ impl VnSession {
                     self.pending.present(&node, command);
                 }
                 super::story_host::StoryEvent::Record(record) => self.apply_record(record),
-                super::story_host::StoryEvent::Property(sample) => {
+                super::story_host::StoryEvent::Property(mut sample) => {
+                    sample.presentation_index = self.pending.presentations.len();
                     self.pending.properties.push(sample);
                 }
                 super::story_host::StoryEvent::ActionStart {
@@ -264,15 +270,20 @@ impl VnSession {
                 if self.state.system.reading_mode == ReadingMode::Hidden {
                     self.state.system.reading_mode = ReadingMode::Manual;
                 } else if self.overlay_depth() == 0
-                    && self.wait.as_ref().is_some_and(|wait| wait.action == "advance")
+                    && self
+                        .wait
+                        .as_ref()
+                        .is_some_and(|wait| wait.action == "advance")
                 {
                     self.resume("advance", serde_json::Value::Null)?;
                 }
             }
             VnPlayerCommand::Choose { option_id } => {
-                let known = self.state.pending_choice.as_ref().is_some_and(|choice| {
-                    choice.enabled_option_ids.contains(&option_id)
-                });
+                let known = self
+                    .state
+                    .pending_choice
+                    .as_ref()
+                    .is_some_and(|choice| choice.enabled_option_ids.contains(&option_id));
                 if !known || self.overlay_depth() != 0 {
                     return Err(VnError::diagnostic(
                         "ROUKAKU_VN_CHOICE_OPTION",
@@ -415,9 +426,11 @@ impl VnSession {
                         format!("gallery item {item_id} is not unlocked"),
                     ));
                 }
-                self.pending.presentations.push(PresentationCommand::Marker {
-                    id: format!("gallery.preview.{item_id}"),
-                });
+                self.pending
+                    .presentations
+                    .push(PresentationCommand::Marker {
+                        id: format!("gallery.preview.{item_id}"),
+                    });
             }
             VnPlayerCommand::JumpRoute { node_id } => {
                 if !self.state.route_coverage.contains(&node_id) {
@@ -495,7 +508,10 @@ impl VnSession {
             let skipping = self.state.system.reading_mode == ReadingMode::FastForward
                 && self.state.system.skip_allowed
                 && self.overlay_depth() == 0
-                && self.wait.as_ref().is_some_and(|wait| wait.action == "advance");
+                && self
+                    .wait
+                    .as_ref()
+                    .is_some_and(|wait| wait.action == "advance");
             if !skipping {
                 return Ok(());
             }

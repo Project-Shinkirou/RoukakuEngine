@@ -296,7 +296,7 @@ pub(crate) fn native_vn_behavioral_evidence(
     package: &PackageReader,
 ) -> Result<Vec<ReleaseEvidence>, (&'static str, String)> {
     use roukaku_vn::{NativeVnStepCommand, NativeVnStepInput, VnSession, VnSessionConfig};
-    let compiled = decode_compiled_project(package).map_err(|error| {
+    let project = decode_vn_project(package).map_err(|error| {
         (
             "ROUKAKU_RUNTIME_PROVIDER_BEHAVIOR_PACKAGE",
             error.to_string(),
@@ -312,7 +312,7 @@ pub(crate) fn native_vn_behavioral_evidence(
         .default_locale;
     let selection = package.product_context();
     let mut session = VnSession::new(
-        std::sync::Arc::new(compiled.story),
+        std::sync::Arc::new(project.story),
         roukaku_vn_core::VnRunConfig {
             profile: selection.profile().into(),
             locale,

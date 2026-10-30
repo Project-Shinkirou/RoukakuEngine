@@ -1,8 +1,7 @@
 use std::cell::RefCell;
 
 use roukaku_text::{
-    MediaError, TextLayoutProvider, TextLayoutProviderIdentity, TextLayoutRequest,
-    TextLayoutResult,
+    MediaError, TextLayoutProvider, TextLayoutProviderIdentity, TextLayoutRequest, TextLayoutResult,
 };
 use roukaku_vn_package::authoring::AuthoringHost;
 
@@ -12,7 +11,10 @@ use super::*;
 #[derive(Debug, Clone, PartialEq)]
 pub(super) enum StoryEvent {
     ParagraphStarted(ParagraphId),
-    Present { node: String, command: StageCommand },
+    Present {
+        node: String,
+        command: StageCommand,
+    },
     Record(NodeRecord),
     Property(NativeVnPropertySample),
     ActionStart {
@@ -107,6 +109,7 @@ impl AuthoringHost for StoryHost {
             target: target.to_owned(),
             property: property.to_owned(),
             value,
+            presentation_index: 0,
         }));
         Ok(())
     }

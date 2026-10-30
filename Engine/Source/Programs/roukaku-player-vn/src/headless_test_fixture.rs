@@ -12,9 +12,12 @@ use roukaku_plugin_abi::{
     ProviderExtensionRecord, ProviderPolicy,
 };
 use roukaku_vn_core::{
-    CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig, compile_roukaku_project,
+    CompileRoukakuProjectOptions, RoukakuSource, VnRunConfig, compile_roukaku_ui,
 };
-use roukaku_vn_package::{PLAYER_LOCALE_CONFIG_SCHEMA, package_sections_for_project};
+use roukaku_vn_package::{
+    LuauStoryBundle, PLAYER_LOCALE_CONFIG_SCHEMA, VnProject, authoring::ParagraphId,
+    package_sections_for_project,
+};
 
 const TEST_UI: &str = r#"
 ui_policy profile:classic save_slots:"slot.quick,slot.01" quick_slot:slot.quick allowed_pages:"title,save,load,config,backlog,gallery,replay,voice_replay,route_chart,localization_preview" reading_modes:"manual" audio_toggle:true save_completion:stay custom_actions:"" #@id ui.policy.test.classic
@@ -60,29 +63,24 @@ pub fn source_for(story: &str) -> NativeVnHostCommandSource {
     .unwrap()
 }
 
+/// Package one Luau story module `story.main`, entering paragraph `start`.
 pub fn product_package(story: &str) -> Vec<u8> {
-    product_package_with_extensions(story, &[])
-}
-
-pub fn product_package_with_extensions(
-    story: &str,
-    extensions: &[roukaku_vn_core::ExtensionCommandDescriptor],
-) -> Vec<u8> {
-    let options = extensions
-        .iter()
-        .fold(test_compile_options(), |options, descriptor| {
-            options.bind_extension(descriptor.clone())
-        });
-    let compiled = compile_roukaku_project(
-        [
-            RoukakuSource::story("main.roukaku", story),
-            RoukakuSource::ui("test-ui.roukaku", TEST_UI),
-        ],
-        options,
+    let story = LuauStoryBundle::new(
+        ParagraphId {
+            module: "story.main".into(),
+            entry: "start".into(),
+        },
+        [("story.main".to_string(), story.to_string())].into(),
     )
     .unwrap();
+    let ui = compile_roukaku_ui(
+        [RoukakuSource::ui("test-ui.roukaku", TEST_UI)],
+        test_compile_options(),
+    )
+    .unwrap();
+    let project = VnProject::new(story, ui).unwrap();
     let mut sections =
-        package_sections_for_project(&compiled, &["classic".to_string()], "nativevn-game").unwrap();
+        package_sections_for_project(&project, &["classic".to_string()], "nativevn-game").unwrap();
     let font =
         include_bytes!("../../../../../Examples/NativeVN/Assets/Fonts/NotoSansJP-Variable.ttf")
             .to_vec();

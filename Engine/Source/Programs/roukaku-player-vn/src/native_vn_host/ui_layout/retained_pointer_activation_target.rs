@@ -14,28 +14,6 @@ pub(in super::super) fn retained_pointer_activation_target(
     })
 }
 
-pub(in super::super) fn system_page_localization_key(
-    page: SystemPageKind,
-) -> Result<&'static str, NativeVnHostError> {
-    match page {
-        SystemPageKind::Title => Ok("system.title"),
-        SystemPageKind::QuickPanel => Ok("system.quick_panel"),
-        SystemPageKind::Save => Ok("system.save"),
-        SystemPageKind::Load => Ok("system.load"),
-        SystemPageKind::Config => Ok("system.config"),
-        SystemPageKind::Gallery => Ok("system.gallery"),
-        SystemPageKind::Replay => Ok("system.replay"),
-        SystemPageKind::VoiceReplay => Ok("system.voice_replay"),
-        SystemPageKind::RouteChart => Ok("system.route_chart"),
-        SystemPageKind::Backlog => Ok("system.backlog"),
-        SystemPageKind::LocalizationPreview => Ok("system.localization_preview"),
-        SystemPageKind::Custom => Ok("system.custom"),
-        SystemPageKind::Unknown => Err(NativeVnHostError::Input(
-            "ROUKAKU_PLAYER_SYSTEM_PAGE: unknown system page".to_string(),
-        )),
-    }
-}
-
 pub(in super::super) fn save_slots_for_policy(
     policy: &SystemUiProfilePolicy,
 ) -> BTreeMap<String, SaveSlotViewModel> {
@@ -236,165 +214,86 @@ pub(in super::super) fn resolve_localized<'a>(
         .map_err(|error| NativeVnHostError::Localization(error.to_string()))
 }
 
-pub(in super::super) fn validate_story_text(
-    compiled: &CompiledStory,
-    localization: &VnLocalizationTable,
-    provider: &CosmicTextLayoutProvider,
-    font_families: &[String],
-) -> Result<(), NativeVnHostError> {
-    let mut keys = BTreeSet::new();
-    for command in compiled
-        .states
-        .values()
-        .flat_map(|state| &state.scenes)
-        .flat_map(|scene| &scene.commands)
-    {
-        match command {
-            CompiledCommand::Dialogue { key, speaker, .. } => {
-                keys.insert(key.clone());
-                if let Some(speaker) = speaker {
-                    keys.insert(format!("speaker.{speaker}"));
-                }
-            }
-            CompiledCommand::Choice { key, options, .. } => {
-                keys.insert(key.clone());
-                keys.extend(options.iter().map(|option| option.key.clone()));
-            }
-            CompiledCommand::SystemPage { page, .. } => {
-                keys.insert(system_page_localization_key(*page)?.to_string());
-                keys.insert("system.back".to_string());
-            }
-            CompiledCommand::Presentation { command, .. } => match command {
-                PresentationCommand::Dialogue { key, speaker, .. } => {
-                    keys.insert(key.clone());
-                    if let Some(speaker) = speaker {
-                        keys.insert(format!("speaker.{speaker}"));
-                    }
-                }
-                PresentationCommand::Choice { key, options } => {
-                    keys.insert(key.clone());
-                    keys.extend(options.iter().map(|option| option.key.clone()));
-                }
-                PresentationCommand::SystemPage { page } => {
-                    keys.insert(system_page_localization_key(*page)?.to_string());
-                    keys.insert("system.back".to_string());
-                }
-                PresentationCommand::SystemOption { option } => {
-                    keys.insert(option.key.clone());
-                }
-                PresentationCommand::Stage(_)
-                | PresentationCommand::Extension(_)
-                | PresentationCommand::Marker { .. } => {}
-            },
-            _ => {}
-        }
-    }
-    for key in keys {
-        let text = resolve_localized(localization, &key)?;
-        let request_key = format!("preflight.{key}");
-        provider.layout(&text_request(TextRequestSpec {
-            key: &request_key,
-            text,
-            locale: &localization.locale,
-            font_families,
-            max_width: 4096,
-            font_size: 28.0,
-            max_lines: 16,
-            direction: TextDirection::Auto,
-        }))?;
-    }
-    Ok(())
-}
-
-pub(in super::super) fn validate_story_presentation(
-    compiled: &CompiledStory,
+/// Validate one runtime presentation command against the packaged assets,
+/// provider presets and work extensions before any of its batch is applied.
+pub(in super::super) fn validate_presentation_command(
+    command: &PresentationCommand,
     assets: &PackageAssetStore,
     manifest: &VnPresentationProviderManifest,
     profile: &str,
     extensions: &roukaku_plugin::WorkExtensionRuntime,
 ) -> Result<(), NativeVnHostError> {
-    for command in compiled
-        .states
-        .values()
-        .flat_map(|state| &state.scenes)
-        .flat_map(|scene| &scene.commands)
-    {
-        let CompiledCommand::Presentation { command, .. } = command else {
-            continue;
-        };
-        match command {
-            PresentationCommand::Stage(stage) => {
-                validate_stage_command_policy(stage, manifest, profile)?;
-                match stage {
-                    StageCommand::Preload { asset } => {
-                        if !assets.contains_image(asset) && !assets.contains_media(asset) {
-                            return Err(NativeVnHostError::Asset(format!(
-                                "ROUKAKU_PLAYER_PRELOAD_ASSET_MISSING: {asset}"
-                            )));
-                        }
-                    }
-                    StageCommand::Background {
-                        asset: asset_id, ..
-                    }
-                    | StageCommand::Show {
-                        asset: asset_id, ..
-                    } => {
-                        if !assets.contains_image(asset_id) {
-                            return Err(missing_texture(asset_id));
-                        }
-                    }
-                    StageCommand::Configure { .. }
-                    | StageCommand::Hide { .. }
-                    | StageCommand::ClearLayer { .. }
-                    | StageCommand::SetLayerVisibility { .. }
-                    | StageCommand::Backdrop { .. }
-                    | StageCommand::Shade { .. }
-                    | StageCommand::SetSkipAllowed { .. }
-                    | StageCommand::Move { .. }
-                    | StageCommand::Audio(_)
-                    | StageCommand::AudioControl(_)
-                    | StageCommand::SetAudioBusEnabled { .. }
-                    | StageCommand::Timeline(_)
-                    | StageCommand::Transition { .. }
-                    | StageCommand::Shake { .. } => {}
-                    StageCommand::DeclareLayer { blend, .. } => {
-                        stage_blend(*blend)?;
-                    }
-                    StageCommand::Camera { .. } => {}
-                    StageCommand::Movie { fallback, .. } => {
-                        if let Some(fallback) = fallback
-                            && !assets.contains_image(fallback)
-                        {
-                            return Err(missing_texture(fallback));
-                        }
-                    }
-                    StageCommand::Effect { filter, .. }
-                        if matches!(
-                            filter.as_str(),
-                            "soft_glow" | "roukaku.filter.bloom" | "roukaku.filter.fade"
-                        ) => {}
-                    unsupported => {
+    match command {
+        PresentationCommand::Stage(stage) => {
+            validate_stage_command_policy(stage, manifest, profile)?;
+            match stage {
+                StageCommand::Preload { asset } => {
+                    if !assets.contains_image(asset) && !assets.contains_media(asset) {
                         return Err(NativeVnHostError::Asset(format!(
-                            "ROUKAKU_PLAYER_PRESENTATION_UNSUPPORTED: typed stage command {} has no product renderer binding",
-                            unsupported.kind()
+                            "ROUKAKU_PLAYER_PRELOAD_ASSET_MISSING: {asset}"
                         )));
                     }
                 }
+                StageCommand::Background {
+                    asset: asset_id, ..
+                }
+                | StageCommand::Show {
+                    asset: asset_id, ..
+                } => {
+                    if !assets.contains_image(asset_id) {
+                        return Err(missing_texture(asset_id));
+                    }
+                }
+                StageCommand::Configure { .. }
+                | StageCommand::Hide { .. }
+                | StageCommand::ClearLayer { .. }
+                | StageCommand::SetLayerVisibility { .. }
+                | StageCommand::Backdrop { .. }
+                | StageCommand::Shade { .. }
+                | StageCommand::SetSkipAllowed { .. }
+                | StageCommand::Move { .. }
+                | StageCommand::Audio(_)
+                | StageCommand::AudioControl(_)
+                | StageCommand::SetAudioBusEnabled { .. }
+                | StageCommand::Timeline(_)
+                | StageCommand::Transition { .. }
+                | StageCommand::Shake { .. }
+                | StageCommand::Camera { .. } => {}
+                StageCommand::DeclareLayer { blend, .. } => {
+                    stage_blend(*blend)?;
+                }
+                StageCommand::Movie { fallback, .. } => {
+                    if let Some(fallback) = fallback
+                        && !assets.contains_image(fallback)
+                    {
+                        return Err(missing_texture(fallback));
+                    }
+                }
+                StageCommand::Effect { filter, .. }
+                    if matches!(
+                        filter.as_str(),
+                        "soft_glow" | "roukaku.filter.bloom" | "roukaku.filter.fade"
+                    ) => {}
+                unsupported => {
+                    return Err(NativeVnHostError::Asset(format!(
+                        "ROUKAKU_PLAYER_PRESENTATION_UNSUPPORTED: typed stage command {} has no product renderer binding",
+                        unsupported.kind()
+                    )));
+                }
             }
-            PresentationCommand::Extension(extension)
-                if extension.provider_id != roukaku_vn_policy::POLICY_ACTION_PROVIDER =>
-            {
-                extensions
-                    .validate_command(
-                        &extension.provider_id,
-                        &extension.command,
-                        &extension.schema,
-                    )
-                    .map_err(NativeVnHostError::Asset)?;
-            }
-            PresentationCommand::Extension(_) => {}
-            _ => {}
         }
+        PresentationCommand::Extension(extension)
+            if extension.provider_id != roukaku_vn_policy::POLICY_ACTION_PROVIDER =>
+        {
+            extensions
+                .validate_command(
+                    &extension.provider_id,
+                    &extension.command,
+                    &extension.schema,
+                )
+                .map_err(NativeVnHostError::Asset)?;
+        }
+        _ => {}
     }
     Ok(())
 }

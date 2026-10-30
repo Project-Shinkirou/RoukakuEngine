@@ -124,13 +124,28 @@ impl NativeVnHostCommandSource {
         delta_ns: u64,
     ) -> Result<Option<PlayerHostCommandBatch>, NativeVnHostError> {
         self.ensure_text_region()?;
-        if !self.stage_director.requires_frame_tick() {
+        let story_segments = self.host.presentation_active();
+        if !story_segments && !self.stage_director.requires_frame_tick() {
             return Ok(None);
         }
-        let outputs = self
-            .stage_director
-            .tick(delta_ns)
-            .map_err(stage_director_error)?;
+        if story_segments {
+            // Story time drives authored segments; samples land before the frame.
+            for sample in self
+                .host
+                .advance_presentation(delta_ns as f64 / 1_000_000_000.0)?
+            {
+                self.stage_director
+                    .set_property(&sample.target, &sample.property, sample.value)
+                    .map_err(stage_director_error)?;
+            }
+        }
+        let outputs = if self.stage_director.requires_frame_tick() {
+            self.stage_director
+                .tick(delta_ns)
+                .map_err(stage_director_error)?
+        } else {
+            Vec::new()
+        };
         let mut completions = Vec::new();
         let mut videos = Vec::new();
         for output in outputs {

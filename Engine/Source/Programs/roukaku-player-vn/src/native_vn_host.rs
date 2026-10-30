@@ -9,7 +9,7 @@ mod runtime;
 mod save_catalog;
 mod ui_clip;
 mod viewport;
-use runtime::NativeVnRuntimeHost;
+use runtime::{NativeVnRuntimeHost, NativeVnSessionBindings};
 mod audio;
 mod error;
 mod lifecycle;
@@ -60,23 +60,21 @@ use roukaku_ui_yakui::{
     BlueprintYakuiRenderer, RoukakuTextMeasureRequest, RoukakuTextMeasureResult,
     RoukakuTextMeasurer, RoukakuYakuiBackend, ui_frame_to_scene_commands,
 };
-use roukaku_vn::{NativeVnStepCommand, NativeVnStepInput, NativeVnStepOutput};
+use roukaku_vn::{
+    NativeVnPropertySample, NativeVnStepCommand, NativeVnStepInput, NativeVnStepOutput,
+};
 use roukaku_vn::{VnHostError, VnHostLimits};
-#[cfg(test)]
-use roukaku_vn_core::SystemActionEffect;
 use roukaku_vn_core::{
-    CompiledCommand, CompiledStory, MovieLoopMode, PresentationCommand, ReadingMode,
-    SaveCompletionPolicy, StageBlendMode, StageClipPolicy, StageCommand, StageFitMode,
-    StageLayerKind, State, SystemPageKind, SystemUiProfilePolicy, TimelineCommand,
-    VN_RUNTIME_STATE_SCHEMA, VnAudioBus, VnAudioControlAction, VnPlayerCommand, VnRunConfig,
-    VnRuntimeState, VnWaitKind,
+    MovieLoopMode, PresentationCommand, ReadingMode, SaveCompletionPolicy, StageBlendMode,
+    StageClipPolicy, StageCommand, StageFitMode, StageLayerKind, SystemPageKind,
+    SystemUiProfilePolicy, TimelineCommand, VnAudioBus, VnAudioControlAction, VnPlayerCommand,
+    VnRunConfig, VnRuntimeState, VnWaitKind,
 };
 use roukaku_vn_package::{
-    CompiledVnProject, PresentationInterruptPolicy, ProductStageDirector, ProductStageState,
-    StageDirectorOutput, TextAdvanceDisposition, VnLocalizationTable,
-    VnPresentationProviderManifest, VnSystemUiProfileManifest, decode_compiled_project,
-    load_localization as load_package_localization, load_player_locale_config,
-    load_presentation_provider_manifest,
+    PresentationInterruptPolicy, ProductStageDirector, ProductStageState, StageDirectorOutput,
+    TextAdvanceDisposition, VnLocalizationTable, VnPresentationProviderManifest,
+    VnSystemUiProfileManifest, decode_vn_project, load_localization as load_package_localization,
+    load_player_locale_config, load_presentation_provider_manifest,
 };
 use roukaku_vn_policy::LuauUiControllerHost;
 use roukaku_vn_ui::{
@@ -157,7 +155,7 @@ pub struct NativeVnHostCommandSource {
     extensions: roukaku_plugin::WorkExtensionRuntime,
     extension_draw: BTreeMap<String, Vec<SceneCommand>>,
     presentation_failed: bool,
-    compiled_project_hash: Hash256,
+    project_hash: Hash256,
     media_scope: roukaku_runtime::TaskScope,
     video_scopes: BTreeMap<String, roukaku_runtime::TaskScope>,
     host: NativeVnRuntimeHost,
@@ -186,7 +184,6 @@ pub struct NativeVnHostCommandSource {
     texture_dimensions: BTreeMap<String, (u32, u32)>,
     asset_store: Arc<PackageAssetStore>,
     image_prefetcher: PackageImagePrefetcher,
-    image_prefetch_windows: BTreeMap<String, Vec<String>>,
     image_prefetch_inflight: BTreeSet<String>,
     image_prefetch_failure: Option<String>,
     live_texture_ids: BTreeSet<String>,
@@ -204,16 +201,16 @@ pub struct NativeVnHostCommandSource {
     scene_draw: Vec<SceneCommand>,
     director_transition_snapshot: Option<DirectorTransitionSnapshot>,
     last_step_evidence: Option<NativeVnStepEvidence>,
-    terminal_routes: std::collections::BTreeSet<String>,
+    /// Paragraph routes at which the story completed in this session.
+    terminal_routes: BTreeSet<String>,
     pending_timeline: Vec<PlayerTimelineTask>,
     pending_audio: Vec<NativeVnAudioOutput>,
     pending_audio_preloads: Vec<NativeVnAudioPreloadRequest>,
-    audio_preload_story_ids: BTreeSet<String>,
     pending_video: Vec<NativeVnVideoRequest>,
     pending_stage_completions: Vec<String>,
     next_media_resource_id: u64,
     stage_director: ProductStageDirector,
-    story: Arc<CompiledStory>,
+    presentation_manifest: VnPresentationProviderManifest,
     ui_blueprints: roukaku_ui_core::UiBlueprintBundle,
     ui_view_localization_keys: BTreeMap<String, BTreeSet<String>>,
     ui_bindings: roukaku_ui_core::UiBindingManifest,
@@ -387,6 +384,8 @@ pub enum NativeVnAudioOutput {
 enum NativeVnOrderedRuntimeOutput {
     AudioStart(NativeVnAudioRequest),
     Presentation(PresentationCommand),
+    /// A story timeline sample, ordered after the presentations emitted before it.
+    Property(NativeVnPropertySample),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

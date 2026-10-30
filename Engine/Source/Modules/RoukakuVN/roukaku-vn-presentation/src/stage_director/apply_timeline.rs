@@ -131,6 +131,32 @@ impl ProductStageDirector {
         Ok(output)
     }
 
+    /// Apply one sample of a story-owned (Luau) timeline segment. Story time
+    /// drives the value; the director validates the target before storing it.
+    pub fn set_property(
+        &mut self,
+        target: &str,
+        property: &str,
+        value: f64,
+    ) -> Result<(), VnError> {
+        self.ensure_active()?;
+        let millionths = (value * 1_000_000.0).round();
+        if !millionths.is_finite() || millionths.abs() > i64::MAX as f64 {
+            return Err(stage_error(
+                "ROUKAKU_VN_STAGE_PROPERTY_VALUE",
+                "stage property sample is not a finite fixed-point value",
+            ));
+        }
+        let (target, property) = timeline_target_property(target, property)?;
+        self.apply_property(
+            &target,
+            property,
+            FixedScalar {
+                millionths: millionths as i64,
+            },
+        )
+    }
+
     pub(super) fn apply_timeline_sample(
         &mut self,
         spec: &TimelineSpec,

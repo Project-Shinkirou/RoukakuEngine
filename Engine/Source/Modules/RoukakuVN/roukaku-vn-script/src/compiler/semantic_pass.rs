@@ -244,11 +244,7 @@ where
             "ROUKAKU_VN_UI_SOURCE_ROLE: UI compilation accepts only UI sources",
         ));
     }
-    crate::ui_compile::compile_ui(
-        &sources,
-        options.ui_themes,
-        options.ui_controller_sources,
-    )
+    crate::ui_compile::compile_ui(&sources, options.ui_themes, options.ui_controller_sources)
 }
 
 pub fn compile_roukaku_project<I, S>(

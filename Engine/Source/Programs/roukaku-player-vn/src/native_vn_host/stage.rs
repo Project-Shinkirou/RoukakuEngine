@@ -143,14 +143,7 @@ mod director_transition_tests {
 mod validate_product_provider_bindings;
 pub(super) use validate_product_provider_bindings::cleanup_runtime_host;
 pub(super) use validate_product_provider_bindings::current_image_working_set;
-pub(super) use validate_product_provider_bindings::default_runtime_launch_state;
-pub(super) use validate_product_provider_bindings::image_prefetch_windows;
 pub(super) use validate_product_provider_bindings::player_timeline_task;
-pub(super) use validate_product_provider_bindings::saved_runtime_state;
-#[cfg(test)]
-pub(super) use validate_product_provider_bindings::state_prefetch_successors;
-#[cfg(test)]
-pub(super) use validate_product_provider_bindings::system_action_gameplay_entry_states;
 pub(super) use validate_product_provider_bindings::unique_string_set;
 pub(super) use validate_product_provider_bindings::validate_product_provider_bindings;
 mod stage_scene_commands;

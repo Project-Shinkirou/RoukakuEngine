@@ -32,6 +32,7 @@ roukaku-platform = { path = "../../Platform/roukaku-platform" }
 roukaku-player-core = { path = "../../Runtime/roukaku-player-core" }
 roukaku-player-vn = { path = "../roukaku-player-vn" }
 roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
+roukaku-vn = { path = "../../Modules/RoukakuVN/roukaku-vn" }
 roukaku-vn-core = { path = "../../Modules/RoukakuVN/roukaku-vn-core" }
 roukaku-vn-package = { path = "../../Modules/RoukakuVN/roukaku-vn-package" }
 serde.workspace = true

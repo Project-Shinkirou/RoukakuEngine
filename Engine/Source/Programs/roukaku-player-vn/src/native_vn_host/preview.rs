@@ -30,7 +30,7 @@ impl NativeVnPreview {
         source: &NativeVnHostCommandSource,
         identity: PreviewIdentity,
     ) -> Result<Self, Reject> {
-        if identity.project_hash != source.compiled_project_hash || identity.generation == 0 {
+        if identity.project_hash != source.project_hash || identity.generation == 0 {
             return Err(Reject::StaleIdentity);
         }
         if serde_json::to_vec(&identity)
@@ -119,10 +119,8 @@ impl NativeVnPreview {
             return Err(Reject::StaleIdentity);
         }
         self.current_time_ns = source.stage_director.state().elapsed_ns;
-        let id = source
-            .pending_wait()
-            .map(|wait| wait.command_id.clone())
-            .filter(|id| source.story.source_map.contains_key(id));
+        // Story waits carry the authored Luau node identity of their source line.
+        let id = source.pending_wait().map(|wait| wait.command_id.clone());
         let changed = id != self.source_id || self.fragment_step != source.fixed_step;
         if changed {
             self.source_id = id;

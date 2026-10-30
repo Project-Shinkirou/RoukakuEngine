@@ -94,7 +94,6 @@ impl NativeVnHostCommandSource {
         self.pending_timeline.clear();
         self.pending_audio.clear();
         self.pending_audio_preloads.clear();
-        self.audio_preload_story_ids.clear();
         self.pending_video.clear();
         self.pending_stage_completions.clear();
         self.pending_ui_host_request = None;

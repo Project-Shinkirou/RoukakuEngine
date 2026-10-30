@@ -112,8 +112,7 @@ impl NativeVnHostCommandSource {
         save_metadata: Option<NativeVnSaveMetadata>,
         committed: &mut bool,
     ) -> Result<PlayerHostCommandBatch, NativeVnHostError> {
-        let restored_runtime_state = saved_runtime_state(&state.runtime)?;
-        let restored_locale = restored_runtime_state.locale.clone();
+        let restored_locale = self.host.saved_locale(&state.runtime)?;
         if !self.localizations.contains_key(&restored_locale) {
             return Err(NativeVnHostError::Localization(format!(
                 "ROUKAKU_PLAYER_RESTORE_LOCALE_UNAVAILABLE: locale {restored_locale} is not packaged"
@@ -219,11 +218,9 @@ impl NativeVnHostCommandSource {
         self.fixed_step = report.step;
         self.session_seed = report.seed;
         self.next_step_mode = roukaku_runtime::TickMode::RestoreContinuation;
-        self.runtime_state = Some(restored_runtime_state);
-        self.runtime_backlog_count = self
-            .runtime_state
-            .as_ref()
-            .map_or(0, |state| state.backlog.len());
+        let restored_view = self.host.view()?;
+        self.runtime_backlog_count = restored_view.backlog_count;
+        self.runtime_state = Some(restored_view.into_display_state());
         self.activate_locale(&restored_locale)?;
         self.stage_director = state.stage_director;
         for (asset_id, frame) in prepared_textures {

@@ -237,36 +237,12 @@ impl NativeVnHostCommandSource {
         Ok(())
     }
 
-    pub(super) fn schedule_current_image_prefetch(&mut self) -> Result<(), NativeVnHostError> {
+    /// Keep the visible stage images resident; authored `preload` commands
+    /// schedule look-ahead decodes through the prefetcher.
+    pub(super) fn pin_current_image_working_set(&mut self) -> Result<(), NativeVnHostError> {
         self.poll_image_prefetch()?;
-        let Some(state_id) = self
-            .runtime_state
-            .as_ref()
-            .and_then(|state| state.cursor.as_ref())
-            .map(|cursor| cursor.state_id.as_str())
-        else {
-            return Ok(());
-        };
-        let Some(assets) = self.image_prefetch_windows.get(state_id) else {
-            self.asset_store.pin_image_working_set(&[])?;
-            return Ok(());
-        };
         let working_set = current_image_working_set(self.stage_director.state());
-        self.asset_store.pin_image_working_set(&working_set)?;
-        for asset_id in assets {
-            if self.live_texture_ids.contains(asset_id)
-                || self.textures.contains_key(asset_id)
-                || self.image_prefetch_inflight.contains(asset_id)
-                || self.asset_store.is_image_cached(asset_id)?
-            {
-                continue;
-            }
-            if !self.image_prefetcher.try_schedule(asset_id.clone())? {
-                break;
-            }
-            self.image_prefetch_inflight.insert(asset_id.clone());
-        }
-        Ok(())
+        self.asset_store.pin_image_working_set(&working_set)
     }
 
     pub(super) fn texture(&self, asset_id: &str) -> Result<&TextureFrame, NativeVnHostError> {

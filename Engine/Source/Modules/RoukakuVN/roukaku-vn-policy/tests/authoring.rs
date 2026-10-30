@@ -11,8 +11,8 @@ use roukaku_core::Hash256;
 use roukaku_policy::PolicyExecutionBudget;
 use roukaku_runtime::TaskScope;
 use roukaku_text::*;
-use roukaku_vn_policy::authoring::*;
 use roukaku_vn_policy::StageCommand;
+use roukaku_vn_policy::authoring::*;
 use serde_json::json;
 
 struct Presentation {
@@ -863,7 +863,11 @@ fn replacing_default_dialog_module_keeps_records_and_rollback_checkpoints() {
         NodeContent::Line { data } if data["key"] == "line.hello"
     ));
     let wait = waiting(&runtime);
-    assert!(runtime.input(wait.token, "advance", serde_json::Value::Null).unwrap());
+    assert!(
+        runtime
+            .input(wait.token, "advance", serde_json::Value::Null)
+            .unwrap()
+    );
 
     assert_eq!(
         runtime.rollback_to(&occurrence).unwrap(),
@@ -894,8 +898,10 @@ fn luau_stage_action_is_typed_and_saved_in_recoverable_scene_state() {
         (node, StageCommand::Backdrop { color })
             if node == "opening.backdrop" && color == &[0, 0, 0, 255]
     ));
-    assert!(runtime
-        .recoverable_state()
-        .scene
-        .contains_key("opening.backdrop"));
+    assert!(
+        runtime
+            .recoverable_state()
+            .scene
+            .contains_key("opening.backdrop")
+    );
 }

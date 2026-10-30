@@ -21,6 +21,9 @@ pub struct NativeVnPropertySample {
     pub target: String,
     pub property: String,
     pub value: f64,
+    /// Number of step presentations emitted before this sample; hosts apply
+    /// the sample after exactly that prefix. Always 0 for presentation ticks.
+    pub presentation_index: usize,
 }
 
 /// Story output accumulated since the last step result, including entry replay.
@@ -31,6 +34,7 @@ pub(super) struct PendingOutput {
     pub timeline: Vec<VnTimelineTask>,
     pub properties: Vec<NativeVnPropertySample>,
     pub coverage_reached: BTreeSet<String>,
+    pub completed_route: Option<String>,
 }
 
 impl PendingOutput {
@@ -162,7 +166,13 @@ impl VnSession {
             timeline: output.timeline,
             properties: output.properties,
             coverage_reached: output.coverage_reached.into_iter().collect(),
+            completed_route: output.completed_route,
         })
+    }
+
+    /// True while authored timeline segments need presentation time.
+    pub fn presentation_active(&self) -> bool {
+        !self.failed && self.authoring.has_active_segments()
     }
 
     /// Advance Luau timeline segments by presentation time and return their samples.
@@ -207,4 +217,6 @@ pub struct NativeVnStepOutput {
     pub timeline: Vec<VnTimelineTask>,
     pub properties: Vec<NativeVnPropertySample>,
     pub coverage_reached: Vec<String>,
+    /// Route id of the paragraph in which the story completed during this step.
+    pub completed_route: Option<String>,
 }

@@ -20,7 +20,7 @@ fn source() -> NativeVnHostCommandSource {
 }
 fn identity(source: &NativeVnHostCommandSource) -> PreviewIdentity {
     PreviewIdentity {
-        project_hash: source.compiled_project_hash,
+        project_hash: source.project_hash,
         generation: 1,
         documents: [(
             "Scripts/main.roukaku".into(),

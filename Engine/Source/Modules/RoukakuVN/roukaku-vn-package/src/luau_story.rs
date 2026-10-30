@@ -134,14 +134,13 @@ mod tests {
         )
         .unwrap();
         let legacy = SectionPayload::postcard("vn.story", "roukaku.vn.story", &"legacy").unwrap();
-        let bytes = roukaku_package::PackageBuilder::build(
-            roukaku_package::PackageBuildRequest::fixture(
+        let bytes =
+            roukaku_package::PackageBuilder::build(roukaku_package::PackageBuildRequest::fixture(
                 "luau-story-mixed-source",
                 "classic",
                 vec![bundle.section().unwrap(), legacy],
-            ),
-        )
-        .unwrap();
+            ))
+            .unwrap();
         let package = PackageReader::open(bytes.as_bytes()).unwrap();
 
         assert!(
@@ -152,4 +151,3 @@ mod tests {
         );
     }
 }
-

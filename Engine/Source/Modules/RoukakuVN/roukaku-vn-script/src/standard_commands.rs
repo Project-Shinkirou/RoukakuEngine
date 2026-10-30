@@ -46,13 +46,9 @@ impl VnStandardCommandManifest {
         }
     }
 
-    pub fn validate_usage(&self, compiled: &CompiledStory) -> VnStandardCommandValidationReport {
-        tracing::debug!(
-            event = "vn.commands.validate.start",
-            command_count = self.commands.len(),
-            state_count = compiled.states.len(),
-            "RoukakuVN command validation started"
-        );
+    /// Validate the manifest shape. Luau stories emit stage commands at run
+    /// time, so Players validate each command against this manifest when it arrives.
+    pub fn validate(&self) -> VnStandardCommandValidationReport {
         let mut diagnostics = Vec::new();
         if self.schema != "roukaku.vn.standard_command_manifest.v2" {
             diagnostics.push(Diagnostic::blocking(
@@ -66,14 +62,12 @@ impl VnStandardCommandManifest {
                 "standard command manifest must use roukaku.vn.standard_commands",
             ));
         }
-
-        let descriptors = self
-            .commands
-            .iter()
-            .map(|descriptor| (descriptor.command.as_str(), descriptor))
-            .collect::<BTreeMap<_, _>>();
         for required in ["show", "hide", "camera", "movie", "voice", "bgm", "se"] {
-            if !descriptors.contains_key(required) {
+            if !self
+                .commands
+                .iter()
+                .any(|descriptor| descriptor.command == required)
+            {
                 diagnostics.push(
                     Diagnostic::blocking(
                         "ROUKAKU_VN_STANDARD_COMMAND_REQUIRED",
@@ -83,6 +77,29 @@ impl VnStandardCommandManifest {
                 );
             }
         }
+        VnStandardCommandValidationReport {
+            passed: diagnostics.is_empty(),
+            diagnostics,
+            command_count: self.commands.len(),
+            checked_usage_count: 0,
+        }
+    }
+
+    pub fn validate_usage(&self, compiled: &CompiledStory) -> VnStandardCommandValidationReport {
+        tracing::debug!(
+            event = "vn.commands.validate.start",
+            command_count = self.commands.len(),
+            state_count = compiled.states.len(),
+            "RoukakuVN command validation started"
+        );
+        let VnStandardCommandValidationReport {
+            mut diagnostics, ..
+        } = self.validate();
+        let descriptors = self
+            .commands
+            .iter()
+            .map(|descriptor| (descriptor.command.as_str(), descriptor))
+            .collect::<BTreeMap<_, _>>();
 
         let mut checked_usage_count = 0usize;
         for command in compiled

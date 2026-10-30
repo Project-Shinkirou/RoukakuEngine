@@ -127,16 +127,15 @@ impl VnUiModelContext<'_> {
             },
             SystemPageKind::RouteChart => VnUiPageModel::RouteChart {
                 nodes: self
-                    .story
-                    .route_graph
-                    .nodes
+                    .runtime
+                    .route_coverage
                     .iter()
                     .enumerate()
                     .map(|(index, node)| RouteNodeViewModel {
-                        node_id: node.id.clone(),
-                        label_key: node.id.clone(),
-                        terminal: node.terminal,
-                        reached: self.runtime.route_coverage.contains(&node.id),
+                        node_id: node.clone(),
+                        label_key: node.clone(),
+                        terminal: self.terminal_routes.contains(node),
+                        reached: true,
                         x_milli: (index % 8) as i32 * 1000,
                         y_milli: (index / 8) as i32 * 1000,
                     })
@@ -184,26 +183,23 @@ impl VnUiModelContext<'_> {
             return Ok(SystemPageUnderlayViewModel::none());
         };
         if wait.kind == VnWaitKind::SystemPage {
-            let pages = self
-                .story
-                .system_story_manifest
-                .entries
-                .values()
-                .filter(|entry| {
-                    entry.story_id == frame.return_to.story_id
-                        && entry.state_id == frame.return_to.state_id
-                })
-                .map(|entry| entry.page)
-                .collect::<Vec<_>>();
-            if pages.len() != 1 {
-                return Err(UiValidationError::invalid(
-                    "ROUKAKU_VN_UI_SYSTEM_UNDERLAY_PAGE",
-                    "system page return cursor must resolve to exactly one authored page",
-                ));
-            }
+            // A user overlay opened above a story-owned page returns to the page below it.
+            let page = self
+                .runtime
+                .system_stack
+                .iter()
+                .rev()
+                .nth(1)
+                .map(|below| below.page)
+                .ok_or_else(|| {
+                    UiValidationError::invalid(
+                        "ROUKAKU_VN_UI_SYSTEM_UNDERLAY_PAGE",
+                        "system page return wait must sit above another system page",
+                    )
+                })?;
             return Ok(SystemPageUnderlayViewModel {
-                kind: system_page_underlay_kind(pages[0]).into(),
-                title: pages[0] == SystemPageKind::Title,
+                kind: system_page_underlay_kind(page).into(),
+                title: page == SystemPageKind::Title,
                 message: false,
                 choice: false,
                 text_key: None,

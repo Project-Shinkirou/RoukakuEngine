@@ -25,7 +25,10 @@ impl VnSession {
         let paragraph = match self.state.cursor {
             Some(_) => {
                 let save = self.authoring.save_paragraph().map_err(authoring_error)?;
-                Some(serde_json::to_vec(&save).map_err(|error| VnError::message(error.to_string()))?)
+                Some(
+                    serde_json::to_vec(&save)
+                        .map_err(|error| VnError::message(error.to_string()))?,
+                )
             }
             None => None,
         };
@@ -83,6 +86,11 @@ impl VnSession {
 
     /// Validate a saved candidate without changing the live world or cancelling work.
     pub fn validate_save(&self, blob: &SaveBlob) -> Result<(), VnError> {
+        self.saved_locale(blob).map(|_| ())
+    }
+
+    /// Validate a saved candidate and return the display locale it restores.
+    pub fn saved_locale(&self, blob: &SaveBlob) -> Result<String, VnError> {
         let mut snapshot = roukaku_runtime::read_runtime_save(
             blob,
             &roukaku_core::SchemaMigrationRegistry::default(),
@@ -93,11 +101,19 @@ impl VnSession {
             .validate()
             .map_err(|error| VnError::message(format!("{}: {}", error.code, error.message)))?;
         self.prepare_candidate(&mut snapshot)
-            .map(|_| ())
+            .map(|save| save.locale)
             .map_err(|error| VnError::message(error.to_string()))
     }
 
-    fn prepare_candidate(&self, snapshot: &mut RuntimeSnapshot) -> Result<SessionSave, RuntimeError> {
+    /// Display projection of the live session.
+    pub fn view(&self) -> NativeVnStateView {
+        NativeVnStateView::project(&self.state)
+    }
+
+    fn prepare_candidate(
+        &self,
+        snapshot: &mut RuntimeSnapshot,
+    ) -> Result<SessionSave, RuntimeError> {
         super::policy_io::prepare_policy(snapshot, self.owner, self.policy_component)?;
         let policy: super::policy_io::SessionPolicyState = snapshot
             .actors
@@ -143,6 +159,9 @@ impl VnSession {
         self.policy_host.stop();
         self.failed = true;
         self.replay(save)?;
+        // Replay rebuilds story state only. Hosts restore their own presentation
+        // snapshot for the save point, so replayed output is not re-emitted.
+        self.pending = Default::default();
         self.failed = false;
         Ok(roukaku_runtime::LoadReport { step, seed })
     }
@@ -150,10 +169,13 @@ impl VnSession {
     fn replay(&mut self, save: SessionSave) -> Result<(), VnError> {
         self.authoring = super::native_open::authoring_runtime(&self.story, &self.host)?;
         self.host.take_events();
-        let mut state = super::native_open::initial_state(&self.id, &VnRunConfig {
-            profile: self.state.profile.clone(),
-            locale: save.locale,
-        });
+        let mut state = super::native_open::initial_state(
+            &self.id,
+            &VnRunConfig {
+                profile: self.state.profile.clone(),
+                locale: save.locale,
+            },
+        );
         state.system = save.system;
         state.variables = save.variables;
         state.backlog = save.backlog;

@@ -64,54 +64,68 @@ pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
             let target: Value = entries.get(entry.as_str())?;
             match target {
                 Value::Function(_) => {}
-                Value::Table(table) if matches!(table.get::<Value>("run")?, Value::Function(_)) => {}
-                _ => return Err(mlua::Error::runtime("paragraph entry does not resolve to a function")),
+                Value::Table(table) if matches!(table.get::<Value>("run")?, Value::Function(_)) => {
+                }
+                _ => {
+                    return Err(mlua::Error::runtime(
+                        "paragraph entry does not resolve to a function",
+                    ));
+                }
             }
             context.charge(module.len().saturating_add(entry.len()))?;
             let mut shared = context.shared.borrow_mut();
             if shared.pending.is_some() || shared.pending_enter.is_some() {
-                return Err(mlua::Error::runtime("paragraph transition conflicts with a pending wait"));
+                return Err(mlua::Error::runtime(
+                    "paragraph transition conflicts with a pending wait",
+                ));
             }
             shared.pending_enter = Some(super::ParagraphId { module, entry });
             Ok(())
         }
     );
-    bind!(
-        "on_fence",
-        |lua: &Lua,
-         context: &Context,
-         (fence, module, export, args): (String, String, String, Value)| {
-            context.active()?;
-            if fence.is_empty()
-                || module.is_empty()
-                || export.is_empty()
-                || context.shared.borrow().story_thread
-                    != Some(lua.current_thread().to_pointer() as usize)
-            {
-                return Err(mlua::Error::runtime(
-                    "fence callbacks require an active story and nonempty identities",
-                ));
-            }
-            context.resolve(&FunctionRef {
-                module: module.clone(),
-                name: export.clone(),
-            })?;
-            let args: serde_json::Value = context.data(lua, args)?;
-            context.charge(fence.len().saturating_add(module.len()).saturating_add(export.len()))?;
-            context
-                .shared
-                .borrow_mut()
-                .fence_callbacks
-                .entry(fence)
-                .or_default()
-                .push(super::FenceCallback {
-                    module,
-                    export,
-                    args,
-                });
-            Ok(())
+    bind!("on_fence", |lua: &Lua,
+                       context: &Context,
+                       (fence, module, export, args): (
+        String,
+        String,
+        String,
+        Value
+    )| {
+        context.active()?;
+        if fence.is_empty()
+            || module.is_empty()
+            || export.is_empty()
+            || context.shared.borrow().story_thread
+                != Some(lua.current_thread().to_pointer() as usize)
+        {
+            return Err(mlua::Error::runtime(
+                "fence callbacks require an active story and nonempty identities",
+            ));
         }
-    );
+        context.resolve(&FunctionRef {
+            module: module.clone(),
+            name: export.clone(),
+        })?;
+        let args: serde_json::Value = context.data(lua, args)?;
+        context.charge(
+            fence
+                .len()
+                .saturating_add(module.len())
+                .saturating_add(export.len()),
+        )?;
+        context
+            .shared
+            .borrow_mut()
+            .fence_callbacks
+            .entry(fence)
+            .or_default()
+            .push(super::FenceCallback {
+                module,
+                export,
+                args,
+            });
+        Ok(())
+    });
     bind!("random_u64", |_lua: &Lua, context: &Context, ()| {
         context.active()?;
         context.charge(64)?;
@@ -207,38 +221,39 @@ pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
         let data = context.data(lua, data)?;
         record(lua, context, node, NodeContent::Line { data })
     });
-    bind!(
-        "choice",
-        |lua: &Lua,
-         context: &Context,
-         (node, options, data): (String, Value, Option<Value>)| {
-            let options: Vec<ChoiceOption> = context.data(lua, options)?;
-            let data: serde_json::Value = match data {
-                Some(data) => context.data(lua, data)?,
-                None => serde_json::Value::Null,
-            };
-            let mut ids = BTreeSet::new();
-            if options.is_empty()
-                || options
-                    .iter()
-                    .any(|option| option.id.is_empty() || !ids.insert(&option.id))
-            {
-                return Err(mlua::Error::runtime(
-                    "choice requires nonempty distinct option identities",
-                ));
-            }
-            record(
-                lua,
-                context,
-                node,
-                NodeContent::Choice {
-                    options,
-                    selected: None,
-                    data,
-                },
-            )
+    bind!("choice", |lua: &Lua,
+                     context: &Context,
+                     (node, options, data): (
+        String,
+        Value,
+        Option<Value>
+    )| {
+        let options: Vec<ChoiceOption> = context.data(lua, options)?;
+        let data: serde_json::Value = match data {
+            Some(data) => context.data(lua, data)?,
+            None => serde_json::Value::Null,
+        };
+        let mut ids = BTreeSet::new();
+        if options.is_empty()
+            || options
+                .iter()
+                .any(|option| option.id.is_empty() || !ids.insert(&option.id))
+        {
+            return Err(mlua::Error::runtime(
+                "choice requires nonempty distinct option identities",
+            ));
         }
-    );
+        record(
+            lua,
+            context,
+            node,
+            NodeContent::Choice {
+                options,
+                selected: None,
+                data,
+            },
+        )
+    });
     bind!("choice_result", |lua: &Lua,
                             context: &Context,
                             (occurrence, selected): (
@@ -317,28 +332,29 @@ pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
         *slot = value;
         Ok(())
     });
-    bind!(
-        "present",
-        |lua: &Lua,
-         context: &Context,
-         (node, action, data): (String, String, Value)| {
-            let data: serde_json::Value = context.data(lua, data)?;
-            context.active()?;
-            if node.is_empty() {
-                return Err(mlua::Error::runtime("presentation node identity must be nonempty"));
-            }
-            context.charge(node.len().saturating_add(action.len()).saturating_add(128))?;
-            let command = stage_command(&action, data)?;
-            context.host.present(&node, &command)?;
-            context
-                .shared
-                .borrow_mut()
-                .recoverable
-                .scene
-                .insert(node, serde_json::to_value(command).map_err(mlua::Error::external)?);
-            Ok(())
+    bind!("present", |lua: &Lua,
+                      context: &Context,
+                      (node, action, data): (
+        String,
+        String,
+        Value
+    )| {
+        let data: serde_json::Value = context.data(lua, data)?;
+        context.active()?;
+        if node.is_empty() {
+            return Err(mlua::Error::runtime(
+                "presentation node identity must be nonempty",
+            ));
         }
-    );
+        context.charge(node.len().saturating_add(action.len()).saturating_add(128))?;
+        let command = stage_command(&action, data)?;
+        context.host.present(&node, &command)?;
+        context.shared.borrow_mut().recoverable.scene.insert(
+            node,
+            serde_json::to_value(command).map_err(mlua::Error::external)?,
+        );
+        Ok(())
+    });
     bind!("measure_text", |lua: &Lua,
                            context: &Context,
                            request: Value| {
@@ -422,7 +438,6 @@ pub(super) fn install(lua: &Lua, context: &Context) -> mlua::Result<()> {
     Ok(())
 }
 
-
 fn stage_command(action: &str, data: serde_json::Value) -> mlua::Result<StageCommand> {
     let variant = match action {
         "preload" => "preload",
@@ -450,8 +465,8 @@ fn stage_command(action: &str, data: serde_json::Value) -> mlua::Result<StageCom
     };
     let mut tagged = serde_json::Map::new();
     tagged.insert(variant.into(), data);
-    let command: StageCommand = serde_json::from_value(serde_json::Value::Object(tagged))
-        .map_err(mlua::Error::external)?;
+    let command: StageCommand =
+        serde_json::from_value(serde_json::Value::Object(tagged)).map_err(mlua::Error::external)?;
     if command.kind() != action {
         return Err(mlua::Error::runtime(
             "VN stage action does not match its command payload",

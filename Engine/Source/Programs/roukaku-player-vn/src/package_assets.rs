@@ -121,49 +121,6 @@ impl AssetCache {
         }
         Ok(retired)
     }
-
-    fn insert_without_eviction(
-        &mut self,
-        asset_id: String,
-        value: CachedAsset,
-    ) -> Result<bool, NativeVnHostError> {
-        let bytes = value.bytes();
-        if bytes == 0 || bytes > self.max_bytes {
-            return Err(NativeVnHostError::Asset(
-                "ROUKAKU_PLAYER_ASSET_CACHE_ENTRY_BUDGET".into(),
-            ));
-        }
-        if !self.can_insert_without_eviction(&asset_id, bytes) {
-            return Ok(false);
-        }
-        self.clock = self.clock.saturating_add(1);
-        if let Some(previous) = self.entries.remove(&asset_id) {
-            self.bytes = self.bytes.saturating_sub(previous.value.bytes());
-        }
-        self.entries.insert(
-            asset_id,
-            CacheEntry {
-                value,
-                last_used: self.clock,
-            },
-        );
-        self.bytes = self.bytes.saturating_add(bytes);
-        Ok(true)
-    }
-
-    fn can_insert_without_eviction(&self, asset_id: &str, bytes: usize) -> bool {
-        if bytes == 0 || bytes > self.max_bytes {
-            return false;
-        }
-        let previous_bytes = self
-            .entries
-            .get(asset_id)
-            .map_or(0, |entry| entry.value.bytes());
-        self.bytes
-            .saturating_sub(previous_bytes)
-            .saturating_add(bytes)
-            <= self.max_bytes
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -379,27 +336,6 @@ impl PackageAssetStore {
         let frame = self.decode_image(asset_id)?;
         self.cache_insert(asset_id, CachedAsset::Image(frame.clone()))?;
         Ok(frame)
-    }
-
-    pub fn prewarm_image_prefix(&self, asset_ids: &[String]) -> Result<usize, NativeVnHostError> {
-        let mut retained = 0usize;
-        for asset_id in asset_ids {
-            if matches!(self.cache_get(asset_id)?, Some(CachedAsset::Image(_))) {
-                retained += 1;
-                continue;
-            }
-            let frame = self.decode_image(asset_id)?;
-            let inserted = self
-                .cache
-                .lock()
-                .map_err(|_| NativeVnHostError::Asset("ROUKAKU_PLAYER_ASSET_CACHE_LOCK".into()))?
-                .insert_without_eviction(asset_id.clone(), CachedAsset::Image(frame))?;
-            if !inserted {
-                break;
-            }
-            retained += 1;
-        }
-        Ok(retained)
     }
 
     pub fn load_media(&self, asset_id: &str) -> Result<LoadedMediaAsset, NativeVnHostError> {

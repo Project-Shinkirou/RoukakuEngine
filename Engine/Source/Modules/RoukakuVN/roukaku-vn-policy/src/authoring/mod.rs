@@ -246,14 +246,9 @@ impl LuauAuthoringRuntime {
             status: StoryStatus::Idle,
         };
         for (module, source) in default_vn_modules() {
-            runtime.replace_module(
-                &module,
-                &format!("@builtin/{module}.luau"),
-                &source,
-            )?;
+            runtime.replace_module(&module, &format!("@builtin/{module}.luau"), &source)?;
         }
         Ok(runtime)
-
     }
     /// Evaluate a named source chunk, then atomically replace its export table.
     /// Existing coroutine frames retain their function; subsequent `rk.call`
@@ -432,7 +427,6 @@ impl LuauAuthoringRuntime {
         self.resume(input)?;
         Ok(true)
     }
-
 
     /// Dispatches registered paragraph-scoped callbacks on the owner thread.
     /// A callback that attempts to yield fails because it is outside the story coroutine.
@@ -728,6 +722,11 @@ impl LuauAuthoringRuntime {
             }
         }
         Ok(())
+    }
+
+    /// True while a story timeline segment still needs presentation time.
+    pub fn has_active_segments(&self) -> bool {
+        !self.context.shared.borrow().active_segments.is_empty()
     }
 
     pub fn complete_segment(&mut self, id: u64) -> mlua::Result<bool> {

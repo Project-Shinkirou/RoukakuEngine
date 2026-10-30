@@ -197,12 +197,18 @@ fn extension_value(
 ) -> Result<ExtensionValue, VnError> {
     let invalid = || action_error("action parameter does not match its declared kind");
     Ok(match kind {
-        ExtensionFieldKind::String => ExtensionValue::String(value.as_str().ok_or_else(invalid)?.into()),
-        ExtensionFieldKind::Symbol => ExtensionValue::Symbol(value.as_str().ok_or_else(invalid)?.into()),
+        ExtensionFieldKind::String => {
+            ExtensionValue::String(value.as_str().ok_or_else(invalid)?.into())
+        }
+        ExtensionFieldKind::Symbol => {
+            ExtensionValue::Symbol(value.as_str().ok_or_else(invalid)?.into())
+        }
         ExtensionFieldKind::AssetUri => {
             ExtensionValue::AssetUri(value.as_str().ok_or_else(invalid)?.into())
         }
-        ExtensionFieldKind::Boolean => ExtensionValue::Boolean(value.as_bool().ok_or_else(invalid)?),
+        ExtensionFieldKind::Boolean => {
+            ExtensionValue::Boolean(value.as_bool().ok_or_else(invalid)?)
+        }
         ExtensionFieldKind::Integer => {
             let number = value.as_f64().ok_or_else(invalid)?;
             if number.fract() != 0.0 || number.abs() > (1_u64 << 53) as f64 {

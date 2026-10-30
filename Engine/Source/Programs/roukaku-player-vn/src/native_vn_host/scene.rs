@@ -31,15 +31,42 @@ impl NativeVnHostCommandSource {
             };
             Some(descriptor_id.clone())
         });
-        let (next_stage_director, stage_outputs) = if stage_commands.is_empty() {
-            (None, Vec::new())
-        } else {
-            let (director, outputs) = self
-                .stage_director
-                .prepare_batch(stage_commands)
+        // Stage commands and story timeline samples apply in Runtime output order.
+        let mut next_stage_director: Option<ProductStageDirector> = None;
+        let mut stage_outputs = Vec::new();
+        let mut stage_run = Vec::new();
+        for output in ordered_outputs {
+            match output {
+                NativeVnOrderedRuntimeOutput::Presentation(PresentationCommand::Stage(stage)) => {
+                    stage_run.push(stage);
+                }
+                NativeVnOrderedRuntimeOutput::Property(sample) => {
+                    if !stage_run.is_empty() {
+                        let (director, outputs) = next_stage_director
+                            .as_ref()
+                            .unwrap_or(&self.stage_director)
+                            .prepare_batch(stage_run.drain(..))
+                            .map_err(stage_director_error)?;
+                        stage_outputs.extend(outputs);
+                        next_stage_director = Some(director);
+                    }
+                    next_stage_director
+                        .get_or_insert_with(|| self.stage_director.clone())
+                        .set_property(&sample.target, &sample.property, sample.value)
+                        .map_err(stage_director_error)?;
+                }
+                _ => {}
+            }
+        }
+        if !stage_run.is_empty() {
+            let (director, outputs) = next_stage_director
+                .as_ref()
+                .unwrap_or(&self.stage_director)
+                .prepare_batch(stage_run)
                 .map_err(stage_director_error)?;
-            (Some(director), outputs)
-        };
+            stage_outputs.extend(outputs);
+            next_stage_director = Some(director);
+        }
         if let Some(director) = next_stage_director.as_ref() {
             self.check_wait_fence(director)?;
         }
@@ -63,14 +90,7 @@ impl NativeVnHostCommandSource {
                 for output in outputs {
                     match output {
                         StageDirectorOutput::Preload { asset } => {
-                            if !self.textures.contains_key(&asset)
-                                && !self.asset_store.contains_media(&asset)
-                                && !self.asset_store.contains_image(&asset)
-                            {
-                                return Err(NativeVnHostError::Asset(format!(
-                                    "ROUKAKU_PLAYER_PRELOAD_ASSET_MISSING: {asset}"
-                                )));
-                            }
+                            self.schedule_preload(&asset)?;
                         }
                         StageDirectorOutput::Audio(_) => {}
                         StageDirectorOutput::AudioControl(control) => {
@@ -294,7 +314,8 @@ impl NativeVnHostCommandSource {
 
         for command in ordered_outputs.iter().filter_map(|output| match output {
             NativeVnOrderedRuntimeOutput::Presentation(command) => Some(command),
-            NativeVnOrderedRuntimeOutput::AudioStart(_) => None,
+            NativeVnOrderedRuntimeOutput::AudioStart(_)
+            | NativeVnOrderedRuntimeOutput::Property(_) => None,
         }) {
             match command {
                 PresentationCommand::Dialogue { .. }

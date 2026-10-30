@@ -383,5 +383,4 @@ pub(crate) fn release_profile_requires_cooked_project(profile: &str) -> bool {
 
 pub(crate) fn release_profile_requires_vn(profile: &str) -> bool {
     matches!(profile, "classic" | "modern")
-        || VnAdvancedPresentationManifest::profile_requires_advanced(profile)
 }

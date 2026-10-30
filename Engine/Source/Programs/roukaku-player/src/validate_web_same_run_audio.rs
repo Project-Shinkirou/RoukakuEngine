@@ -137,41 +137,85 @@ impl BundleContext {
     ) -> Result<Vec<ScenarioHostInput>, PlayerAutomationError> {
         let package_bytes = fs::read(&self.package_path)?;
         let package = roukaku_package::PackageReader::open(&package_bytes)?;
-        let compiled = roukaku_vn_package::decode_compiled_project(&package)?;
-        let mut option_indexes = std::collections::BTreeMap::new();
-        for state in compiled.states.values() {
-            for scene in &state.scenes {
-                for command in &scene.commands {
-                    if let roukaku_vn_core::CompiledCommand::Choice { options, .. } = command {
-                        for (index, option) in options.iter().enumerate() {
-                            if option_indexes.insert(option.id.clone(), index).is_some() {
-                                return Err(format!(
-                                    "ROUKAKU_PLAYER_CHOICE_ID_DUPLICATE: {}",
-                                    option.id
-                                )
-                                .into());
-                            }
-                        }
+        let story = roukaku_vn_package::load_luau_story_bundle(&package)?;
+        // Luau choices exist only at run time: replay the scenario through a
+        // story session and read each option index from the live pending choice.
+        let mut session = roukaku_vn::VnSession::new(
+            std::sync::Arc::new(story),
+            roukaku_vn_core::VnRunConfig::classic("en"),
+            roukaku_vn::VnSessionConfig {
+                target_id: "automation".into(),
+                seed: 0,
+                package: None,
+                integrity_mode: roukaku_runtime::TickIntegrityMode::Shipping,
+                worker_count: 1,
+            },
+        )
+        .map_err(|error| error.to_string())?;
+        let mut fixed_step = 0u64;
+        let mut step = |session: &mut roukaku_vn::VnSession,
+                        command: roukaku_vn::NativeVnStepCommand|
+         -> Result<roukaku_vn::NativeVnStepOutput, PlayerAutomationError> {
+            fixed_step += 1;
+            session
+                .step(roukaku_vn::NativeVnStepInput {
+                    timing: roukaku_runtime::TickInput {
+                        fixed_step,
+                        delta_ns: 16_666_667,
+                        seed: 0,
+                    },
+                    mode: roukaku_runtime::TickMode::Live,
+                    command,
+                })
+                .map_err(|error| error.to_string().into())
+        };
+        step(&mut session, roukaku_vn::NativeVnStepCommand::LaunchDefault)?;
+        let mut option_indexes = Vec::with_capacity(inputs.len());
+        for input in inputs {
+            let command = match input {
+                ScenarioInputAction::Advance => roukaku_vn_core::VnPlayerCommand::Advance,
+                ScenarioInputAction::Choose { option_id } => {
+                    let state = session.view().into_display_state();
+                    let index = state
+                        .pending_choice
+                        .as_ref()
+                        .and_then(|choice| {
+                            choice
+                                .options
+                                .iter()
+                                .position(|option| &option.id == option_id)
+                        })
+                        .ok_or_else(|| format!("ROUKAKU_PLAYER_CHOICE_ID_UNKNOWN: {option_id}"))?;
+                    option_indexes.push(index);
+                    roukaku_vn_core::VnPlayerCommand::Choose {
+                        option_id: option_id.clone(),
                     }
                 }
-            }
+                ScenarioInputAction::OpenSystem { .. } | ScenarioInputAction::Back => continue,
+            };
+            step(
+                &mut session,
+                roukaku_vn::NativeVnStepCommand::Execute(command),
+            )?;
         }
+        session.close();
+        let mut option_indexes = option_indexes.into_iter();
         inputs
             .iter()
             .map(|input| {
                 let virtual_key = match input {
                     ScenarioInputAction::Advance => 0x20,
                     ScenarioInputAction::Choose { option_id } => {
-                        let index = option_indexes.get(option_id).ok_or_else(|| {
+                        let index = option_indexes.next().ok_or_else(|| {
                             format!("ROUKAKU_PLAYER_CHOICE_ID_UNKNOWN: {option_id}")
                         })?;
-                        if *index >= 9 {
+                        if index >= 9 {
                             return Err(format!(
                                 "ROUKAKU_PLAYER_CHOICE_KEY_UNAVAILABLE: {option_id} uses index {index}"
                             )
                             .into());
                         }
-                        0x31 + *index as u16
+                        0x31 + index as u16
                     }
                     ScenarioInputAction::OpenSystem { page } if page == "backlog" => 0x42,
                     ScenarioInputAction::OpenSystem { page } => {

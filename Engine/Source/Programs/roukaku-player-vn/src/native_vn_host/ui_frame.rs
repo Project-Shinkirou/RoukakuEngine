@@ -26,7 +26,7 @@ impl NativeVnHostCommandSource {
         let context = VnUiModelContext {
             runtime: state,
             text_reveal: text_reveal.as_ref(),
-            story: &self.story,
+            terminal_routes: &self.terminal_routes,
             save_slots: &save_slots,
             localization_keys: &self.localization_keys,
         };

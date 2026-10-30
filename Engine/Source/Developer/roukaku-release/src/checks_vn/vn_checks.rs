@@ -6,26 +6,21 @@ pub(crate) fn vn_checks(
     selected_target: Option<&str>,
 ) -> Vec<ReleaseCheckRecord> {
     if !release_profile_requires_vn(profile)
-        && !package.has_section("vn.compiled_project")
+        && !package.has_section("vn.project")
         && !package.has_section("vn.profile_manifest")
     {
         return Vec::new();
     }
-    let mut checks = vec![
-        vn_compiled_project_check(package, profile),
+    vec![
+        vn_project_check(package, profile),
         vn_locale_config_check(package),
         vn_profile_manifest_check(package, profile, selected_target),
         vn_policy_bundle_check(package, profile),
         vn_extension_bindings_check(package, profile),
         vn_standard_commands_check(package, profile),
         vn_presentation_provider_check(package, profile),
-        vn_commercial_baseline_check(package, profile),
         vn_system_ui_profile_check(package, profile),
-    ];
-    if VnAdvancedPresentationManifest::profile_requires_advanced(profile) {
-        checks.push(vn_advanced_presentation_check(package, profile));
-    }
-    checks
+    ]
 }
 
 pub(crate) fn vn_locale_config_check(package: &PackageReader) -> ReleaseCheckRecord {
@@ -65,103 +60,34 @@ pub(crate) fn vn_locale_config_check(package: &PackageReader) -> ReleaseCheckRec
     }
 }
 
-pub(crate) fn vn_compiled_project_check(
-    package: &PackageReader,
-    profile: &str,
-) -> ReleaseCheckRecord {
-    let compiled = match decode_compiled_project(package) {
-        Ok(compiled) => compiled,
+pub(crate) fn vn_project_check(package: &PackageReader, profile: &str) -> ReleaseCheckRecord {
+    let project = match decode_vn_project(package) {
+        Ok(project) => project,
         Err(err) => {
             return ReleaseCheckRecord {
-                id: "vn.compiled_project".to_string(),
+                id: "vn.project".to_string(),
                 domain: ReleaseDomain::Vn,
                 status: CheckStatus::Blocked,
-                summary: "vn.compiled_project root or child section is missing or invalid"
+                summary: "vn.project root, Luau story bundle or UI section is missing or invalid"
                     .to_string(),
-                diagnostic: Some(Diagnostic::blocking(
-                    "ROUKAKU_VN_COMPILED_PROJECT",
-                    err.to_string(),
-                )),
+                diagnostic: Some(Diagnostic::blocking("ROUKAKU_VN_PROJECT", err.to_string())),
                 evidence: vec![
-                    evidence("section", "vn.compiled_project"),
+                    evidence("section", "vn.project"),
                     evidence("profile", profile),
                 ],
             };
         }
     };
-    if compiled.schema != "roukaku.vn.compiled_project.v5"
-        || compiled.story.stories.is_empty()
-        || compiled.story.states.is_empty()
-    {
-        return ReleaseCheckRecord {
-            id: "vn.compiled_project".to_string(),
-            domain: ReleaseDomain::Vn,
-            status: CheckStatus::Blocked,
-            summary: "compiled VN story does not contain runnable story/state data".to_string(),
-            diagnostic: Some(Diagnostic::blocking(
-                "ROUKAKU_VN_COMPILED_STORY_SHAPE",
-                "compiled VN story needs schema, stories and states",
-            )),
-            evidence: vec![evidence("section", "vn.compiled_project")],
-        };
-    }
-    if compiled.story_manifest.schema != "roukaku.vn.story_manifest.v1"
-        || compiled.variable_manifest.schema != "roukaku.vn.variable_manifest.v1"
-        || compiled.command_manifest.schema != "roukaku.vn.command_manifest.v1"
-        || compiled.story_manifest.stories.is_empty()
-        || compiled.command_manifest.commands.is_empty()
-        || compiled
-            .command_manifest
-            .commands
-            .iter()
-            .any(|command| command.source.is_none())
-    {
-        return ReleaseCheckRecord {
-            id: "vn.compiled_project".to_string(),
-            domain: ReleaseDomain::Vn,
-            status: CheckStatus::Blocked,
-            summary: "compiled VN story is missing manifest/source-map evidence".to_string(),
-            diagnostic: Some(Diagnostic::blocking(
-                "ROUKAKU_VN_COMPILED_STORY_MANIFEST",
-                "compiled VN story must include story, variable and command manifests with command source refs",
-            )),
-            evidence: vec![
-                evidence("section", "vn.compiled_project"),
-                evidence(
-                    "story_manifest_count",
-                    compiled.story_manifest.stories.len(),
-                ),
-                evidence(
-                    "variable_scope_count",
-                    compiled.variable_manifest.scopes.len(),
-                ),
-                evidence(
-                    "command_manifest_count",
-                    compiled.command_manifest.commands.len(),
-                ),
-            ],
-        };
-    }
     ReleaseCheckRecord {
-        id: "vn.compiled_project".to_string(),
+        id: "vn.project".to_string(),
         domain: ReleaseDomain::Vn,
         status: CheckStatus::Pass,
-        summary: "compiled VN project root and all authoritative child sections are valid"
-            .to_string(),
+        summary: "VN project root, Luau story bundle and UI sections are valid".to_string(),
         diagnostic: None,
         evidence: vec![
-            evidence("story_hash", compiled.story_hash),
-            evidence("story_count", compiled.stories.len()),
-            evidence("state_count", compiled.states.len()),
-            evidence("route_node_count", compiled.route_graph.nodes.len()),
-            evidence(
-                "command_manifest_count",
-                compiled.command_manifest.commands.len(),
-            ),
-            evidence(
-                "variable_scope_count",
-                compiled.variable_manifest.scopes.len(),
-            ),
+            evidence("project_hash", project.project_hash),
+            evidence("story_revision", project.story.source_revision),
+            evidence("story_module_count", project.story.modules.len()),
         ],
     }
 }
@@ -406,25 +332,7 @@ pub(crate) fn vn_standard_commands_check(
             };
         }
     };
-    let compiled = match decode_compiled_project(package) {
-        Ok(compiled) => compiled,
-        Err(err) => {
-            return ReleaseCheckRecord {
-                id: "vn.standard_commands".to_string(),
-                domain: ReleaseDomain::Vn,
-                status: CheckStatus::Blocked,
-                summary: "vn.compiled_project is required to validate standard command usage"
-                    .to_string(),
-                diagnostic: Some(Diagnostic::blocking(
-                    "ROUKAKU_VN_COMPILED_STORY",
-                    err.to_string(),
-                )),
-                evidence: vec![evidence("section", "vn.compiled_project")],
-            };
-        }
-    };
-
-    let report = manifest.validate_usage(&compiled);
+    let report = manifest.validate();
     if !report.passed {
         return ReleaseCheckRecord {
             id: "vn.standard_commands".to_string(),

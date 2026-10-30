@@ -65,7 +65,10 @@ fn luau_project_round_trips_and_rejects_retired_or_tampered_roots() {
     let project = project();
     let mut sections =
         package_sections_for_project(&project, &["classic".to_string()], "game").unwrap();
-    assert_eq!(decode_vn_project(&package(sections.clone())).unwrap(), project);
+    assert_eq!(
+        decode_vn_project(&package(sections.clone())).unwrap(),
+        project
+    );
 
     let mut mixed = sections.clone();
     mixed.push(SectionPayload::postcard("vn.story", "roukaku.vn.story", &"legacy").unwrap());

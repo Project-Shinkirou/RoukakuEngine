@@ -29,6 +29,7 @@ roukaku-platform-web = { path = "../../Platform/roukaku-platform-web" }
 roukaku-platform-windows = { path = "../../Platform/roukaku-platform-windows" }
 roukaku-plugin-abi = { path = "../../Runtime/roukaku-plugin-abi" }
 roukaku-release = { path = "../../Developer/roukaku-release" }
+roukaku-runtime = { path = "../../Runtime/roukaku-runtime" }
 roukaku-target = { path = "../../Platform/roukaku-target" }
 roukaku-ui-core = { path = "../../Runtime/roukaku-ui-core" }
 roukaku-vn = { path = "../../Modules/RoukakuVN/roukaku-vn" }

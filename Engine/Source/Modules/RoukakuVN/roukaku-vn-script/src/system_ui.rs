@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    CompiledVnUi, ReadingMode, SystemStoryValidationStatus, SystemUiProfilePolicy,
-    SystemUnlockKind,
+    CompiledVnUi, ReadingMode, SystemStoryValidationStatus, SystemUiProfilePolicy, SystemUnlockKind,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

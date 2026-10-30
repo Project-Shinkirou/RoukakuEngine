@@ -1,6 +1,12 @@
 use super::*;
 use roukaku_runtime::{LoadReport, SaveBlob};
 
+/// Host services a Luau story session needs before it launches.
+pub(super) struct NativeVnSessionBindings {
+    pub text_layout: Arc<dyn TextLayoutProvider>,
+    pub system_actions: BTreeSet<String>,
+}
+
 pub(super) struct NativeVnRuntimeHost {
     runtime: Option<roukaku_vn::VnSession>,
     binding: roukaku_package::PackageProductContext,
@@ -63,9 +69,10 @@ impl NativeVnRuntimeHost {
 
     pub(super) fn open(
         &mut self,
-        compiled: Arc<CompiledStory>,
+        story: Arc<roukaku_vn::LuauStoryBundle>,
         config: VnRunConfig,
         options: roukaku_vn::VnSessionConfig,
+        bindings: NativeVnSessionBindings,
     ) -> Result<String, VnHostError> {
         self.validate_request(&options.target_id, &config.profile)?;
         if self.session.is_some() {
@@ -75,8 +82,10 @@ impl NativeVnRuntimeHost {
             ));
         }
         let seed = options.seed;
-        let runtime = roukaku_vn::VnSession::new(compiled, config, options)
+        let mut runtime = roukaku_vn::VnSession::new(story, config, options)
             .map_err(|error| VnHostError::new("ROUKAKU_RUNTIME_HOST_OPEN", error.to_string()))?;
+        runtime.bind_text_layout(bindings.text_layout);
+        runtime.bind_system_actions(bindings.system_actions);
         let session_id = runtime.id().to_string();
         self.runtime = Some(runtime);
         self.session = Some(session_id.clone());
@@ -85,6 +94,45 @@ impl NativeVnRuntimeHost {
         self.next_mode = roukaku_runtime::TickMode::Live;
         self.failed = false;
         Ok(session_id)
+    }
+
+    fn session(&self) -> Result<&roukaku_vn::VnSession, VnHostError> {
+        self.runtime.as_ref().ok_or_else(|| {
+            VnHostError::new(
+                "ROUKAKU_RUNTIME_HOST_SESSION",
+                "NativeVN session is not open",
+            )
+        })
+    }
+
+    /// Display projection of the live story state.
+    pub(super) fn view(&self) -> Result<roukaku_vn::NativeVnStateView, VnHostError> {
+        Ok(self.session()?.view())
+    }
+
+    pub(super) fn presentation_active(&self) -> bool {
+        self.runtime
+            .as_ref()
+            .is_some_and(roukaku_vn::VnSession::presentation_active)
+    }
+
+    /// Advance story timeline segments by presentation time.
+    pub(super) fn advance_presentation(
+        &mut self,
+        seconds: f64,
+    ) -> Result<Vec<roukaku_vn::NativeVnPropertySample>, VnHostError> {
+        self.require_healthy()?;
+        let runtime = self.runtime.as_mut().ok_or_else(|| {
+            VnHostError::new(
+                "ROUKAKU_RUNTIME_HOST_SESSION",
+                "NativeVN session is not open",
+            )
+        })?;
+        let result = runtime.advance_presentation(seconds).map_err(|error| {
+            VnHostError::new("ROUKAKU_RUNTIME_HOST_PRESENTATION", error.to_string())
+        });
+        self.failed = result.is_err();
+        result
     }
 
     pub(super) fn bind_policy(
@@ -231,20 +279,16 @@ impl NativeVnRuntimeHost {
         Ok(report)
     }
 
-    pub(super) fn validate_save(&self, blob: &SaveBlob) -> Result<(), VnHostError> {
+    /// Validate a save candidate and return the display locale it restores.
+    pub(super) fn saved_locale(&self, blob: &SaveBlob) -> Result<String, VnHostError> {
         self.limits.validate_save_bytes(blob.0.len())?;
-        self.runtime
-            .as_ref()
-            .ok_or_else(|| {
-                VnHostError::new(
-                    "ROUKAKU_RUNTIME_HOST_SESSION",
-                    "NativeVN session is not open",
-                )
-            })?
-            .validate_save(blob)
-            .map_err(|error| {
-                VnHostError::new("ROUKAKU_RUNTIME_HOST_SAVE_CANDIDATE", error.to_string())
-            })
+        self.session()?.saved_locale(blob).map_err(|error| {
+            VnHostError::new("ROUKAKU_RUNTIME_HOST_SAVE_CANDIDATE", error.to_string())
+        })
+    }
+
+    pub(super) fn validate_save(&self, blob: &SaveBlob) -> Result<(), VnHostError> {
+        self.saved_locale(blob).map(|_| ())
     }
 
     pub(super) fn shutdown(&mut self) -> Result<(), VnHostError> {

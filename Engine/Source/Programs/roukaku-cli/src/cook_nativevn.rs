@@ -113,7 +113,9 @@ pub(crate) fn nativevn_story_bundle(
     for (module, path) in declared {
         let relative = validate_project_relative_path(&path)?;
         if relative.extension().and_then(std::ffi::OsStr::to_str) != Some("luau") {
-            return Err(format!("ROUKAKU_VN_STORY_MODULE_FORMAT: {path} must be a .luau module").into());
+            return Err(
+                format!("ROUKAKU_VN_STORY_MODULE_FORMAT: {path} must be a .luau module").into(),
+            );
         }
         modules.insert(module, fs::read_to_string(project_dir.join(relative))?);
     }

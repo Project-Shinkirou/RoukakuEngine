@@ -2,8 +2,6 @@ use super::*;
 
 #[derive(Debug, thiserror::Error)]
 pub enum NativeVnHostError {
-    #[error("compiled story has no playable entry state")]
-    EmptyStory,
     #[error("Player host command sequence overflowed")]
     SequenceOverflow,
     #[error(transparent)]
