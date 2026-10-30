@@ -35,6 +35,8 @@ pub enum NodeContent {
     Choice {
         options: Vec<ChoiceOption>,
         selected: Option<String>,
+        #[serde(default)]
+        data: Value,
     },
 }
 
@@ -140,6 +142,7 @@ pub struct ParagraphSave {
 pub enum ReplayEvent {
     Input { action: String, payload: Value },
     HostResult { operation: String, result: Value },
+    Fence { id: String },
     SideEffect { id: String },
     RandomDraw { value: u64 },
 }
@@ -162,8 +165,13 @@ pub struct ReplayCheckpoint {
 pub trait AuthoringHost: TextLayoutProvider {
     fn display_text(&self, id: &str, layout: Arc<TextLayoutResult>) -> mlua::Result<()>;
     fn set_property(&self, target: &str, property: &str, value: f64) -> mlua::Result<()>;
-    /// Stop/release resources owned by a segment, for either terminal outcome.
     fn release_segment(&self, id: u64) -> mlua::Result<()>;
+    fn present(&self, node: &str, command: &crate::StageCommand) -> mlua::Result<()> {
+        let _ = (node, command);
+        Err(mlua::Error::runtime(
+            "authoring host stage presentation is not supported",
+        ))
+    }
     /// Query results are journaled so replay never calls external systems twice.
     fn query(&self, operation: &str, args: Value) -> mlua::Result<Value> {
         let _ = (operation, args);

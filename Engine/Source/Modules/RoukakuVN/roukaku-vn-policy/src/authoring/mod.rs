@@ -1,5 +1,7 @@
 //! Luau authoring mechanisms. Default VN behavior and product loading are consumers.
 mod api;
+mod default_modules;
+pub use default_modules::default_vn_modules;
 mod contract;
 mod timeline;
 
@@ -42,6 +44,13 @@ pub(super) fn source_revision(
     Ok(Hash256::from_sha256(&bytes).to_string())
 }
 
+#[derive(Clone)]
+struct FenceCallback {
+    module: String,
+    export: String,
+    args: serde_json::Value,
+}
+
 struct Shared {
     root: TaskScope,
     scope: TaskScope,
@@ -62,6 +71,8 @@ struct Shared {
     active_segments: BTreeSet<u64>,
     cancelling: bool,
     pending: Option<InputWait>,
+    pending_enter: Option<ParagraphId>,
+    fence_callbacks: BTreeMap<String, Vec<FenceCallback>>,
     budget: SharedBudget,
     limits: PolicyExecutionBudget,
 }
@@ -215,6 +226,8 @@ impl LuauAuthoringRuntime {
                 active_segments: BTreeSet::new(),
                 cancelling: false,
                 pending: None,
+                pending_enter: None,
+                fence_callbacks: BTreeMap::new(),
                 budget: HostBudget::new(
                     &VnPolicyState::default(),
                     &PolicyQueryContext::default(),
@@ -226,14 +239,22 @@ impl LuauAuthoringRuntime {
             host,
         };
         api::install(vm.lua(), &context)?;
-        Ok(Self {
+        let mut runtime = Self {
             vm,
             context,
             thread: None,
             status: StoryStatus::Idle,
-        })
-    }
+        };
+        for (module, source) in default_vn_modules() {
+            runtime.replace_module(
+                &module,
+                &format!("@builtin/{module}.luau"),
+                &source,
+            )?;
+        }
+        Ok(runtime)
 
+    }
     /// Evaluate a named source chunk, then atomically replace its export table.
     /// Existing coroutine frames retain their function; subsequent `rk.call`
     /// and timeline callbacks resolve against the replacement table.
@@ -295,6 +316,8 @@ impl LuauAuthoringRuntime {
             shared.paragraph = Some(paragraph);
             shared.story_thread = Some(thread.to_pointer() as usize);
             shared.visits.clear();
+            shared.pending_enter = None;
+            shared.fence_callbacks.clear();
             shared.records.clear();
             shared.entry_checkpoint = shared.recoverable.clone();
             shared.replay.clear();
@@ -321,6 +344,9 @@ impl LuauAuthoringRuntime {
         if let Err(error) = healthy.and(result) {
             self.fail();
             return Err(error);
+        }
+        if let Some(target) = self.context.shared.borrow_mut().pending_enter.take() {
+            return self.start_paragraph(target);
         }
         let status = self.thread.as_ref().map(Thread::status);
         if status == Some(ThreadStatus::Resumable) {
@@ -397,6 +423,62 @@ impl LuauAuthoringRuntime {
         Ok(true)
     }
 
+
+    /// Dispatches registered paragraph-scoped callbacks on the owner thread.
+    /// A callback that attempts to yield fails because it is outside the story coroutine.
+    pub fn signal_fence(&mut self, fence: &str) -> mlua::Result<usize> {
+        if fence.is_empty() {
+            return Err(mlua::Error::runtime("host fence identity must be nonempty"));
+        }
+        self.context.active()?;
+        let callbacks = self
+            .context
+            .shared
+            .borrow_mut()
+            .fence_callbacks
+            .remove(fence)
+            .unwrap_or_default();
+        if callbacks.is_empty() {
+            return Ok(0);
+        }
+        self.begin_dispatch();
+        self.context.charge(fence.len().saturating_add(64))?;
+        {
+            let mut shared = self.context.shared.borrow_mut();
+            if shared.replaying {
+                match shared.replay_source.get(shared.replay_cursor) {
+                    Some(ReplayEvent::Fence { id }) if id == fence => {
+                        shared.replay_cursor += 1;
+                        shared.replay.push(ReplayEvent::Fence { id: fence.into() });
+                    }
+                    _ => return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_DIVERGED")),
+                }
+            } else {
+                shared.replay.push(ReplayEvent::Fence { id: fence.into() });
+            }
+        }
+        let lua = self.vm.lua();
+        for callback in &callbacks {
+            let reference = FunctionRef {
+                module: callback.module.clone(),
+                name: callback.export.clone(),
+            };
+            let result = self
+                .context
+                .resolve(&reference)?
+                .call::<Value>(lua.to_value(&callback.args)?);
+            if let Err(error) = result {
+                self.fail();
+                return Err(error);
+            }
+        }
+        let healthy = self.context.shared.borrow().budget.borrow().check();
+        if let Err(error) = healthy {
+            self.fail();
+            return Err(error);
+        }
+        Ok(callbacks.len())
+    }
     pub fn status(&self) -> StoryStatus {
         self.status.clone()
     }
@@ -479,6 +561,9 @@ impl LuauAuthoringRuntime {
                     if !self.input(wait.token, &action, payload)? {
                         return Err(mlua::Error::runtime("ROUKAKU_VN_REPLAY_INPUT_REJECTED"));
                     }
+                }
+                Some(ReplayEvent::Fence { id }) => {
+                    self.signal_fence(&id)?;
                 }
                 Some(
                     ReplayEvent::RandomDraw { .. }

@@ -12,6 +12,7 @@ use roukaku_policy::PolicyExecutionBudget;
 use roukaku_runtime::TaskScope;
 use roukaku_text::*;
 use roukaku_vn_policy::authoring::*;
+use roukaku_vn_policy::StageCommand;
 use serde_json::json;
 
 struct Presentation {
@@ -19,6 +20,7 @@ struct Presentation {
     displayed: RefCell<BTreeMap<String, Arc<TextLayoutResult>>>,
     properties: RefCell<BTreeMap<(String, String), f64>>,
     released: RefCell<BTreeSet<u64>>,
+    presented: RefCell<Vec<(String, StageCommand)>>,
 }
 
 impl Presentation {
@@ -53,6 +55,7 @@ impl Presentation {
             .unwrap(),
             displayed: RefCell::new(BTreeMap::new()),
             properties: RefCell::new(BTreeMap::new()),
+            presented: RefCell::new(Vec::new()),
             released: RefCell::new(BTreeSet::new()),
         })
     }
@@ -87,6 +90,12 @@ impl AuthoringHost for Presentation {
             self.released.borrow_mut().insert(id),
             "segment released twice"
         );
+        Ok(())
+    }
+    fn present(&self, node: &str, command: &StageCommand) -> mlua::Result<()> {
+        self.presented
+            .borrow_mut()
+            .push((node.into(), command.clone()));
         Ok(())
     }
 }
@@ -761,4 +770,132 @@ fn many_presentation_ticks_use_dispatch_budgets_without_accumulating_property_co
     assert!((host.property("actor", "x") - 25.0).abs() < 0.0001);
     assert!(matches!(runtime.status(), StoryStatus::Waiting(_)));
     assert_eq!(runtime.recoverable_state().variables["results"], 0);
+}
+
+#[test]
+fn paragraph_entry_transition_starts_a_new_save_boundary() {
+    let mut runtime = runtime(Presentation::new());
+    runtime
+        .replace_module(
+            "story",
+            "@transition.luau",
+            r#"
+return { paragraphs = {
+    intro = function() rk.enter("story", "finish") end,
+    finish = function() rk.line("finish", { key = "finish" }); rk.wait_input("advance") end,
+} }
+"#,
+        )
+        .unwrap();
+
+    assert!(matches!(
+        runtime.start_paragraph(paragraph()).unwrap(),
+        StoryStatus::Waiting(_)
+    ));
+    let save = runtime.save_paragraph().unwrap();
+    assert_eq!(save.paragraph.entry, "finish");
+    assert_eq!(runtime.records()[0].occurrence.paragraph.entry, "finish");
+}
+
+#[test]
+fn host_fence_callback_is_one_shot_and_replays_from_the_entry() {
+    let source = r#"
+return {
+    paragraphs = { intro = function()
+        rk.on_fence("voice.ready", "story", "camera_pulse", {})
+        rk.line("line", { key = "line" })
+        rk.wait_input("advance")
+    end },
+    camera_pulse = function()
+        rk.set_property("camera.main", "zoom", 1.15)
+    end,
+}
+"#;
+    let host = Presentation::new();
+    let mut live = runtime(host.clone());
+    live.replace_module("story", "@fence.luau", source).unwrap();
+    live.start_paragraph(paragraph()).unwrap();
+    assert_eq!(live.signal_fence("voice.ready").unwrap(), 1);
+    assert_eq!(host.property("camera.main", "zoom"), 1.15);
+    assert_eq!(live.signal_fence("voice.ready").unwrap(), 0);
+    let save = live.save_paragraph().unwrap();
+
+    let restored_host = Presentation::new();
+    let mut restored = runtime(restored_host.clone());
+    restored
+        .replace_module("story", "@fence.luau", source)
+        .unwrap();
+    assert_eq!(
+        restored.load_paragraph(save).unwrap(),
+        ParagraphLoadOutcome::Replayed
+    );
+    assert_eq!(restored_host.property("camera.main", "zoom"), 1.15);
+    assert!(matches!(restored.status(), StoryStatus::Waiting(_)));
+}
+
+#[test]
+fn replacing_default_dialog_module_keeps_records_and_rollback_checkpoints() {
+    let mut runtime = runtime(Presentation::new());
+    runtime
+        .replace_module(
+            "roukaku.vn.dialog",
+            "@replacement/dialog.luau",
+            r#"return { show = function(node, data)
+                local occurrence = rk.line(node, data)
+                rk.wait_input("advance")
+                return occurrence
+            end }"#,
+        )
+        .unwrap();
+    runtime
+        .replace_module(
+            "story",
+            "@replacement/story.luau",
+            r#"return { paragraphs = { intro = function()
+                rk.call("roukaku.vn.dialog", "show", "line.hello", { key = "line.hello" })
+            end } }"#,
+        )
+        .unwrap();
+    runtime.start_paragraph(paragraph()).unwrap();
+    let occurrence = runtime.records()[0].occurrence.clone();
+    assert!(matches!(
+        &runtime.records()[0].content,
+        NodeContent::Line { data } if data["key"] == "line.hello"
+    ));
+    let wait = waiting(&runtime);
+    assert!(runtime.input(wait.token, "advance", serde_json::Value::Null).unwrap());
+
+    assert_eq!(
+        runtime.rollback_to(&occurrence).unwrap(),
+        ParagraphLoadOutcome::Replayed
+    );
+    assert_eq!(runtime.records()[0].occurrence, occurrence);
+    assert!(matches!(runtime.status(), StoryStatus::Waiting(_)));
+}
+
+#[test]
+fn luau_stage_action_is_typed_and_saved_in_recoverable_scene_state() {
+    let host = Presentation::new();
+    let mut runtime = runtime(host.clone());
+    runtime
+        .replace_module(
+            "story",
+            "@stage-action.luau",
+            r#"return { paragraphs = { intro = function()
+                rk.present("opening.backdrop", "backdrop", { color = { 0, 0, 0, 255 } })
+                rk.wait_input("advance")
+            end } }"#,
+        )
+        .unwrap();
+    runtime.start_paragraph(paragraph()).unwrap();
+
+    assert!(matches!(
+        &host.presented.borrow()[0],
+        (node, StageCommand::Backdrop { color })
+            if node == "opening.backdrop" && color == &[0, 0, 0, 255]
+    ));
+    assert!(runtime
+        .recoverable_state()
+        .scene
+        .contains_key("opening.backdrop"));
 }
