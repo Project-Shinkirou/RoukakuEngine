@@ -12,10 +12,11 @@ use roukaku_media::{
 use roukaku_package::{CookSummaryManifest, SectionCodec};
 use roukaku_platform::{migrate_host_profile_json, validate_host_profile};
 use roukaku_vn_package::{
-    PLAYER_LOCALE_CONFIG_SCHEMA, PlayerLocaleConfig, package_sections_for_project,
+    LuauStoryBundle, PLAYER_LOCALE_CONFIG_SCHEMA, PlayerLocaleConfig, VnProject,
+    authoring::ParagraphId, package_sections_for_project,
 };
 use roukaku_vn_policy::LuauUiControllerHost;
-use roukaku_vn_script::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_project};
+use roukaku_vn_script::{CompileRoukakuProjectOptions, RoukakuSource, compile_roukaku_ui};
 
 use super::*;
 
@@ -87,6 +88,51 @@ pub(crate) fn project_uses_nativevn(project: &serde_yaml::Value) -> bool {
     project.get("nativevn").is_some()
 }
 
+/// Read `nativevn.story_modules` (module id → `.luau` path) and `nativevn.entry`,
+/// then load every module into a Luau session so syntax and entry errors fail Cook.
+pub(crate) fn nativevn_story_bundle(
+    project: &serde_yaml::Value,
+    project_dir: &std::path::Path,
+) -> Result<LuauStoryBundle, CliError> {
+    let nativevn = project
+        .get("nativevn")
+        .ok_or("ROUKAKU_VN_STORY_MODULES: nativevn section is missing")?;
+    let declared: BTreeMap<String, String> = serde_yaml::from_value(
+        nativevn
+            .get("story_modules")
+            .cloned()
+            .ok_or("ROUKAKU_VN_STORY_MODULES: nativevn.story_modules is required")?,
+    )?;
+    let entry: ParagraphId = serde_yaml::from_value(
+        nativevn
+            .get("entry")
+            .cloned()
+            .ok_or("ROUKAKU_VN_STORY_ENTRY: nativevn.entry is required")?,
+    )?;
+    let mut modules = BTreeMap::new();
+    for (module, path) in declared {
+        let relative = validate_project_relative_path(&path)?;
+        if relative.extension().and_then(std::ffi::OsStr::to_str) != Some("luau") {
+            return Err(format!("ROUKAKU_VN_STORY_MODULE_FORMAT: {path} must be a .luau module").into());
+        }
+        modules.insert(module, fs::read_to_string(project_dir.join(relative))?);
+    }
+    let bundle = LuauStoryBundle::new(entry, modules)?;
+    roukaku_vn::VnSession::new(
+        std::sync::Arc::new(bundle.clone()),
+        roukaku_vn_package::VnRunConfig::classic("en"),
+        roukaku_vn::VnSessionConfig {
+            target_id: "cook".into(),
+            seed: 0,
+            package: None,
+            integrity_mode: roukaku_runtime::TickIntegrityMode::Shipping,
+            worker_count: 1,
+        },
+    )
+    .map_err(|error| format!("ROUKAKU_VN_STORY_MODULE_LOAD: {error}"))?;
+    Ok(bundle)
+}
+
 pub(crate) fn cook_nativevn_sections(
     project: &serde_yaml::Value,
     project_dir: &std::path::Path,
@@ -96,22 +142,12 @@ pub(crate) fn cook_nativevn_sections(
     cancellation: &CookCancellationToken,
 ) -> Result<(Vec<CookedArtifactRef>, CookSummaryManifest), CliError> {
     cancellation.check_cancelled()?;
-    let source_paths = nativevn_source_paths(project, project_dir, "sources", "Scripts")?;
-    if source_paths.is_empty() {
-        return Err("nativevn project must declare at least one .roukaku source".into());
-    }
-    let mut sources = Vec::with_capacity(source_paths.len());
-    for source in source_paths {
-        let source_text = fs::read_to_string(project_dir.join(&source))?;
-        sources.push(RoukakuSource::story(
-            normalize_relative_path(&source),
-            source_text,
-        ));
-    }
+    let story = nativevn_story_bundle(project, project_dir)?;
     let ui_source_paths = nativevn_source_paths(project, project_dir, "ui_sources", "UI")?;
     if ui_source_paths.is_empty() {
         return Err("nativevn project must declare at least one UI .roukaku source".into());
     }
+    let mut sources = Vec::with_capacity(ui_source_paths.len());
     for source in ui_source_paths {
         let source_text = fs::read_to_string(project_dir.join(&source))?;
         sources.push(RoukakuSource::ui(
@@ -174,11 +210,8 @@ pub(crate) fn cook_nativevn_sections(
             compile_options.with_ui_controller_source(manifest.id.clone(), source.to_string());
     }
     let policy_actions = nativevn_actions::load(project, project_dir, cancellation)?;
-    for binding in &policy_actions {
-        compile_options = compile_options.bind_extension(binding.descriptor.clone());
-    }
-    let compiled = compile_roukaku_project(sources, compile_options)?;
-    nativevn_actions::validate_commands(&compiled, &policy_actions)?;
+    let ui = compile_roukaku_ui(sources, compile_options)?;
+    let compiled = VnProject::new(story, ui)?;
     let mut profiles = string_list(
         project
             .get("nativevn")

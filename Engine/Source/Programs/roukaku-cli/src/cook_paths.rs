@@ -191,9 +191,6 @@ pub(crate) fn nativevn_source_paths(
             .get("nativevn")
             .and_then(|nativevn| nativevn.get(field)),
     );
-    if sources.is_empty() && field == "sources" {
-        sources = string_list(project.get("scripts"));
-    }
     if sources.is_empty() {
         let default = project_dir.join(default_directory);
         if default.is_dir() {
