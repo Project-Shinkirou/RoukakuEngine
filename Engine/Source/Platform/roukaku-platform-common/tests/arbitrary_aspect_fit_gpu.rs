@@ -24,7 +24,7 @@ async fn native_gpu_preserves_aspect_fit_bars_for_arbitrary_rasters() {
         renderer.identity().backend,
         if cfg!(target_os = "windows") {
             "dx12"
-        } else if cfg!(target_os = "linux") {
+        } else if cfg!(any(target_os = "linux", target_os = "android")) {
             "vulkan"
         } else {
             "metal"

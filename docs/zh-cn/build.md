@@ -44,6 +44,8 @@ cargo xtask check --workspace engine --hardware
 cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
 ```
 
+原生离屏渲染在 Windows 使用 DX12，Linux 和 Android 使用 Vulkan，macOS/iOS 使用 Metal。Android 创建无 surface 的 Vulkan instance，沿用相同的硬件适配器校验、场景渲染与有界回读；不回退到 GLES 或软件适配器。
+
 `check-fast` 只检查文档链接和文本卫生，不编译或运行测试。`docs` 使用同一文档检查。`ui-check` 显式下载锁定的 Luau analyzer 并检查 NativeVN controller；它需要联网。
 
 ## 编译集成作品扩展

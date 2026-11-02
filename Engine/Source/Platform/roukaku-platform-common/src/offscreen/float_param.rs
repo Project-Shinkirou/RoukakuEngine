@@ -4,9 +4,14 @@ use super::*;
 /// Retain it in the graphics owner and lend it to each session renderer so native
 /// backend loaders remain loaded across session creation and destruction.
 pub fn native_wgpu_instance() -> Result<wgpu::Instance, PlatformError> {
+    Ok(wgpu::Instance::new(native_instance_descriptor()?))
+}
+
+fn native_instance_descriptor() -> Result<wgpu::InstanceDescriptor, PlatformError> {
     #[cfg(any(
         target_os = "windows",
         target_os = "linux",
+        target_os = "android",
         target_os = "macos",
         target_os = "ios"
     ))]
@@ -16,7 +21,7 @@ pub fn native_wgpu_instance() -> Result<wgpu::Instance, PlatformError> {
         descriptor.backends = wgpu::Backends::DX12;
         descriptor.backend_options.dx12.shader_compiler = wgpu::Dx12Compiler::StaticDxc;
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     {
         descriptor.backends = wgpu::Backends::VULKAN;
     }
@@ -27,34 +32,37 @@ pub fn native_wgpu_instance() -> Result<wgpu::Instance, PlatformError> {
     #[cfg(not(any(
         target_os = "windows",
         target_os = "linux",
+        target_os = "android",
         target_os = "macos",
         target_os = "ios"
     )))]
     {
         Err(unavailable(
             "offscreen.platform",
-            "offscreen GPU is implemented only for Windows, Linux, macOS, and iOS",
+            "offscreen GPU is implemented only for Windows, Linux, Android, macOS, and iOS",
         ))
     }
     #[cfg(any(
         target_os = "windows",
         target_os = "linux",
+        target_os = "android",
         target_os = "macos",
         target_os = "ios"
     ))]
-    Ok(wgpu::Instance::new(descriptor))
+    Ok(descriptor)
 }
 
 pub(super) fn native_backend_mask() -> wgpu::Backends {
     #[cfg(target_os = "windows")]
     return wgpu::Backends::DX12;
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     return wgpu::Backends::VULKAN;
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     return wgpu::Backends::METAL;
     #[cfg(not(any(
         target_os = "windows",
         target_os = "linux",
+        target_os = "android",
         target_os = "macos",
         target_os = "ios"
     )))]
@@ -158,7 +166,7 @@ pub(super) fn readback(
 
 pub(super) fn validate_native_backend(backend: wgpu::Backend) -> Result<(), PlatformError> {
     let valid = cfg!(target_os = "windows") && backend == wgpu::Backend::Dx12
-        || cfg!(target_os = "linux") && backend == wgpu::Backend::Vulkan
+        || cfg!(any(target_os = "linux", target_os = "android")) && backend == wgpu::Backend::Vulkan
         || cfg!(any(target_os = "macos", target_os = "ios")) && backend == wgpu::Backend::Metal;
     if valid {
         Ok(())
@@ -167,6 +175,30 @@ pub(super) fn validate_native_backend(backend: wgpu::Backend) -> Result<(), Plat
             "offscreen.backend",
             "adapter backend does not match the native platform policy",
         ))
+    }
+}
+
+#[cfg(all(test, target_os = "android"))]
+mod android_tests {
+    use super::*;
+
+    #[test]
+    fn android_instance_and_adapter_selection_use_vulkan() {
+        let descriptor = native_instance_descriptor().unwrap();
+        let mask = native_backend_mask();
+        assert!(!mask.is_empty());
+        assert_eq!(descriptor.backends, wgpu::Backends::VULKAN);
+        assert_eq!(descriptor.backends, mask);
+        assert!(validate_native_backend(wgpu::Backend::Vulkan).is_ok());
+        for backend in [
+            wgpu::Backend::Noop,
+            wgpu::Backend::Dx12,
+            wgpu::Backend::Metal,
+            wgpu::Backend::Gl,
+            wgpu::Backend::BrowserWebGpu,
+        ] {
+            assert!(validate_native_backend(backend).is_err());
+        }
     }
 }
 
