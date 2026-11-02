@@ -11,11 +11,17 @@ pub(crate) fn update_gpu_atlas(
     upload_pixels: &mut Vec<u8>,
 ) -> Result<(PreparedAtlasUpdate, u64), PlatformError> {
     let Some(current) = current else {
-        let atlas = create_full_gpu_atlas(&mut context, new_resources, upload_pixels)?;
-        let upload_bytes = u64::from(atlas.packed.width) * u64::from(atlas.packed.height) * 4;
+        let (atlas, upload_bytes) =
+            create_full_gpu_atlas(&mut context, new_resources, upload_pixels)?;
         return Ok((PreparedAtlasUpdate::Replace(atlas), upload_bytes));
     };
-    let mut allocator = AtlasAllocatorState::new(&current.packed);
+    let mut allocators = current
+        .packed
+        .pages
+        .iter()
+        .enumerate()
+        .map(|(index, page)| AtlasAllocatorState::new(index, page))
+        .collect::<SmallVec<[_; 1]>>();
     let mut placement_mutations = AtlasPlacementJournal::new();
     for stale_id in current
         .packed
@@ -30,7 +36,7 @@ pub(crate) fn update_gpu_atlas(
             .placements
             .get(&stale_id)
             .ok_or_else(|| invalid("stale resource has no atlas placement"))?;
-        release_pending_atlas_slot(&mut allocator, placement)?;
+        release_pending_atlas_slot(&mut allocators[placement.page], placement)?;
         placement_mutations.insert(stale_id, None);
     }
     for resource_id in old_resources.keys() {
@@ -40,7 +46,7 @@ pub(crate) fn update_gpu_atlas(
                 .placements
                 .get(resource_id)
                 .ok_or_else(|| invalid("released resource has no atlas placement"))?;
-            release_pending_atlas_slot(&mut allocator, placement)?;
+            release_pending_atlas_slot(&mut allocators[placement.page], placement)?;
             placement_mutations.insert(resource_id.clone(), None);
         }
     }
@@ -67,32 +73,31 @@ pub(crate) fn update_gpu_atlas(
             }
             // A retained cache entry may change dimensions. Retire the entire
             // padded slot before allocating, including when the image shrinks.
-            release_pending_atlas_slot(&mut allocator, *placement)?;
+            release_pending_atlas_slot(&mut allocators[placement.page], *placement)?;
             placement_mutations.insert((*resource_id).clone(), None);
         }
-        let placement = match allocate_pending_atlas_slot(
-            &mut allocator,
-            resource.width(),
-            resource.height(),
-        ) {
-            Ok(placement) => placement,
-            Err(_error) => {
-                tracing::debug!(
-                    event = "platform.wgpu.atlas.repacked",
-                    resource_count = new_resources.len(),
-                    freed_area = allocator.freed_area,
-                    previous_width = current.packed.width,
-                    previous_height = current.packed.height,
-                    "glyph atlas capacity or fragmentation triggered a GPU-side repack"
-                );
-                return repack_gpu_atlas(
-                    &mut context,
-                    current,
-                    old_resources,
-                    new_resources,
-                    upload_pixels,
-                );
-            }
+        let placement = allocators.iter_mut().find_map(|allocator| {
+            allocate_pending_atlas_slot(allocator, resource.width(), resource.height()).ok()
+        });
+        let Some(placement) = placement else {
+            tracing::debug!(
+                event = "platform.wgpu.atlas.repacked",
+                resource_count = new_resources.len(),
+                freed_area = allocators
+                    .iter()
+                    .map(|allocator| allocator.freed_area)
+                    .sum::<u64>(),
+                previous_pages = current.packed.pages.len(),
+                previous_bytes = current.packed.byte_len(),
+                "glyph atlas capacity or fragmentation triggered a GPU-side repack"
+            );
+            return repack_gpu_atlas(
+                &mut context,
+                current,
+                old_resources,
+                new_resources,
+                upload_pixels,
+            );
         };
         placement_mutations.insert((*resource_id).clone(), Some(placement));
     }
@@ -115,18 +120,14 @@ pub(crate) fn update_gpu_atlas(
         upload_resource_rect(
             context.queue,
             upload_encoder.as_mut(),
-            &current.texture,
+            &current.textures[placement.page],
             resource,
             placement,
             upload_pixels,
             context.staging_belt,
         )?;
         upload_bytes = upload_bytes
-            .checked_add(
-                u64::from(resource.width() + ATLAS_PADDING * 2)
-                    * u64::from(resource.height() + ATLAS_PADDING * 2)
-                    * 4,
-            )
+            .checked_add(padded_resource_bytes(resource))
             .ok_or_else(|| invalid("glyph atlas upload byte count overflowed"))?;
     }
     for upload in texture_region_uploads {
@@ -139,7 +140,7 @@ pub(crate) fn update_gpu_atlas(
         let bytes = upload_texture_region(
             context.queue,
             upload_encoder.as_mut(),
-            &current.texture,
+            &current.textures[placement.page],
             placement,
             *upload,
             upload_pixels,
@@ -160,12 +161,10 @@ pub(crate) fn update_gpu_atlas(
     Ok((
         PreparedAtlasUpdate::Mutate(PackedAtlasMutation {
             placements: placement_mutations,
-            cursor_x: allocator.cursor_x,
-            cursor_y: allocator.cursor_y,
-            row_height: allocator.row_height,
-            consumed_free_slots: allocator.consumed_free_slots,
-            added_free_slots: allocator.added_free_slots,
-            freed_area: allocator.freed_area,
+            pages: allocators
+                .into_iter()
+                .map(AtlasAllocatorState::into_mutation)
+                .collect(),
         }),
         upload_bytes,
     ))
@@ -178,62 +177,82 @@ pub(crate) fn repack_gpu_atlas(
     new_resources: &AtlasResourceView<'_>,
     upload_pixels: &mut Vec<u8>,
 ) -> Result<(PreparedAtlasUpdate, u64), PlatformError> {
-    let current_area = u64::from(current.packed.width) * u64::from(current.packed.height);
     let max_dimension = context.device.limits().max_texture_dimension_2d;
-    let candidates = [
-        (MIN_ATLAS_SIDE, MIN_ATLAS_SIDE),
-        (2048, 2048),
-        (ATLAS_SIDE, 2048),
-        (ATLAS_SIDE, ATLAS_SIDE),
-        (MAX_ATLAS_WIDTH, 2048),
-        (MAX_ATLAS_WIDTH, ATLAS_SIDE),
-    ];
-    let mut packed = None;
-    for (width, height) in candidates {
-        let area = u64::from(width) * u64::from(height);
-        if area < current_area || width > max_dimension || height > max_dimension {
-            continue;
-        }
-        if let Some(candidate) = pack_atlas_at_extent(new_resources, width, height)? {
-            packed = Some(candidate);
-            break;
-        }
-    }
-    let packed = match packed {
-        Some(packed) => packed,
-        None => {
-            let (resource_bytes, padded_area, widest, tallest) = new_resources.values().try_fold(
-                (0_u64, 0_u64, 0_u32, 0_u32),
-                |(bytes, area, widest, tallest), resource| {
-                    let padded_width = resource.width() + ATLAS_PADDING * 2;
-                    let padded_height = resource.height() + ATLAS_PADDING * 2;
-                    Ok::<_, PlatformError>((
-                        bytes
-                            .checked_add(resource.byte_len() as u64)
-                            .ok_or_else(|| invalid("scene resource byte count overflowed"))?,
-                        area.checked_add(u64::from(padded_width) * u64::from(padded_height))
-                            .ok_or_else(|| invalid("glyph atlas total area overflowed"))?,
-                        widest.max(padded_width),
-                        tallest.max(padded_height),
-                    ))
-                },
-            )?;
-            tracing::error!(
-                event = "platform.wgpu.atlas.capacity_exceeded",
-                resource_count = new_resources.len(),
-                resource_bytes,
-                padded_area,
-                widest,
-                tallest,
-                max_texture_dimension_2d = max_dimension,
-                max_atlas_width = MAX_ATLAS_WIDTH,
-                max_atlas_height = ATLAS_SIDE,
-                "retained scene resources cannot be packed into the GPU atlas"
-            );
-            return Err(invalid("glyph atlas capacity was exceeded"));
+    let packed = match pack_atlas(
+        new_resources,
+        &REPACK_ATLAS_EXTENTS,
+        current.packed.byte_len() / 4,
+        max_dimension,
+    ) {
+        Ok(packed) => packed,
+        Err(error) => {
+            log_capacity_exceeded(new_resources, max_dimension)?;
+            return Err(error);
         }
     };
     let atlas = create_empty_gpu_atlas(context, packed);
+    let upload_bytes = fill_empty_gpu_atlas(
+        context,
+        &atlas,
+        new_resources,
+        Some((current, old_resources)),
+        upload_pixels,
+    )?;
+    Ok((PreparedAtlasUpdate::Replace(atlas), upload_bytes))
+}
+
+fn log_capacity_exceeded(
+    resources: &AtlasResourceView<'_>,
+    max_dimension: u32,
+) -> Result<(), PlatformError> {
+    let (resource_bytes, padded_area, widest, tallest) = resources.values().try_fold(
+        (0_u64, 0_u64, 0_u32, 0_u32),
+        |(bytes, area, widest, tallest), resource| {
+            let padded_width = resource.width() + ATLAS_PADDING * 2;
+            let padded_height = resource.height() + ATLAS_PADDING * 2;
+            Ok::<_, PlatformError>((
+                bytes
+                    .checked_add(resource.byte_len() as u64)
+                    .ok_or_else(|| invalid("scene resource byte count overflowed"))?,
+                area.checked_add(u64::from(padded_width) * u64::from(padded_height))
+                    .ok_or_else(|| invalid("glyph atlas total area overflowed"))?,
+                widest.max(padded_width),
+                tallest.max(padded_height),
+            ))
+        },
+    )?;
+    tracing::error!(
+        event = "platform.wgpu.atlas.capacity_exceeded",
+        resource_count = resources.len(),
+        resource_bytes,
+        padded_area,
+        widest,
+        tallest,
+        max_texture_dimension_2d = max_dimension,
+        max_atlas_width = MAX_ATLAS_WIDTH,
+        max_atlas_height = ATLAS_SIDE,
+        max_atlas_pages = MAX_ATLAS_PAGES,
+        "retained scene resources cannot be packed into the GPU atlas"
+    );
+    Ok(())
+}
+
+fn padded_resource_bytes(resource: &AtlasResource) -> u64 {
+    u64::from(resource.width() + ATLAS_PADDING * 2)
+        * u64::from(resource.height() + ATLAS_PADDING * 2)
+        * 4
+}
+
+/// Writes every resource into a freshly created atlas. Resources unchanged
+/// since `previous` are copied GPU-side from their old page; the rest are
+/// staged from CPU memory.
+fn fill_empty_gpu_atlas(
+    context: &mut AtlasUpdateContext<'_>,
+    atlas: &GpuAtlas,
+    resources: &AtlasResourceView<'_>,
+    previous: Option<(&GpuAtlas, &BTreeMap<String, AtlasResource>)>,
+    upload_pixels: &mut Vec<u8>,
+) -> Result<u64, PlatformError> {
     let mut encoder = context
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -244,21 +263,23 @@ pub(crate) fn repack_gpu_atlas(
     }
     let mut upload_bytes = 0u64;
     let mut staged_uploads = false;
-    for (resource_id, resource) in new_resources.iter() {
+    for (resource_id, resource) in resources.iter() {
         let placement = *atlas
             .packed
             .placements
             .get(resource_id)
             .ok_or_else(|| invalid("repacked atlas resource has no placement"))?;
-        let copy_bytes = u64::from(resource.width() + ATLAS_PADDING * 2)
-            * u64::from(resource.height() + ATLAS_PADDING * 2)
-            * 4;
-        if old_resources.get(resource_id) == Some(resource)
-            && let Some(old_placement) = current.packed.placements.get(resource_id)
-        {
+        let copy_bytes = padded_resource_bytes(resource);
+        let old_placement = previous.and_then(|(current, old_resources)| {
+            (old_resources.get(resource_id) == Some(resource))
+                .then(|| current.packed.placements.get(resource_id))
+                .flatten()
+                .map(|old_placement| (current, *old_placement))
+        });
+        if let Some((current, old_placement)) = old_placement {
             encoder.copy_texture_to_texture(
                 wgpu::TexelCopyTextureInfo {
-                    texture: &current.texture,
+                    texture: &current.textures[old_placement.page],
                     mip_level: 0,
                     origin: wgpu::Origin3d {
                         x: old_placement.x - ATLAS_PADDING,
@@ -268,7 +289,7 @@ pub(crate) fn repack_gpu_atlas(
                     aspect: wgpu::TextureAspect::All,
                 },
                 wgpu::TexelCopyTextureInfo {
-                    texture: &atlas.texture,
+                    texture: &atlas.textures[placement.page],
                     mip_level: 0,
                     origin: wgpu::Origin3d {
                         x: placement.x - ATLAS_PADDING,
@@ -283,21 +304,18 @@ pub(crate) fn repack_gpu_atlas(
                     depth_or_array_layers: 1,
                 },
             );
-            upload_bytes = upload_bytes
-                .checked_add(copy_bytes)
-                .ok_or_else(|| invalid("glyph atlas repack byte count overflowed"))?;
-            continue;
+        } else {
+            upload_resource_rect(
+                context.queue,
+                Some(&mut encoder),
+                &atlas.textures[placement.page],
+                resource,
+                placement,
+                upload_pixels,
+                context.staging_belt,
+            )?;
+            staged_uploads = true;
         }
-        upload_resource_rect(
-            context.queue,
-            Some(&mut encoder),
-            &atlas.texture,
-            resource,
-            placement,
-            upload_pixels,
-            context.staging_belt,
-        )?;
-        staged_uploads = true;
         upload_bytes = upload_bytes
             .checked_add(copy_bytes)
             .ok_or_else(|| invalid("glyph atlas repack byte count overflowed"))?;
@@ -312,18 +330,15 @@ pub(crate) fn repack_gpu_atlas(
     if staged_uploads {
         context.staging_belt.recall();
     }
-    Ok((PreparedAtlasUpdate::Replace(atlas), upload_bytes))
+    Ok(upload_bytes)
 }
 
-pub(crate) fn create_empty_gpu_atlas(
-    context: &AtlasUpdateContext<'_>,
-    packed: PackedAtlas,
-) -> GpuAtlas {
-    let texture = context.device.create_texture(&wgpu::TextureDescriptor {
+fn create_atlas_texture(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
         label: Some("roukaku-glyph-atlas"),
         size: wgpu::Extent3d {
-            width: packed.width,
-            height: packed.height,
+            width,
+            height,
             depth_or_array_layers: 1,
         },
         mip_level_count: 1,
@@ -334,74 +349,107 @@ pub(crate) fn create_empty_gpu_atlas(
             | wgpu::TextureUsages::COPY_DST
             | wgpu::TextureUsages::COPY_SRC,
         view_formats: &[wgpu::TextureFormat::Rgba8UnormSrgb],
-    });
-    // Solid-color primitives sample the reserved texel at the atlas origin.
-    // Every replacement atlas must establish the same invariant as the
-    // initial/full atlas before any draw can observe it.
-    context.queue.write_texture(
-        wgpu::TexelCopyTextureInfo {
-            texture: &texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        &[255, 255, 255, 255],
-        wgpu::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(4),
-            rows_per_image: Some(1),
-        },
-        wgpu::Extent3d {
-            width: 1,
-            height: 1,
-            depth_or_array_layers: 1,
-        },
-    );
-    let linear_view = texture.create_view(&wgpu::TextureViewDescriptor {
-        format: Some(wgpu::TextureFormat::Rgba8UnormSrgb),
-        ..Default::default()
-    });
-    let encoded_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    let linear_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &linear_view,
-        &encoded_view,
-        context.linear_sampler,
-        "roukaku-glyph-atlas-linear-bind-group",
-    );
-    let nearest_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &linear_view,
-        &encoded_view,
-        context.nearest_sampler,
-        "roukaku-glyph-atlas-nearest-bind-group",
-    );
-    let encoded_linear_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &encoded_view,
-        &encoded_view,
-        context.linear_sampler,
-        "roukaku-glyph-atlas-encoded-linear-bind-group",
-    );
-    let encoded_nearest_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &encoded_view,
-        &encoded_view,
-        context.nearest_sampler,
-        "roukaku-glyph-atlas-encoded-nearest-bind-group",
-    );
+    })
+}
+
+/// Builds the bind groups for every (page, mask page) pair.
+fn assemble_gpu_atlas(
+    context: &AtlasUpdateContext<'_>,
+    textures: Vec<wgpu::Texture>,
+    packed: PackedAtlas,
+) -> GpuAtlas {
+    let views = textures
+        .iter()
+        .map(|texture| {
+            let linear = texture.create_view(&wgpu::TextureViewDescriptor {
+                format: Some(wgpu::TextureFormat::Rgba8UnormSrgb),
+                ..Default::default()
+            });
+            let encoded = texture.create_view(&wgpu::TextureViewDescriptor::default());
+            (linear, encoded)
+        })
+        .collect::<Vec<_>>();
+    let mut bind_groups = Vec::with_capacity(views.len() * views.len());
+    for (linear_view, encoded_view) in &views {
+        for (_, mask_view) in &views {
+            bind_groups.push(AtlasBindGroups {
+                linear: create_atlas_bind_group(
+                    context.device,
+                    context.layout,
+                    linear_view,
+                    mask_view,
+                    context.linear_sampler,
+                    "roukaku-glyph-atlas-linear-bind-group",
+                ),
+                nearest: create_atlas_bind_group(
+                    context.device,
+                    context.layout,
+                    linear_view,
+                    mask_view,
+                    context.nearest_sampler,
+                    "roukaku-glyph-atlas-nearest-bind-group",
+                ),
+                encoded_linear: create_atlas_bind_group(
+                    context.device,
+                    context.layout,
+                    encoded_view,
+                    mask_view,
+                    context.linear_sampler,
+                    "roukaku-glyph-atlas-encoded-linear-bind-group",
+                ),
+                encoded_nearest: create_atlas_bind_group(
+                    context.device,
+                    context.layout,
+                    encoded_view,
+                    mask_view,
+                    context.nearest_sampler,
+                    "roukaku-glyph-atlas-encoded-nearest-bind-group",
+                ),
+            });
+        }
+    }
     GpuAtlas {
-        texture,
-        linear_bind_group,
-        nearest_bind_group,
-        encoded_linear_bind_group,
-        encoded_nearest_bind_group,
+        textures,
+        bind_groups,
         packed,
     }
+}
+
+pub(crate) fn create_empty_gpu_atlas(
+    context: &AtlasUpdateContext<'_>,
+    packed: PackedAtlas,
+) -> GpuAtlas {
+    let textures = packed
+        .pages
+        .iter()
+        .map(|page| {
+            let texture = create_atlas_texture(context.device, page.width, page.height);
+            // Solid-color primitives sample the reserved texel at the page
+            // origin. Every replacement page must establish the same
+            // invariant as the initial/full atlas before any draw observes it.
+            context.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                &[255, 255, 255, 255],
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(4),
+                    rows_per_image: Some(1),
+                },
+                wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+            );
+            texture
+        })
+        .collect();
+    assemble_gpu_atlas(context, textures, packed)
 }
 
 pub(crate) fn create_reserved_gpu_atlas(
@@ -414,13 +462,15 @@ pub(crate) fn create_reserved_gpu_atlas(
 ) -> GpuAtlas {
     let packed = PackedAtlas {
         placements: BTreeMap::new(),
-        width: side,
-        height: side,
-        cursor_x: ATLAS_PADDING * 3,
-        cursor_y: ATLAS_PADDING,
-        row_height: 0,
-        free_slots: Vec::new(),
-        freed_area: 0,
+        pages: vec![AtlasPageAllocation {
+            width: side,
+            height: side,
+            cursor_x: ATLAS_PADDING * 3,
+            cursor_y: ATLAS_PADDING,
+            row_height: 0,
+            free_slots: Vec::new(),
+            freed_area: 0,
+        }],
     };
     let mut staging_belt = primed_staging_belt(device);
     let context = AtlasUpdateContext {
@@ -435,81 +485,53 @@ pub(crate) fn create_reserved_gpu_atlas(
     create_empty_gpu_atlas(&context, packed)
 }
 
+/// Builds the first atlas for `resources`. A set that fits one page within
+/// the staging budget uploads that page in a single write; an overflowing set
+/// fills its pages resource by resource. Returns the atlas and uploaded bytes.
 pub(crate) fn create_full_gpu_atlas(
     context: &mut AtlasUpdateContext<'_>,
     resources: &AtlasResourceView<'_>,
     upload_pixels: &mut Vec<u8>,
-) -> Result<GpuAtlas, PlatformError> {
-    create_full_gpu_atlas_with_min_side(context, resources, upload_pixels, MIN_ATLAS_SIDE)
-}
-
-pub(crate) fn create_full_gpu_atlas_with_min_side(
-    context: &mut AtlasUpdateContext<'_>,
-    resources: &AtlasResourceView<'_>,
-    upload_pixels: &mut Vec<u8>,
-    minimum_side: u32,
-) -> Result<GpuAtlas, PlatformError> {
-    let packed = if minimum_side == MIN_ATLAS_SIDE {
-        pack_atlas(resources)?
-    } else {
-        pack_atlas_with_min_side(resources, minimum_side)?
+) -> Result<(GpuAtlas, u64), PlatformError> {
+    let max_dimension = context.device.limits().max_texture_dimension_2d;
+    let packed = match pack_atlas(resources, &INITIAL_ATLAS_EXTENTS, 0, max_dimension) {
+        Ok(packed) => packed,
+        Err(error) => {
+            log_capacity_exceeded(resources, max_dimension)?;
+            return Err(error);
+        }
     };
-    build_atlas_pixels(resources, &packed, upload_pixels)?;
-    let texture = upload_atlas(
+    if packed.pages.len() > 1 || packed.byte_len() > MAX_ATLAS_UPLOAD_BYTES as u64 {
+        tracing::debug!(
+            event = "platform.wgpu.atlas.paged",
+            resource_count = resources.len(),
+            pages = packed.pages.len(),
+            atlas_bytes = packed.byte_len(),
+            "scene resources overflow one atlas page"
+        );
+        let atlas = create_empty_gpu_atlas(context, packed);
+        let upload_bytes = fill_empty_gpu_atlas(context, &atlas, resources, None, upload_pixels)?;
+        return Ok((atlas, upload_bytes));
+    }
+    let page = &packed.pages[0];
+    build_atlas_pixels(resources, &packed, 0, upload_pixels)?;
+    let texture = create_atlas_texture(context.device, page.width, page.height);
+    upload_atlas(
         context.device,
         context.queue,
+        &texture,
         upload_pixels,
-        packed.width,
-        packed.height,
+        page.width,
+        page.height,
         context.timestamp_query,
     )?;
     upload_pixels.clear();
     upload_pixels.shrink_to(ATLAS_STAGING_CHUNK_BYTES as usize);
-    let linear_view = texture.create_view(&wgpu::TextureViewDescriptor {
-        format: Some(wgpu::TextureFormat::Rgba8UnormSrgb),
-        ..Default::default()
-    });
-    let encoded_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    let linear_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &linear_view,
-        &encoded_view,
-        context.linear_sampler,
-        "roukaku-glyph-atlas-linear-bind-group",
-    );
-    let nearest_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &linear_view,
-        &encoded_view,
-        context.nearest_sampler,
-        "roukaku-glyph-atlas-nearest-bind-group",
-    );
-    let encoded_linear_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &encoded_view,
-        &encoded_view,
-        context.linear_sampler,
-        "roukaku-glyph-atlas-encoded-linear-bind-group",
-    );
-    let encoded_nearest_bind_group = create_atlas_bind_group(
-        context.device,
-        context.layout,
-        &encoded_view,
-        &encoded_view,
-        context.nearest_sampler,
-        "roukaku-glyph-atlas-encoded-nearest-bind-group",
-    );
-    Ok(GpuAtlas {
-        texture,
-        linear_bind_group,
-        nearest_bind_group,
-        encoded_linear_bind_group,
-        encoded_nearest_bind_group,
-        packed,
-    })
+    let upload_bytes = packed.byte_len();
+    Ok((
+        assemble_gpu_atlas(context, vec![texture], packed),
+        upload_bytes,
+    ))
 }
 
 pub(crate) fn create_atlas_bind_group(

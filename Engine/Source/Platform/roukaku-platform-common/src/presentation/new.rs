@@ -30,7 +30,10 @@ impl WgpuPresentationCore {
             ));
         }
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
+            .request_device(&wgpu::DeviceDescriptor {
+                required_features: adapter.features() & wgpu::Features::DEPTH_CLIP_CONTROL,
+                ..wgpu::DeviceDescriptor::default()
+            })
             .await
             .map_err(|_| unavailable("surface.create", "wgpu device creation failed"))?;
         let device_lost = Arc::new(AtomicBool::new(false));
@@ -433,7 +436,10 @@ impl WgpuPresentationCore {
         );
         let (device, queue) = self
             .adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
+            .request_device(&wgpu::DeviceDescriptor {
+                required_features: self.adapter.features() & wgpu::Features::DEPTH_CLIP_CONTROL,
+                ..wgpu::DeviceDescriptor::default()
+            })
             .await
             .map_err(|_| {
                 PlatformError::new(

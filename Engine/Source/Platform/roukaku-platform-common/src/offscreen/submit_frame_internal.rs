@@ -203,11 +203,15 @@ pub(super) fn renderer_execution_identity(info: &wgpu::AdapterInfo) -> RendererE
     }
 }
 
+/// Requests timestamp queries on demand and depth-clip control whenever the
+/// adapter offers it, so projective meshes can keep out-of-range depth.
 pub(super) fn device_descriptor(
+    adapter_features: wgpu::Features,
     require_timestamp_query: bool,
     timestamp_features: wgpu::Features,
 ) -> wgpu::DeviceDescriptor<'static> {
     let mut descriptor = wgpu::DeviceDescriptor {
+        required_features: adapter_features & wgpu::Features::DEPTH_CLIP_CONTROL,
         memory_hints: wgpu::MemoryHints::MemoryUsage,
         ..wgpu::DeviceDescriptor::default()
     };

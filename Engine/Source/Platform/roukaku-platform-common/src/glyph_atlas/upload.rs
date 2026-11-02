@@ -124,12 +124,16 @@ pub(crate) fn upload_resource_rect(
     Ok(())
 }
 
+/// Builds the full CPU image of one atlas page, including the reserved white
+/// texel and every resource placed on that page.
 pub(crate) fn build_atlas_pixels(
     resources: &AtlasResourceView<'_>,
     atlas: &PackedAtlas,
+    page: usize,
     upload_pixels: &mut Vec<u8>,
 ) -> Result<(), PlatformError> {
-    prepare_upload_pixels(upload_pixels, atlas.width, atlas.height)?;
+    let width = atlas.pages[page].width;
+    prepare_upload_pixels(upload_pixels, width, atlas.pages[page].height)?;
     upload_pixels.fill(0);
     upload_pixels[..4].copy_from_slice(&[255; 4]);
     for (resource_id, resource) in resources.iter() {
@@ -137,10 +141,13 @@ pub(crate) fn build_atlas_pixels(
             .placements
             .get(resource_id)
             .ok_or_else(|| invalid("glyph atlas placement is missing"))?;
+        if placement.page != page {
+            continue;
+        }
         write_padded_resource(
             resource,
             upload_pixels,
-            atlas.width,
+            width,
             placement.x - ATLAS_PADDING,
             placement.y - ATLAS_PADDING,
         )?;
@@ -337,27 +344,12 @@ pub(crate) fn prepare_upload_pixels(
 pub(crate) fn upload_atlas(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
+    texture: &wgpu::Texture,
     pixels: &[u8],
     width: u32,
     height: u32,
     timestamp_query: Option<(&wgpu::QuerySet, u32, u32)>,
-) -> Result<wgpu::Texture, PlatformError> {
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("roukaku-glyph-atlas"),
-        size: wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8Unorm,
-        usage: wgpu::TextureUsages::TEXTURE_BINDING
-            | wgpu::TextureUsages::COPY_DST
-            | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[wgpu::TextureFormat::Rgba8UnormSrgb],
-    });
+) -> Result<(), PlatformError> {
     if let Some((query_set, begin, end)) = timestamp_query {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("roukaku-glyph-atlas-upload-encoder"),
@@ -366,7 +358,7 @@ pub(crate) fn upload_atlas(
         encode_texture_upload_once(
             device,
             &mut encoder,
-            &texture,
+            texture,
             pixels,
             width,
             height,
@@ -377,7 +369,7 @@ pub(crate) fn upload_atlas(
     } else {
         queue.write_texture(
             wgpu::TexelCopyTextureInfo {
-                texture: &texture,
+                texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
@@ -395,7 +387,7 @@ pub(crate) fn upload_atlas(
             },
         );
     }
-    Ok(texture)
+    Ok(())
 }
 
 pub(crate) fn primed_staging_belt(device: &wgpu::Device) -> wgpu::util::StagingBelt {

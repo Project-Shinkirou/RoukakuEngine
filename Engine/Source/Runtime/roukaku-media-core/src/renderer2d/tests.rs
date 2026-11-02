@@ -36,6 +36,87 @@ fn aspect_fit_root_clip_uses_the_integer_viewport_edge() {
     assert_eq!(pixel(0, 670), &[0, 0, 0, 255]);
 }
 
+fn cpu_renderer(width: u32, height: u32) -> HeadlessRenderer {
+    CpuRendererProvider
+        .create(RendererCreateRequest {
+            width,
+            height,
+            format: RenderTargetFormat::Rgba8Srgb,
+            profile: "test".into(),
+        })
+        .unwrap()
+}
+
+fn upload(resource_id: &str, rgba: [u8; 4]) -> SceneCommand {
+    SceneCommand::UploadTexture {
+        resource_id: resource_id.into(),
+        frame: TextureFrame::from_vec(1, 1, rgba.to_vec()).unwrap(),
+    }
+}
+
+#[test]
+fn screen_rgb_ignores_source_coverage_and_keeps_target_alpha() {
+    let mut renderer = cpu_renderer(1, 1);
+    for alpha in [0, 64, 255] {
+        let frame = renderer
+            .capture_frame(&[
+                SceneCommand::clear([20, 80, 160, 255]),
+                SceneCommand::Texture {
+                    id: "source".into(),
+                    frame: TextureFrame::from_vec(1, 1, vec![200, 120, 40, alpha]).unwrap(),
+                    destination: RectI::new(0, 0, 1, 1),
+                    opacity: 0.5,
+                    blend: BlendMode::ScreenRgb,
+                },
+            ])
+            .unwrap();
+        assert_eq!(&frame.bytes[..4], &[112, 121, 167, 255]);
+    }
+}
+
+#[test]
+fn crossfade_sprite_midpoint_weights_both_opaque_sources_equally() {
+    let mut renderer = cpu_renderer(1, 1);
+    let frame = renderer
+        .capture_frame(&[
+            upload("previous", [255, 0, 0, 255]),
+            upload("current", [0, 0, 255, 255]),
+            SceneCommand::clear([0, 255, 0, 255]),
+            SceneCommand::CrossfadeSprite {
+                id: "fade".into(),
+                previous_texture_id: "previous".into(),
+                current_texture_id: "current".into(),
+                source: None,
+                destination: RectI::new(0, 0, 1, 1),
+                progress: 0.5,
+                opacity: 1.0,
+            },
+        ])
+        .unwrap();
+    assert_eq!(&frame.bytes[..4], &[128, 0, 128, 255]);
+}
+
+#[test]
+fn crossfade_quad_draws_the_shared_diagonal_once() {
+    let mut renderer = cpu_renderer(2, 2);
+    let frame = renderer
+        .capture_frame(&[
+            upload("white", [255, 255, 255, 255]),
+            SceneCommand::clear([0, 0, 0, 255]),
+            SceneCommand::CrossfadeQuad {
+                id: "quad".into(),
+                previous_texture_id: "white".into(),
+                current_texture_id: "white".into(),
+                source: None,
+                positions: [[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]],
+                progress: 0.25,
+                opacity: 0.5,
+            },
+        ])
+        .unwrap();
+    assert_eq!(frame.bytes, [128, 128, 128, 255].repeat(4));
+}
+
 #[test]
 fn rotated_clip_keeps_conservative_bounds_rounding() {
     let transform = Transform2D {

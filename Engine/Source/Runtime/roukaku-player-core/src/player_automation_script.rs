@@ -333,6 +333,9 @@ pub fn evidence_scene_command_hash(
             SceneCommand::PushPixelMask { .. } => (21, None),
             SceneCommand::PopPixelMask => (22, None),
             SceneCommand::MaskReveal { frame, .. } => (23, Some(&frame.rgba8)),
+            SceneCommand::CrossfadeSprite { .. } => (24, None),
+            SceneCommand::CrossfadeQuad { .. } => (25, None),
+            SceneCommand::ProjectiveMesh2D { .. } => (26, None),
         };
         material.push(kind);
         if let Some(pixels) = pixels {

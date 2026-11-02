@@ -89,6 +89,72 @@ impl Renderer2D for HeadlessRenderer {
                         *blend,
                     )?;
                 }
+                DrawCommand::CrossfadeSprite {
+                    previous_texture_id,
+                    current_texture_id,
+                    source,
+                    destination,
+                    progress,
+                    opacity,
+                    ..
+                } => {
+                    crossfade::draw_sprite(
+                        &mut bytes,
+                        width,
+                        height,
+                        *clips.last().expect("clip stack is initialized"),
+                        current_transform(camera, &transforms),
+                        *destination,
+                        crossfade::Sources {
+                            previous: capture_crossfade_texture(
+                                &self.textures,
+                                &texture_changes,
+                                previous_texture_id,
+                            )?,
+                            current: capture_crossfade_texture(
+                                &self.textures,
+                                &texture_changes,
+                                current_texture_id,
+                            )?,
+                            source: *source,
+                            progress: *progress,
+                            opacity: *opacity * opacities.last().copied().unwrap_or(1.0),
+                        },
+                    )?;
+                }
+                DrawCommand::CrossfadeQuad {
+                    previous_texture_id,
+                    current_texture_id,
+                    source,
+                    positions,
+                    progress,
+                    opacity,
+                    ..
+                } => {
+                    crossfade::draw_quad(
+                        &mut bytes,
+                        width,
+                        height,
+                        *clips.last().expect("clip stack is initialized"),
+                        current_transform(camera, &transforms),
+                        *positions,
+                        crossfade::Sources {
+                            previous: capture_crossfade_texture(
+                                &self.textures,
+                                &texture_changes,
+                                previous_texture_id,
+                            )?,
+                            current: capture_crossfade_texture(
+                                &self.textures,
+                                &texture_changes,
+                                current_texture_id,
+                            )?,
+                            source: *source,
+                            progress: *progress,
+                            opacity: *opacity * opacities.last().copied().unwrap_or(1.0),
+                        },
+                    )?;
+                }
                 DrawCommand::GlyphRun {
                     glyphs,
                     rgba,
@@ -166,6 +232,11 @@ impl Renderer2D for HeadlessRenderer {
                         *opacity * opacities.last().copied().unwrap_or(1.0),
                         *blend,
                     )?;
+                }
+                DrawCommand::ProjectiveMesh2D { .. } => {
+                    return Err(MediaError::message(
+                        "ROUKAKU_MEDIA_PROJECTIVE_MESH_GPU_REQUIRED: CPU renderer does not support projective meshes",
+                    ));
                 }
                 DrawCommand::MeshBatch2D {
                     vertices,
@@ -395,6 +466,16 @@ pub(super) fn capture_texture<'a>(
     changes
         .get(resource_id)
         .map_or_else(|| retained.get(resource_id), Option::as_ref)
+}
+
+fn capture_crossfade_texture<'a>(
+    retained: &'a BTreeMap<String, TextureFrame>,
+    changes: &'a BTreeMap<String, Option<TextureFrame>>,
+    resource_id: &str,
+) -> Result<&'a TextureFrame, MediaError> {
+    capture_texture(retained, changes, resource_id).ok_or_else(|| {
+        MediaError::message("ROUKAKU_MEDIA_RESOURCE_UNKNOWN: crossfade texture is not uploaded")
+    })
 }
 
 pub(super) fn capture_glyph<'a>(

@@ -44,6 +44,8 @@ To exercise the native GPU scene, WGSL filter, texture upload and readback witho
 cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
 ```
 
+Native offscreen rendering uses DX12 on Windows, Vulkan on Linux and Android, and Metal on macOS/iOS. Android uses a surfaceless Vulkan instance and the same hardware-adapter validation, scene renderer and bounded readback as desktop hosts; GLES and software adapters are not fallbacks.
+
 `check-fast` checks documentation links and hygiene only; it does not compile or test code. `docs` runs the same documentation check. `ui-check` explicitly downloads a pinned Luau analyzer and checks NativeVN controllers, requiring network access.
 
 ## Compiled work extensions

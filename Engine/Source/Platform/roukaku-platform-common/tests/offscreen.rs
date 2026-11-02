@@ -152,7 +152,7 @@ async fn native_offscreen_gpu_renders_scene_filter_and_readback() {
         renderer.identity().backend,
         if cfg!(target_os = "windows") {
             "dx12"
-        } else if cfg!(target_os = "linux") {
+        } else if cfg!(any(target_os = "linux", target_os = "android")) {
             "vulkan"
         } else {
             "metal"

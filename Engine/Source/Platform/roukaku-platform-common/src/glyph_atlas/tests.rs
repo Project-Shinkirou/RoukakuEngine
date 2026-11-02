@@ -1,13 +1,45 @@
 use super::{
     ATLAS_PADDING, ATLAS_SIDE, AtlasAllocatorState, AtlasResource, AtlasResourceView,
-    MAX_ATLAS_UPLOAD_BYTES, MAX_ATLAS_WIDTH, ResourceMutationJournal, RetainedTexture,
-    allocate_pending_atlas_slot, pack_atlas, pack_atlas_at_extent, prepare_upload_pixels,
-    release_pending_atlas_slot, updated_retained_texture, vertex_upload_required,
-    write_padded_resource,
+    INITIAL_ATLAS_EXTENTS, MAX_ATLAS_UPLOAD_BYTES, MAX_ATLAS_WIDTH, PackedAtlas,
+    REPACK_ATLAS_EXTENTS, ResourceMutationJournal, RetainedTexture, allocate_pending_atlas_slot,
+    pack_atlas, prepare_upload_pixels, release_pending_atlas_slot, updated_retained_texture,
+    validate_resource_budget, vertex_upload_required, write_padded_resource,
 };
 use roukaku_media_core::TextureFrame;
-use roukaku_platform::PlatformErrorCode;
+use roukaku_platform::{PlatformError, PlatformErrorCode};
 use std::{collections::BTreeMap, sync::Arc};
+
+fn initial_pack(resources: &AtlasResourceView<'_>) -> Result<PackedAtlas, PlatformError> {
+    pack_atlas(resources, &INITIAL_ATLAS_EXTENTS, 0, MAX_ATLAS_WIDTH)
+}
+
+fn sized_texture(width: u32, height: u32) -> AtlasResource {
+    AtlasResource::texture(TextureFrame {
+        width,
+        height,
+        rgba8: Vec::new().into(),
+    })
+}
+
+fn assert_padded_slots_disjoint(packed: &PackedAtlas) {
+    let placements = packed.placements.values().collect::<Vec<_>>();
+    for (index, left) in placements.iter().enumerate() {
+        let page = &packed.pages[left.page];
+        assert!(left.x + left.width + ATLAS_PADDING <= page.width);
+        assert!(left.y + left.height + ATLAS_PADDING <= page.height);
+        assert!(left.x > ATLAS_PADDING * 2 || left.y > ATLAS_PADDING * 2);
+        for right in &placements[index + 1..] {
+            assert!(
+                left.page != right.page
+                    || left.x + left.width + ATLAS_PADDING <= right.x - ATLAS_PADDING
+                    || right.x + right.width + ATLAS_PADDING <= left.x - ATLAS_PADDING
+                    || left.y + left.height + ATLAS_PADDING <= right.y - ATLAS_PADDING
+                    || right.y + right.height + ATLAS_PADDING <= left.y - ATLAS_PADDING,
+                "padded atlas slots overlap"
+            );
+        }
+    }
+}
 
 #[test]
 fn atlas_width_tracks_total_area_and_packs_multiple_stage_textures() {
@@ -27,23 +59,20 @@ fn atlas_width_tracks_total_area_and_packs_multiple_stage_textures() {
         .collect::<BTreeMap<_, _>>();
 
     let mutations = ResourceMutationJournal::new();
-    let packed = pack_atlas(&AtlasResourceView::new(&resources, &mutations))
+    let packed = initial_pack(&AtlasResourceView::new(&resources, &mutations))
         .expect("stage textures must fit the bounded atlas");
 
     assert_eq!(packed.placements.len(), 8);
-    assert_eq!(packed.width, 4096);
-    assert_eq!(packed.height, 4096);
+    assert_eq!(packed.pages.len(), 1);
+    assert_eq!(
+        (packed.pages[0].width, packed.pages[0].height),
+        (4096, 4096)
+    );
 }
 
 #[test]
 fn rectangular_growth_packs_wide_stage_resources_without_raising_resource_budget() {
-    let texture = |width, height| {
-        AtlasResource::texture(TextureFrame {
-            width,
-            height,
-            rgba8: Vec::new().into(),
-        })
-    };
+    let texture = sized_texture;
     let mut resources = BTreeMap::from([("texture.stage.large".to_string(), texture(2560, 1840))]);
     for index in 0..20 {
         resources.insert(format!("texture.stage.strip.{index}"), texture(512, 1000));
@@ -51,15 +80,77 @@ fn rectangular_growth_packs_wide_stage_resources_without_raising_resource_budget
     let mutations = ResourceMutationJournal::new();
     let view = AtlasResourceView::new(&resources, &mutations);
 
-    assert!(
-        pack_atlas_at_extent(&view, ATLAS_SIDE, ATLAS_SIDE)
-            .expect("square packing must be evaluated")
-            .is_none()
+    // The square extent is tried first and overflows; the wide one holds all.
+    let packed = pack_atlas(
+        &view,
+        &[(ATLAS_SIDE, ATLAS_SIDE), (MAX_ATLAS_WIDTH, ATLAS_SIDE)],
+        0,
+        MAX_ATLAS_WIDTH,
+    )
+    .expect("wide stage resources must fit the bounded rectangular atlas");
+    assert_eq!(packed.pages.len(), 1);
+    assert_eq!(
+        (packed.pages[0].width, packed.pages[0].height),
+        (8192, 4096)
     );
-    let packed = pack_atlas_at_extent(&view, MAX_ATLAS_WIDTH, ATLAS_SIDE)
-        .expect("rectangular packing must be evaluated")
-        .expect("wide stage resources must fit the bounded rectangular atlas");
-    assert_eq!((packed.width, packed.height), (8192, 4096));
+}
+
+#[test]
+fn texture_set_overflowing_one_page_spills_onto_additional_pages() {
+    // Nine large backgrounds: about 134 MB raw, more than one 8192x4096 page.
+    let mut resources = (0..9)
+        .map(|index| (format!("texture.stage.{index}"), sized_texture(2730, 1365)))
+        .collect::<BTreeMap<_, _>>();
+    resources.insert("glyph.small".to_owned(), sized_texture(44, 44));
+    let mutations = ResourceMutationJournal::new();
+    let view = AtlasResourceView::new(&resources, &mutations);
+    validate_resource_budget(&view).expect("the overflowing set stays within the budget");
+
+    let packed = pack_atlas(&view, &REPACK_ATLAS_EXTENTS, 0, MAX_ATLAS_WIDTH).unwrap();
+
+    assert_eq!(packed.placements.len(), 10);
+    assert!(packed.pages.len() > 1);
+    assert!(packed.pages.iter().all(|page| {
+        page.width <= MAX_ATLAS_WIDTH
+            && page.height <= ATLAS_SIDE
+            && page.width.is_power_of_two()
+            && page.height.is_power_of_two()
+    }));
+    // Pages beyond the first shrink to what their resources occupy.
+    assert!(packed.byte_len() < packed.pages.len() as u64 * 8192 * 4096 * 4);
+    // First fit: the small resource fills a gap on an earlier page instead
+    // of opening a page of its own.
+    let small_page = packed.placements["glyph.small"].page;
+    assert!(
+        packed
+            .placements
+            .iter()
+            .any(|(id, placement)| id != "glyph.small" && placement.page == small_page)
+    );
+    assert_padded_slots_disjoint(&packed);
+}
+
+#[test]
+fn device_limit_bounds_every_atlas_page() {
+    let resources = (0..3)
+        .map(|index| (format!("texture.{index}"), sized_texture(1500, 1500)))
+        .collect::<BTreeMap<_, _>>();
+    let mutations = ResourceMutationJournal::new();
+    let view = AtlasResourceView::new(&resources, &mutations);
+
+    let packed = pack_atlas(&view, &REPACK_ATLAS_EXTENTS, 0, 2048).unwrap();
+    assert_eq!(packed.pages.len(), 3);
+    assert!(
+        packed
+            .pages
+            .iter()
+            .all(|page| page.width <= 2048 && page.height <= 2048)
+    );
+    assert_padded_slots_disjoint(&packed);
+
+    let oversized = BTreeMap::from([("texture.wide".to_owned(), sized_texture(3000, 100))]);
+    let oversized = AtlasResourceView::new(&oversized, &mutations);
+    assert!(pack_atlas(&oversized, &REPACK_ATLAS_EXTENTS, 0, 2048).is_err());
 }
 
 #[test]
@@ -114,9 +205,9 @@ fn released_atlas_slot_is_reused_without_repacking_live_resources() {
     .into_iter()
     .collect::<BTreeMap<_, _>>();
     let mutations = ResourceMutationJournal::new();
-    let packed = pack_atlas(&AtlasResourceView::new(&resources, &mutations)).unwrap();
+    let packed = initial_pack(&AtlasResourceView::new(&resources, &mutations)).unwrap();
     let original = packed.placements["texture.stable"];
-    let mut allocator = AtlasAllocatorState::new(&packed);
+    let mut allocator = AtlasAllocatorState::new(0, &packed.pages[0]);
     release_pending_atlas_slot(&mut allocator, original).unwrap();
     let reused = allocate_pending_atlas_slot(&mut allocator, 32, 32).unwrap();
     assert_eq!((reused.x, reused.y), (original.x, original.y));
@@ -144,23 +235,23 @@ fn released_atlas_slot_is_reused_without_repacking_live_resources() {
 fn wider_than_current_atlas_requires_repacking_after_row_wrap() {
     let resources = BTreeMap::new();
     let mutations = ResourceMutationJournal::new();
-    let packed = pack_atlas(&AtlasResourceView::new(&resources, &mutations)).unwrap();
-    assert_eq!(packed.width, 1024);
-    let mut allocator = AtlasAllocatorState::new(&packed);
+    let packed = initial_pack(&AtlasResourceView::new(&resources, &mutations)).unwrap();
+    assert_eq!(packed.pages[0].width, 1024);
+    let mut allocator = AtlasAllocatorState::new(0, &packed.pages[0]);
+    allocate_pending_atlas_slot(&mut allocator, 600, 10).unwrap();
+    let cursor = (allocator.cursor_x, allocator.cursor_y, allocator.row_height);
     assert!(allocate_pending_atlas_slot(&mut allocator, 1280, 720).is_err());
+    // A failed allocation leaves the page untouched so another page or a
+    // repack can take the resource.
+    assert_eq!(
+        (allocator.cursor_x, allocator.cursor_y, allocator.row_height),
+        cursor
+    );
 
-    let resources = BTreeMap::from([(
-        "texture.stage".to_owned(),
-        AtlasResource::texture(TextureFrame {
-            width: 1280,
-            height: 720,
-            rgba8: Vec::new().into(),
-        }),
-    )]);
-    let repacked = pack_atlas(&AtlasResourceView::new(&resources, &mutations)).unwrap();
-    let placement = repacked.placements["texture.stage"];
-    assert!(placement.x + placement.width + ATLAS_PADDING <= repacked.width);
-    assert!(placement.y + placement.height + ATLAS_PADDING <= repacked.height);
+    let resources = BTreeMap::from([("texture.stage".to_owned(), sized_texture(1280, 720))]);
+    let repacked = initial_pack(&AtlasResourceView::new(&resources, &mutations)).unwrap();
+    assert_eq!(repacked.pages.len(), 1);
+    assert_padded_slots_disjoint(&repacked);
 }
 
 #[test]
@@ -282,14 +373,14 @@ fn initial_and_incremental_atlas_slots_keep_disjoint_sampling_guards() {
         .collect::<BTreeMap<_, _>>();
     let mutations = ResourceMutationJournal::new();
     let view = AtlasResourceView::new(&resources, &mutations);
-    let packed = pack_atlas(&view).unwrap();
+    let packed = initial_pack(&view).unwrap();
     let mut pixels = Vec::new();
-    super::build_atlas_pixels(&view, &packed, &mut pixels).unwrap();
+    super::build_atlas_pixels(&view, &packed, 0, &mut pixels).unwrap();
     for (id, rgba) in colors {
         let placement = packed.placements[id];
         for y in placement.y - ATLAS_PADDING..placement.y + placement.height + ATLAS_PADDING {
             for x in placement.x - ATLAS_PADDING..placement.x + placement.width + ATLAS_PADDING {
-                let offset = ((y * packed.width + x) * 4) as usize;
+                let offset = ((y * packed.pages[0].width + x) * 4) as usize;
                 assert_eq!(
                     &pixels[offset..offset + 4],
                     &rgba,
@@ -298,19 +389,9 @@ fn initial_and_incremental_atlas_slots_keep_disjoint_sampling_guards() {
             }
         }
     }
-    let mut allocator = AtlasAllocatorState::new(&packed);
+    let mut allocator = AtlasAllocatorState::new(0, &packed.pages[0]);
     let next = allocate_pending_atlas_slot(&mut allocator, 2, 2).unwrap();
-    let mut placements = packed.placements.values().copied().collect::<Vec<_>>();
-    placements.push(next);
-    for (index, left) in placements.iter().enumerate() {
-        for right in &placements[index + 1..] {
-            assert!(
-                left.x + left.width + ATLAS_PADDING <= right.x - ATLAS_PADDING
-                    || right.x + right.width + ATLAS_PADDING <= left.x - ATLAS_PADDING
-                    || left.y + left.height + ATLAS_PADDING <= right.y - ATLAS_PADDING
-                    || right.y + right.height + ATLAS_PADDING <= left.y - ATLAS_PADDING,
-                "padded atlas slots overlap"
-            );
-        }
-    }
+    let mut packed = packed;
+    packed.placements.insert("next".to_owned(), next);
+    assert_padded_slots_disjoint(&packed);
 }

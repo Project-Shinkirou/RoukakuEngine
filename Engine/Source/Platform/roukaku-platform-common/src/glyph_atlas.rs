@@ -16,7 +16,15 @@ mod vertices;
 
 mod pipelines;
 
+mod crossfade;
+
+mod projective_mesh;
+
 pub(crate) use allocator::*;
+
+pub(crate) use crossfade::*;
+
+pub(crate) use projective_mesh::*;
 
 pub(crate) use gpu::*;
 
@@ -40,8 +48,9 @@ use std::{
 };
 
 use roukaku_media_core::{
-    BlendMode, GlyphBitmap, MaskRevealMode, MeshMaterial2D, MeshVertex2D, OwnedPixelBuffer, RectI,
-    SceneCommand, SceneCompositing2D, TextureFilter2D, TextureFrame, Transform2D,
+    BlendMode, GlyphBitmap, MaskRevealMode, MeshDepth2D, MeshMaterial2D, MeshVertex2D,
+    OwnedPixelBuffer, RectI, SceneCommand, SceneCompositing2D, TextureFilter2D, TextureFrame,
+    Transform2D,
 };
 
 use roukaku_platform::{PlatformError, SceneFrame};
@@ -58,6 +67,8 @@ use atlas_state::ATLAS_PADDING;
 use atlas_state::ATLAS_SIDE;
 use atlas_state::ATLAS_STAGING_CHUNK_BYTES;
 pub(crate) use atlas_state::AtlasAllocatorState;
+pub(crate) use atlas_state::AtlasBindGroups;
+pub(crate) use atlas_state::AtlasPageAllocation;
 pub(crate) use atlas_state::AtlasPlacement;
 use atlas_state::AtlasPlacementJournal;
 pub(crate) use atlas_state::AtlasPlacementView;
@@ -74,6 +85,7 @@ pub(crate) use atlas_state::DrawRun;
 pub(crate) use atlas_state::GlyphCpuProfile;
 pub(crate) use atlas_state::GlyphProfileQueries;
 pub(crate) use atlas_state::GpuAtlas;
+use atlas_state::MAX_ATLAS_PAGES;
 use atlas_state::MAX_ATLAS_UPLOAD_BYTES;
 use atlas_state::MAX_ATLAS_WIDTH;
 use atlas_state::MAX_SCENE_RESOURCE_BYTES;
@@ -94,6 +106,6 @@ pub(crate) use atlas_state::TextureRegionUpload;
 use atlas_state::VERTEX_STRIDE;
 pub(crate) use atlas_state::WgpuGlyphAtlasRenderer;
 mod push_quad_run;
-pub(crate) use push_quad_run::DrawBatch;
 use push_quad_run::push_quad_run;
+pub(crate) use push_quad_run::{BatchPipeline, DrawBatch};
 mod render_internal;

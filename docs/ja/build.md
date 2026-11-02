@@ -44,6 +44,8 @@ cargo xtask check --workspace engine --hardware
 cargo test --locked -p roukaku-platform-common --test offscreen native_offscreen_gpu_renders_scene_filter_and_readback -- --ignored --nocapture
 ```
 
+ネイティブのオフスクリーン描画は Windows で DX12、Linux と Android で Vulkan、macOS/iOS で Metal を使います。Android は surface を持たない Vulkan instance を作成し、同じハードウェア adapter 検証、シーン描画、有界リードバックを使います。GLES やソフトウェア adapter へのフォールバックは行いません。
+
 `check-fast` はドキュメントのリンクとテキストの衛生チェックだけを行い、コードのコンパイルやテストは行いません。`docs` も同じドキュメントチェックを実行します。`ui-check` は固定版の Luau analyzer を明示的にダウンロードして NativeVN の controller をチェックするため、ネットワーク接続が必要です。
 
 ## コンパイル統合型の作品拡張

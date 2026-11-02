@@ -29,10 +29,15 @@ pub fn run(root: &Path) -> Result<()> {
         }
     }
     files.extend(
-        ["README.md", "README.zh-CN.md", "README.ja.md", "CONTRIBUTING.md"]
-            .iter()
-            .map(|name| root.join(name))
-            .filter(|p| p.is_file()),
+        [
+            "README.md",
+            "README.zh-CN.md",
+            "README.ja.md",
+            "CONTRIBUTING.md",
+        ]
+        .iter()
+        .map(|name| root.join(name))
+        .filter(|p| p.is_file()),
     );
     files.sort();
     let errors: Vec<_> = files

@@ -10,14 +10,37 @@ pub(super) fn push_quad_run<'a>(
     primitives.push(DrawPrimitive::Quads(index));
 }
 
+/// Fixed-function state a batch draws with.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BatchPipeline {
+    Blend(BlendMode),
+    Mask(MaskRevealMode),
+    /// Group 0 binds `page` (previous texture), group 1 `secondary_page`.
+    Crossfade,
+    /// 48-byte homogeneous vertices; depth batches need a depth attachment.
+    Projective(BlendMode, MeshDepth2D),
+}
+
+impl BatchPipeline {
+    pub(super) fn depth_tested(self) -> bool {
+        matches!(self, Self::Projective(_, MeshDepth2D::ReadWriteLess))
+    }
+}
+
+#[derive(Clone, Copy)]
 pub(crate) struct DrawBatch {
-    pub(super) first_vertex: u32,
+    /// Byte offset of the first vertex; batches mix vertex strides.
+    pub(super) byte_offset: u64,
     pub(super) vertex_count: u32,
     pub(super) clip: RectI,
-    pub(super) blend: BlendMode,
     pub(super) texture_filter: TextureFilter2D,
     pub(super) compositing: SceneCompositing2D,
-    pub(super) mask: Option<MaskRevealMode>,
+    pub(super) pipeline: BatchPipeline,
+    /// Atlas page sampled by the image binding.
+    pub(super) page: usize,
+    /// Atlas page sampled by the secondary (mask) binding; equals `page`
+    /// unless the batch samples a second resource.
+    pub(super) secondary_page: usize,
 }
 
 impl WgpuGlyphAtlasRenderer {
@@ -76,6 +99,7 @@ impl WgpuGlyphAtlasRenderer {
             atlas_staging_belts: std::array::from_fn(|_| primed_staging_belt(device)),
             atlas_staging_index: 0,
             reserved_side,
+            depth_target: None,
         }
     }
 
@@ -100,6 +124,7 @@ impl WgpuGlyphAtlasRenderer {
             )
         });
         self.output = None;
+        self.depth_target = None;
         self.vertex_buffer = None;
         self.vertex_capacity = 0;
         self.uploaded_vertex_bytes.clear();
@@ -196,34 +221,34 @@ impl WgpuGlyphAtlasRenderer {
                         }
                     }
                 }
-                atlas.packed.cursor_x = mutation.cursor_x;
-                atlas.packed.cursor_y = mutation.cursor_y;
-                atlas.packed.row_height = mutation.row_height;
-                for index in mutation.consumed_free_slots.into_iter().rev() {
-                    atlas.packed.free_slots.remove(index);
+                for (page, mutation) in atlas.packed.pages.iter_mut().zip(mutation.pages) {
+                    page.cursor_x = mutation.cursor_x;
+                    page.cursor_y = mutation.cursor_y;
+                    page.row_height = mutation.row_height;
+                    for index in mutation.consumed_free_slots.into_iter().rev() {
+                        page.free_slots.remove(index);
+                    }
+                    page.free_slots.extend(mutation.added_free_slots);
+                    page.free_slots.sort_by_key(atlas_slot_sort_key);
+                    page.freed_area = mutation.freed_area;
                 }
-                atlas.packed.free_slots.extend(mutation.added_free_slots);
-                atlas.packed.free_slots.sort_by_key(atlas_slot_sort_key);
-                atlas.packed.freed_area = mutation.freed_area;
             }
         }
         prepared.texture
     }
 
     pub(crate) fn resource_bytes(&self) -> u64 {
-        let atlas = self.atlas.as_ref().map_or(0, |atlas| {
-            u64::from(atlas.packed.width) * u64::from(atlas.packed.height) * 4
-        });
         let output = self.output.as_ref().map_or(0, |output| {
             u64::from(output.width) * u64::from(output.height) * 4
         });
-        atlas + output + self.vertex_capacity
+        let depth = self.depth_target.as_ref().map_or(0, DepthTarget::bytes);
+        self.atlas_bytes() + output + depth + self.vertex_capacity
     }
 
     pub(crate) fn atlas_bytes(&self) -> u64 {
-        self.atlas.as_ref().map_or(0, |atlas| {
-            u64::from(atlas.packed.width) * u64::from(atlas.packed.height) * 4
-        })
+        self.atlas
+            .as_ref()
+            .map_or(0, |atlas| atlas.packed.byte_len())
     }
 
     pub(crate) fn last_upload_bytes(&self) -> u64 {
