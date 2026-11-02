@@ -166,7 +166,8 @@ pub(super) fn readback(
 
 pub(super) fn validate_native_backend(backend: wgpu::Backend) -> Result<(), PlatformError> {
     let valid = cfg!(target_os = "windows") && backend == wgpu::Backend::Dx12
-        || cfg!(any(target_os = "linux", target_os = "android")) && backend == wgpu::Backend::Vulkan
+        || cfg!(any(target_os = "linux", target_os = "android"))
+            && backend == wgpu::Backend::Vulkan
         || cfg!(any(target_os = "macos", target_os = "ios")) && backend == wgpu::Backend::Metal;
     if valid {
         Ok(())
