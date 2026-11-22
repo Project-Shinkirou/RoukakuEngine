@@ -92,6 +92,30 @@ impl SceneFilters {
         input: &wgpu::Texture,
         timestamps: Option<(&wgpu::QuerySet, u32)>,
     ) -> Result<wgpu::Texture, PlatformError> {
+        if !frame.commands.iter().any(|command| {
+            matches!(command, SceneCommand::FilterGraph { graph } if !graph.nodes.is_empty())
+        }) {
+            self.draw_calls = 0;
+            self.stages.clear();
+            return Ok(input.clone());
+        }
+        let mut encoder = device.create_command_encoder(&Default::default());
+        let texture = self.encode(device, queue, &mut encoder, frame, input, timestamps)?;
+        if self.draw_calls != 0 {
+            queue.submit([encoder.finish()]);
+        }
+        Ok(texture)
+    }
+
+    pub(crate) fn encode(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        frame: &SceneFrame,
+        input: &wgpu::Texture,
+        timestamps: Option<(&wgpu::QuerySet, u32)>,
+    ) -> Result<wgpu::Texture, PlatformError> {
         let mut texture = input.clone();
         self.draw_calls = 0;
         for command in &frame.commands {
@@ -99,7 +123,7 @@ impl SceneFilters {
                 continue;
             };
             for node in &graph.nodes {
-                texture = self.apply(device, queue, &texture, node, timestamps)?;
+                texture = self.apply(device, queue, encoder, &texture, node, timestamps)?;
                 self.draw_calls += 1;
             }
         }
@@ -111,6 +135,7 @@ impl SceneFilters {
         &mut self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
         input: &wgpu::Texture,
         node: &FilterNode,
         timestamps: Option<(&wgpu::QuerySet, u32)>,
@@ -171,7 +196,6 @@ impl SceneFilters {
             queue.write_buffer(&stage.uniform, 0, &bytes);
             stage.parameters = Some(parameters);
         }
-        let mut encoder = device.create_command_encoder(&Default::default());
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("roukaku-scene-filter-pass"),
@@ -200,7 +224,6 @@ impl SceneFilters {
             pass.set_bind_group(0, &stage.binding, &[]);
             pass.draw(0..3, 0..1);
         }
-        queue.submit([encoder.finish()]);
         Ok(stage.texture.clone())
     }
 

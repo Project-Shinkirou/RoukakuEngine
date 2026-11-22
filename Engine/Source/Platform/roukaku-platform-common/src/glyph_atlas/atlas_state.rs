@@ -157,6 +157,7 @@ pub(crate) struct AtlasUpdateContext<'a> {
     pub(super) layout: &'a wgpu::BindGroupLayout,
     pub(super) linear_sampler: &'a wgpu::Sampler,
     pub(super) nearest_sampler: &'a wgpu::Sampler,
+    pub(super) frame_encoder: Option<&'a mut wgpu::CommandEncoder>,
     pub(super) staging_belt: &'a mut wgpu::util::StagingBelt,
     pub(super) timestamp_query: Option<(&'a wgpu::QuerySet, u32, u32)>,
 }
@@ -178,6 +179,7 @@ pub(super) type PreparedRender = (
     ResourceMutationJournal,
     PreparedAtlasUpdate,
     GlyphCpuProfile,
+    wgpu::CommandEncoder,
 );
 
 #[derive(Clone, PartialEq, Eq)]

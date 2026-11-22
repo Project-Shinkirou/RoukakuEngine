@@ -6,20 +6,8 @@ impl WgpuOffscreenRenderer {
         frame: &SceneFrame,
         profile_gpu: bool,
     ) -> Result<Option<WgpuPendingProfile>, PlatformError> {
-        self.last_readback_bytes = 0;
-        self.last_queue_submissions = 0;
-        if let Some(timer) = self.gpu_timer.as_mut() {
-            timer.resolve_submissions_since_frame = 0;
-        }
         let cpu_started = Instant::now();
-        if self.device_lost.load(Ordering::Acquire) {
-            return Err(PlatformError::new(
-                PlatformErrorCode::DeviceLost,
-                "offscreen.render",
-                "GPU device is lost",
-            ));
-        }
-        let filter_stage = SceneFilters::validate(frame)?;
+        let filter_stage = self.begin_frame(frame)?;
         let profile_atlas_upload = profile_gpu && self.scene_renderer.requires_atlas_update(frame);
         let query_count = 2 + u32::from(profile_atlas_upload) * 2 + filter_stage as u32 * 2;
         if profile_gpu && query_count > MAX_GPU_TIMESTAMP_QUERIES {
@@ -104,7 +92,8 @@ impl WgpuOffscreenRenderer {
                 unavailable("offscreen.timestamp_query", "GPU timer is unavailable")
             })?;
             mark_gpu_timestamp_recorded(timer, timer_slot, query_count)?;
-            self.last_queue_submissions = 1 + u64::from(profile_atlas_upload) + filter_stage as u64;
+            self.last_queue_submissions =
+                1 + u64::from(profile_atlas_upload) + u64::from(filter_stage != 0);
             timer.next_slot = (timer_slot + 1) % timer.slots.len();
             Ok(Some(WgpuPendingProfile {
                 cpu_submit_ns,
@@ -122,9 +111,25 @@ impl WgpuOffscreenRenderer {
                 profiled_atlas_upload: profile_atlas_upload,
             }))
         } else {
-            self.last_queue_submissions = 1 + filter_stage as u64;
+            self.last_queue_submissions = 1 + u64::from(filter_stage != 0);
             Ok(None)
         }
+    }
+
+    pub(super) fn begin_frame(&mut self, frame: &SceneFrame) -> Result<usize, PlatformError> {
+        self.last_readback_bytes = 0;
+        self.last_queue_submissions = 0;
+        if let Some(timer) = self.gpu_timer.as_mut() {
+            timer.resolve_submissions_since_frame = 0;
+        }
+        if self.device_lost.load(Ordering::Acquire) {
+            return Err(PlatformError::new(
+                PlatformErrorCode::DeviceLost,
+                "offscreen.render",
+                "GPU device is lost",
+            ));
+        }
+        SceneFilters::validate(frame)
     }
 
     pub fn capture_checkpoint(&mut self) -> Result<CapturedFrame, PlatformError> {
@@ -134,15 +139,19 @@ impl WgpuOffscreenRenderer {
                 "checkpoint capture requires a submitted frame",
             )
         })?;
-        let frame = readback(
+        let mut encoder = self.device.create_command_encoder(&Default::default());
+        let readback = encode_readback(
             &self.device,
-            &self.queue,
+            &mut encoder,
             &output.texture,
             output.width,
             output.height,
             &mut self.readback_ring,
         )?;
-        self.last_readback_bytes = u64::from(output.width) * u64::from(output.height) * 4;
+        let submission = self.queue.submit([encoder.finish()]);
+        self.last_queue_submissions += 1;
+        let frame = readback.finish(&self.device, submission)?;
+        self.last_readback_bytes = frame.rgba8.len() as u64;
         Ok(frame)
     }
 }

@@ -93,6 +93,9 @@ impl WgpuGlyphAtlasRenderer {
         self.last_command_allocation_bytes = command_allocation_bytes;
         self.last_command_allocation_breakdown = Some(command_allocation_breakdown);
 
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("roukaku-glyph-render-encoder"),
+        });
         let atlas_started = Instant::now();
         let (atlas_update, upload_bytes) = if resources_changed {
             if atlas_upload_query.is_some() {
@@ -108,6 +111,7 @@ impl WgpuGlyphAtlasRenderer {
                     layout: &self.layout,
                     linear_sampler: &self.linear_sampler,
                     nearest_sampler: &self.nearest_sampler,
+                    frame_encoder: Some(&mut encoder),
                     staging_belt: &mut self.atlas_staging_belts[staging_index],
                     timestamp_query: atlas_upload_query,
                 },
@@ -289,9 +293,6 @@ impl WgpuGlyphAtlasRenderer {
         if segments.is_empty() {
             segments.push((0, 0, false));
         }
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("roukaku-glyph-render-encoder"),
-        });
         let clear = frame.clear_rgba;
         let clear_channel = |channel: u8| match compositing {
             SceneCompositing2D::LinearSrgb => f64::from(srgb_byte_to_linear(channel)),
@@ -393,13 +394,8 @@ impl WgpuGlyphAtlasRenderer {
                 pass.draw(0..batch.vertex_count, 0..1);
             }
         }
-        let command_buffer = encoder.finish();
         let render_encode_ns = profiled_elapsed_ns(profile_cpu, render_submit_started)?;
-        let queue_submit_started = Instant::now();
-        queue.submit([command_buffer]);
-        let queue_submit_ns = profiled_elapsed_ns(profile_cpu, queue_submit_started)?;
         self.last_draw_calls = self.draw_batches.len() as u64;
-        let render_submit_ns = profiled_elapsed_ns(profile_cpu, render_submit_started)?;
         Ok((
             output,
             committed_mutations,
@@ -410,9 +406,10 @@ impl WgpuGlyphAtlasRenderer {
                 geometry_ns,
                 vertex_upload_ns,
                 render_encode_ns,
-                queue_submit_ns,
-                render_submit_ns,
+                queue_submit_ns: 0,
+                render_submit_ns: render_encode_ns,
             },
+            encoder,
         ))
     }
 }

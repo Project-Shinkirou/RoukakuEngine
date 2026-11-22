@@ -253,14 +253,22 @@ fn fill_empty_gpu_atlas(
     previous: Option<(&GpuAtlas, &BTreeMap<String, AtlasResource>)>,
     upload_pixels: &mut Vec<u8>,
 ) -> Result<u64, PlatformError> {
-    let mut encoder = context
-        .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("roukaku-glyph-atlas-repack-encoder"),
-        });
-    if let Some((query_set, begin, _)) = context.timestamp_query {
+    let mut profiled_encoder = context.timestamp_query.map(|(query_set, begin, _)| {
+        let mut encoder = context
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("roukaku-glyph-atlas-repack-encoder"),
+            });
         encoder.write_timestamp(query_set, begin);
-    }
+        encoder
+    });
+    let profiled = profiled_encoder.is_some();
+    let encoder = profiled_encoder.as_mut().unwrap_or_else(|| {
+        context
+            .frame_encoder
+            .as_deref_mut()
+            .expect("a frame owns the atlas encoder")
+    });
     let mut upload_bytes = 0u64;
     let mut staged_uploads = false;
     for (resource_id, resource) in resources.iter() {
@@ -307,28 +315,30 @@ fn fill_empty_gpu_atlas(
         } else {
             upload_resource_rect(
                 context.queue,
-                Some(&mut encoder),
+                profiled.then_some(&mut *encoder),
                 &atlas.textures[placement.page],
                 resource,
                 placement,
                 upload_pixels,
                 context.staging_belt,
             )?;
-            staged_uploads = true;
+            staged_uploads |= profiled;
         }
         upload_bytes = upload_bytes
             .checked_add(copy_bytes)
             .ok_or_else(|| invalid("glyph atlas repack byte count overflowed"))?;
     }
-    if let Some((query_set, _, end)) = context.timestamp_query {
+    if let (Some((query_set, _, end)), Some(mut encoder)) =
+        (context.timestamp_query, profiled_encoder)
+    {
         encoder.write_timestamp(query_set, end);
-    }
-    if staged_uploads {
-        context.staging_belt.finish();
-    }
-    context.queue.submit([encoder.finish()]);
-    if staged_uploads {
-        context.staging_belt.recall();
+        if staged_uploads {
+            context.staging_belt.finish();
+        }
+        context.queue.submit([encoder.finish()]);
+        if staged_uploads {
+            context.staging_belt.recall();
+        }
     }
     Ok(upload_bytes)
 }
@@ -479,6 +489,7 @@ pub(crate) fn create_reserved_gpu_atlas(
         layout,
         linear_sampler,
         nearest_sampler,
+        frame_encoder: None,
         staging_belt: &mut staging_belt,
         timestamp_query: None,
     };
