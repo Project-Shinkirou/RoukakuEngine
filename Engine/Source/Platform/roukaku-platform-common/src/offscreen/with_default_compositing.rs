@@ -266,8 +266,37 @@ impl WgpuOffscreenRenderer {
     }
 
     pub fn render(&mut self, frame: &SceneFrame) -> Result<CapturedFrame, PlatformError> {
-        self.submit_frame(frame)?;
-        self.capture_checkpoint()
+        self.begin_frame(frame)?;
+        let (prepared, mut encoder) =
+            self.scene_renderer
+                .encode(&self.device, &self.queue, frame)?;
+        let texture = self.filters.encode(
+            &self.device,
+            &self.queue,
+            &mut encoder,
+            frame,
+            &prepared.texture,
+            None,
+        )?;
+        let readback = encode_readback(
+            &self.device,
+            &mut encoder,
+            &texture,
+            frame.width,
+            frame.height,
+            &mut self.readback_ring,
+        )?;
+        let submission = self.queue.submit([encoder.finish()]);
+        self.last_queue_submissions = 1;
+        self.scene_renderer.commit(prepared);
+        self.pending_output = Some(PendingOutput {
+            texture,
+            width: frame.width,
+            height: frame.height,
+        });
+        let captured = readback.finish(&self.device, submission)?;
+        self.last_readback_bytes = captured.rgba8.len() as u64;
+        Ok(captured)
     }
 
     pub fn submit_frame(&mut self, frame: &SceneFrame) -> Result<(), PlatformError> {

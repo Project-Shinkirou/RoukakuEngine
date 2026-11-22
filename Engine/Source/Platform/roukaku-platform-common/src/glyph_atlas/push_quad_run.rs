@@ -147,14 +147,28 @@ impl WgpuGlyphAtlasRenderer {
         queue: &wgpu::Queue,
         frame: &SceneFrame,
     ) -> Result<PreparedGlyphFrame, PlatformError> {
-        let (texture, resource_mutations, atlas_update, cpu_profile) =
+        let (prepared, encoder) = self.encode(device, queue, frame)?;
+        queue.submit([encoder.finish()]);
+        Ok(prepared)
+    }
+
+    pub(crate) fn encode(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        frame: &SceneFrame,
+    ) -> Result<(PreparedGlyphFrame, wgpu::CommandEncoder), PlatformError> {
+        let (texture, resource_mutations, atlas_update, cpu_profile, encoder) =
             self.render_internal(device, queue, frame, true, None, None)?;
-        Ok(PreparedGlyphFrame {
-            texture,
-            cpu_profile,
-            resource_mutations,
-            atlas_update,
-        })
+        Ok((
+            PreparedGlyphFrame {
+                texture,
+                cpu_profile,
+                resource_mutations,
+                atlas_update,
+            },
+            encoder,
+        ))
     }
 
     pub(crate) fn render_profiled(
@@ -164,16 +178,27 @@ impl WgpuGlyphAtlasRenderer {
         frame: &SceneFrame,
         queries: GlyphProfileQueries<'_>,
     ) -> Result<PreparedGlyphFrame, PlatformError> {
-        let (texture, resource_mutations, atlas_update, cpu_profile) = self.render_internal(
-            device,
-            queue,
-            frame,
-            true,
-            queries
-                .atlas_upload
-                .map(|(begin, end)| (queries.query_set, begin, end)),
-            Some((queries.query_set, queries.scene.0, queries.scene.1)),
-        )?;
+        let (texture, resource_mutations, atlas_update, mut cpu_profile, encoder) = self
+            .render_internal(
+                device,
+                queue,
+                frame,
+                true,
+                queries
+                    .atlas_upload
+                    .map(|(begin, end)| (queries.query_set, begin, end)),
+                Some((queries.query_set, queries.scene.0, queries.scene.1)),
+            )?;
+        let finish_started = Instant::now();
+        let command = encoder.finish();
+        let finish_ns = profiled_elapsed_ns(true, finish_started)?;
+        let submit_started = Instant::now();
+        queue.submit([command]);
+        cpu_profile.queue_submit_ns = profiled_elapsed_ns(true, submit_started)?;
+        cpu_profile.render_encode_ns = cpu_profile.render_encode_ns.saturating_add(finish_ns);
+        cpu_profile.render_submit_ns = cpu_profile
+            .render_encode_ns
+            .saturating_add(cpu_profile.queue_submit_ns);
         Ok(PreparedGlyphFrame {
             texture,
             cpu_profile,
@@ -188,8 +213,10 @@ impl WgpuGlyphAtlasRenderer {
         queue: &wgpu::Queue,
         frame: &SceneFrame,
     ) -> Result<wgpu::Texture, PlatformError> {
-        self.render_internal(device, queue, frame, false, None, None)
-            .map(|(texture, _, _, _)| texture)
+        let (texture, _, _, _, encoder) =
+            self.render_internal(device, queue, frame, false, None, None)?;
+        queue.submit([encoder.finish()]);
+        Ok(texture)
     }
 
     pub(crate) fn commit(&mut self, prepared: PreparedGlyphFrame) -> wgpu::Texture {

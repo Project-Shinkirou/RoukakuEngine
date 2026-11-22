@@ -69,14 +69,23 @@ pub(super) fn native_backend_mask() -> wgpu::Backends {
     return wgpu::Backends::empty();
 }
 
-pub(super) fn readback(
+pub(super) struct PendingReadback {
+    buffer: wgpu::Buffer,
+    mapping: mpsc::Receiver<Result<(), wgpu::BufferAsyncError>>,
+    width: u32,
+    height: u32,
+    row: usize,
+    padded: usize,
+}
+
+pub(super) fn encode_readback(
     device: &wgpu::Device,
-    queue: &wgpu::Queue,
+    encoder: &mut wgpu::CommandEncoder,
     texture: &wgpu::Texture,
     width: u32,
     height: u32,
     ring: &mut ReadbackRing,
-) -> Result<CapturedFrame, PlatformError> {
+) -> Result<PendingReadback, PlatformError> {
     let row = width
         .checked_mul(4)
         .ok_or_else(|| invalid("offscreen.readback", "frame row overflows"))?;
@@ -108,7 +117,6 @@ pub(super) fn readback(
         .slots
         .get(slot)
         .ok_or_else(|| invalid("offscreen.readback", "readback ring slot is unavailable"))?;
-    let mut encoder = device.create_command_encoder(&Default::default());
     encoder.copy_texture_to_buffer(
         texture.as_image_copy(),
         wgpu::TexelCopyBufferInfo {
@@ -125,43 +133,87 @@ pub(super) fn readback(
             depth_or_array_layers: 1,
         },
     );
-    let submission = queue.submit([encoder.finish()]);
-    let slice = buffer.slice(..);
-    let (tx, rx) = mpsc::sync_channel(1);
-    slice.map_async(wgpu::MapMode::Read, move |result| {
-        let _ = tx.send(result);
+    let (mapped, mapping) = mpsc::sync_channel(1);
+    encoder.map_buffer_on_submit(buffer, wgpu::MapMode::Read, .., move |result| {
+        let _ = mapped.send(result);
     });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: Some(submission),
-            timeout: Some(READBACK_TIMEOUT),
-        })
-        .map_err(|_| {
-            unavailable(
-                "offscreen.readback",
-                "GPU readback exceeded its bounded timeout",
-            )
-        })?;
-    rx.recv()
-        .map_err(|_| unavailable("offscreen.readback", "GPU readback callback was lost"))?
-        .map_err(|_| unavailable("offscreen.readback", "GPU readback mapping failed"))?;
-    let mapped = slice.get_mapped_range().map_err(|_| {
-        unavailable(
-            "offscreen.readback",
-            "GPU readback mapped range is unavailable",
-        )
-    })?;
-    let mut rgba8 = Vec::with_capacity(row as usize * height as usize);
-    for source in mapped.chunks_exact(padded as usize).take(height as usize) {
-        rgba8.extend_from_slice(&source[..row as usize]);
-    }
-    drop(mapped);
-    buffer.unmap();
-    Ok(CapturedFrame {
+    Ok(PendingReadback {
+        buffer: buffer.clone(),
+        mapping,
         width,
         height,
-        rgba8: rgba8.into(),
+        row: row as usize,
+        padded: padded as usize,
     })
+}
+
+impl PendingReadback {
+    pub(super) fn finish(
+        self,
+        device: &wgpu::Device,
+        submission: wgpu::SubmissionIndex,
+    ) -> Result<CapturedFrame, PlatformError> {
+        let Self {
+            buffer,
+            mapping,
+            width,
+            height,
+            row,
+            padded,
+        } = self;
+        let deadline = Instant::now() + READBACK_TIMEOUT;
+        if device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(READBACK_TIMEOUT),
+            })
+            .is_err()
+        {
+            buffer.unmap();
+            return Err(unavailable(
+                "offscreen.readback",
+                "GPU readback exceeded its bounded timeout",
+            ));
+        }
+        let result = match mapping.recv_timeout(deadline.saturating_duration_since(Instant::now()))
+        {
+            Ok(result) => result,
+            Err(_) => {
+                buffer.unmap();
+                return Err(unavailable(
+                    "offscreen.readback",
+                    "GPU readback callback was lost",
+                ));
+            }
+        };
+        result.map_err(|_| unavailable("offscreen.readback", "GPU readback mapping failed"))?;
+        let mapped = match buffer.slice(..).get_mapped_range() {
+            Ok(mapped) => mapped,
+            Err(_) => {
+                buffer.unmap();
+                return Err(unavailable(
+                    "offscreen.readback",
+                    "GPU readback mapped range is unavailable",
+                ));
+            }
+        };
+        let rgba8 = if row == padded {
+            Arc::from(&mapped[..row * height as usize])
+        } else {
+            let mut pixels = Vec::with_capacity(row * height as usize);
+            for source in mapped.chunks_exact(padded).take(height as usize) {
+                pixels.extend_from_slice(&source[..row]);
+            }
+            pixels.into()
+        };
+        drop(mapped);
+        buffer.unmap();
+        Ok(CapturedFrame {
+            width,
+            height,
+            rgba8,
+        })
+    }
 }
 
 pub(super) fn validate_native_backend(backend: wgpu::Backend) -> Result<(), PlatformError> {
