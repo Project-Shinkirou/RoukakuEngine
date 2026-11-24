@@ -7,6 +7,7 @@ members = [
     "Engine/Source/Runtime/roukaku-byte-source",
     "Engine/Source/Runtime/roukaku-media-core",
     "Engine/Source/Runtime/roukaku-media",
+    "Engine/Source/Runtime/roukaku-libass",
     "Engine/Source/Runtime/roukaku-subtitle",
     "Engine/Source/Runtime/roukaku-text",
     "Engine/Source/Runtime/roukaku-audio-kira",

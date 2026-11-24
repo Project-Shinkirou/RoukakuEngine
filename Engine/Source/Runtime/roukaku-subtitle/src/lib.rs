@@ -30,6 +30,8 @@ mod color;
 mod ffi;
 
 pub use color::{VideoColorSpace, YcbcrMatrix};
+// Pull the provider's native link directives into the final binary.
+use roukaku_libass as _;
 use std::{
     ffi::CString,
     fmt,

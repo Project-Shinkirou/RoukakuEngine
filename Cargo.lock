@@ -5067,6 +5067,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "roukaku-libass"
+version = "0.1.0"
+dependencies = [
+ "pkg-config",
+ "vcpkg",
+]
+
+[[package]]
 name = "roukaku-media"
 version = "0.1.0"
 dependencies = [
@@ -5597,8 +5605,7 @@ name = "roukaku-subtitle"
 version = "0.1.0"
 dependencies = [
  "cc",
- "pkg-config",
- "vcpkg",
+ "roukaku-libass",
 ]
 
 [[package]]
