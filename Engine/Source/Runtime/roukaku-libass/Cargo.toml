@@ -1,0 +1,11 @@
+[package]
+name = "roukaku-libass"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+links = "roukaku_libass"
+
+[build-dependencies]
+vcpkg = "=0.2.15"
+pkg-config = "0.3"
