@@ -34,6 +34,7 @@ impl WgpuGlyphAtlasRenderer {
             transient_glyph_count,
             mesh_command_allocation_bytes,
             mesh_command_allocation_count,
+            has_linear_text,
             ..
         } = walked;
         let command_walk_allocation = roukaku_observability::thread_allocation_snapshot();
@@ -168,18 +169,21 @@ impl WgpuGlyphAtlasRenderer {
             &mut self.vertex_bytes,
             &mut self.draw_batches,
         )?;
-        let compositing = self
-            .draw_batches
-            .first()
-            .map(|batch| batch.compositing)
-            .unwrap_or_default();
-        if self
+        let first_compositing = self.draw_batches.first().map(|batch| batch.compositing);
+        let has_linear_text =
+            has_linear_text && self.default_compositing == SceneCompositing2D::EncodedSrgb;
+        let compositing = if has_linear_text {
+            self.default_compositing
+        } else {
+            first_compositing.unwrap_or_default()
+        };
+        let mixed = self
             .draw_batches
             .iter()
-            .any(|batch| batch.compositing != compositing)
-        {
+            .any(|batch| batch.compositing != compositing);
+        if mixed && !has_linear_text {
             return Err(invalid(
-                "a scene frame cannot mix linear and encoded compositing batches",
+                "a scene frame cannot mix linear and encoded compositing batches without linear text",
             ));
         }
         for batch in &self.draw_batches {
@@ -245,62 +249,68 @@ impl WgpuGlyphAtlasRenderer {
                 || output.height != frame.height
                 || output.compositing != compositing
         }) {
-            self.output = Some(CachedOutput {
-                width: frame.width,
-                height: frame.height,
-                compositing,
-                texture: device.create_texture(&wgpu::TextureDescriptor {
-                    label: Some("roukaku-glyph-output"),
-                    size: wgpu::Extent3d {
-                        width: frame.width,
-                        height: frame.height,
-                        depth_or_array_layers: 1,
-                    },
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: wgpu::TextureDimension::D2,
-                    format: scene_target_format(compositing),
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                        | wgpu::TextureUsages::TEXTURE_BINDING
-                        | wgpu::TextureUsages::COPY_SRC,
-                    view_formats: &[],
-                }),
-            });
+            self.output = Some(CachedOutput::new(device, frame.width, frame.height, compositing));
+            self.mixed_output = None;
         }
         let output = self
             .output
             .as_ref()
-            .ok_or_else(|| invalid("glyph output texture is unavailable"))?
-            .texture
-            .clone();
-        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
+            .ok_or_else(|| invalid("glyph output texture is unavailable"))?;
+        let mixed = mixed.then(|| {
+            let transfer = self
+                .compositing_transfer
+                .get_or_insert_with(|| CompositingTransfer::new(device));
+            let target = self
+                .mixed_output
+                .get_or_insert_with(|| MixedOutput::new(device, transfer, output));
+            (&*target, &*transfer)
+        });
         let depth_view = self
             .draw_batches
             .iter()
             .any(|batch| batch.pipeline.depth_tested())
             .then(|| DepthTarget::view(&mut self.depth_target, device, frame.width, frame.height));
-        // A render pass either has a depth attachment or not, and every
-        // pipeline must agree, so consecutive depth-tested batches get their
-        // own pass. The depth buffer is cleared once and shared by the scene.
-        let mut segments: SmallVec<[(usize, usize, bool); 4]> = SmallVec::new();
+        // Changing depth mode or color space ends the pass, but neither change
+        // resets the scene depth buffer or permits reordering a draw.
+        let mut segments: SmallVec<[(usize, usize, bool, SceneCompositing2D); 4]> = SmallVec::new();
         for (index, batch) in self.draw_batches.iter().enumerate() {
             let depth_tested = batch.pipeline.depth_tested();
+            let mode = batch.compositing;
             match segments.last_mut() {
-                Some((_, end, depth)) if *depth == depth_tested => *end = index + 1,
-                _ => segments.push((index, index + 1, depth_tested)),
+                Some((_, end, depth, current)) if *depth == depth_tested && *current == mode => {
+                    *end = index + 1;
+                }
+                _ => segments.push((index, index + 1, depth_tested, mode)),
             }
         }
         if segments.is_empty() {
-            segments.push((0, 0, false));
+            segments.push((0, 0, false, compositing));
         }
         let clear = frame.clear_rgba;
-        let clear_channel = |channel: u8| match compositing {
-            SceneCompositing2D::LinearSrgb => f64::from(srgb_byte_to_linear(channel)),
-            SceneCompositing2D::EncodedSrgb => f64::from(channel) / 255.0,
-        };
         let last_segment = segments.len() - 1;
+        let finalize = segments[last_segment].3 != compositing;
         let mut depth_cleared = false;
-        for (segment_index, &(start, end, depth_tested)) in segments.iter().enumerate() {
+        let mut transfers = 0;
+        let mut previous_mode = segments[0].3;
+        for (segment_index, &(start, end, depth_tested, mode)) in segments.iter().enumerate() {
+            let target = if let Some((alternate, transfer)) = mixed {
+                if previous_mode != mode {
+                    alternate.transfer_to(transfer, &mut encoder, output, mode, None);
+                    transfers += 1;
+                    previous_mode = mode;
+                }
+                if mode == compositing {
+                    output
+                } else {
+                    &alternate.alternate
+                }
+            } else {
+                output
+            };
+            let clear_channel = |channel: u8| match mode {
+                SceneCompositing2D::LinearSrgb => f64::from(srgb_byte_to_linear(channel)),
+                SceneCompositing2D::EncodedSrgb => f64::from(channel) / 255.0,
+            };
             let color_load = if segment_index == 0 {
                 wgpu::LoadOp::Clear(wgpu::Color {
                     r: clear_channel(clear[0]),
@@ -332,7 +342,7 @@ impl WgpuGlyphAtlasRenderer {
             };
             let timestamp_writes = timestamp_query.and_then(|(query_set, beginning, end_index)| {
                 let beginning = (segment_index == 0).then_some(beginning);
-                let end_index = (segment_index == last_segment).then_some(end_index);
+                let end_index = (segment_index == last_segment && !finalize).then_some(end_index);
                 (beginning.is_some() || end_index.is_some()).then_some(
                     wgpu::RenderPassTimestampWrites {
                         query_set,
@@ -344,7 +354,7 @@ impl WgpuGlyphAtlasRenderer {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("roukaku-glyph-render-pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &output_view,
+                    view: &target.view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: color_load,
@@ -394,10 +404,21 @@ impl WgpuGlyphAtlasRenderer {
                 pass.draw(0..batch.vertex_count, 0..1);
             }
         }
+        if finalize && let Some((target, transfer)) = mixed {
+            let timestamp_writes = timestamp_query.map(|(query_set, _, end_index)| {
+                wgpu::RenderPassTimestampWrites {
+                    query_set,
+                    beginning_of_pass_write_index: None,
+                    end_of_pass_write_index: Some(end_index),
+                }
+            });
+            target.transfer_to(transfer, &mut encoder, output, compositing, timestamp_writes);
+            transfers += 1;
+        }
         let render_encode_ns = profiled_elapsed_ns(profile_cpu, render_submit_started)?;
-        self.last_draw_calls = self.draw_batches.len() as u64;
+        self.last_draw_calls = self.draw_batches.len() as u64 + transfers;
         Ok((
-            output,
+            output.texture.clone(),
             committed_mutations,
             atlas_update,
             GlyphCpuProfile {

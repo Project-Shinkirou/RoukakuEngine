@@ -191,6 +191,11 @@ impl HeadlessRenderer {
                     glyphs: instances,
                     opacity,
                     ..
+                }
+                | DrawCommand::LinearGlyphRun {
+                    glyphs: instances,
+                    opacity,
+                    ..
                 } => {
                     validate_opacity(*opacity)?;
                     for instance in instances.iter() {

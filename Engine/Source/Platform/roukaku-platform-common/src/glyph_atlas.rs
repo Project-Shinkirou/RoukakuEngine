@@ -109,3 +109,5 @@ mod push_quad_run;
 use push_quad_run::push_quad_run;
 pub(crate) use push_quad_run::{BatchPipeline, DrawBatch};
 mod render_internal;
+mod compositing_transfer;
+use compositing_transfer::{CompositingTransfer, MixedOutput};

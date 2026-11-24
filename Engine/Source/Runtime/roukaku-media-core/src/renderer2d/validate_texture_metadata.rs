@@ -217,6 +217,90 @@ pub(super) fn draw_glyph(
     )
 }
 
+/// Glyph coverage always contributes to alpha; only the RGB channels use sRGB.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn draw_linear_glyph(
+    target: &mut [u8],
+    (target_width, target_height): (usize, usize),
+    clip: RectI,
+    transform: Transform2D,
+    instance: &GlyphInstance,
+    glyph: &GlyphBitmap,
+    tint: [u8; 4],
+    opacity: f32,
+) -> Result<(), MediaError> {
+    let rotation = instance.rotation_quadrants % 4;
+    let (width, height) = (glyph.width, glyph.height);
+    let (dw, dh) = if rotation.is_multiple_of(2) {
+        (width, height)
+    } else {
+        (height, width)
+    };
+    let destination = RectI::new(instance.x, instance.y, dw, dh);
+    let inverse = transform
+        .inverse()
+        .ok_or_else(|| MediaError::message("ROUKAKU_MEDIA_TRANSFORM: transform is singular"))?;
+    let bounds = intersection(
+        intersection(clip, transformed_bounds(transform, destination)?),
+        RectI::new(0, 0, target_width as u32, target_height as u32),
+    );
+    static DECODE: std::sync::LazyLock<[f32; 256]> = std::sync::LazyLock::new(|| {
+        std::array::from_fn(|i| {
+            let x = i as f32 / 255.0;
+            if x <= 0.04045 {
+                x / 12.92
+            } else {
+                ((x + 0.055) / 1.055).powf(2.4)
+            }
+        })
+    });
+    let decode = &*DECODE;
+    let tint_rgb: [f32; 3] = std::array::from_fn(|i| decode[tint[i] as usize]);
+    let tint_alpha = f32::from(tint[3]) * opacity / (255.0 * 255.0);
+    for y in bounds.y..bounds.y + bounds.height as i32 {
+        for x in bounds.x..bounds.x + bounds.width as i32 {
+            let (sx, sy) = inverse.point(x as f32 + 0.5, y as f32 + 0.5);
+            let (sx, sy) = (sx - instance.x as f32, sy - instance.y as f32);
+            if sx < 0.0 || sy < 0.0 || sx >= dw as f32 || sy >= dh as f32 {
+                continue;
+            }
+            let (sx, sy) = (sx as u32, sy as u32);
+            let (sx, sy) = match rotation {
+                1 => (sy, height - 1 - sx),
+                2 => (width - 1 - sx, height - 1 - sy),
+                3 => (width - 1 - sy, sx),
+                _ => (sx, sy),
+            };
+            let pixel = sy as usize * width as usize + sx as usize;
+            let (coverage, rgb) = match glyph.format {
+                GlyphBitmapFormat::Alpha8 => (glyph.pixels[pixel], tint_rgb),
+                GlyphBitmapFormat::Rgba8 => {
+                    let src = &glyph.pixels[pixel * 4..][..4];
+                    (src[3], std::array::from_fn(|i| decode[src[i] as usize] * tint_rgb[i]))
+                }
+            };
+            let alpha = f32::from(coverage) * tint_alpha;
+            if alpha == 0.0 {
+                continue;
+            }
+            let dst = &mut target[(y as usize * target_width + x as usize) * 4..][..4];
+            let old_alpha = f32::from(dst[3]) / 255.0 * (1.0 - alpha);
+            let out_alpha = old_alpha + alpha;
+            for i in 0..3 {
+                let linear = (alpha * rgb[i] + old_alpha * decode[dst[i] as usize]) / out_alpha;
+                let encoded = if linear <= 0.0031308 {
+                    linear * 12.92
+                } else {
+                    1.055 * linear.powf(1.0 / 2.4) - 0.055
+                };
+                dst[i] = (encoded * 255.0).round() as u8;
+            }
+            dst[3] = (out_alpha * 255.0).round() as u8;
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn rotate_texture_clockwise(mut frame: TextureFrame, quadrants: u8) -> TextureFrame {
     for _ in 0..quadrants {
         let source_width = frame.width as usize;

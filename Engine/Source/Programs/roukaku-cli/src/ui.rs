@@ -390,6 +390,7 @@ pub(crate) fn scene_command_kind(command: &roukaku_media::SceneCommand) -> &'sta
         SceneCommand::ReleaseResource { .. } => "release_resource",
         SceneCommand::Sprite { .. } => "sprite",
         SceneCommand::GlyphRun { .. } => "glyph_run",
+        SceneCommand::LinearGlyphRun { .. } => "linear_glyph_run",
         SceneCommand::Mesh2D { .. } => "mesh2d",
         SceneCommand::MeshBatch2D { .. } => "mesh_batch2d",
         SceneCommand::ProjectiveMesh2D { .. } => "projective_mesh2d",

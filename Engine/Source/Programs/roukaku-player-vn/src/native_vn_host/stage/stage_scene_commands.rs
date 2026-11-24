@@ -270,6 +270,7 @@ pub(in super::super) fn namespace_transition_scene_draw(
         let id = match command {
             SceneCommand::Sprite { id, .. }
             | SceneCommand::GlyphRun { id, .. }
+            | SceneCommand::LinearGlyphRun { id, .. }
             | SceneCommand::Mesh2D { id, .. }
             | SceneCommand::Rect { id, .. }
             | SceneCommand::Texture { id, .. }

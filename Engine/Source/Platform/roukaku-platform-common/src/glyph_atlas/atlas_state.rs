@@ -38,6 +38,8 @@ pub(crate) struct WgpuGlyphAtlasRenderer {
     pub(super) pipelines: BlendPipelines,
     pub(super) default_compositing: SceneCompositing2D,
     pub(super) output: Option<CachedOutput>,
+    pub(super) mixed_output: Option<MixedOutput>,
+    pub(super) compositing_transfer: Option<CompositingTransfer>,
     pub(super) vertex_buffer: Option<wgpu::Buffer>,
     pub(super) vertex_capacity: u64,
     pub(super) last_upload_bytes: u64,
@@ -65,6 +67,41 @@ pub(crate) struct CachedOutput {
     pub(super) height: u32,
     pub(super) compositing: SceneCompositing2D,
     pub(super) texture: wgpu::Texture,
+    pub(super) view: wgpu::TextureView,
+}
+
+impl CachedOutput {
+    pub(super) fn new(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        compositing: SceneCompositing2D,
+    ) -> Self {
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("roukaku-glyph-output"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: scene_target_format(compositing),
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&Default::default());
+        Self {
+            width,
+            height,
+            compositing,
+            texture,
+            view,
+        }
+    }
 }
 
 /// Every semantic scene command shares the atlas and vertex format; only its
@@ -485,6 +522,10 @@ pub(crate) struct AtlasSlot {
 
 pub(crate) enum QuadSource<'a> {
     Resource {
+        resource_id: Cow<'a, str>,
+        source: RectI,
+    },
+    Coverage {
         resource_id: Cow<'a, str>,
         source: RectI,
     },

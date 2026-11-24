@@ -2,7 +2,7 @@ use super::*;
 
 impl WgpuOffscreenRenderer {
     /// Choose the color space of commands without an explicit compositing mode.
-    /// Mesh batches retain their own declaration; mixed spaces remain invalid.
+    /// Linear glyph runs composite in linear light even over encoded scenes.
     pub fn with_default_compositing(
         mut self,
         compositing: roukaku_media_core::SceneCompositing2D,

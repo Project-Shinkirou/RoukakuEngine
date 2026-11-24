@@ -95,9 +95,10 @@ pub(crate) fn build_vertices(
                     .quads
                     .iter()
                     .find_map(|quad| match &quad.source {
-                        QuadSource::Resource { resource_id, .. } => atlas
-                            .get(resource_id.as_ref())
-                            .map(|placement| placement.page),
+                        QuadSource::Resource { resource_id, .. }
+                        | QuadSource::Coverage { resource_id, .. } => {
+                            atlas.get(resource_id.as_ref()).map(|placement| placement.page)
+                        }
                         QuadSource::White => None,
                     })
                     .or(mask_placement.map(|placement| placement.page))
@@ -130,7 +131,8 @@ pub(crate) fn build_vertices(
                     let right = left + draw_width as f32;
                     let bottom = top + draw_height as f32;
                     let placement = match &quad.source {
-                        QuadSource::Resource {
+                        QuadSource::Coverage { resource_id, source }
+                        | QuadSource::Resource {
                             resource_id,
                             source,
                         } => Some((
@@ -181,6 +183,13 @@ pub(crate) fn build_vertices(
                         _ => unreachable!(),
                     };
                     let positions = [(left, top), (right, top), (right, bottom), (left, bottom)];
+                    // Mask-reveal progress is nonnegative. For an Alpha8 text
+                    // quad, a negative marker tells fs_main to ignore atlas RGB.
+                    let phase = if matches!(quad.source, QuadSource::Coverage { .. }) {
+                        -1.0
+                    } else {
+                        mask_params.map_or(0.0, |params| params.phase)
+                    };
                     for corner in [0, 1, 2, 0, 2, 3] {
                         let (x, y) = transform_point(
                             run.transform,
@@ -200,7 +209,7 @@ pub(crate) fn build_vertices(
                             frame.height,
                             pixel_mask,
                             [mu, mv],
-                            mask_params.map_or(0.0, |params| params.phase),
+                            phase,
                         );
                     }
                     batch.vertex_count = batch

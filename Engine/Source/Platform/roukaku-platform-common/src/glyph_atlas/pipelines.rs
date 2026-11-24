@@ -444,7 +444,10 @@ fn masked_sample(input: VertexOutput) -> vec4<f32> {
 @fragment fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let sample = masked_sample(input);
     let alpha = sample.a * input.color.a;
-    return vec4<f32>(sample.rgb * input.color.rgb * sample.a, alpha);
+    // A coverage-only glyph stores the mask in every channel for legacy
+    // consumers. The new text path uses alpha once, not RGB times alpha.
+    let pigment = select(sample.rgb, vec3<f32>(1.0), input.phase < 0.0);
+    return vec4<f32>(pigment * input.color.rgb * sample.a, alpha);
 }
 @fragment fn fs_opaque(input: VertexOutput) -> @location(0) vec4<f32> {
     let sample = masked_sample(input);

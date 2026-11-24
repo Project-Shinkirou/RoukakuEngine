@@ -138,7 +138,9 @@ pub(super) fn validate_scene_frame(
                         })?;
             }
             SceneCommand::ReleaseResource { .. } | SceneCommand::Clear { .. } => {}
-            SceneCommand::GlyphRun { opacity, .. } | SceneCommand::Glyph { opacity, .. }
+            SceneCommand::GlyphRun { opacity, .. }
+            | SceneCommand::LinearGlyphRun { opacity, .. }
+            | SceneCommand::Glyph { opacity, .. }
                 if opacity.is_finite() && (0.0..=1.0).contains(opacity) => {}
             SceneCommand::Mesh2D {
                 id,

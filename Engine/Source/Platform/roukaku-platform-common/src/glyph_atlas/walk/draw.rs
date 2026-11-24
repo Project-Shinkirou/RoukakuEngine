@@ -20,8 +20,23 @@ impl<'a> WalkedScene<'a> {
                 glyphs,
                 rgba,
                 opacity,
-                blend,
+                ..
+            }
+            | SceneCommand::LinearGlyphRun {
+                id,
+                glyphs,
+                rgba,
+                opacity,
             } => {
+                let (compositing, blend, linear_text) = match command {
+                    SceneCommand::GlyphRun { blend, .. } => {
+                        (self.default_compositing, *blend, false)
+                    }
+                    _ => {
+                        self.has_linear_text = true;
+                        (SceneCompositing2D::LinearSrgb, BlendMode::Alpha, true)
+                    }
+                };
                 if id.is_empty()
                     || id.len() > 256
                     || !self.run_ids.insert(id)
@@ -40,10 +55,15 @@ impl<'a> WalkedScene<'a> {
                     let AtlasResource::Glyph(bitmap) = bitmap else {
                         return Err(invalid("glyph run references a non-glyph resource"));
                     };
+                    let resource_id = Cow::Borrowed(glyph.resource_id.as_str());
+                    let source = RectI::new(0, 0, bitmap.width, bitmap.height);
                     quads.push(DrawQuad {
-                        source: QuadSource::Resource {
-                            resource_id: Cow::Borrowed(glyph.resource_id.as_str()),
-                            source: RectI::new(0, 0, bitmap.width, bitmap.height),
+                        source: if linear_text
+                            && bitmap.format == roukaku_media_core::GlyphBitmapFormat::Alpha8
+                        {
+                            QuadSource::Coverage { resource_id, source }
+                        } else {
+                            QuadSource::Resource { resource_id, source }
                         },
                         destination: RectI::new(glyph.x, glyph.y, bitmap.width, bitmap.height),
                         rotation_quadrants: glyph.rotation_quadrants,
@@ -55,8 +75,8 @@ impl<'a> WalkedScene<'a> {
                     &mut self.draw_runs,
                     DrawRun {
                         pixel_mask: self.pixel_masks.last().copied().unwrap_or(u64::MAX),
-                        compositing: self.default_compositing,
-                        blend: *blend,
+                        compositing,
+                        blend,
                         quads,
                         rgba: *rgba,
                         opacity: *opacity * self.opacity_stack.last().copied().unwrap_or(1.0),

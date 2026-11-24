@@ -81,6 +81,8 @@ impl WgpuGlyphAtlasRenderer {
             pipelines,
             default_compositing: SceneCompositing2D::LinearSrgb,
             output: None,
+            mixed_output: None,
+            compositing_transfer: None,
             vertex_buffer: None,
             vertex_capacity: 0,
             last_upload_bytes: 0,
@@ -124,6 +126,8 @@ impl WgpuGlyphAtlasRenderer {
             )
         });
         self.output = None;
+        self.mixed_output = None;
+        self.compositing_transfer = None;
         self.depth_target = None;
         self.vertex_buffer = None;
         self.vertex_capacity = 0;
@@ -268,8 +272,9 @@ impl WgpuGlyphAtlasRenderer {
         let output = self.output.as_ref().map_or(0, |output| {
             u64::from(output.width) * u64::from(output.height) * 4
         });
+        let alternate = self.mixed_output.is_some() as u64 * output;
         let depth = self.depth_target.as_ref().map_or(0, DepthTarget::bytes);
-        self.atlas_bytes() + output + depth + self.vertex_capacity
+        self.atlas_bytes() + output + alternate + depth + self.vertex_capacity
     }
 
     pub(crate) fn atlas_bytes(&self) -> u64 {

@@ -26,6 +26,7 @@ pub(super) struct WalkedScene<'a> {
     pub(super) mesh_command_allocation_bytes: u64,
     pub(super) mesh_command_allocation_count: u64,
     pub(super) default_compositing: SceneCompositing2D,
+    pub(super) has_linear_text: bool,
 }
 impl<'a> WalkedScene<'a> {
     pub(super) fn new(atlas_missing: bool, default_compositing: SceneCompositing2D) -> Self {
@@ -39,6 +40,7 @@ impl<'a> WalkedScene<'a> {
             run_ids: SceneIdSet::default(),
             drawn_resources: SceneIdSet::default(),
             default_compositing,
+            has_linear_text: false,
             quad_runs: SmallVec::new(),
             draw_runs: SmallVec::new(),
             clip_stack: SmallVec::new(),

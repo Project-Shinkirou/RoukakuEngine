@@ -1,3 +1,4 @@
+use super::validate_texture_metadata::draw_linear_glyph;
 use super::*;
 
 impl Renderer2D for HeadlessRenderer {
@@ -159,9 +160,21 @@ impl Renderer2D for HeadlessRenderer {
                     glyphs,
                     rgba,
                     opacity,
-                    blend,
+                    ..
+                }
+                | DrawCommand::LinearGlyphRun {
+                    glyphs,
+                    rgba,
+                    opacity,
                     ..
                 } => {
+                    let blend = match command {
+                        DrawCommand::GlyphRun { blend, .. } => Some(*blend),
+                        _ => None,
+                    };
+                    let clip = *clips.last().expect("clip stack is initialized");
+                    let transform = current_transform(camera, &transforms);
+                    let opacity = *opacity * opacities.last().copied().unwrap_or(1.0);
                     for instance in glyphs.iter() {
                         let glyph = capture_glyph(
                             &self.glyphs,
@@ -173,20 +186,33 @@ impl Renderer2D for HeadlessRenderer {
                                 "ROUKAKU_MEDIA_RESOURCE_UNKNOWN: glyph resource is not uploaded",
                             )
                         })?;
-                        draw_glyph(
-                            &mut bytes,
-                            width,
-                            height,
-                            *clips.last().expect("clip stack is initialized"),
-                            current_transform(camera, &transforms),
-                            instance.x,
-                            instance.y,
-                            glyph,
-                            instance.rotation_quadrants,
-                            *rgba,
-                            *opacity * opacities.last().copied().unwrap_or(1.0),
-                            *blend,
-                        )?;
+                        if let Some(blend) = blend {
+                            draw_glyph(
+                                &mut bytes,
+                                width,
+                                height,
+                                clip,
+                                transform,
+                                instance.x,
+                                instance.y,
+                                glyph,
+                                instance.rotation_quadrants,
+                                *rgba,
+                                opacity,
+                                blend,
+                            )?;
+                        } else {
+                            draw_linear_glyph(
+                                &mut bytes,
+                                (width, height),
+                                clip,
+                                transform,
+                                instance,
+                                glyph,
+                                *rgba,
+                                opacity,
+                            )?;
+                        }
                     }
                 }
                 DrawCommand::Mesh2D {

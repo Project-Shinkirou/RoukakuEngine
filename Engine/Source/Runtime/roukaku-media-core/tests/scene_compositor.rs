@@ -320,3 +320,68 @@ fn resource_updates_are_transactional_and_color_glyphs_preserve_rgba() {
         .unwrap();
     assert_eq!(frame.bytes, vec![200, 100, 50, 128]);
 }
+
+#[test]
+fn linear_glyph_blends_over_the_live_scene_without_changing_legacy_coverage() {
+    let mut renderer = CpuRendererProvider
+        .create(RendererCreateRequest {
+            width: 3,
+            height: 1,
+            format: RenderTargetFormat::Rgba8Srgb,
+            profile: "linear-glyph".into(),
+        })
+        .unwrap();
+    let glyphs = |x| {
+        [roukaku_media_core::GlyphInstance {
+            resource_id: "edge".into(),
+            x,
+            y: 0,
+            rotation_quadrants: 0,
+        }]
+        .into()
+    };
+    let frame = renderer
+        .capture_frame(&[
+            DrawCommand::Rect {
+                id: "opaque-backdrop".into(),
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 1,
+                rgba: [0, 0, 0, 255],
+            },
+            DrawCommand::UploadGlyph {
+                resource_id: "edge".into(),
+                glyph: GlyphBitmap {
+                    width: 1,
+                    height: 1,
+                    format: GlyphBitmapFormat::Alpha8,
+                    pixels: vec![128].into(),
+                },
+            },
+            DrawCommand::GlyphRun {
+                id: "legacy".into(),
+                glyphs: glyphs(0),
+                rgba: [255; 4],
+                opacity: 1.0,
+                blend: BlendMode::Alpha,
+            },
+            DrawCommand::LinearGlyphRun {
+                id: "linear".into(),
+                glyphs: glyphs(1),
+                rgba: [255; 4],
+                opacity: 1.0,
+            },
+            DrawCommand::LinearGlyphRun {
+                id: "linear-transparent".into(),
+                glyphs: glyphs(2),
+                rgba: [255; 4],
+                opacity: 1.0,
+            },
+        ])
+        .unwrap();
+    assert_eq!(
+        frame.bytes,
+        [128, 128, 128, 255, 188, 188, 188, 255, 255, 255, 255, 128]
+    );
+}

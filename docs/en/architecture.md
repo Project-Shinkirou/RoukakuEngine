@@ -25,6 +25,8 @@ Within RoukakuVN, `roukaku-vn-script` compiles `.roukaku` and produces source ma
 
 A platform host profile explicitly selects renderer, decode, audio mixer, audio output, save providers, and package sources. Failed explicit bindings report errors rather than presenting a different backend as successful. Consumers can compose shared text, media, and byte-source libraries without first creating a VN session.
 
+`SceneCommand::LinearGlyphRun` composites sRGB text paint with linear coverage in draw order. It shares glyph uploads and clipping with `GlyphRun`; it does not change the blend space of surrounding legacy draws. On the GPU, mixed encoded/linear frames use one cached alternate color target and keep alpha unchanged when switching compositors.
+
 ## Enforced runtime protections
 
 These are product behavior and must survive refactoring:

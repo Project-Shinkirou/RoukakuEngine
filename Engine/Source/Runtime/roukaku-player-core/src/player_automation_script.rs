@@ -314,7 +314,7 @@ pub fn evidence_scene_command_hash(
             SceneCommand::UploadGlyph { glyph, .. } => (2, Some(&glyph.pixels)),
             SceneCommand::ReleaseResource { .. } => (3, None),
             SceneCommand::Sprite { .. } => (4, None),
-            SceneCommand::GlyphRun { .. } => (5, None),
+            SceneCommand::GlyphRun { .. } | SceneCommand::LinearGlyphRun { .. } => (5, None),
             SceneCommand::Mesh2D { .. } => (6, None),
             SceneCommand::MeshBatch2D { .. } => (20, None),
             SceneCommand::Clear { .. } => (7, None),

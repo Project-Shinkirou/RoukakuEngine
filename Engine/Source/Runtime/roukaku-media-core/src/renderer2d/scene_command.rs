@@ -59,6 +59,13 @@ pub enum SceneCommand {
         opacity: f32,
         blend: BlendMode,
     },
+    /// Source-over text with sRGB paint and linear glyph coverage.
+    LinearGlyphRun {
+        id: String,
+        glyphs: Arc<[GlyphInstance]>,
+        rgba: [u8; 4],
+        opacity: f32,
+    },
     Mesh2D {
         id: String,
         vertices: Arc<[MeshVertex2D]>,

@@ -25,6 +25,8 @@ RoukakuVN 内部，`roukaku-vn-script` 编译 `.roukaku` 并生成 source map；
 
 平台 host profile 明确 renderer、decode、audio mixer、audio output、save provider 和包来源。显式 provider 绑定失败会报告错误，不能将另一后端的输出当作原绑定成功。文字、媒体和字节源等共享库可由实际消费者独立组合，不要求先创建 VN 会话。
 
+`SceneCommand::LinearGlyphRun` 按原绘制顺序，以线性光混合 sRGB 字色，字形覆盖率只参与一次透明度计算。它与 `GlyphRun` 共用字形上传和裁剪，不改变其他绘制命令的混合空间。GPU 在混合两种色彩空间的帧中复用一张额外的色彩目标，切换时保留 alpha。
+
 ## 已实施的运行保护
 
 这些保护属于产品行为，重构时必须保留：
