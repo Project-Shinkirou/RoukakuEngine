@@ -7,7 +7,7 @@ use std::{
     },
 };
 
-use cosmic_text::{FontSystem, LayoutGlyph, SwashCache, fontdb};
+use cosmic_text::{FontSystem, LayoutGlyph, fontdb};
 use roukaku_core::Hash256;
 use roukaku_worker_budget::WorkerBudgetBroker;
 
@@ -15,7 +15,9 @@ use crate::MediaError;
 
 use super::{
     contract::*,
-    layout_engine::layout_uncached,
+    layout_engine::shape_uncached,
+    logical::{LogicalTextLayout, next_revision},
+    raster::{RasterLayoutKey, Rasterizer},
     validation::{
         TextLayoutCacheKey, load_database, request_cache_key, validate_config, validate_context,
         validate_family_chain,
@@ -26,10 +28,11 @@ pub struct CosmicTextLayoutProvider {
     context: FontBindingContext,
     config: TextLayoutConfig,
     state: Mutex<ProviderState>,
+    rasterizer: Mutex<Rasterizer>,
     worker_cursor: AtomicUsize,
     active_workers: AtomicUsize,
     peak_active_workers: AtomicUsize,
-    next_layout_revision: AtomicU64,
+    domain: Arc<AtomicU64>,
 }
 
 struct ProviderState {
@@ -39,7 +42,7 @@ struct ProviderState {
 }
 
 struct LayoutFlight {
-    result: Mutex<Option<Result<Arc<TextLayoutResult>, String>>>,
+    result: Mutex<Option<Result<Arc<LogicalTextLayout>, String>>>,
     ready: Condvar,
 }
 
@@ -66,7 +69,6 @@ pub(super) struct FontState {
     pub(super) database: fontdb::Database,
     pub(super) faces: BTreeMap<String, LoadedFace>,
     pub(super) font_systems: BTreeMap<String, FontSystem>,
-    pub(super) swash_cache: SwashCache,
     layout_cache: BTreeMap<TextLayoutCacheKey, CacheEntry>,
     access_sequence: u64,
     generation: u64,
@@ -84,7 +86,7 @@ pub(super) struct LoadedFace {
 }
 
 struct CacheEntry {
-    result: Arc<TextLayoutResult>,
+    result: Arc<LogicalTextLayout>,
     last_access: u64,
 }
 
@@ -96,7 +98,7 @@ impl LayoutFlight {
         }
     }
 
-    fn wait(&self) -> Result<Arc<TextLayoutResult>, MediaError> {
+    fn wait(&self) -> Result<Arc<LogicalTextLayout>, MediaError> {
         let mut result = self.result.lock().map_err(|_| {
             MediaError::message("ROUKAKU_TEXT_SINGLE_FLIGHT_POISONED: result lock was poisoned")
         })?;
@@ -114,7 +116,7 @@ impl LayoutFlight {
         }
     }
 
-    fn complete(&self, result: Result<Arc<TextLayoutResult>, String>) -> Result<(), MediaError> {
+    fn complete(&self, result: Result<Arc<LogicalTextLayout>, String>) -> Result<(), MediaError> {
         let mut slot = self.result.lock().map_err(|_| {
             MediaError::message("ROUKAKU_TEXT_SINGLE_FLIGHT_POISONED: result lock was poisoned")
         })?;
@@ -148,7 +150,6 @@ pub(super) struct RawLine {
 pub(super) struct RawLayout {
     pub(super) lines: Vec<RawLine>,
     pub(super) overflowed: bool,
-    pub(super) locale: String,
 }
 
 pub(super) struct LayoutPass {
@@ -180,7 +181,6 @@ impl CosmicTextLayoutProvider {
             database: loaded.database,
             faces: loaded.faces,
             font_systems: BTreeMap::new(),
-            swash_cache: SwashCache::new(),
             layout_cache: BTreeMap::new(),
             access_sequence: 0,
             generation: 1,
@@ -191,6 +191,11 @@ impl CosmicTextLayoutProvider {
         let workers = (0..worker_count)
             .map(|_| Arc::new(Mutex::new(font_worker_from_catalog(&catalog))))
             .collect();
+        let rasterizer = Rasterizer::new(
+            catalog.generation,
+            &context.default_locale,
+            catalog.database.clone(),
+        );
         Ok(Self {
             context,
             config,
@@ -199,10 +204,11 @@ impl CosmicTextLayoutProvider {
                 workers,
                 in_flight: BTreeMap::new(),
             }),
+            rasterizer: Mutex::new(rasterizer),
             worker_cursor: AtomicUsize::new(0),
             active_workers: AtomicUsize::new(0),
             peak_active_workers: AtomicUsize::new(0),
-            next_layout_revision: AtomicU64::new(1),
+            domain: Arc::new(AtomicU64::new(1)),
         })
     }
 
@@ -321,7 +327,7 @@ impl CosmicTextLayoutProvider {
         })
     }
 
-    /// Drops shaped-layout entries without rebuilding the packaged font database.
+    /// Drops shaped and rasterized layouts without rebuilding the font database.
     ///
     /// Exhaustive validation requests use identities that the interactive UI
     /// never reuses. They must not occupy the bounded runtime LRU and evict
@@ -333,6 +339,7 @@ impl CosmicTextLayoutProvider {
                 "ROUKAKU_TEXT_FONT_GENERATION_BUSY: cannot clear layout cache during shaping",
             ));
         }
+        self.lock_rasterizer()?.clear_layouts();
         state.catalog.layout_cache.clear();
         state.catalog.access_sequence = 0;
         state.catalog.hits = 0;
@@ -352,15 +359,21 @@ impl CosmicTextLayoutProvider {
         }
         let loaded = load_database(&self.context, &self.config, &fonts)?;
         fonts.sort_by(|left, right| left.asset_id.cmp(&right.asset_id));
+        let generation = state.catalog.generation.checked_add(1).ok_or_else(|| {
+            MediaError::message("ROUKAKU_TEXT_FONT_GENERATION: font generation overflow")
+        })?;
+        let mut rasterizer = self.lock_rasterizer()?;
+        *rasterizer = Rasterizer::new(
+            generation,
+            &self.context.default_locale,
+            loaded.database.clone(),
+        );
         state.catalog.fonts = fonts;
         state.catalog.database = loaded.database;
         state.catalog.faces = loaded.faces;
         state.catalog.font_systems.clear();
-        state.catalog.swash_cache = SwashCache::new();
         state.catalog.layout_cache.clear();
-        state.catalog.generation = state.catalog.generation.checked_add(1).ok_or_else(|| {
-            MediaError::message("ROUKAKU_TEXT_FONT_GENERATION: font generation overflow")
-        })?;
+        state.catalog.generation = generation;
         state.workers = (0..state.workers.len())
             .map(|_| Arc::new(Mutex::new(font_worker_from_catalog(&state.catalog))))
             .collect();
@@ -373,15 +386,56 @@ impl CosmicTextLayoutProvider {
         })
     }
 
-    /// Returns the immutable cached layout owned by the font provider.
-    ///
-    /// Rendering hosts that retain a layout across resource and scene phases
-    /// must not deep-clone its shaped runs and glyph resources after Yakui has
-    /// already populated the same cache entry during measurement.
+    fn lock_rasterizer(&self) -> Result<MutexGuard<'_, Rasterizer>, MediaError> {
+        self.rasterizer.lock().map_err(|_| {
+            MediaError::message("ROUKAKU_TEXT_RASTER_POISONED: rasterizer lock was poisoned")
+        })
+    }
+
+    /// Shape in logical units and rasterize at one physical pixel per unit.
     pub fn layout_shared(
         &self,
         request: &TextLayoutRequest,
     ) -> Result<Arc<TextLayoutResult>, MediaError> {
+        let logical = self.shape_shared(request)?;
+        self.rasterize_shared(&logical, 1.0, (0.0, 0.0))
+    }
+
+    /// Rasterize a previously shaped layout after logical positioning and reveal.
+    ///
+    /// `scale` is physical pixels per logical unit. `offset` is already in
+    /// physical pixels: each position is scaled and then translated by `offset`
+    /// before choosing the glyph's X/Y raster phase. The bitmap origins and
+    /// clip in the result are physical; widths, lines, glyph advances and ruby
+    /// boxes stay logical. Submit with zero additional renderer translation
+    /// when `offset` is the final draw origin.
+    pub fn rasterize_shared(
+        &self,
+        logical: &LogicalTextLayout,
+        scale: f32,
+        offset: (f32, f32),
+    ) -> Result<Arc<TextLayoutResult>, MediaError> {
+        if !Arc::ptr_eq(&self.domain, &logical.domain) {
+            return Err(MediaError::message(
+                "ROUKAKU_TEXT_RASTER_LAYOUT: logical layout belongs to another provider",
+            ));
+        }
+        let key = RasterLayoutKey::new(logical.revision, scale, offset)?;
+        if let Some(layout) = self.lock_rasterizer()?.cached(key, logical.generation)? {
+            return Ok(layout);
+        }
+        let _budget_lease = WorkerBudgetBroker::global()
+            .blocking_acquire()
+            .map_err(|error| MediaError::message(error.to_string()))?;
+        self.lock_rasterizer()?
+            .prepare(logical, key, self.config.max_cache_entries)
+    }
+
+    /// Get the cached logical metrics and shaped glyphs, without rasterization.
+    pub fn shape_shared(
+        &self,
+        request: &TextLayoutRequest,
+    ) -> Result<Arc<LogicalTextLayout>, MediaError> {
         let span = tracing::debug_span!(
             target: "roukaku_text",
             "text_layout",
@@ -454,21 +508,17 @@ impl CosmicTextLayoutProvider {
         let _active_guard = ActiveWorkerGuard {
             active: &self.active_workers,
         };
-        let layout_revision = self
-            .next_layout_revision
-            .try_update(Ordering::AcqRel, Ordering::Acquire, |current| {
-                current.checked_add(1)
-            })
-            .map_err(|_| {
-                MediaError::message("ROUKAKU_TEXT_LAYOUT_REVISION: layout revision overflowed")
-            })?;
         let layout_result = catch_unwind(AssertUnwindSafe(|| {
             let mut worker = worker.lock().map_err(|_| {
                 MediaError::message("ROUKAKU_TEXT_WORKER_POISONED: font worker lock was poisoned")
             })?;
-            let mut layout = layout_uncached(request, &mut worker, &self.config)?;
-            layout.revision = layout_revision;
-            Ok(Arc::new(layout))
+            let mut shaped = shape_uncached(request, &mut worker, &self.config)?;
+            shaped.layout.revision = next_revision(&self.domain)?;
+            Ok(Arc::new(LogicalTextLayout {
+                shaped,
+                domain: Arc::clone(&self.domain),
+                generation: worker.generation,
+            }))
         }))
         .unwrap_or_else(|_| {
             Err(MediaError::message(
@@ -508,7 +558,6 @@ impl CosmicTextLayoutProvider {
             layout_revision = result.revision,
             line_count = result.lines.len(),
             glyph_count = result.shaped_runs.iter().map(|run| run.glyphs.len()).sum::<usize>(),
-            resource_count = result.glyph_resources.len(),
             clipped = result.clipped,
             ellipsized = result.ellipsized,
         );
@@ -535,9 +584,7 @@ impl TextLayoutProvider for CosmicTextLayoutProvider {
     }
 
     fn measure(&self, request: &TextLayoutRequest) -> Result<TextLayoutMeasurement, MediaError> {
-        Ok(TextLayoutMeasurement::from(
-            self.layout_shared(request)?.as_ref(),
-        ))
+        Ok(TextLayoutMeasurement::from(&**self.shape_shared(request)?))
     }
 }
 
@@ -557,7 +604,6 @@ fn font_worker_from_catalog(catalog: &FontState) -> FontState {
         database: catalog.database.clone(),
         faces: catalog.faces.clone(),
         font_systems: BTreeMap::new(),
-        swash_cache: SwashCache::new(),
         layout_cache: BTreeMap::new(),
         access_sequence: 0,
         generation: catalog.generation,
@@ -569,7 +615,7 @@ fn font_worker_from_catalog(catalog: &FontState) -> FontState {
 fn insert_cache_entry(
     catalog: &mut FontState,
     cache_key: TextLayoutCacheKey,
-    result: Arc<TextLayoutResult>,
+    result: Arc<LogicalTextLayout>,
     max_cache_entries: usize,
 ) -> Result<(), MediaError> {
     if catalog.layout_cache.len() == max_cache_entries {

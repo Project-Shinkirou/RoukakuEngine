@@ -104,7 +104,6 @@ pub(super) fn shape_raw(
     Ok(RawLayout {
         lines,
         overflowed,
-        locale: locale.to_string(),
     })
 }
 
@@ -265,7 +264,7 @@ fn detect_overflow(pass: &LayoutPass, constraint: LayoutConstraint) -> bool {
     width_overflow || line_overflow || height_overflow
 }
 
-pub(super) fn glyph_bitmap(image: &cosmic_text::SwashImage) -> Result<GlyphBitmap, MediaError> {
+pub(super) fn glyph_bitmap(image: cosmic_text::SwashImage) -> Result<GlyphBitmap, MediaError> {
     let pixels = (image.placement.width as usize)
         .checked_mul(image.placement.height as usize)
         .ok_or_else(|| {
@@ -282,7 +281,7 @@ pub(super) fn glyph_bitmap(image: &cosmic_text::SwashImage) -> Result<GlyphBitma
     }
     let (format, pixels) = match image.content {
         SwashContent::Mask if image.data.len() == pixels => {
-            (GlyphBitmapFormat::Alpha8, image.data.clone())
+            (GlyphBitmapFormat::Alpha8, image.data)
         }
         SwashContent::SubpixelMask
             if image.data.len()
@@ -307,7 +306,7 @@ pub(super) fn glyph_bitmap(image: &cosmic_text::SwashImage) -> Result<GlyphBitma
                     MediaError::message("ROUKAKU_TEXT_GLYPH_BITMAP: color bitmap size overflows")
                 })? =>
         {
-            (GlyphBitmapFormat::Rgba8, image.data.clone())
+            (GlyphBitmapFormat::Rgba8, image.data)
         }
         _ => {
             return Err(MediaError::message(format!(

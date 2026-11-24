@@ -120,8 +120,6 @@ pub(super) fn transform_vertical_run(
             } else {
                 glyph.advance = column_width;
             }
-            glyph.render_x = Some(glyph.x.round() as i32);
-            glyph.render_y = Some(glyph.y.round() as i32);
         }
     }
     for ruby in ruby_boxes
