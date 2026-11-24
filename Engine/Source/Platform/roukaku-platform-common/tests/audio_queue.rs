@@ -39,3 +39,22 @@ fn native_audio_queue_moves_callback_chunks_in_bulk() {
     assert_eq!(&output[6..], &[-1.0, -1.0]);
     assert_eq!(telemetry.snapshot().consumed_samples, 6);
 }
+
+#[test]
+fn native_audio_queue_does_not_publish_a_chunk_without_a_replacement() {
+    let (mut producer, mut consumer, telemetry) =
+        NativeAudioQueue::create(1, 2, AudioWakeRegistration::default()).expect("queue");
+    let mut replacement = producer.try_submit_owned(vec![0.25, -0.25]).unwrap();
+    assert_eq!(consumer.pop_sample(), Some(0.25));
+
+    // The ready slot is free, but the callback still owns the first chunk.
+    replacement.fill(0.5);
+    assert_eq!(
+        producer.try_submit_owned(replacement).unwrap_err().code,
+        PlatformErrorCode::QueueOverflow
+    );
+    assert_eq!(telemetry.snapshot().queued_samples, 1);
+    assert_eq!(consumer.pop_sample(), Some(-0.25));
+    assert_eq!(consumer.pop_sample(), None);
+    assert_eq!(telemetry.snapshot().queued_samples, 0);
+}

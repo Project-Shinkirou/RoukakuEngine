@@ -150,9 +150,14 @@ impl FfmpegPlaybackDecoder {
         ffmpeg::init().map_err(|error| {
             ffmpeg_error("ROUKAKU_FFMPEG_STREAM_PROBE", "initialize FFmpeg", error)
         })?;
-        let input = ffmpeg::format::input(source.path()).map_err(|error| {
-            ffmpeg_error("ROUKAKU_FFMPEG_STREAM_DEMUX", "open encoded stream", error)
-        })?;
+        // MPEG program streams can omit the PTS of a delayed final frame.
+        // Let FFmpeg reconstruct missing PTS while preserving supplied timestamps.
+        let mut options = ffmpeg::Dictionary::new();
+        options.set("fflags", "+genpts");
+        let input =
+            ffmpeg::format::input_with_dictionary(source.path(), options).map_err(|error| {
+                ffmpeg_error("ROUKAKU_FFMPEG_STREAM_DEMUX", "open encoded stream", error)
+            })?;
         let duration = input.duration();
         if duration <= 0 {
             return Err(decode_error(

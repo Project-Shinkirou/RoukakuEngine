@@ -53,15 +53,22 @@ impl NativeAudioProducer {
             ));
         }
         let sample_count = samples.len() as u64;
-        self.ready
-            .push(samples)
-            .map_err(|_| queue_overflow("audio output lane changed while submitting"))?;
+        // Reserve the replacement and account for the samples before the callback
+        // can consume and recycle the submitted buffer.
+        let replacement = self
+            .recycled
+            .pop()
+            .map_err(|_| queue_overflow("audio output lane has no recycled allocation"))?;
         self.telemetry
             .queued_samples
             .fetch_add(sample_count, Ordering::Release);
-        self.recycled
-            .pop()
-            .map_err(|_| queue_overflow("audio output lane has no recycled allocation"))
+        if self.ready.push(samples).is_err() {
+            self.telemetry
+                .queued_samples
+                .fetch_sub(sample_count, Ordering::Release);
+            return Err(queue_overflow("audio output lane changed while submitting"));
+        }
+        Ok(replacement)
     }
 }
 
@@ -305,4 +312,42 @@ impl NativeAudioQueue {
 
 fn queue_overflow(message: &'static str) -> PlatformError {
     PlatformError::new(PlatformErrorCode::QueueOverflow, "audio.submit", message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        thread,
+        time::{Duration, Instant},
+    };
+
+    #[test]
+    fn callback_can_recycle_a_chunk_as_soon_as_it_is_published() {
+        const CHUNKS: usize = 8192;
+        let (mut producer, mut consumer, telemetry) =
+            NativeAudioQueue::create(1, 2, AudioWakeRegistration::default()).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        thread::scope(|scope| {
+            scope.spawn(move || {
+                for _ in 0..CHUNKS {
+                    while consumer.pop_samples(&mut [0.0; 2]) == 0 {
+                        assert!(Instant::now() < deadline, "output chunk was not published");
+                        thread::yield_now();
+                    }
+                }
+            });
+            let mut chunk = vec![0.0; 2];
+            for _ in 0..CHUNKS {
+                while producer.ready.slots() == 0 || producer.recycled.slots() == 0 {
+                    assert!(Instant::now() < deadline, "output chunk was not recycled");
+                    thread::yield_now();
+                }
+                chunk = producer.try_submit_owned(chunk).unwrap();
+            }
+        });
+        let result = telemetry.snapshot();
+        assert_eq!(result.queued_samples, 0);
+        assert_eq!(result.consumed_samples, 2 * CHUNKS as u64);
+    }
 }
