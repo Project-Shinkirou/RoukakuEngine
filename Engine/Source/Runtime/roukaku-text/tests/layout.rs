@@ -184,6 +184,9 @@ fn request(text: &str) -> TextLayoutRequest {
     }
 }
 
+#[path = "layout/density.rs"]
+mod density;
+
 #[path = "layout/resources_and_concurrency.rs"]
 mod resources_and_concurrency;
 

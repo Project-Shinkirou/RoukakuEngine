@@ -91,7 +91,8 @@ fn font_binding_hash_direction_and_fallback_fail_fast() {
 fn font_replacement_is_transactional_and_invalidates_layout_cache() {
     let provider = provider();
     let request = request("cache identity");
-    let first = provider.layout(&request).unwrap();
+    let logical = provider.shape_shared(&request).unwrap();
+    let first = provider.rasterize_shared(&logical, 1.0, (0.0, 0.0)).unwrap();
     let initial = provider.cache_stats().unwrap();
     assert_eq!(initial.font_generation, 1);
     assert_eq!(initial.entries, 1);
@@ -109,8 +110,19 @@ fn font_replacement_is_transactional_and_invalidates_layout_cache() {
     let replaced = provider.cache_stats().unwrap();
     assert_eq!(replaced.font_generation, 2);
     assert_eq!(replaced.entries, 0);
+    assert!(
+        provider
+            .rasterize_shared(&logical, 1.0, (0.0, 0.0))
+            .unwrap_err()
+            .to_string()
+            .contains("ROUKAKU_TEXT_RASTER_LAYOUT")
+    );
     let second = provider.layout(&request).unwrap();
     assert_ne!(first.revision, second.revision);
+    assert_ne!(
+        first.glyph_resources[0].resource_id,
+        second.glyph_resources[0].resource_id
+    );
 
     let before_failure = provider.cache_stats().unwrap();
     let invalid = font(vec![1, 2, 3]);

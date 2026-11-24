@@ -1,6 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
-use cosmic_text::{FontFeatures, SubpixelBin};
+use cosmic_text::FontFeatures;
 use roukaku_core::Diagnostic;
 
 use super::vertical::{is_vertical, shaping_constraint, transform_vertical_run};
@@ -8,22 +8,23 @@ use crate::MediaError;
 
 use super::{
     contract::*,
+    logical::{RasterGlyph, ShapedText},
     provider::{FontState, RawLayout},
-    shaping::{append_shaped_glyph, glyph_bitmap, shape_raw},
+    shaping::{append_shaped_glyph, shape_raw},
     validation::{
         cluster_covered, cosmic_features, ranges_overlap, validate_direction, validate_ruby,
     },
 };
 
-pub(super) fn layout_uncached(
+pub(super) fn shape_uncached(
     request: &TextLayoutRequest,
     state: &mut FontState,
     config: &TextLayoutConfig,
-) -> Result<TextLayoutResult, MediaError> {
+) -> Result<ShapedText, MediaError> {
     let features = cosmic_features(&request.features)?;
     let mut lines = Vec::new();
     let mut shaped_runs = Vec::new();
-    let mut resources = BTreeMap::new();
+    let mut raster_glyphs = Vec::new();
     let mut ruby_boxes = Vec::new();
     let mut voice_refs = Vec::new();
     let mut diagnostics = Vec::new();
@@ -75,7 +76,7 @@ pub(super) fn layout_uncached(
             &request.font_families,
             &mut lines,
             &mut shaped_runs,
-            &mut resources,
+            &mut raster_glyphs,
             &mut diagnostics,
             config,
         )?;
@@ -95,7 +96,7 @@ pub(super) fn layout_uncached(
                 &features,
                 &mut lines,
                 &mut shaped_runs,
-                &mut resources,
+                &mut raster_glyphs,
                 &mut ruby_boxes,
                 &mut diagnostics,
                 config,
@@ -125,15 +126,6 @@ pub(super) fn layout_uncached(
             })?;
     }
 
-    let glyph_count = shaped_runs
-        .iter()
-        .map(|run| run.glyphs.len())
-        .sum::<usize>();
-    if glyph_count > config.max_glyphs {
-        return Err(MediaError::message(
-            "ROUKAKU_TEXT_GLYPH_BUDGET: shaped glyph count exceeds the configured budget",
-        ));
-    }
     let width = lines
         .iter()
         .map(|line| {
@@ -154,41 +146,42 @@ pub(super) fn layout_uncached(
         .map(|line| line.top + line.height)
         .chain(ruby_boxes.iter().map(|ruby| ruby.y + ruby.height))
         .fold(0.0, f32::max);
-    let glyph_resources = resources.into_values().collect::<Vec<_>>();
-    let clip = if request.constraint.overflow == OverflowPolicy::Clip {
-        Some(LayoutClip {
-            x: 0,
-            y: 0,
-            width: request.constraint.max_width.ceil() as u32,
-            height: request
-                .constraint
-                .max_height
-                .unwrap_or_else(|| {
-                    request.constraint.max_lines.map_or(height, |lines| {
-                        lines as f32 * request.constraint.line_height
-                    })
-                })
-                .ceil()
-                .max(1.0) as u32,
-        })
-    } else {
-        None
-    };
-    Ok(TextLayoutResult {
-        schema: TEXT_LAYOUT_SCHEMA.to_string(),
-        key: request.key.clone(),
-        width,
-        height,
-        lines,
-        shaped_runs,
-        glyph_resources,
-        ruby_boxes,
-        voice_refs,
-        clip,
-        clipped,
-        ellipsized,
-        diagnostics,
-        revision: 0,
+    let clip_extent = (request.constraint.overflow == OverflowPolicy::Clip).then(|| {
+        (
+            request.constraint.max_width,
+            request.constraint.max_height.unwrap_or_else(|| {
+                request
+                    .constraint
+                    .max_lines
+                    .map_or(height, |lines| lines as f32 * request.constraint.line_height)
+            }),
+        )
+    });
+    let clip = clip_extent.map(|(width, height)| LayoutClip {
+        x: 0,
+        y: 0,
+        width: width.ceil() as u32,
+        height: height.ceil().max(1.0) as u32,
+    });
+    Ok(ShapedText {
+        layout: TextLayoutResult {
+            schema: TEXT_LAYOUT_SCHEMA.to_string(),
+            key: request.key.clone(),
+            width,
+            height,
+            lines,
+            shaped_runs,
+            glyph_resources: Vec::new(),
+            ruby_boxes,
+            voice_refs,
+            clip,
+            clipped,
+            ellipsized,
+            diagnostics,
+            revision: 0,
+        },
+        raster_glyphs,
+        clip_extent,
     })
 }
 
@@ -204,7 +197,7 @@ fn append_ruby(
     features: &FontFeatures,
     lines: &mut Vec<LayoutLine>,
     shaped_runs: &mut Vec<ShapedGlyphRun>,
-    resources: &mut BTreeMap<String, GlyphResource>,
+    raster_glyphs: &mut Vec<RasterGlyph>,
     ruby_boxes: &mut Vec<RubyLayoutBox>,
     diagnostics: &mut Vec<Diagnostic>,
     config: &TextLayoutConfig,
@@ -285,7 +278,7 @@ fn append_ruby(
         &request.font_families,
         lines,
         shaped_runs,
-        resources,
+        raster_glyphs,
         diagnostics,
         config,
     )?;
@@ -299,7 +292,6 @@ fn append_ruby(
         .flat_map(|shaped| &mut shaped.glyphs)
     {
         glyph.x += ruby_x;
-        glyph.render_x = glyph.render_x.map(|x| x + ruby_x.round() as i32);
     }
     ruby_boxes.push(RubyLayoutBox {
         run_index,
@@ -327,15 +319,11 @@ fn append_raw_layout(
     family_chain: &[String],
     lines: &mut Vec<LayoutLine>,
     shaped_runs: &mut Vec<ShapedGlyphRun>,
-    resources: &mut BTreeMap<String, GlyphResource>,
+    raster_glyphs: &mut Vec<RasterGlyph>,
     diagnostics: &mut Vec<Diagnostic>,
     config: &TextLayoutConfig,
 ) -> Result<(), MediaError> {
-    let RawLayout {
-        lines: raw_lines,
-        locale,
-        ..
-    } = raw;
+    let RawLayout { lines: raw_lines, .. } = raw;
     for (line_index, raw_line) in raw_lines.into_iter().enumerate() {
         validate_direction(requested_direction, raw_line.rtl)?;
         let line_number = line_offset + line_index as u32;
@@ -445,59 +433,18 @@ fn append_raw_layout(
             } else {
                 TextDirection::RightToLeft
             };
-            let physical = glyph.physical((0.0, y_offset + raw_line.baseline), 1.0);
-            let image = {
-                let system = state.font_systems.get_mut(&locale).ok_or_else(|| {
-                    MediaError::message("ROUKAKU_TEXT_FONT_SYSTEM: locale system is missing")
-                })?;
-                state
-                    .swash_cache
-                    .get_image(system, physical.cache_key)
-                    .clone()
-            };
-            let invisible = cluster
-                .chars()
-                .all(|value| value.is_whitespace() || is_invisible_scalar(value));
-            let empty_image = image.as_ref().is_some_and(|image| {
-                image.placement.width == 0 || image.placement.height == 0 || image.data.is_empty()
+            raster_glyphs.push(RasterGlyph {
+                font: glyph.font_id,
+                size: glyph.font_size,
+                weight: glyph.font_weight,
+                flags: glyph.cache_key_flags,
+                x_offset: glyph.font_size * glyph.x_offset,
+                y_offset: glyph.font_size * -glyph.y_offset + raw_line.baseline - raw_line.top,
+                invisible: cluster
+                    .chars()
+                    .all(|value| value.is_whitespace() || is_invisible_scalar(value)),
+                zero_advance: glyph.w.abs() <= f32::EPSILON,
             });
-            let zero_advance = glyph.w.abs() <= f32::EPSILON;
-            let (resource_id, render_x, render_y) = if empty_image && (invisible || zero_advance) {
-                (None, None, None)
-            } else if let Some(image) = image {
-                let bitmap = glyph_bitmap(&image)?;
-                let cache_key = physical.cache_key;
-                let resource_id = format!(
-                    "glyph:{}:{}:{}:{}:{}:{}:{}",
-                    face.asset_id,
-                    face.face_index,
-                    cache_key.glyph_id,
-                    cache_key.font_size_bits,
-                    subpixel_bin_id(cache_key.x_bin),
-                    subpixel_bin_id(cache_key.y_bin),
-                    cache_key.flags.bits(),
-                );
-                resources
-                    .entry(resource_id.clone())
-                    .or_insert_with(|| GlyphResource {
-                        resource_id: resource_id.clone(),
-                        font_asset_id: face.asset_id.clone(),
-                        font_hash: face.hash,
-                        glyph_id: glyph.glyph_id,
-                        bitmap,
-                    });
-                (
-                    Some(resource_id),
-                    Some(physical.x + image.placement.left),
-                    Some(physical.y - image.placement.top),
-                )
-            } else if invisible {
-                (None, None, None)
-            } else {
-                return Err(MediaError::message(
-                    "ROUKAKU_TEXT_GLYPH_RASTER: covered glyph could not be rasterized",
-                ));
-            };
             let shaped = ShapedGlyph {
                 source: SourceRange {
                     start: glyph.start,
@@ -514,35 +461,21 @@ fn append_raw_layout(
                 advance: glyph.w,
                 baseline: y_offset + raw_line.baseline,
                 line: line_number,
-                resource_id,
-                render_x,
-                render_y,
+                resource_id: None,
+                render_x: None,
+                render_y: None,
                 rotation_quadrants: 0,
                 tate_chu_yoko: false,
             };
             append_shaped_glyph(shaped_runs, run_index, role.clone(), shaped);
         }
-        if shaped_runs
-            .iter()
-            .map(|run| run.glyphs.len())
-            .sum::<usize>()
-            > config.max_glyphs
-        {
+        if raster_glyphs.len() > config.max_glyphs {
             return Err(MediaError::message(
                 "ROUKAKU_TEXT_GLYPH_BUDGET: shaped glyph count exceeds the configured budget",
             ));
         }
     }
     Ok(())
-}
-
-const fn subpixel_bin_id(bin: SubpixelBin) -> u8 {
-    match bin {
-        SubpixelBin::Zero => 0,
-        SubpixelBin::One => 1,
-        SubpixelBin::Two => 2,
-        SubpixelBin::Three => 3,
-    }
 }
 
 fn is_invisible_scalar(value: char) -> bool {

@@ -217,7 +217,7 @@ pub struct ShapedGlyph {
     pub resource_id: Option<String>,
     pub render_x: Option<i32>,
     pub render_y: Option<i32>,
-    /// Clockwise quarter turns already applied to the glyph bitmap.
+    /// Clockwise quarter turns to apply when drawing the glyph bitmap.
     pub rotation_quadrants: u8,
     /// True when a short horizontal digit run occupies one vertical em cell.
     pub tate_chu_yoko: bool,
@@ -288,8 +288,8 @@ pub struct TextLayoutResult {
     pub clipped: bool,
     pub ellipsized: bool,
     pub diagnostics: Vec<Diagnostic>,
-    /// Provider-local immutable layout revision. This is assigned once on a
-    /// cache miss and reused by every cache hit; it is not a content digest.
+    /// Provider-local immutable logical revision; raster variants share it.
+    /// This is not a content digest.
     pub revision: u64,
 }
 
