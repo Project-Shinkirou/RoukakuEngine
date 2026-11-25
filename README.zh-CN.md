@@ -1,26 +1,41 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme-banner-dark.png">
+  <img src="docs/assets/readme-banner-light.png" alt="RoukakuEngine —— 原生 2D 视觉小说创作引擎、播放器、编辑器与共享运行时">
+</picture>
+
+<div align="center">
+
 # RoukakuEngine
 
-用来创作和运行原生 2D 作品与视觉小说的引擎。
+**基于 Rust 的原生 2D 视觉小说创作引擎、播放器、编辑器与共享运行时。**
+
+[![License](https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-f59e0b)](LICENSE-MIT)
+[![Status](https://img.shields.io/badge/status-源码公开%20%C2%B7%20开发暂停-64748b)](https://project-shinkirou.github.io/zh-cn/status/)
 
 [English](README.md) · 简体中文 · [日本語](README.ja.md)
 
-> **状态：暂停开发。** RoukakuEngine 没有发布二进制版本。源码和文档保持公开，可以按下面的步骤从源码构建。详见[项目状态](https://project-shinkirou.github.io/zh-cn/status/)页面。
+[官方门户](https://project-shinkirou.github.io/zh-cn/roukaku/) · [文档](https://project-shinkirou.github.io/zh-cn/roukaku/docs/) · [快速上手](https://project-shinkirou.github.io/zh-cn/roukaku/docs/quick-start/) · [Project-Shinkirou](https://github.com/Project-Shinkirou)
 
-**门户：**[RoukakuEngine](https://project-shinkirou.github.io/zh-cn/roukaku/) · [文档](https://project-shinkirou.github.io/zh-cn/roukaku/docs/) · [快速开始](https://project-shinkirou.github.io/zh-cn/roukaku/docs/quick-start/)
+</div>
 
-## 组成
+---
 
-- **共享运行层**：场景、任务、时钟、输入、文字、媒体和资源管理。
-- **RoukakuVN**：视觉小说模块。作者编写 `.roukaku` 源码，经 Cook 编译后由同一套 `VnSession` 执行。
-- **RoukakuPlayer**：作品运行宿主，加载打包数据，管理窗口、设备和平台事件。
-- **RoukakuEditor**：文本、剧情图、时间线、Details 和独立 Player 预览，面板里的编辑会回写同一份源码。
-- **`roukaku` 命令行工具**：脚本与 UI 检查、Cook、包构建和平台 bundle。
+> [!NOTE]
+> **项目状态：功能开发已暂停。** RoukakuEngine 不发布预编译安装包，但源码与文档持续公开并可从源码构建；其共享底层运行时库持续为 [ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU) 提供支持。详见[项目状态](https://project-shinkirou.github.io/zh-cn/status/)。
 
-配置中声明了某个平台，不等于该平台的窗口、输入、声音和存读档已经通过设备验证。
+## 核心组件
 
-## 开始使用
+| 组件 | 职责 |
+|---|---|
+| **共享运行时** | 场景、任务调度、时钟、输入、文字排版、音视频媒体与资源管理 |
+| **RoukakuVN** | 视觉小说模块——将 `.roukaku` 剧本烘焙并交由统一 `VnSession` 执行 |
+| **RoukakuPlayer** | 原生运行宿主，负责加载打包作品并管理窗口、设备与平台事件 |
+| **RoukakuEditor** | 集成剧本编辑、剧情图、时间轴、属性面板与独立播放器实时预览 |
+| **`roukaku` CLI** | 剧本/界面校验、资源烘焙、构包与平台打包命令行工具 |
 
-安装 Rust（工具链由 `rust-toolchain.toml` 选择）和本机 C/C++ 工具链，按[构建说明](docs/zh-cn/build.md)准备原生依赖，然后在仓库根目录运行：
+## 从源码开始
+
+安装 `rust-toolchain.toml` 指定的 Rust 工具链及原生 C/C++ 工具链，按[构建文档](docs/zh-cn/build.md)准备原生依赖后，在仓库根目录执行：
 
 ```sh
 cargo build --locked -p roukaku-cli -p roukaku-player -p roukaku-crash-reporter
@@ -30,32 +45,32 @@ cargo xtask check --workspace engine
 cargo xtask check --workspace editor
 ```
 
-把 CLI 安装到 Cargo 的 bin 目录：
+安装命令行工具到 Cargo bin 目录：
 
 ```sh
 cargo install --locked --path Engine/Source/Programs/roukaku-cli --bin roukaku
 roukaku --help
 ```
 
-公开示例的 Cook、打包和 Player 启动步骤见[快速开始](docs/zh-cn/quick-start.md)。
+按照[快速上手](docs/zh-cn/quick-start.md)可烘焙、打包并运行公开示例工程。
 
-## 文档
+## 文档导航
 
-| | 简体中文 | English | 日本語 |
+| 主题 | 简体中文 | English | 日本語 |
 |---|---|---|---|
-| 概览 | [index](docs/zh-cn/index.md) | [index](docs/en/index.md) | [index](docs/ja/index.md) |
-| 快速开始 | [quick-start](docs/zh-cn/quick-start.md) | [quick-start](docs/en/quick-start.md) | [quick-start](docs/ja/quick-start.md) |
-| 构建 | [build](docs/zh-cn/build.md) | [build](docs/en/build.md) | [build](docs/ja/build.md) |
-| 架构与接口 | [architecture](docs/zh-cn/architecture.md) | [architecture](docs/en/architecture.md) | [architecture](docs/ja/architecture.md) |
-| Editor | [editor](docs/zh-cn/editor.md) | [editor](docs/en/editor.md) | [editor](docs/ja/editor.md) |
-| VN 创作 | [vn-authoring](docs/zh-cn/vn-authoring.md) | [vn-authoring](docs/en/vn-authoring.md) | [vn-authoring](docs/ja/vn-authoring.md) |
+| 概览 | [概览](docs/zh-cn/index.md) | [index](docs/en/index.md) | [概要](docs/ja/index.md) |
+| 快速上手 | [快速上手](docs/zh-cn/quick-start.md) | [quick-start](docs/en/quick-start.md) | [クイックスタート](docs/ja/quick-start.md) |
+| 构建 | [构建](docs/zh-cn/build.md) | [build](docs/en/build.md) | [ビルド](docs/ja/build.md) |
+| 架构 | [架构](docs/zh-cn/architecture.md) | [architecture](docs/en/architecture.md) | [アーキテクチャ](docs/ja/architecture.md) |
+| 编辑器 | [编辑器](docs/zh-cn/editor.md) | [editor](docs/en/editor.md) | [エディター](docs/ja/editor.md) |
+| VN 创作 | [VN 创作](docs/zh-cn/vn-authoring.md) | [vn-authoring](docs/en/vn-authoring.md) | [VN 制作](docs/ja/vn-authoring.md) |
 
-[参与贡献](CONTRIBUTING.md) · [来源与归属](ORIGINS.md) · [问题反馈](https://github.com/Project-Shinkirou/RoukakuEngine/issues)
+[参与贡献](CONTRIBUTING.md) · [来源与署名](ORIGINS.md) · [Issues](https://github.com/Project-Shinkirou/RoukakuEngine/issues)
 
 ## 与 ShinkiEMU 的关系
 
-[ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU) 是运行原生旧视觉小说引擎的独立产品，按固定 Git revision 使用 RoukakuEngine 的共享库；RoukakuEngine 不依赖 ShinkiEMU。
+[ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU) 是 Project-Shinkirou 旗下用于运行既有视觉小说引擎的姊妹项目，在固定 Git 提交上复用 RoukakuEngine 的共享底层库；RoukakuEngine 本身不依赖 ShinkiEMU。
 
-## 许可证
+## 许可
 
-自有代码采用 [MIT](LICENSE-MIT) 或 [Apache-2.0](LICENSE-APACHE)，可任选其一。第三方代码与素材保留各自的许可证和归属。
+项目自有代码采用 [MIT](LICENSE-MIT) 或 [Apache-2.0](LICENSE-APACHE) 双许可（任选其一）。第三方代码与素材保留原有许可与署名。
