@@ -261,7 +261,7 @@ impl PendingReadback {
 }
 
 impl crate::WgpuSceneTarget {
-    /// Read the target into tightly packed, top-down encoded RGBA8, retaining alpha.
+    /// Read the target into tightly packed, top-down encoded RGBA8 with opaque alpha.
     /// This blocks for an explicit capture; ordinary rendering never maps the target.
     /// `dst` must contain exactly `width * height * 4` bytes. On success every
     /// byte is initialized. Use the same device and queue as for rendering.

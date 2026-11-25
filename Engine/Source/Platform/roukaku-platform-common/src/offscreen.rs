@@ -173,12 +173,23 @@ mod shared_scene_tests {
             // SAFETY: Successful capture initialized every pixel.
             unsafe { pixels.assume_init() }
         };
-        assert_eq!(capture(&first), expected_first.rgba8);
-        assert_eq!(capture(&second), expected_second.rgba8);
+        let assert_opaque_rgb = |actual: &[u8], expected: &[u8]| {
+            assert_eq!(actual.len(), expected.len());
+            for (index, (actual, expected)) in actual
+                .chunks_exact(4)
+                .zip(expected.chunks_exact(4))
+                .enumerate()
+            {
+                assert_eq!(&actual[..3], &expected[..3], "pixel {index} RGB");
+                assert_eq!(actual[3], 255, "pixel {index} alpha");
+            }
+        };
+        assert_opaque_rgb(&capture(&first), &expected_first.rgba8);
+        assert_opaque_rgb(&capture(&second), &expected_second.rgba8);
         shared
             .render(&offscreen.device, &offscreen.queue, &frame, &mut first)
             .unwrap();
-        assert_eq!(capture(&first), expected_second.rgba8);
+        assert_opaque_rgb(&capture(&first), &expected_second.rgba8);
 
         frame.sequence += 1;
         frame.commands.clear();
@@ -186,6 +197,6 @@ mod shared_scene_tests {
         shared
             .render(&offscreen.device, &offscreen.queue, &frame, &mut first)
             .unwrap();
-        assert_eq!(&*capture(&first), frame.clear_rgba.repeat(3 * 2));
+        assert_opaque_rgb(&capture(&first), &frame.clear_rgba.repeat(3 * 2));
     }
 }
