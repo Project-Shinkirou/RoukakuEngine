@@ -7,10 +7,17 @@ impl WgpuGlyphAtlasRenderer {
         queue: &wgpu::Queue,
         frame: &SceneFrame,
         apply_mutations: bool,
-        atlas_upload_query: Option<(&wgpu::QuerySet, u32, u32)>,
-        timestamp_query: Option<(&wgpu::QuerySet, u32, u32)>,
+        target: Option<&mut WgpuSceneTarget>,
+        queries: Option<GlyphProfileQueries<'_>>,
     ) -> Result<PreparedRender, PlatformError> {
-        let profile_cpu = timestamp_query.is_some();
+        let profile_cpu = queries.is_some();
+        let atlas_upload_query = queries.as_ref().and_then(|queries| {
+            queries
+                .atlas_upload
+                .map(|(begin, end)| (queries.query_set, begin, end))
+        });
+        let timestamp_query =
+            queries.map(|queries| (queries.query_set, queries.scene.0, queries.scene.1));
         let command_started = Instant::now();
         let engine_allocation_before = roukaku_observability::thread_allocation_snapshot();
         validate_scene_resource_payloads(&frame.commands)?;
@@ -175,7 +182,9 @@ impl WgpuGlyphAtlasRenderer {
         let compositing = if has_linear_text {
             self.default_compositing
         } else {
-            first_compositing.unwrap_or_default()
+            first_compositing
+                .or_else(|| target.as_ref().map(|target| target.output.compositing))
+                .unwrap_or_default()
         };
         let mixed = self
             .draw_batches
@@ -244,25 +253,40 @@ impl WgpuGlyphAtlasRenderer {
         }
         let vertex_upload_ns = profiled_elapsed_ns(profile_cpu, vertex_upload_started)?;
         let render_submit_started = Instant::now();
-        if self.output.as_ref().is_none_or(|output| {
-            output.width != frame.width
-                || output.height != frame.height
-                || output.compositing != compositing
-        }) {
-            self.output = Some(CachedOutput::new(device, frame.width, frame.height, compositing));
-            self.mixed_output = None;
-        }
-        let output = self
-            .output
-            .as_ref()
-            .ok_or_else(|| invalid("glyph output texture is unavailable"))?;
+        let (output, mixed_output, linear_view) = if let Some(target) = target {
+            // A single color space needs only a view of the shared texture;
+            // switching between spaces still uses the normal transfer passes.
+            let linear_view = (compositing == SceneCompositing2D::LinearSrgb).then(|| {
+                &*target.linear_view.get_or_insert_with(|| {
+                    target.output.texture.create_view(&wgpu::TextureViewDescriptor {
+                        format: Some(wgpu::TextureFormat::Rgba8UnormSrgb),
+                        ..Default::default()
+                    })
+                })
+            });
+            (&target.output, &mut target.mixed_output, linear_view)
+        } else {
+            if self.output.as_ref().is_none_or(|output| {
+                output.width != frame.width
+                    || output.height != frame.height
+                    || output.compositing != compositing
+            }) {
+                self.output = Some(CachedOutput::new(device, frame.width, frame.height, compositing));
+                self.mixed_output = None;
+            }
+            (
+                self.output.as_ref().expect("scene output was prepared"),
+                &mut self.mixed_output,
+                None,
+            )
+        };
+        let output_view = linear_view.unwrap_or(&output.view);
         let mixed = mixed.then(|| {
             let transfer = self
                 .compositing_transfer
                 .get_or_insert_with(|| CompositingTransfer::new(device));
-            let target = self
-                .mixed_output
-                .get_or_insert_with(|| MixedOutput::new(device, transfer, output));
+            let target =
+                mixed_output.get_or_insert_with(|| MixedOutput::new(device, transfer, output));
             (&*target, &*transfer)
         });
         let depth_view = self
@@ -293,19 +317,19 @@ impl WgpuGlyphAtlasRenderer {
         let mut transfers = 0;
         let mut previous_mode = segments[0].3;
         for (segment_index, &(start, end, depth_tested, mode)) in segments.iter().enumerate() {
-            let target = if let Some((alternate, transfer)) = mixed {
+            let view = if let Some((alternate, transfer)) = mixed {
                 if previous_mode != mode {
                     alternate.transfer_to(transfer, &mut encoder, output, mode, None);
                     transfers += 1;
                     previous_mode = mode;
                 }
                 if mode == compositing {
-                    output
+                    output_view
                 } else {
-                    &alternate.alternate
+                    &alternate.alternate.view
                 }
             } else {
-                output
+                output_view
             };
             let clear_channel = |channel: u8| match mode {
                 SceneCompositing2D::LinearSrgb => f64::from(srgb_byte_to_linear(channel)),
@@ -354,7 +378,7 @@ impl WgpuGlyphAtlasRenderer {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("roukaku-glyph-render-pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &target.view,
+                    view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: color_load,
@@ -418,7 +442,6 @@ impl WgpuGlyphAtlasRenderer {
         let render_encode_ns = profiled_elapsed_ns(profile_cpu, render_submit_started)?;
         self.last_draw_calls = self.draw_batches.len() as u64 + transfers;
         Ok((
-            output.texture.clone(),
             committed_mutations,
             atlas_update,
             GlyphCpuProfile {

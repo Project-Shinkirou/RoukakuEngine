@@ -97,3 +97,95 @@ use float_param::native_backend_mask;
 pub use float_param::native_wgpu_instance;
 use float_param::unavailable;
 use float_param::validate_native_backend;
+
+#[cfg(test)]
+mod shared_scene_tests {
+    use super::*;
+    use crate::{WgpuSceneTarget, WgpuSharedSceneRenderer};
+    use roukaku_media_core::{GlyphBitmap, GlyphBitmapFormat, GlyphInstance, SceneCompositing2D};
+
+    #[tokio::test]
+    #[ignore = "requires a native hardware GPU runner"]
+    async fn shared_scene_matches_offscreen_and_keeps_leased_targets_intact() {
+        let instance = native_wgpu_instance().unwrap();
+        let mut offscreen = WgpuOffscreenRenderer::new(&instance)
+            .await
+            .unwrap()
+            .with_default_compositing(SceneCompositing2D::EncodedSrgb);
+        let mut shared = WgpuSharedSceneRenderer::new(&offscreen.device);
+        let mut first = WgpuSceneTarget::new(&offscreen.device, 3, 2).unwrap();
+        let mut second = WgpuSceneTarget::new(&offscreen.device, 3, 2).unwrap();
+        let mut frame = SceneFrame {
+            sequence: 1,
+            width: 3,
+            height: 2,
+            clear_rgba: [13, 33, 99, 208],
+            commands: vec![
+                SceneCommand::UploadGlyph {
+                    resource_id: "edge".into(),
+                    glyph: GlyphBitmap {
+                        width: 1,
+                        height: 1,
+                        format: GlyphBitmapFormat::Alpha8,
+                        pixels: vec![128].into(),
+                    },
+                },
+                SceneCommand::LinearGlyphRun {
+                    id: "text".into(),
+                    glyphs: [GlyphInstance {
+                        resource_id: "edge".into(),
+                        x: 1,
+                        y: 0,
+                        rotation_quadrants: 0,
+                    }]
+                    .into(),
+                    rgba: [255; 4],
+                    opacity: 1.0,
+                },
+                SceneCommand::rect("foreground", 1, 0, 2, 1, [7, 74, 206, 97]),
+            ],
+            semantics: None,
+        };
+        let expected_first = offscreen.render(&frame).unwrap();
+        shared
+            .render(&offscreen.device, &offscreen.queue, &frame, &mut first)
+            .unwrap();
+
+        frame.sequence += 1;
+        frame.clear_rgba = [53, 16, 23, 255];
+        frame.commands.remove(0);
+        let expected_second = offscreen.render(&frame).unwrap();
+        shared
+            .render(&offscreen.device, &offscreen.queue, &frame, &mut second)
+            .unwrap();
+
+        // Both rows are narrower than GPU copy alignment, and the second pass
+        // must still use the glyph uploaded in the first pass's atlas.
+        let capture = |target: &WgpuSceneTarget| {
+            let mut pixels = Arc::<[u8]>::new_uninit_slice(3 * 2 * 4);
+            target
+                .capture_into(
+                    &offscreen.device,
+                    &offscreen.queue,
+                    Arc::get_mut(&mut pixels).unwrap(),
+                )
+                .unwrap();
+            // SAFETY: Successful capture initialized every pixel.
+            unsafe { pixels.assume_init() }
+        };
+        assert_eq!(capture(&first), expected_first.rgba8);
+        assert_eq!(capture(&second), expected_second.rgba8);
+        shared
+            .render(&offscreen.device, &offscreen.queue, &frame, &mut first)
+            .unwrap();
+        assert_eq!(capture(&first), expected_second.rgba8);
+
+        frame.sequence += 1;
+        frame.commands.clear();
+        frame.clear_rgba = [21, 83, 153, 79];
+        shared
+            .render(&offscreen.device, &offscreen.queue, &frame, &mut first)
+            .unwrap();
+        assert_eq!(&*capture(&first), frame.clear_rgba.repeat(3 * 2));
+    }
+}

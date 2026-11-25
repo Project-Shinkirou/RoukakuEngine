@@ -77,6 +77,16 @@ impl CachedOutput {
         height: u32,
         compositing: SceneCompositing2D,
     ) -> Self {
+        Self::with_view_formats(device, width, height, compositing, &[])
+    }
+
+    pub(super) fn with_view_formats(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        compositing: SceneCompositing2D,
+        view_formats: &[wgpu::TextureFormat],
+    ) -> Self {
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("roukaku-glyph-output"),
             size: wgpu::Extent3d {
@@ -91,7 +101,7 @@ impl CachedOutput {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT
                 | wgpu::TextureUsages::TEXTURE_BINDING
                 | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
+            view_formats,
         });
         let view = texture.create_view(&Default::default());
         Self {
@@ -212,7 +222,6 @@ pub(crate) struct TextureRegionUpload<'a> {
 }
 
 pub(super) type PreparedRender = (
-    wgpu::Texture,
     ResourceMutationJournal,
     PreparedAtlasUpdate,
     GlyphCpuProfile,

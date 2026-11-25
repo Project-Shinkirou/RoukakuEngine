@@ -111,3 +111,5 @@ pub(crate) use push_quad_run::{BatchPipeline, DrawBatch};
 mod render_internal;
 mod compositing_transfer;
 use compositing_transfer::{CompositingTransfer, MixedOutput};
+mod shared_scene;
+pub use shared_scene::{WgpuSceneTarget, WgpuSharedSceneRenderer};

@@ -19,6 +19,7 @@ mod verified_cache;
 pub use audio::*;
 pub use completion::*;
 pub use gamepad::*;
+pub use glyph_atlas::{WgpuSceneTarget, WgpuSharedSceneRenderer};
 #[cfg(not(target_arch = "wasm32"))]
 pub use http_range::*;
 #[cfg(not(target_arch = "wasm32"))]
