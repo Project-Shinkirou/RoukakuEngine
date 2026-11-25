@@ -1,26 +1,41 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme-banner-dark.png">
+  <img src="docs/assets/readme-banner-light.png" alt="RoukakuEngine — Native 2D visual novel engine, player, editor, and shared runtime">
+</picture>
+
+<div align="center">
+
 # RoukakuEngine
 
-An engine for making and running native 2D works and visual novels.
+**Native 2D visual novel engine, player, editor, and shared runtime in Rust.**
+
+[![License](https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-f59e0b)](LICENSE-MIT)
+[![Status](https://img.shields.io/badge/status-source%20public%20%C2%B7%20dev%20paused-64748b)](https://project-shinkirou.github.io/en/status/)
 
 English · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
-> **Status: development is paused.** RoukakuEngine has no binary releases. The source and documentation stay public, and you can build it from source with the steps below. See the [project status](https://project-shinkirou.github.io/en/status/) page.
+[Portal](https://project-shinkirou.github.io/en/roukaku/) · [Documentation](https://project-shinkirou.github.io/en/roukaku/docs/) · [Quick Start](https://project-shinkirou.github.io/en/roukaku/docs/quick-start/) · [Project-Shinkirou](https://github.com/Project-Shinkirou)
 
-**Portal:** [RoukakuEngine](https://project-shinkirou.github.io/en/roukaku/) · [Documentation](https://project-shinkirou.github.io/en/roukaku/docs/) · [Quick start](https://project-shinkirou.github.io/en/roukaku/docs/quick-start/)
+</div>
 
-## Parts
+---
 
-- **Shared runtime**: scenes, tasks, clocks, input, text, media and resource management.
-- **RoukakuVN**: the visual novel module. Authors write `.roukaku` sources, which are cooked and then executed by the same `VnSession`.
-- **RoukakuPlayer**: the runtime host. It loads packaged data and manages windows, devices and platform events.
-- **RoukakuEditor**: text, story graph, timeline, Details and a standalone Player preview; panel edits are written back to the same source.
-- **`roukaku` CLI**: script and UI checks, cooking, package builds and platform bundles.
+> [!NOTE]
+> **Project Status: feature development is paused.** RoukakuEngine ships no prebuilt binary releases. Its source code and documentation remain open and buildable from source, and its shared runtime libraries actively power [ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU). See [Project Status](https://project-shinkirou.github.io/en/status/).
 
-A platform declared in the configuration has not necessarily had its windowing, input, audio and save/load verified on a device.
+## Components
 
-## Get started
+| Component | Purpose |
+|---|---|
+| **Shared runtime** | Scenes, tasks, clocks, input, text layout, media, and resource management |
+| **RoukakuVN** | Visual novel module — cooks `.roukaku` scripts and executes them through `VnSession` |
+| **RoukakuPlayer** | Native runtime host loading packaged works and managing windows, devices, and platform events |
+| **RoukakuEditor** | Integrated story graph, script text, timeline, inspector, and live Player preview |
+| **`roukaku` CLI** | Script/UI validation, asset cooking, package building, and platform bundling |
 
-Install Rust (the toolchain is selected by `rust-toolchain.toml`) and a native C/C++ toolchain, then prepare native dependencies with the [build guide](docs/en/build.md). From the repository root:
+## Get Started from Source
+
+Install Rust (pinned in `rust-toolchain.toml`) and a native C/C++ toolchain, then follow the [build guide](docs/en/build.md):
 
 ```sh
 cargo build --locked -p roukaku-cli -p roukaku-player -p roukaku-crash-reporter
@@ -37,25 +52,25 @@ cargo install --locked --path Engine/Source/Programs/roukaku-cli --bin roukaku
 roukaku --help
 ```
 
-See [Quick start](docs/en/quick-start.md) to cook, package and play the public sample.
+Follow [Quick Start](docs/en/quick-start.md) to cook, package, and run the public sample project.
 
 ## Documentation
 
-| | English | 简体中文 | 日本語 |
+| Topic | English | 简体中文 | 日本語 |
 |---|---|---|---|
-| Overview | [index](docs/en/index.md) | [index](docs/zh-cn/index.md) | [index](docs/ja/index.md) |
-| Quick start | [quick-start](docs/en/quick-start.md) | [quick-start](docs/zh-cn/quick-start.md) | [quick-start](docs/ja/quick-start.md) |
-| Build | [build](docs/en/build.md) | [build](docs/zh-cn/build.md) | [build](docs/ja/build.md) |
-| Architecture | [architecture](docs/en/architecture.md) | [architecture](docs/zh-cn/architecture.md) | [architecture](docs/ja/architecture.md) |
-| Editor | [editor](docs/en/editor.md) | [editor](docs/zh-cn/editor.md) | [editor](docs/ja/editor.md) |
-| VN authoring | [vn-authoring](docs/en/vn-authoring.md) | [vn-authoring](docs/zh-cn/vn-authoring.md) | [vn-authoring](docs/ja/vn-authoring.md) |
+| Overview | [index](docs/en/index.md) | [概览](docs/zh-cn/index.md) | [概要](docs/ja/index.md) |
+| Quick start | [quick-start](docs/en/quick-start.md) | [快速上手](docs/zh-cn/quick-start.md) | [クイックスタート](docs/ja/quick-start.md) |
+| Build | [build](docs/en/build.md) | [构建](docs/zh-cn/build.md) | [ビルド](docs/ja/build.md) |
+| Architecture | [architecture](docs/en/architecture.md) | [架构](docs/zh-cn/architecture.md) | [アーキテクチャ](docs/ja/architecture.md) |
+| Editor | [editor](docs/en/editor.md) | [编辑器](docs/zh-cn/editor.md) | [エディター](docs/ja/editor.md) |
+| VN authoring | [vn-authoring](docs/en/vn-authoring.md) | [VN 创作](docs/zh-cn/vn-authoring.md) | [VN 制作](docs/ja/vn-authoring.md) |
 
-[Contributing](CONTRIBUTING.md) · [Origins and attribution](ORIGINS.md) · [Issues](https://github.com/Project-Shinkirou/RoukakuEngine/issues)
+[Contributing](CONTRIBUTING.md) · [Origins & Attribution](ORIGINS.md) · [Issues](https://github.com/Project-Shinkirou/RoukakuEngine/issues)
 
 ## Relation to ShinkiEMU
 
-[ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU) is a separate product for running original visual novel engines. It uses RoukakuEngine's shared libraries at a pinned Git revision; RoukakuEngine does not depend on ShinkiEMU.
+[ShinkiEMU](https://github.com/Project-Shinkirou/ShinkiEMU) is Project-Shinkirou's sister product for running existing visual novel engines. It consumes RoukakuEngine's shared libraries at a pinned Git revision; RoukakuEngine itself has no dependency on ShinkiEMU.
 
 ## License
 
-Project-owned code is available under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option. Third-party code and assets keep their own licenses and attribution.
+Project-owned code is dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option. Third-party code and assets keep their respective licenses and attribution.
